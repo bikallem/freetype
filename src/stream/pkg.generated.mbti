@@ -1,0 +1,56 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "bikallem/freetype/stream"
+
+import {
+  "bikallem/freetype/error",
+}
+
+// Values
+
+// Errors
+
+// Types and methods
+pub(all) struct ByteReader {
+  data : Bytes
+  size : Int
+  mut pos : Int
+  mut frame_start : Int
+  mut frame_size : Int
+  mut cursor : Int
+}
+pub fn ByteReader::enter_frame(Self, Int) -> Unit raise @error.FTError
+pub fn ByteReader::exit_frame(Self) -> Unit
+pub fn ByteReader::frame_remaining(Self) -> Int
+pub fn ByteReader::frame_skip(Self, Int) -> Unit
+pub fn ByteReader::get_byte(Self) -> Byte
+pub fn ByteReader::get_bytes(Self, Int) -> Bytes
+pub fn ByteReader::get_i16_be(Self) -> Int
+pub fn ByteReader::get_i32_be(Self) -> Int
+pub fn ByteReader::get_i64_be(Self) -> Int64
+pub fn ByteReader::get_u16_be(Self) -> UInt
+pub fn ByteReader::get_u16_le(Self) -> UInt
+pub fn ByteReader::get_u24_be(Self) -> UInt
+pub fn ByteReader::get_u32_be(Self) -> UInt
+pub fn ByteReader::get_u32_le(Self) -> UInt
+pub fn ByteReader::in_frame(Self) -> Bool
+pub fn ByteReader::length(Self) -> Int
+pub fn ByteReader::new(Bytes) -> Self
+pub fn ByteReader::position(Self) -> Int
+pub fn ByteReader::read_byte(Self) -> Byte raise @error.FTError
+pub fn ByteReader::read_bytes(Self, Int) -> Bytes raise @error.FTError
+pub fn ByteReader::read_i16_be(Self) -> Int raise @error.FTError
+pub fn ByteReader::read_i32_be(Self) -> Int raise @error.FTError
+pub fn ByteReader::read_u16_be(Self) -> UInt raise @error.FTError
+pub fn ByteReader::read_u16_le(Self) -> UInt raise @error.FTError
+pub fn ByteReader::read_u24_be(Self) -> UInt raise @error.FTError
+pub fn ByteReader::read_u32_be(Self) -> UInt raise @error.FTError
+pub fn ByteReader::read_u32_le(Self) -> UInt raise @error.FTError
+pub fn ByteReader::remaining(Self) -> Int
+pub fn ByteReader::seek(Self, Int) -> Unit raise @error.FTError
+pub fn ByteReader::skip(Self, Int) -> Unit raise @error.FTError
+pub impl Show for ByteReader
+
+// Type aliases
+
+// Traits
+

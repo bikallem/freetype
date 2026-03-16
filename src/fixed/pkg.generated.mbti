@@ -1,0 +1,120 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "bikallem/freetype/fixed"
+
+import {
+  "bikallem/freetype/error",
+}
+
+// Values
+pub let angle_2pi : Int64
+
+pub fn angle_diff(Int64, Int64) -> Int64
+
+pub let angle_pi : Int64
+
+pub let angle_pi2 : Int64
+
+pub let angle_pi4 : Int64
+
+pub fn atan2(Int64, Int64) -> Int64
+
+pub fn corner_is_flat(Int64, Int64, Int64, Int64) -> Bool
+
+pub fn corner_orientation(Int64, Int64, Int64, Int64) -> Int
+
+pub fn cos(Int64) -> Fixed
+
+pub fn div_fix(Int64, Int64) -> Fixed
+
+pub fn msb(UInt) -> Int
+
+pub fn mul_div(Int64, Int64, Int64) -> Int64
+
+pub fn mul_fix(Fixed, Fixed) -> Fixed
+
+pub fn sin(Int64) -> Fixed
+
+pub fn sqrt_fixed(UInt64) -> UInt
+
+pub fn tan(Int64) -> Fixed
+
+pub fn vector_from_polar(Int64, Int64) -> (Int64, Int64)
+
+pub fn vector_length(Int64, Int64) -> Int64
+
+pub fn vector_polarize(Int64, Int64) -> (Int64, Int64)
+
+pub fn vector_rotate(Int64, Int64, Int64) -> (Int64, Int64)
+
+pub fn vector_unit(Int64) -> (Fixed, Fixed)
+
+// Errors
+
+// Types and methods
+pub(all) struct F26Dot6 {
+  val : Int64
+}
+pub fn F26Dot6::ceil(Self) -> Self
+pub fn F26Dot6::floor(Self) -> Self
+pub fn F26Dot6::from_int(Int) -> Self
+pub fn F26Dot6::from_pixels(Int) -> Self
+pub fn F26Dot6::from_raw(Int64) -> Self
+pub fn F26Dot6::round(Self) -> Self
+pub fn F26Dot6::to_int(Self) -> Int
+pub fn F26Dot6::to_raw(Self) -> Int64
+pub fn F26Dot6::zero() -> Self
+pub impl Add for F26Dot6
+pub impl Compare for F26Dot6
+pub impl Eq for F26Dot6
+pub impl Neg for F26Dot6
+pub impl Show for F26Dot6
+pub impl Sub for F26Dot6
+
+pub(all) struct F2Dot14 {
+  val : Int
+}
+pub fn F2Dot14::from_raw(Int) -> Self
+pub fn F2Dot14::one() -> Self
+pub fn F2Dot14::to_fixed(Self) -> Fixed
+pub fn F2Dot14::to_raw(Self) -> Int
+pub fn F2Dot14::zero() -> Self
+pub impl Compare for F2Dot14
+pub impl Eq for F2Dot14
+pub impl Show for F2Dot14
+
+pub(all) struct Fixed {
+  val : Int64
+}
+pub fn Fixed::ceil(Self) -> Self
+pub fn Fixed::floor(Self) -> Self
+pub fn Fixed::from_int(Int) -> Self
+pub fn Fixed::from_raw(Int64) -> Self
+pub fn Fixed::one() -> Self
+pub fn Fixed::round(Self) -> Self
+pub fn Fixed::to_int(Self) -> Int
+pub fn Fixed::to_raw(Self) -> Int64
+pub fn Fixed::zero() -> Self
+pub impl Add for Fixed
+pub impl Compare for Fixed
+pub impl Eq for Fixed
+pub impl Neg for Fixed
+pub impl Show for Fixed
+pub impl Sub for Fixed
+
+pub(all) struct Matrix {
+  mut xx : Fixed
+  mut xy : Fixed
+  mut yx : Fixed
+  mut yy : Fixed
+}
+pub fn Matrix::identity() -> Self
+pub fn Matrix::invert(Self) -> Unit raise @error.FTError
+pub fn Matrix::multiply(Self, Self) -> Unit
+pub fn Matrix::transform(Self, Int64, Int64) -> (Int64, Int64)
+pub impl Eq for Matrix
+pub impl Show for Matrix
+
+// Type aliases
+
+// Traits
+

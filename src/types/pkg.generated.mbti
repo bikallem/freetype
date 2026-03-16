@@ -1,0 +1,300 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "bikallem/freetype/types"
+
+import {
+  "bikallem/freetype/fixed",
+}
+
+// Values
+pub fn curve_tag(Byte) -> Byte
+
+pub let curve_tag_conic : Byte
+
+pub let curve_tag_cubic : Byte
+
+pub let curve_tag_has_scanmode : Byte
+
+pub let curve_tag_on : Byte
+
+pub let curve_tag_touch_both : Byte
+
+pub let curve_tag_touch_x : Byte
+
+pub let curve_tag_touch_y : Byte
+
+pub fn make_tag(Byte, Byte, Byte, Byte) -> UInt
+
+pub let outline_even_odd_fill : Int
+
+pub let outline_high_precision : Int
+
+pub let outline_ignore_dropouts : Int
+
+pub let outline_include_stubs : Int
+
+pub let outline_none : Int
+
+pub let outline_overlap : Int
+
+pub let outline_owner : Int
+
+pub let outline_reverse_fill : Int
+
+pub let outline_single_pass : Int
+
+pub let outline_smart_dropouts : Int
+
+pub let tag_BASE : UInt
+
+pub let tag_BDF : UInt
+
+pub let tag_CBDT : UInt
+
+pub let tag_CBLC : UInt
+
+pub let tag_CFF : UInt
+
+pub let tag_CFF2 : UInt
+
+pub let tag_CID : UInt
+
+pub let tag_COLR : UInt
+
+pub let tag_CPAL : UInt
+
+pub let tag_DSIG : UInt
+
+pub let tag_EBDT : UInt
+
+pub let tag_EBLC : UInt
+
+pub let tag_EBSC : UInt
+
+pub let tag_FOND : UInt
+
+pub let tag_GDEF : UInt
+
+pub let tag_GPOS : UInt
+
+pub let tag_GSUB : UInt
+
+pub let tag_HVAR : UInt
+
+pub let tag_JSTF : UInt
+
+pub let tag_LTSH : UInt
+
+pub let tag_LWFN : UInt
+
+pub let tag_MATH : UInt
+
+pub let tag_META : UInt
+
+pub let tag_MMFX : UInt
+
+pub let tag_MMSD : UInt
+
+pub let tag_MVAR : UInt
+
+pub let tag_OS2 : UInt
+
+pub let tag_OTTO : UInt
+
+pub let tag_PCLT : UInt
+
+pub let tag_POST : UInt
+
+pub let tag_SING : UInt
+
+pub let tag_SVG : UInt
+
+pub let tag_TYP1 : UInt
+
+pub let tag_VDMX : UInt
+
+pub let tag_VVAR : UInt
+
+pub let tag_avar : UInt
+
+pub let tag_bdat : UInt
+
+pub let tag_bhed : UInt
+
+pub let tag_bloc : UInt
+
+pub let tag_bsln : UInt
+
+pub let tag_cmap : UInt
+
+pub let tag_cvar : UInt
+
+pub let tag_cvt : UInt
+
+pub let tag_feat : UInt
+
+pub let tag_fpgm : UInt
+
+pub let tag_fvar : UInt
+
+pub let tag_gasp : UInt
+
+pub let tag_glyf : UInt
+
+pub let tag_gvar : UInt
+
+pub let tag_hdmx : UInt
+
+pub let tag_head : UInt
+
+pub let tag_hhea : UInt
+
+pub let tag_hmtx : UInt
+
+pub let tag_just : UInt
+
+pub let tag_kern : UInt
+
+pub let tag_lcar : UInt
+
+pub let tag_loca : UInt
+
+pub let tag_maxp : UInt
+
+pub let tag_mort : UInt
+
+pub let tag_morx : UInt
+
+pub let tag_name : UInt
+
+pub let tag_opbd : UInt
+
+pub let tag_post : UInt
+
+pub let tag_prep : UInt
+
+pub let tag_prop : UInt
+
+pub let tag_sbix : UInt
+
+pub let tag_sfnt : UInt
+
+pub let tag_trak : UInt
+
+pub let tag_true : UInt
+
+pub let tag_ttc : UInt
+
+pub let tag_ttcf : UInt
+
+pub let tag_typ1 : UInt
+
+pub let tag_vhea : UInt
+
+pub let tag_vmtx : UInt
+
+pub let tag_wOF2 : UInt
+
+pub let tag_wOFF : UInt
+
+// Errors
+
+// Types and methods
+pub(all) struct BBox {
+  mut x_min : Int64
+  mut y_min : Int64
+  mut x_max : Int64
+  mut y_max : Int64
+}
+pub fn BBox::empty() -> Self
+pub impl Eq for BBox
+pub impl Show for BBox
+pub impl ToJson for BBox
+
+pub(all) struct Bitmap {
+  mut rows : UInt
+  mut width : UInt
+  mut pitch : Int
+  mut buffer : Bytes
+  mut num_grays : UInt
+  mut pixel_mode : PixelMode
+}
+pub fn Bitmap::new() -> Self
+pub impl Eq for Bitmap
+pub impl Show for Bitmap
+
+pub(all) enum GlyphFormat {
+  None
+  Composite
+  Bitmap
+  Outline
+  Plotter
+  Svg
+}
+pub impl Eq for GlyphFormat
+pub impl Show for GlyphFormat
+
+pub(all) struct GlyphMetrics {
+  mut width : Int64
+  mut height : Int64
+  mut hori_bearing_x : Int64
+  mut hori_bearing_y : Int64
+  mut hori_advance : Int64
+  mut vert_bearing_x : Int64
+  mut vert_bearing_y : Int64
+  mut vert_advance : Int64
+}
+pub fn GlyphMetrics::new() -> Self
+pub impl Eq for GlyphMetrics
+pub impl Show for GlyphMetrics
+pub impl ToJson for GlyphMetrics
+
+pub(all) struct Outline {
+  mut points : Array[Vector]
+  mut tags : Array[Byte]
+  mut contours : Array[UInt]
+  mut flags : Int
+}
+pub fn Outline::n_contours(Self) -> Int
+pub fn Outline::n_points(Self) -> Int
+pub fn Outline::new() -> Self
+pub impl Eq for Outline
+pub impl Show for Outline
+
+pub(all) enum PixelMode {
+  None
+  Mono
+  Gray
+  Gray2
+  Gray4
+  Lcd
+  LcdV
+  Bgra
+}
+pub impl Eq for PixelMode
+pub impl Show for PixelMode
+
+pub(all) struct SizeMetrics {
+  x_ppem : UInt
+  y_ppem : UInt
+  x_scale : @fixed.Fixed
+  y_scale : @fixed.Fixed
+  ascender : Int64
+  descender : Int64
+  height : Int64
+  max_advance : Int64
+}
+pub impl Eq for SizeMetrics
+pub impl Show for SizeMetrics
+
+pub(all) struct Vector {
+  mut x : Int64
+  mut y : Int64
+}
+pub impl Eq for Vector
+pub impl Show for Vector
+pub impl ToJson for Vector
+
+// Type aliases
+
+// Traits
+

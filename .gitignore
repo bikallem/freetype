@@ -1,6 +1,19 @@
 vendor
 
+# MoonBit build artifacts
+_build/
+.mooncakes/
+target/
+
+# Test fonts (downloaded via script)
+test/fonts/*.ttf
+test/fonts/*.otf
+test/fonts/*.woff
+test/fonts/*.bdf
+test/fonts/*.pcf
+
 # Dolt database files (added by bd init)
 .dolt/
 *.db
 .beads
+.mooncakes

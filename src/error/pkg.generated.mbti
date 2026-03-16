@@ -1,0 +1,111 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "bikallem/freetype/error"
+
+// Values
+
+// Errors
+pub(all) suberror FTError {
+  CannotOpenResource
+  UnknownFileFormat
+  InvalidFileFormat
+  InvalidVersion
+  LowerModuleVersion
+  InvalidArgument
+  UnimplementedFeature
+  InvalidTable
+  InvalidOffset
+  ArrayTooLarge
+  MissingModule
+  MissingProperty
+  InvalidGlyphIndex
+  InvalidCharacterCode
+  InvalidGlyphFormat
+  CannotRenderGlyph
+  InvalidOutline
+  InvalidComposite
+  TooManyHints
+  InvalidPixelSize
+  InvalidSvgDocument
+  InvalidHandle
+  InvalidLibraryHandle
+  InvalidDriverHandle
+  InvalidFaceHandle
+  InvalidSizeHandle
+  InvalidSlotHandle
+  InvalidCharMapHandle
+  InvalidCacheHandle
+  InvalidStreamHandle
+  TooManyDrivers
+  TooManyExtensions
+  OutOfMemory
+  UnlistedObject
+  CannotOpenStream
+  InvalidStreamSeek
+  InvalidStreamSkip
+  InvalidStreamRead
+  InvalidStreamOperation
+  InvalidFrameOperation
+  NestedFrameAccess
+  InvalidFrameRead
+  RasterUninitialized
+  RasterCorrupted
+  RasterOverflow
+  RasterNegativeHeight
+  TooManyCaches
+  InvalidOpcode
+  TooFewArguments
+  StackOverflow
+  CodeOverflow
+  BadArgument
+  DivideByZero
+  InvalidReference
+  DebugOpCode
+  EndfInExecStream
+  NestedDefs
+  InvalidCodeRange
+  ExecutionTooLong
+  TooManyFunctionDefs
+  TooManyInstructionDefs
+  TableMissing
+  HorizHeaderMissing
+  LocationsMissing
+  NameTableMissing
+  CMapTableMissing
+  HmtxTableMissing
+  PostTableMissing
+  InvalidHorizMetrics
+  InvalidCharMapFormat
+  InvalidPPem
+  InvalidVertMetrics
+  CouldNotFindContext
+  InvalidPostTableFormat
+  InvalidPostTable
+  DefInGlyfBytecode
+  MissingBitmap
+  MissingSvgHooks
+  SyntaxError
+  StackUnderflow
+  Ignore
+  NoUnicodeGlyphName
+  GlyphTooBig
+  MissingStartfontField
+  MissingFontField
+  MissingSizeField
+  MissingFontBoundingBoxField
+  MissingCharsField
+  MissingStartcharField
+  MissingEncodingField
+  MissingBbxField
+  BbxTooBig
+  CorruptedFontHeader
+  CorruptedFontGlyphs
+}
+pub impl Eq for FTError
+pub impl Show for FTError
+
+// Types and methods
+
+// Type aliases
+
+// Traits
+
