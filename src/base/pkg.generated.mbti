@@ -1,0 +1,290 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "bikallem/freetype/base"
+
+import {
+  "bikallem/freetype/error",
+  "bikallem/freetype/fixed",
+  "bikallem/freetype/types",
+}
+
+// Values
+pub fn detect_format(Bytes) -> FontFormat
+
+pub let face_flag_cid_keyed : Int64
+
+pub let face_flag_color : Int64
+
+pub let face_flag_fixed_sizes : Int64
+
+pub let face_flag_fixed_width : Int64
+
+pub let face_flag_glyph_names : Int64
+
+pub let face_flag_hinter : Int64
+
+pub let face_flag_horizontal : Int64
+
+pub let face_flag_kerning : Int64
+
+pub let face_flag_multiple_masters : Int64
+
+pub let face_flag_sbix : Int64
+
+pub let face_flag_sbix_overlay : Int64
+
+pub let face_flag_scalable : Int64
+
+pub let face_flag_sfnt : Int64
+
+pub let face_flag_svg : Int64
+
+pub let face_flag_tricky : Int64
+
+pub let face_flag_variation : Int64
+
+pub let face_flag_vertical : Int64
+
+pub let load_advance_only : Int
+
+pub let load_bitmap_metrics_only : Int
+
+pub let load_color : Int
+
+pub let load_compute_metrics : Int
+
+pub let load_default : Int
+
+pub let load_force_autohint : Int
+
+pub let load_ignore_transform : Int
+
+pub let load_linear_design : Int
+
+pub let load_monochrome : Int
+
+pub let load_no_autohint : Int
+
+pub let load_no_bitmap : Int
+
+pub let load_no_hinting : Int
+
+pub let load_no_recurse : Int
+
+pub let load_no_scale : Int
+
+pub let load_no_svg : Int
+
+pub let load_pedantic : Int
+
+pub let load_render : Int
+
+pub let load_sbits_only : Int
+
+pub let load_vertical_layout : Int
+
+pub fn outline_decompose(@types.Outline, OutlineFuncs) -> Unit raise @error.FTError
+
+pub fn outline_get_bbox(@types.Outline) -> @types.BBox
+
+pub fn outline_get_cbox(@types.Outline) -> @types.BBox
+
+pub fn outline_get_orientation(@types.Outline) -> Int
+
+pub fn outline_reverse(@types.Outline) -> Unit
+
+pub fn outline_transform(@types.Outline, @fixed.Matrix) -> Unit
+
+pub fn outline_translate(@types.Outline, Int64, Int64) -> Unit
+
+pub let style_flag_bold : Int
+
+pub let style_flag_italic : Int
+
+// Errors
+
+// Types and methods
+pub(all) struct BitmapSize {
+  height : Int
+  width : Int
+  size : Int64
+  x_ppem : Int64
+  y_ppem : Int64
+}
+pub impl Eq for BitmapSize
+pub impl Show for BitmapSize
+
+pub(all) struct CffData {
+  placeholder : Int
+}
+pub impl Show for CffData
+
+pub(all) struct CharMapRec {
+  encoding : Encoding
+  platform_id : UInt
+  encoding_id : UInt
+}
+pub impl Eq for CharMapRec
+pub impl Show for CharMapRec
+
+pub(all) enum DriverData {
+  Empty
+  TrueType(TrueTypeData)
+  Cff(CffData)
+  Type1(Type1Data)
+}
+pub impl Show for DriverData
+
+pub(all) enum Encoding {
+  None
+  MsSymbol
+  Unicode
+  Sjis
+  Prc
+  Big5
+  Wansung
+  Johab
+  AdobeStandard
+  AdobeExpert
+  AdobeCustom
+  AdobeLatin1
+  OldLatin2
+  AppleRoman
+}
+pub fn Encoding::from_tag(UInt) -> Self
+pub fn Encoding::to_tag(Self) -> UInt
+pub impl Eq for Encoding
+pub impl Show for Encoding
+
+pub(all) struct FaceRec {
+  num_faces : Int64
+  face_index : Int64
+  mut face_flags : Int64
+  mut style_flags : Int
+  mut num_glyphs : Int64
+  mut family_name : String
+  mut style_name : String
+  mut available_sizes : Array[BitmapSize]
+  mut charmaps : Array[CharMapRec]
+  mut active_charmap : Int
+  mut bbox : @types.BBox
+  mut units_per_em : UInt
+  mut ascender : Int
+  mut descender : Int
+  mut height : Int
+  mut max_advance_width : Int
+  mut max_advance_height : Int
+  mut underline_position : Int
+  mut underline_thickness : Int
+  mut glyph : GlyphSlot
+  mut size : SizeRec
+  mut driver_data : DriverData
+}
+pub fn FaceRec::has_color(Self) -> Bool
+pub fn FaceRec::has_fixed_sizes(Self) -> Bool
+pub fn FaceRec::has_glyph_names(Self) -> Bool
+pub fn FaceRec::has_horizontal(Self) -> Bool
+pub fn FaceRec::has_kerning(Self) -> Bool
+pub fn FaceRec::has_multiple_masters(Self) -> Bool
+pub fn FaceRec::has_vertical(Self) -> Bool
+pub fn FaceRec::is_fixed_width(Self) -> Bool
+pub fn FaceRec::is_scalable(Self) -> Bool
+pub fn FaceRec::is_sfnt(Self) -> Bool
+pub fn FaceRec::is_variation(Self) -> Bool
+pub fn FaceRec::new(num_faces? : Int64, face_index? : Int64) -> Self
+pub impl Show for FaceRec
+
+pub(all) enum FontFormat {
+  TrueType
+  TrueTypeCollection
+  CffOpenType
+  Woff1
+  Woff2
+  Type1Pfa
+  Type1Pfb
+  Cid
+  Bdf
+  Pcf
+  WindowsFnt
+  Pfr
+  Unknown
+}
+pub impl Eq for FontFormat
+pub impl Show for FontFormat
+
+pub(all) struct GlyphLoader {
+  mut base_points : Array[@types.Vector]
+  mut base_tags : Array[Byte]
+  mut base_contours : Array[UInt]
+  mut current_points : Array[@types.Vector]
+  mut current_tags : Array[Byte]
+  mut current_contours : Array[UInt]
+  mut subglyphs : Array[SubGlyph]
+}
+pub fn GlyphLoader::add(Self) -> Unit
+pub fn GlyphLoader::add_point(Self, Int64, Int64, Byte) -> Unit
+pub fn GlyphLoader::base_n_contours(Self) -> Int
+pub fn GlyphLoader::base_n_points(Self) -> Int
+pub fn GlyphLoader::end_contour(Self) -> Unit
+pub fn GlyphLoader::new() -> Self
+pub fn GlyphLoader::prepare(Self) -> Unit
+pub fn GlyphLoader::reset(Self) -> Unit
+pub fn GlyphLoader::to_outline(Self) -> @types.Outline
+pub impl Show for GlyphLoader
+
+pub(all) struct GlyphSlot {
+  mut glyph_index : UInt
+  mut metrics : @types.GlyphMetrics
+  mut linear_hori_advance : @fixed.Fixed
+  mut linear_vert_advance : @fixed.Fixed
+  mut advance : @types.Vector
+  mut format : @types.GlyphFormat
+  mut bitmap : @types.Bitmap
+  mut bitmap_left : Int
+  mut bitmap_top : Int
+  mut outline : @types.Outline
+  mut lsb_delta : Int64
+  mut rsb_delta : Int64
+  mut num_subglyphs : UInt
+  mut subglyphs : Array[SubGlyph]
+}
+pub fn GlyphSlot::new() -> Self
+pub impl Show for GlyphSlot
+
+pub(all) struct OutlineFuncs {
+  move_to : (@types.Vector) -> Unit raise @error.FTError
+  line_to : (@types.Vector) -> Unit raise @error.FTError
+  conic_to : (@types.Vector, @types.Vector) -> Unit raise @error.FTError
+  cubic_to : (@types.Vector, @types.Vector, @types.Vector) -> Unit raise @error.FTError
+  shift : Int
+  delta : Int64
+}
+
+pub(all) struct SizeRec {
+  mut metrics : @types.SizeMetrics
+}
+pub fn SizeRec::new() -> Self
+pub impl Show for SizeRec
+
+pub(all) struct SubGlyph {
+  index : UInt
+  flags : UInt
+  arg1 : Int
+  arg2 : Int
+  transform : @fixed.Matrix
+}
+pub impl Show for SubGlyph
+
+pub(all) struct TrueTypeData {
+  placeholder : Int
+}
+pub impl Show for TrueTypeData
+
+pub(all) struct Type1Data {
+  placeholder : Int
+}
+pub impl Show for Type1Data
+
+// Type aliases
+
+// Traits
+
