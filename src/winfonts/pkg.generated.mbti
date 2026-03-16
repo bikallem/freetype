@@ -1,0 +1,41 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "bikallem/freetype/winfonts"
+
+// Values
+pub fn is_fnt_header(Bytes) -> Bool
+
+pub fn is_mz_header(Bytes) -> Bool
+
+// Errors
+
+// Types and methods
+pub(all) struct FntFont {
+  mut version : UInt
+  mut file_size : UInt
+  mut face_name : String
+  mut points_size : UInt
+  mut vert_resolution : UInt
+  mut horiz_resolution : UInt
+  mut ascent : UInt
+  mut internal_leading : UInt
+  mut external_leading : UInt
+  mut weight : UInt
+  mut charset : UInt
+  mut pixel_width : UInt
+  mut pixel_height : UInt
+  mut pitch_and_family : UInt
+  mut avg_width : UInt
+  mut max_width : UInt
+  mut first_char : UInt
+  mut last_char : UInt
+  mut default_char : UInt
+  mut num_glyphs : Int
+  mut is_fon : Bool
+}
+pub fn FntFont::new() -> Self
+pub impl Show for FntFont
+
+// Type aliases
+
+// Traits
+

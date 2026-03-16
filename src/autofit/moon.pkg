@@ -4,8 +4,4 @@ import {
   "bikallem/freetype/types",
   "bikallem/freetype/stream",
   "bikallem/freetype/base",
-  "bikallem/freetype/sfnt",
-  "bikallem/freetype/psaux",
-  "bikallem/freetype/pshinter",
-  "bikallem/freetype/psnames",
 }

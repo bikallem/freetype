@@ -1,0 +1,52 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "bikallem/freetype/bdf"
+
+import {
+  "bikallem/freetype/error",
+}
+
+// Values
+pub fn parse_bdf_header(Bytes) -> BdfFont raise @error.FTError
+
+// Errors
+
+// Types and methods
+pub(all) struct BdfFont {
+  mut font_name : String
+  mut point_size : Int
+  mut x_resolution : Int
+  mut y_resolution : Int
+  mut properties : Array[BdfProperty]
+  mut glyphs : Array[BdfGlyph]
+  mut num_chars : Int
+  mut bbx_width : Int
+  mut bbx_height : Int
+  mut bbx_x_offset : Int
+  mut bbx_y_offset : Int
+}
+pub fn BdfFont::new() -> Self
+pub impl Show for BdfFont
+
+pub(all) struct BdfGlyph {
+  mut encoding : Int
+  mut bbx_width : Int
+  mut bbx_height : Int
+  mut bbx_x_offset : Int
+  mut bbx_y_offset : Int
+  mut bitmap : Bytes
+  mut name : String
+}
+pub fn BdfGlyph::new() -> Self
+pub impl Show for BdfGlyph
+
+pub(all) struct BdfProperty {
+  name : String
+  value : String
+}
+pub impl Eq for BdfProperty
+pub impl Show for BdfProperty
+
+// Type aliases
+
+// Traits
+

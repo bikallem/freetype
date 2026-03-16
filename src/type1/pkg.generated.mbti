@@ -1,0 +1,44 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "bikallem/freetype/type1"
+
+import {
+  "bikallem/freetype/error",
+  "bikallem/freetype/types",
+}
+
+// Values
+pub fn charstring_decrypt(Bytes, len_iv? : Int) -> Bytes
+
+pub fn eexec_decrypt(Bytes, key? : UInt) -> Bytes
+
+pub fn load_type1_glyph(Type1Font, String) -> @types.Outline raise @error.FTError
+
+pub fn parse_type1_pfb(Bytes) -> Type1Font raise @error.FTError
+
+// Errors
+
+// Types and methods
+pub(all) struct Type1Font {
+  mut font_name : String
+  mut encoding : Array[String]
+  mut charstrings : Map[String, Bytes]
+  mut subrs : Array[Bytes]
+  mut blue_values : Array[Int]
+  mut other_blues : Array[Int]
+  mut std_hw : Int
+  mut std_vw : Int
+  mut default_width_x : Int64
+  mut nominal_width_x : Int64
+  mut len_iv : Int
+  mut paint_type : Int
+  mut font_matrix : Array[Double]
+  mut font_bbox : Array[Int]
+  mut unique_id : Int
+}
+pub fn Type1Font::new() -> Self
+pub impl Show for Type1Font
+
+// Type aliases
+
+// Traits
+

@@ -1,0 +1,37 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "bikallem/freetype/pfr"
+
+// Values
+pub fn is_pfr(Bytes) -> Bool
+
+// Errors
+
+// Types and methods
+pub(all) struct PfrFont {
+  mut header : PfrHeader
+  mut font_name : String
+  mut num_chars : Int
+}
+pub fn PfrFont::new() -> Self
+pub impl Show for PfrFont
+
+pub(all) struct PfrHeader {
+  signature : UInt
+  version : UInt
+  signature2 : UInt
+  header_size : UInt
+  log_dir_size : UInt
+  log_dir_offset : UInt
+  log_font_max_size : UInt
+  phy_font_offset : UInt
+  phy_font_max_size : UInt
+  gps_offset : UInt
+  gps_max_size : UInt
+}
+pub impl Eq for PfrHeader
+pub impl Show for PfrHeader
+
+// Type aliases
+
+// Traits
+

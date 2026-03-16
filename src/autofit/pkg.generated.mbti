@@ -1,0 +1,103 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "bikallem/freetype/autofit"
+
+import {
+  "bikallem/freetype/fixed",
+  "bikallem/freetype/types",
+}
+
+// Values
+pub fn compute_edges(Array[Segment], @fixed.Fixed) -> Array[Edge]
+
+pub fn compute_segments(@types.Outline, SegmentDir) -> Array[Segment]
+
+pub fn detect_script(UInt) -> Script
+
+// Errors
+
+// Types and methods
+pub(all) struct AxisHints {
+  mut segments : Array[Segment]
+  mut edges : Array[Edge]
+  mut stems : Array[Stem]
+}
+pub fn AxisHints::new() -> Self
+pub impl Eq for AxisHints
+pub impl Show for AxisHints
+
+pub(all) struct BlueZone {
+  ref_pos : Int64
+  shoot : Int64
+  fitted : Int64
+}
+pub impl Eq for BlueZone
+pub impl Show for BlueZone
+
+pub(all) struct Edge {
+  mut position : Int64
+  mut fitted_position : Int64
+  mut linked_edge : Int
+  mut is_serif : Bool
+  mut blue_edge : Bool
+  mut num_segments : Int
+}
+pub fn Edge::new(Int64) -> Self
+pub impl Eq for Edge
+pub impl Show for Edge
+
+pub(all) struct GlyphHints {
+  mut x_axis : AxisHints
+  mut y_axis : AxisHints
+}
+pub fn GlyphHints::new() -> Self
+pub impl Eq for GlyphHints
+pub impl Show for GlyphHints
+
+pub(all) enum Script {
+  Latin
+  Cjk
+  Indic
+  Default
+}
+pub impl Eq for Script
+pub impl Show for Script
+
+pub(all) struct ScriptMetrics {
+  mut std_widths : Array[Int64]
+  mut blue_zones : Array[BlueZone]
+  mut scale : @fixed.Fixed
+}
+pub fn ScriptMetrics::new() -> Self
+pub impl Eq for ScriptMetrics
+pub impl Show for ScriptMetrics
+
+pub(all) struct Segment {
+  position : Int64
+  min_coord : Int64
+  max_coord : Int64
+  direction : SegmentDir
+  first_point : Int
+  last_point : Int
+  num_points : Int
+}
+pub impl Eq for Segment
+pub impl Show for Segment
+
+pub(all) enum SegmentDir {
+  Horizontal
+  Vertical
+}
+pub impl Eq for SegmentDir
+pub impl Show for SegmentDir
+
+pub(all) struct Stem {
+  edge1 : Int
+  edge2 : Int
+}
+pub impl Eq for Stem
+pub impl Show for Stem
+
+// Type aliases
+
+// Traits
+

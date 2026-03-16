@@ -1,0 +1,48 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "bikallem/freetype/cid"
+
+import {
+  "bikallem/freetype/error",
+}
+
+// Values
+pub fn parse_cid_font(Bytes) -> CidFont raise @error.FTError
+
+// Errors
+
+// Types and methods
+pub(all) struct CidFont {
+  mut font_name : String
+  mut cid_count : Int
+  mut fd_array : Array[CidFontDict]
+  mut registry : String
+  mut ordering : String
+  mut supplement : Int
+  mut font_bbox : Array[Int]
+  mut gd_bytes : Int
+  mut cid_map_offset : Int
+  mut data_offset : Int
+}
+pub fn CidFont::new() -> Self
+pub impl Show for CidFont
+
+pub(all) struct CidFontDict {
+  mut blue_values : Array[Int]
+  mut other_blues : Array[Int]
+  mut std_hw : Int
+  mut std_vw : Int
+  mut default_width_x : Int64
+  mut nominal_width_x : Int64
+  mut len_iv : Int
+  mut subrs : Array[Bytes]
+  mut subrs_offset : Int
+  mut sd_bytes : Int
+  mut paint_type : Int
+}
+pub fn CidFontDict::new() -> Self
+pub impl Show for CidFontDict
+
+// Type aliases
+
+// Traits
+

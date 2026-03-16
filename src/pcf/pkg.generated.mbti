@@ -1,0 +1,55 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "bikallem/freetype/pcf"
+
+import {
+  "bikallem/freetype/error",
+  "bikallem/freetype/stream",
+}
+
+// Values
+pub fn parse_pcf_header(@stream.ByteReader) -> Array[PcfTableEntry] raise @error.FTError
+
+pub let pcf_accelerators : UInt
+
+pub let pcf_bdf_accelerators : UInt
+
+pub let pcf_bdf_encodings : UInt
+
+pub let pcf_bitmaps : UInt
+
+pub let pcf_glyph_names : UInt
+
+pub let pcf_ink_metrics : UInt
+
+pub let pcf_metrics : UInt
+
+pub let pcf_properties : UInt
+
+pub let pcf_signature : UInt
+
+pub let pcf_swidths : UInt
+
+// Errors
+
+// Types and methods
+pub(all) struct PcfFont {
+  mut tables : Array[PcfTableEntry]
+  mut font_name : String
+  mut num_glyphs : Int
+}
+pub fn PcfFont::new() -> Self
+pub impl Show for PcfFont
+
+pub(all) struct PcfTableEntry {
+  table_type : UInt
+  format : UInt
+  size : UInt
+  offset : UInt
+}
+pub impl Eq for PcfTableEntry
+pub impl Show for PcfTableEntry
+
+// Type aliases
+
+// Traits
+
