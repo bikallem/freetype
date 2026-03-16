@@ -3,4 +3,7 @@ import {
   "bikallem/freetype/fixed",
   "bikallem/freetype/types",
   "bikallem/freetype/stream",
+  "bikallem/freetype/base",
+  "bikallem/freetype/psnames",
+  "bikallem/compress/zlib" @zlib,
 }

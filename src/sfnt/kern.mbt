@@ -1,0 +1,95 @@
+///|
+/// A single kerning pair.
+pub(all) struct KernPair {
+  left : UInt // left glyph index
+  right : UInt // right glyph index
+  value : Int // kerning value in FUnits
+} derive(Eq, Show)
+
+///|
+/// Parsed kern table (format 0 subtables only).
+pub(all) struct KernTable {
+  pairs : Array[KernPair]
+} derive(Show)
+
+///|
+/// Parse the 'kern' table.
+/// Supports the Microsoft kern table format with format 0 subtables.
+pub fn parse_kern(
+  reader : @stream.ByteReader,
+  offset : UInt,
+  length : UInt,
+) -> KernTable raise @error.FTError {
+  let len = length.reinterpret_as_int()
+  if len < 4 {
+    return { pairs: [] }
+  }
+  reader.seek(offset.reinterpret_as_int())
+  let version = reader.read_u16_be()
+  let pairs : Array[KernPair] = []
+  if version == 0U {
+    // Microsoft format: version(2), nTables(2)
+    let n_tables = reader.read_u16_be().reinterpret_as_int()
+    for t = 0; t < n_tables; t = t + 1 {
+      let sub_version = reader.read_u16_be()
+      let sub_length = reader.read_u16_be().reinterpret_as_int()
+      let coverage = reader.read_u16_be()
+      ignore(sub_version)
+      // Format 0: ordered list of pairs
+      let format = (coverage >> 8).reinterpret_as_int()
+      let horizontal = (coverage & 1U) != 0U
+      if format == 0 && horizontal {
+        let n_pairs = reader.read_u16_be().reinterpret_as_int()
+        let _search_range = reader.read_u16_be()
+        let _entry_selector = reader.read_u16_be()
+        let _range_shift = reader.read_u16_be()
+        for i = 0; i < n_pairs; i = i + 1 {
+          let left = reader.read_u16_be()
+          let right = reader.read_u16_be()
+          let value = reader.read_i16_be()
+          pairs.push({ left, right, value })
+        }
+      } else {
+        // Skip unsupported subtable
+        let remaining = sub_length - 6
+        if remaining > 0 {
+          reader.skip(remaining)
+        }
+      }
+    }
+  } else if version == 1U {
+    // Apple format (version 1.0): version is actually u32
+    let _version_lo = reader.read_u16_be()
+    let n_tables = reader.read_u32_be().reinterpret_as_int()
+    // Skip Apple kern subtables for now
+    ignore(n_tables)
+  }
+  { pairs, }
+}
+
+///|
+/// Look up kerning between two glyphs.
+/// Uses binary search on the sorted pairs array.
+pub fn KernTable::get_kerning(
+  self : KernTable,
+  left : UInt,
+  right : UInt,
+) -> Int {
+  let key = (left.reinterpret_as_int() << 16) | right.reinterpret_as_int()
+  let mut lo = 0
+  let mut hi = self.pairs.length() - 1
+  while lo <= hi {
+    let mid = (lo + hi) / 2
+    let pair = self.pairs[mid]
+    let pair_key = (pair.left.reinterpret_as_int() << 16) |
+      pair.right.reinterpret_as_int()
+    if key < pair_key {
+      hi = mid - 1
+    } else if key > pair_key {
+      lo = mid + 1
+    } else {
+      return pair.value
+    }
+  }
+  0
+}

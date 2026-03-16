@@ -1,0 +1,87 @@
+///|
+/// Parsed 'post' (PostScript) table header.
+pub(all) struct PostTable {
+  format : UInt // 0x00010000, 0x00020000, 0x00025000, 0x00030000
+  italic_angle : @fixed.Fixed
+  underline_position : Int
+  underline_thickness : Int
+  is_fixed_pitch : UInt
+  // Format 2.0 data
+  glyph_names : Array[String] // per-glyph name (format 2.0 only)
+} derive(Show)
+
+///|
+/// Parse the 'post' table.
+pub fn parse_post(
+  reader : @stream.ByteReader,
+  offset : UInt,
+  length : UInt,
+  num_glyphs : UInt,
+) -> PostTable raise @error.FTError {
+  let len = length.reinterpret_as_int()
+  if len < 32 {
+    raise @error.FTError::PostTableMissing
+  }
+  reader.seek(offset.reinterpret_as_int())
+  reader.enter_frame(32)
+  let format = reader.get_u32_be()
+  let italic_angle = @fixed.Fixed::from_raw(reader.get_i32_be().to_int64())
+  let underline_position = reader.get_i16_be()
+  let underline_thickness = reader.get_i16_be()
+  let is_fixed_pitch = reader.get_u32_be()
+  // Skip minMemType42, maxMemType42, minMemType1, maxMemType1 (16 bytes)
+  reader.frame_skip(16)
+  reader.exit_frame()
+  let glyph_names : Array[String] = []
+  // Format 2.0: per-glyph name table
+  if format == 0x00020000U && len > 34 {
+    let ng = num_glyphs.reinterpret_as_int()
+    let table_num_glyphs = reader.read_u16_be().reinterpret_as_int()
+    let actual_count = if table_num_glyphs < ng { table_num_glyphs } else { ng }
+    // Read glyph name indices
+    let indices : Array[UInt] = []
+    for i = 0; i < actual_count; i = i + 1 {
+      indices.push(reader.read_u16_be())
+    }
+    // Read Pascal strings (extra names beyond the 258 Mac standard names)
+    let extra_names : Array[String] = []
+    // Read remaining bytes as Pascal strings
+    let remaining_start = reader.position()
+    let remaining_end = offset.reinterpret_as_int() + len
+    while reader.position() < remaining_end {
+      let slen = reader.read_byte().to_int()
+      if reader.position() + slen > remaining_end {
+        break // invalid data
+      }
+      let name_bytes = reader.read_bytes(slen)
+      let buf = StringBuilder::new()
+      for j = 0; j < slen; j = j + 1 {
+        buf.write_char(Char::from_int(name_bytes[j].to_int()))
+      }
+      extra_names.push(buf.to_string())
+    }
+    ignore(remaining_start)
+    // Resolve indices to names
+    for i = 0; i < actual_count; i = i + 1 {
+      let idx = indices[i].reinterpret_as_int()
+      if idx < 258 {
+        glyph_names.push(@psnames.macintosh_name(idx.reinterpret_as_uint()))
+      } else {
+        let extra_idx = idx - 258
+        if extra_idx < extra_names.length() {
+          glyph_names.push(extra_names[extra_idx])
+        } else {
+          glyph_names.push(".notdef")
+        }
+      }
+    }
+  }
+  {
+    format,
+    italic_angle,
+    underline_position,
+    underline_thickness,
+    is_fixed_pitch,
+    glyph_names,
+  }
+}

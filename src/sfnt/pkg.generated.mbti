@@ -1,0 +1,339 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "bikallem/freetype/sfnt"
+
+import {
+  "bikallem/freetype/base",
+  "bikallem/freetype/error",
+  "bikallem/freetype/fixed",
+  "bikallem/freetype/stream",
+}
+
+// Values
+pub fn decompress_woff(Bytes) -> Bytes raise @error.FTError
+
+pub fn load_sfnt_face(Bytes, Int64) -> (SfntData, @base.FaceRec) raise @error.FTError
+
+pub let name_id_copyright : UInt
+
+pub let name_id_font_family : UInt
+
+pub let name_id_font_subfamily : UInt
+
+pub let name_id_full_name : UInt
+
+pub let name_id_preferred_family : UInt
+
+pub let name_id_preferred_subfamily : UInt
+
+pub let name_id_ps_name : UInt
+
+pub let name_id_unique_id : UInt
+
+pub let name_id_version_string : UInt
+
+pub fn parse_cmap_header(@stream.ByteReader, UInt) -> CmapTable raise @error.FTError
+
+pub fn parse_cmap_subtable(@stream.ByteReader, UInt, UInt) -> CmapLookup raise @error.FTError
+
+pub fn parse_head(@stream.ByteReader, UInt, UInt) -> HeadTable raise @error.FTError
+
+pub fn parse_hhea(@stream.ByteReader, UInt, UInt) -> HheaTable raise @error.FTError
+
+pub fn parse_hmtx(@stream.ByteReader, UInt, UInt, UInt) -> HmtxTable raise @error.FTError
+
+pub fn parse_kern(@stream.ByteReader, UInt, UInt) -> KernTable raise @error.FTError
+
+pub fn parse_maxp(@stream.ByteReader, UInt, UInt) -> MaxpTable raise @error.FTError
+
+pub fn parse_name(@stream.ByteReader, UInt, UInt) -> NameTable raise @error.FTError
+
+pub fn parse_os2(@stream.ByteReader, UInt, UInt) -> Os2Table raise @error.FTError
+
+pub fn parse_post(@stream.ByteReader, UInt, UInt, UInt) -> PostTable raise @error.FTError
+
+pub fn parse_table_directory(@stream.ByteReader) -> TableDirectory raise @error.FTError
+
+pub fn parse_ttc_header(@stream.ByteReader) -> TtcHeader raise @error.FTError
+
+// Errors
+
+// Types and methods
+pub(all) struct CmapFormat0 {
+  glyph_ids : FixedArray[Byte]
+}
+pub fn CmapFormat0::char_index(Self, UInt) -> UInt
+pub impl Show for CmapFormat0
+
+pub(all) struct CmapFormat12 {
+  groups : Array[CmapFormat12Group]
+}
+pub fn CmapFormat12::char_index(Self, UInt) -> UInt
+pub impl Show for CmapFormat12
+
+pub(all) struct CmapFormat12Group {
+  start_char_code : UInt
+  end_char_code : UInt
+  start_glyph_id : UInt
+}
+pub impl Eq for CmapFormat12Group
+pub impl Show for CmapFormat12Group
+
+pub(all) struct CmapFormat4 {
+  seg_count : Int
+  end_codes : Array[UInt]
+  start_codes : Array[UInt]
+  id_deltas : Array[Int]
+  id_range_offsets : Array[UInt]
+  glyph_ids : Array[UInt]
+  id_range_offset_start : Int
+}
+pub fn CmapFormat4::char_index(Self, UInt) -> UInt
+pub impl Show for CmapFormat4
+
+pub(all) struct CmapFormat6 {
+  first_code : UInt
+  entry_count : UInt
+  glyph_ids : Array[UInt]
+}
+pub fn CmapFormat6::char_index(Self, UInt) -> UInt
+pub impl Show for CmapFormat6
+
+pub(all) enum CmapLookup {
+  Format0(CmapFormat0)
+  Format4(CmapFormat4)
+  Format6(CmapFormat6)
+  Format12(CmapFormat12)
+}
+pub fn CmapLookup::char_index(Self, UInt) -> UInt
+
+pub(all) struct CmapSubtable {
+  platform_id : UInt
+  encoding_id : UInt
+  offset : UInt
+}
+pub impl Eq for CmapSubtable
+pub impl Show for CmapSubtable
+
+pub(all) struct CmapTable {
+  version : UInt
+  subtables : Array[CmapSubtable]
+}
+pub impl Show for CmapTable
+
+pub(all) struct HeadTable {
+  major_version : UInt
+  minor_version : UInt
+  font_revision : @fixed.Fixed
+  checksum_adjust : UInt
+  magic_number : UInt
+  flags : UInt
+  units_per_em : UInt
+  created : Int64
+  modified : Int64
+  x_min : Int
+  y_min : Int
+  x_max : Int
+  y_max : Int
+  mac_style : UInt
+  lowest_rec_ppem : UInt
+  font_direction_hint : Int
+  index_to_loc_format : Int
+  glyph_data_format : Int
+}
+pub impl Show for HeadTable
+
+pub(all) struct HheaTable {
+  major_version : UInt
+  minor_version : UInt
+  ascender : Int
+  descender : Int
+  line_gap : Int
+  advance_width_max : UInt
+  min_left_side_bearing : Int
+  min_right_side_bearing : Int
+  x_max_extent : Int
+  caret_slope_rise : Int
+  caret_slope_run : Int
+  caret_offset : Int
+  metric_data_format : Int
+  number_of_h_metrics : UInt
+}
+pub impl Show for HheaTable
+
+pub(all) struct HmtxTable {
+  metrics : Array[LongHorMetric]
+  left_side_bearings : Array[Int]
+}
+pub fn HmtxTable::get_metrics(Self, UInt) -> (UInt, Int)
+pub impl Show for HmtxTable
+
+pub(all) struct KernPair {
+  left : UInt
+  right : UInt
+  value : Int
+}
+pub impl Eq for KernPair
+pub impl Show for KernPair
+
+pub(all) struct KernTable {
+  pairs : Array[KernPair]
+}
+pub fn KernTable::get_kerning(Self, UInt, UInt) -> Int
+pub impl Show for KernTable
+
+pub(all) struct LongHorMetric {
+  advance_width : UInt
+  lsb : Int
+}
+pub impl Eq for LongHorMetric
+pub impl Show for LongHorMetric
+
+pub(all) struct MaxpTable {
+  version : UInt
+  num_glyphs : UInt
+  max_points : UInt
+  max_contours : UInt
+  max_composite_points : UInt
+  max_composite_contours : UInt
+  max_zones : UInt
+  max_twilight_points : UInt
+  max_storage : UInt
+  max_function_defs : UInt
+  max_instruction_defs : UInt
+  max_stack_elements : UInt
+  max_size_of_instructions : UInt
+  max_component_elements : UInt
+  max_component_depth : UInt
+}
+pub impl Show for MaxpTable
+
+pub(all) struct NameRecord {
+  platform_id : UInt
+  encoding_id : UInt
+  language_id : UInt
+  name_id : UInt
+  length : UInt
+  offset : UInt
+}
+pub impl Show for NameRecord
+
+pub(all) struct NameTable {
+  format : UInt
+  count : UInt
+  string_offset : UInt
+  records : Array[NameRecord]
+  string_data : Bytes
+}
+pub fn NameTable::get_name(Self, UInt) -> String?
+pub impl Show for NameTable
+
+pub(all) struct Os2Table {
+  version : UInt
+  x_avg_char_width : Int
+  us_weight_class : UInt
+  us_width_class : UInt
+  fs_type : UInt
+  y_subscript_x_size : Int
+  y_subscript_y_size : Int
+  y_subscript_x_offset : Int
+  y_subscript_y_offset : Int
+  y_superscript_x_size : Int
+  y_superscript_y_size : Int
+  y_superscript_x_offset : Int
+  y_superscript_y_offset : Int
+  y_strikeout_size : Int
+  y_strikeout_position : Int
+  s_family_class : Int
+  fs_selection : UInt
+  us_first_char_index : UInt
+  us_last_char_index : UInt
+  s_typo_ascender : Int
+  s_typo_descender : Int
+  s_typo_line_gap : Int
+  us_win_ascent : UInt
+  us_win_descent : UInt
+}
+pub impl Show for Os2Table
+
+pub(all) struct PostTable {
+  format : UInt
+  italic_angle : @fixed.Fixed
+  underline_position : Int
+  underline_thickness : Int
+  is_fixed_pitch : UInt
+  glyph_names : Array[String]
+}
+pub impl Show for PostTable
+
+pub(all) struct SfntData {
+  table_dir : TableDirectory
+  head : HeadTable
+  hhea : HheaTable
+  maxp : MaxpTable
+  hmtx : HmtxTable
+  name : NameTable?
+  os2 : Os2Table?
+  post : PostTable?
+  cmap : CmapTable?
+  kern : KernTable?
+  raw_data : Bytes
+}
+pub impl Show for SfntData
+
+pub(all) struct TableDirectory {
+  sfnt_version : UInt
+  num_tables : UInt
+  search_range : UInt
+  entry_selector : UInt
+  range_shift : UInt
+  tables : Array[TableRecord]
+}
+pub fn TableDirectory::find_table(Self, UInt) -> TableRecord?
+pub impl Show for TableDirectory
+
+pub(all) struct TableRecord {
+  tag : UInt
+  checksum : UInt
+  offset : UInt
+  length : UInt
+}
+pub impl Eq for TableRecord
+pub impl Show for TableRecord
+
+pub(all) struct TtcHeader {
+  tag : UInt
+  version : UInt
+  num_fonts : UInt
+  offsets : Array[UInt]
+}
+pub impl Show for TtcHeader
+
+pub(all) struct WoffHeader {
+  signature : UInt
+  flavor : UInt
+  length : UInt
+  num_tables : UInt
+  total_sfnt_size : UInt
+  major_version : UInt
+  minor_version : UInt
+  meta_offset : UInt
+  meta_length : UInt
+  meta_orig_length : UInt
+  priv_offset : UInt
+  priv_length : UInt
+}
+pub impl Show for WoffHeader
+
+pub(all) struct WoffTableEntry {
+  tag : UInt
+  offset : UInt
+  comp_length : UInt
+  orig_length : UInt
+  orig_checksum : UInt
+}
+pub impl Show for WoffTableEntry
+
+// Type aliases
+
+// Traits
+
