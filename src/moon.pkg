@@ -5,4 +5,5 @@ import {
   "bikallem/freetype/stream",
   "bikallem/freetype/base",
   "bikallem/freetype/sfnt",
+  "bikallem/freetype/truetype",
 }
