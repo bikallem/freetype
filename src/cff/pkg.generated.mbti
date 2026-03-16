@@ -1,0 +1,85 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "bikallem/freetype/cff"
+
+import {
+  "bikallem/freetype/error",
+  "bikallem/freetype/stream",
+  "bikallem/freetype/types",
+}
+
+// Values
+pub fn load_cff(Bytes, Int) -> CffFont raise @error.FTError
+
+pub fn load_cff_glyph(CffFont, UInt) -> (@types.Outline, Int64) raise @error.FTError
+
+pub fn parse_cff_index(@stream.ByteReader) -> CffIndex raise @error.FTError
+
+pub fn parse_private_dict(Bytes) -> CffPrivateDict
+
+pub fn parse_top_dict(Bytes) -> CffTopDict
+
+// Errors
+
+// Types and methods
+pub(all) struct CffFont {
+  header : CffHeader
+  name : String
+  top_dict : CffTopDict
+  private_dict : CffPrivateDict
+  charstrings : CffIndex
+  global_subrs : CffIndex
+  local_subrs : CffIndex?
+  num_glyphs : UInt
+}
+pub impl Show for CffFont
+
+pub(all) struct CffHeader {
+  major : Int
+  minor : Int
+  hdr_size : Int
+  off_size : Int
+}
+pub impl Show for CffHeader
+
+pub(all) struct CffIndex {
+  count : UInt
+  off_size : Int
+  offsets : Array[UInt]
+  data_start : Int
+  data : Bytes
+}
+pub fn CffIndex::get_item(Self, Int) -> Bytes
+pub impl Show for CffIndex
+
+pub(all) struct CffPrivateDict {
+  mut default_width_x : Int64
+  mut nominal_width_x : Int64
+  mut subrs_offset : UInt
+  mut blue_values : Array[Int64]
+  mut other_blues : Array[Int64]
+  mut std_hw : Int64
+  mut std_vw : Int64
+}
+pub fn CffPrivateDict::new() -> Self
+pub impl Show for CffPrivateDict
+
+pub(all) struct CffTopDict {
+  mut charset_offset : UInt
+  mut encoding_offset : UInt
+  mut charstrings_offset : UInt
+  mut private_offset : UInt
+  mut private_size : UInt
+  mut fd_array_offset : UInt
+  mut fd_select_offset : UInt
+  mut ros : (UInt, UInt, UInt)
+  mut is_cid : Bool
+  mut font_matrix : Array[Int64]
+  mut font_bbox : Array[Int64]
+}
+pub fn CffTopDict::new() -> Self
+pub impl Show for CffTopDict
+
+// Type aliases
+
+// Traits
+
