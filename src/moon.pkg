@@ -6,4 +6,6 @@ import {
   "bikallem/freetype/base",
   "bikallem/freetype/sfnt",
   "bikallem/freetype/truetype",
+  "bikallem/freetype/psaux",
+  "bikallem/freetype/pshinter",
 }

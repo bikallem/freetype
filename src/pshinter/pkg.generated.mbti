@@ -1,0 +1,48 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "bikallem/freetype/pshinter"
+
+import {
+  "bikallem/freetype/fixed",
+}
+
+// Values
+pub fn align_stem(Int64, Int64, @fixed.Fixed) -> (Int64, Int64)
+
+pub fn apply_blue_zone(Int64, Array[BlueZone], @fixed.Fixed, Int64) -> Int64?
+
+// Errors
+
+// Types and methods
+pub(all) struct BlueZone {
+  position : Int64
+  overshoot : Int64
+  is_bottom : Bool
+}
+pub impl Eq for BlueZone
+pub impl Show for BlueZone
+
+pub(all) struct HintMapEntry {
+  org_pos : Int64
+  cur_pos : Int64
+}
+pub impl Eq for HintMapEntry
+pub impl Show for HintMapEntry
+
+pub(all) struct PsGlobals {
+  blue_values : Array[BlueZone]
+  other_blues : Array[BlueZone]
+  blue_scale : @fixed.Fixed
+  blue_shift : Int64
+  blue_fuzz : Int64
+  std_hw : Int64
+  std_vw : Int64
+  snap_widths_h : Array[Int64]
+  snap_widths_v : Array[Int64]
+}
+pub fn PsGlobals::new() -> Self
+pub impl Show for PsGlobals
+
+// Type aliases
+
+// Traits
+

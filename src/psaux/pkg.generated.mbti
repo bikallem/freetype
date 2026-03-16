@@ -1,0 +1,54 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "bikallem/freetype/psaux"
+
+import {
+  "bikallem/freetype/error",
+  "bikallem/freetype/types",
+}
+
+// Values
+pub fn calc_subr_bias(Int) -> Int
+
+pub fn execute_type2(Bytes, Int64, Int64, local_subrs? : Array[Bytes], global_subrs? : Array[Bytes]) -> (@types.Outline, Int64) raise @error.FTError
+
+// Errors
+
+// Types and methods
+pub(all) struct CallFrame {
+  code : Bytes
+  ip : Int
+}
+pub impl Show for CallFrame
+
+pub(all) struct PsInterp {
+  mut stack : Array[Int64]
+  mut sp : Int
+  mut points : Array[@types.Vector]
+  mut tags : Array[Byte]
+  mut contours : Array[UInt]
+  mut current_x : Int64
+  mut current_y : Int64
+  mut path_started : Bool
+  mut hints_h : Array[StemHint]
+  mut hints_v : Array[StemHint]
+  mut width : Int64
+  mut width_set : Bool
+  mut local_subrs : Array[Bytes]
+  mut global_subrs : Array[Bytes]
+  mut call_stack : Array[CallFrame]
+}
+pub fn PsInterp::finalize(Self) -> @types.Outline
+pub fn PsInterp::new() -> Self
+pub impl Show for PsInterp
+
+pub(all) struct StemHint {
+  position : Int64
+  width : Int64
+}
+pub impl Eq for StemHint
+pub impl Show for StemHint
+
+// Type aliases
+
+// Traits
+
