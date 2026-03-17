@@ -271,7 +271,6 @@ pub fn compute_edges(
   segments : Array[Segment],
   scale : @fixed.Fixed,
 ) -> Array[Edge] {
-  let _ = scale
   let edges : Array[Edge] = []
   if segments.length() == 0 {
     return edges
@@ -288,8 +287,13 @@ pub fn compute_edges(
     }
     sorted[j + 1] = key
   }
-  // Merge nearby segments into edges
-  let edge_distance : Int64 = 32 // threshold in font units
+  // Merge nearby segments into edges.
+  // Threshold: half a pixel (32 in 26.6) converted back to font units via scale.
+  let edge_distance : Int64 = if scale.val > 0L {
+    @fixed.mul_div(32L, 0x10000L, scale.val)
+  } else {
+    32L // fallback if scale is zero
+  }
   let mut current_edge = Edge::new(sorted[0].position)
   current_edge.num_segments = 1
   for i in 1..<n {
