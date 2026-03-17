@@ -97,7 +97,7 @@ def gen_font_tests(ff, golden):
 
     # T5: flags
     ff_ = meta.get("face_flags", 0)
-    if upe > 0:
+    if True:  # flags apply to all formats
         L += [f"///|", f'test "parity/{ff}: flags" {{',
               f"  let f = @freetype.from_bytes(load_{v}())",
               f'  inspect(f.is_scalable(), content="{str(bool(ff_ & 1)).lower()}")',
@@ -109,7 +109,7 @@ def gen_font_tests(ff, golden):
 
     # T6: charmaps
     n_cm = meta.get("num_charmaps", 0)
-    if n_cm > 0 and upe > 0:
+    if n_cm > 0:  # charmaps apply to all formats
         L += [f"///|", f'test "parity/{ff}: charmaps" {{',
               f"  let f = @freetype.from_bytes(load_{v}())",
               f'  inspect(f.charmaps.length(), content="{n_cm}")']
@@ -132,7 +132,7 @@ def gen_font_tests(ff, golden):
             if cm.get("entries"):
                 best_cm = cm
                 break
-    if best_cm and upe > 0:
+    if best_cm:  # charmap entries apply to all formats
         entries = best_cm["entries"][:50]
         L += [f"///|", f'test "parity/{ff}: charmap entries" {{',
               f"  let f = @freetype.from_bytes(load_{v}())"]
