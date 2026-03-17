@@ -11,9 +11,9 @@ GOLDEN_DIR = os.path.join(os.path.dirname(__file__), "..", "golden", "data")
 OUTPUT_DIR = os.path.join(os.path.dirname(__file__), "..", "..", "src", "parity")
 FONT_DIR = os.path.join(os.path.dirname(__file__), "..", "fonts")
 MAX_FONT_SIZE = 2_000_000  # 2MB — fits DejaVuSans.ttc (1.5MB)
-# WOFF files > 50KB cause stack overflow in bikallem/compress zlib inflater
-# (recursive flate decoder hits WASM stack limit). Skip large WOFFs for now.
-MAX_WOFF_SIZE = 50_000
+# Large WOFF files require native target with unlimited stack due to
+# bikallem/compress#4 (recursive flate inflater).
+MAX_WOFF_SIZE = 500_000  # include real WOFFs; run with: ulimit -s unlimited
 
 
 def vn(f):

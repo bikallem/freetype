@@ -30,8 +30,15 @@ def main():
         return 1
 
     # Run MoonBit parity tests and capture results
+    # Use native target with unlimited stack to avoid bikallem/compress#4
+    # (recursive flate inflater stack overflow on large WOFF inputs)
+    import resource
+    try:
+        resource.setrlimit(resource.RLIMIT_STACK, (resource.RLIM_INFINITY, resource.RLIM_INFINITY))
+    except (ValueError, resource.error):
+        pass  # may fail on some systems; parity still works for non-WOFF tests
     result = subprocess.run(
-        ["moon", "test", "src/parity", "-v"],
+        ["moon", "test", "src/parity", "--target", "native", "-v"],
         capture_output=True, text=True, cwd=PROJECT_ROOT,
     )
     test_output = result.stdout + result.stderr
