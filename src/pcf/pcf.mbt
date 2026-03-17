@@ -73,7 +73,7 @@ pub fn parse_pcf_header(
     raise @error.FTError::InvalidFileFormat
   }
   let tables : Array[PcfTableEntry] = []
-  for i = 0; i < count; i = i + 1 {
+  for _ in 0..<count {
     let table_type = reader.read_u32_le()
     let format = reader.read_u32_le()
     let size = reader.read_u32_le()

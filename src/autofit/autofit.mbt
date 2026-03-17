@@ -191,7 +191,7 @@ pub fn compute_segments(
     return segments
   }
   let mut contour_start = 0
-  for c = 0; c < n_contours; c = c + 1 {
+  for c in 0..<n_contours {
     let contour_end = outline.contours[c].reinterpret_as_int()
     // Scan points in this contour for segments
     let mut seg_start = -1
@@ -278,7 +278,8 @@ pub fn compute_edges(
   }
   // Sort segments by position (simple insertion sort for now)
   let sorted = segments.copy()
-  for i = 1; i < sorted.length(); i = i + 1 {
+  let n = sorted.length()
+  for i in 1..<n {
     let key = sorted[i]
     let mut j = i - 1
     while j >= 0 && sorted[j].position > key.position {
@@ -291,7 +292,7 @@ pub fn compute_edges(
   let edge_distance : Int64 = 32 // threshold in font units
   let mut current_edge = Edge::new(sorted[0].position)
   current_edge.num_segments = 1
-  for i = 1; i < sorted.length(); i = i + 1 {
+  for i in 1..<n {
     let seg = sorted[i]
     let diff = if seg.position > current_edge.position {
       seg.position - current_edge.position

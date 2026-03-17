@@ -75,8 +75,7 @@ pub fn parse_bdf_header(data : Bytes) -> BdfFont raise @error.FTError {
   let text = data.to_unchecked_string()
   let lines = split_lines(text)
   let mut found_startfont = false
-  for i = 0; i < lines.length(); i = i + 1 {
-    let line = lines[i]
+  for _, line in lines {
     if line.has_prefix("STARTFONT ") {
       found_startfont = true
     } else if line.has_prefix("FONT ") {
@@ -114,7 +113,7 @@ fn split_lines(s : String) -> Array[String] {
   let lines : Array[String] = []
   let mut start = 0
   let len = s.length()
-  for i = 0; i < len; i = i + 1 {
+  for i in 0..<len {
     if s[i] == '\n' {
       let line = s[start:i].to_string()
       // Strip trailing '\r'
@@ -140,7 +139,7 @@ fn split_spaces(s : String) -> Array[String] {
   let len = s.length()
   let mut start = 0
   let mut in_word = false
-  for i = 0; i < len; i = i + 1 {
+  for i in 0..<len {
     if s[i] == ' ' || s[i] == '\t' {
       if in_word {
         parts.push(s[start:i].to_string())
@@ -162,19 +161,21 @@ fn split_spaces(s : String) -> Array[String] {
 fn parse_int_or_zero(s : String) -> Int {
   let mut result = 0
   let mut negative = false
-  let mut i = 0
-  if s.length() > 0 && s[0] == '-' {
+  let start = if s.length() > 0 && s[0] == '-' {
     negative = true
-    i = 1
+    1
+  } else {
+    0
   }
-  while i < s.length() {
+  let len = s.length()
+  for i = start; i < len; {
     let c = s[i]
     if c >= '0' && c <= '9' {
       result = result * 10 + (c.to_int() - '0'.to_int())
     } else {
       break
     }
-    i += 1
+    continue i + 1
   }
   if negative {
     -result
