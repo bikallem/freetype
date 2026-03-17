@@ -12,14 +12,14 @@ Pure MoonBit port of the [FreeType](https://freetype.org/) font library. A full 
 | OpenType/CFF | `.otf` | Full | `cff/` — CFF INDEX/DICT parsing, Type 2 charstrings |
 | TrueType Collection | `.ttc` | Full | `sfnt/` — collection header, per-face loading |
 | WOFF1 | `.woff` | Full | `sfnt/woff.mbt` — zlib decompression via `bikallem/compress` |
-| WOFF2 | `.woff2` | Not yet | Blocked on Brotli support in `bikallem/compress` |
-| Type 1 (PFB/PFA) | `.pfb` `.pfa` | Partial | `type1/` — PFB parsing, eexec decryption, FontBBox |
-| CID-keyed | — | Stub | `cid/` — struct definitions only |
-| Type 42 | — | Stub | `type42/` — struct definitions only |
-| BDF (bitmap) | `.bdf` | Load + metadata | `bdf/` — header parsing, glyph count |
-| PCF (bitmap) | `.pcf` | Stub | `pcf/` — TOC parsing only |
-| PFR | — | Stub | `pfr/` — header detection only |
-| Windows FNT | `.fnt` `.fon` | Stub | `winfonts/` — MZ header detection only |
+| WOFF2 | `.woff2` | Not yet | Blocked on Brotli in `bikallem/compress` ([ticket](https://github.com/bikallem/freetype)) |
+| Type 1 (PFB/PFA) | `.pfb` `.pfa` | Full | `type1/` — PFB/PFA parsing, eexec, Type 1 charstrings |
+| CID-keyed | — | Metadata | `cid/` — CIDSystemInfo, CIDCount, FDArray, FontBBox |
+| Type 42 | — | Metadata | `type42/` — sfnts hex extraction, delegates to TrueType |
+| BDF (bitmap) | `.bdf` | Full | `bdf/` — header + glyph bitmap extraction |
+| PCF (bitmap) | `.pcf` | Full | `pcf/` — TOC, properties, metrics, encodings, bitmaps |
+| PFR | — | Metadata | `pfr/` — header and physical font record parsing |
+| Windows FNT | `.fnt` `.fon` | Metadata | `winfonts/` — FNT v2/v3 header, face name, dimensions |
 
 **Core capabilities:**
 
@@ -30,6 +30,7 @@ Pure MoonBit port of the [FreeType](https://freetype.org/) font library. A full 
 - Kerning pair lookup
 - TrueType bytecode interpreter (~40 opcodes: stack, arithmetic, comparison, logic, flow control, push, storage, CVT)
 - PostScript Type 2 charstring interpreter (path operators, hints, subroutines, flex)
+- PostScript Type 1 charstring interpreter (hsbw, closepath, callothersubr/Flex, seac)
 - WOFF1 decompression (zlib via `bikallem/compress`)
 - Format auto-detection from file header bytes
 
