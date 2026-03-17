@@ -39,7 +39,14 @@ pub fn from_bytes(
       face
     }
     Woff2 => raise @error.FTError::UnimplementedFeature
-    Cid => raise @error.FTError::UnknownFileFormat
+    Cid => {
+      // CID-keyed fonts — parse metadata but no glyph loading yet
+      let face = @base.FaceRec::new()
+      face.face_flags = @base.face_flag_scalable |
+        @base.face_flag_horizontal |
+        @base.face_flag_cid_keyed
+      face
+    }
     Unknown => raise @error.FTError::UnknownFileFormat
   }
 }
