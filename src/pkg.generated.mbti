@@ -11,6 +11,12 @@ pub fn from_bytes(Bytes, face_index? : Int) -> @base.FaceRec raise @error.FTErro
 
 pub fn get_char_index(@base.FaceRec, UInt) -> UInt
 
+pub fn get_kerning(@base.FaceRec, UInt, UInt) -> (Int64, Int64)
+
+pub fn load_glyph(@base.FaceRec, UInt, load_flags? : Int) -> Unit raise @error.FTError
+
+pub fn set_pixel_sizes(@base.FaceRec, UInt, UInt) -> Unit raise @error.FTError
+
 // Errors
 
 // Types and methods

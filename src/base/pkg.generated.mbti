@@ -113,11 +113,6 @@ pub(all) struct BitmapSize {
 pub impl Eq for BitmapSize
 pub impl Show for BitmapSize
 
-pub(all) struct CffData {
-  placeholder : Int
-}
-pub impl Show for CffData
-
 pub(all) struct CharMapRec {
   encoding : Encoding
   platform_id : UInt
@@ -128,9 +123,8 @@ pub impl Show for CharMapRec
 
 pub(all) enum DriverData {
   Empty
-  TrueType(TrueTypeData)
-  Cff(CffData)
-  Type1(Type1Data)
+  SfntDriver(SfntOps)
+  Type1Ops(Type1Ops)
 }
 pub impl Show for DriverData
 
@@ -250,6 +244,15 @@ pub(all) struct GlyphSlot {
 pub fn GlyphSlot::new() -> Self
 pub impl Show for GlyphSlot
 
+pub(all) struct GlyphSlotData {
+  metrics_width : Int64
+  metrics_height : Int64
+  metrics_hori_bearing_x : Int64
+  metrics_hori_bearing_y : Int64
+  metrics_hori_advance : Int64
+}
+pub impl Show for GlyphSlotData
+
 pub(all) struct OutlineFuncs {
   move_to : (@types.Vector) -> Unit raise @error.FTError
   line_to : (@types.Vector) -> Unit raise @error.FTError
@@ -258,6 +261,15 @@ pub(all) struct OutlineFuncs {
   shift : Int
   delta : Int64
 }
+
+pub(all) struct SfntOps {
+  char_index : (UInt) -> UInt
+  load_glyph : (UInt, Int) -> (GlyphSlotData, @types.Outline) raise @error.FTError
+  get_kerning : (UInt, UInt) -> Int
+  num_glyphs : UInt
+  raw_data : Bytes
+}
+pub impl Show for SfntOps
 
 pub(all) struct SizeRec {
   mut metrics : @types.SizeMetrics
@@ -274,15 +286,11 @@ pub(all) struct SubGlyph {
 }
 pub impl Show for SubGlyph
 
-pub(all) struct TrueTypeData {
-  placeholder : Int
+pub(all) struct Type1Ops {
+  char_index : (UInt) -> UInt
+  load_glyph : (UInt, Int) -> (GlyphSlotData, @types.Outline) raise @error.FTError
 }
-pub impl Show for TrueTypeData
-
-pub(all) struct Type1Data {
-  placeholder : Int
-}
-pub impl Show for Type1Data
+pub impl Show for Type1Ops
 
 // Type aliases
 

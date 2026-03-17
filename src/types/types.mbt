@@ -49,12 +49,12 @@ pub fn GlyphMetrics::new() -> GlyphMetrics {
 ///|
 /// Size metrics (in 26.6).
 pub(all) struct SizeMetrics {
-  x_ppem : UInt
-  y_ppem : UInt
-  x_scale : @fixed.Fixed
-  y_scale : @fixed.Fixed
-  ascender : Int64
-  descender : Int64
-  height : Int64
-  max_advance : Int64
+  mut x_ppem : UInt
+  mut y_ppem : UInt
+  mut x_scale : @fixed.Fixed
+  mut y_scale : @fixed.Fixed
+  mut ascender : Int64
+  mut descender : Int64
+  mut height : Int64
+  mut max_advance : Int64
 } derive(Eq, Show)

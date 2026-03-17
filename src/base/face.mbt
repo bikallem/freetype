@@ -128,35 +128,65 @@ pub(all) struct SubGlyph {
 } derive(Show)
 
 ///|
-/// Opaque driver-specific data. Each font format driver stores its own
-/// parsed data here. This replaces C's void* internal pointers.
+/// Opaque driver-specific data. Each font format stores parsed data here.
+/// The root package (lib.mbt) sets this; sub-packages read it via pattern matching.
 pub(all) enum DriverData {
   Empty
-  TrueType(TrueTypeData)
-  Cff(CffData)
-  Type1(Type1Data)
+  /// SFNT data stored as: (cmap_lookup_fn, glyph_load_fn, kern_fn, raw_data)
+  /// Using closures to avoid circular dependency between base and sfnt/truetype/cff.
+  SfntDriver(SfntOps)
+  /// Type 1 data stored with closures for charmap and glyph loading.
+  Type1Ops(Type1Ops)
+}
+
+///|
+pub impl Show for DriverData with output(self, logger) {
+  match self {
+    Empty => logger.write_string("Empty")
+    SfntDriver(_) => logger.write_string("SfntDriver(...)")
+    Type1Ops(_) => logger.write_string("Type1Ops(...)")
+  }
+}
+
+///|
+/// SFNT driver operations — closures that capture the parsed font data.
+pub(all) struct SfntOps {
+  char_index : (UInt) -> UInt // charcode → glyph index
+  load_glyph : (UInt, Int) -> (GlyphSlotData, @types.Outline) raise @error.FTError // (glyph_index, load_flags) → slot data
+  get_kerning : (UInt, UInt) -> Int // (left, right) → kern value
+  num_glyphs : UInt
+  raw_data : Bytes // font file bytes (for re-parsing if needed)
+}
+
+///|
+pub impl Show for SfntOps with output(self, logger) {
+  logger.write_string("SfntOps { num_glyphs: ")
+  self.num_glyphs.output(logger)
+  logger.write_string(" }")
+}
+
+///|
+/// Data returned from glyph loading (before being stored in GlyphSlot).
+pub(all) struct GlyphSlotData {
+  metrics_width : Int64
+  metrics_height : Int64
+  metrics_hori_bearing_x : Int64
+  metrics_hori_bearing_y : Int64
+  metrics_hori_advance : Int64
 } derive(Show)
 
 ///|
-/// Placeholder for TrueType driver-specific data.
-/// Will be populated in Phase 4.
-pub(all) struct TrueTypeData {
-  placeholder : Int
-} derive(Show)
+/// Type 1 driver operations.
+pub(all) struct Type1Ops {
+  char_index : (UInt) -> UInt
+  load_glyph : (UInt, Int) -> (GlyphSlotData, @types.Outline) raise @error.FTError
+}
 
 ///|
-/// Placeholder for CFF driver-specific data.
-/// Will be populated in Phase 6.
-pub(all) struct CffData {
-  placeholder : Int
-} derive(Show)
-
-///|
-/// Placeholder for Type 1 driver-specific data.
-/// Will be populated in Phase 7.
-pub(all) struct Type1Data {
-  placeholder : Int
-} derive(Show)
+pub impl Show for Type1Ops with output(self, logger) {
+  logger.write_string("Type1Ops(...)")
+  ignore(self)
+}
 
 ///|
 /// Create a new empty face record.
