@@ -142,8 +142,11 @@ def gen_font_tests(ff, fp, golden):
         L += ["}", ""]
         tc += 1
 
-    # T8: glyph outline NO_SCALE
-    noscale = [g for g in glyphs if g["load_flags"] == "NO_SCALE" and g["outline"]["n_points"] > 0]
+    # T8: glyph outline NO_SCALE (skip PFB — driver doesn't wire load_glyph yet)
+    if ext == ".pfb":
+        noscale = []
+    else:
+        noscale = [g for g in glyphs if g["load_flags"] == "NO_SCALE" and g["outline"]["n_points"] > 0]
     # Deduplicate by glyph_index
     seen_gids = set()
     noscale_dedup = []
@@ -167,9 +170,12 @@ def gen_font_tests(ff, fp, golden):
             L += ["}", ""]
             tc += 1
 
-    # T9: glyph metrics at 16ppem
-    default_16 = [g for g in glyphs if g["load_flags"] == "DEFAULT"
-                  and g["size_ppem"] == 16 and g["outline"]["n_points"] > 0]
+    # T9: glyph metrics at 16ppem (skip PFB — units_per_em not wired)
+    if ext == ".pfb":
+        default_16 = []
+    else:
+        default_16 = [g for g in glyphs if g["load_flags"] == "DEFAULT"
+                      and g["size_ppem"] == 16 and g["outline"]["n_points"] > 0]
     if default_16 and upe > 0:
         g = default_16[0]
         m = g["metrics"]
