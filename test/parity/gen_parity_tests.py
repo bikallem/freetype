@@ -1,8 +1,9 @@
 #!/usr/bin/env python3
 """
 Generate comprehensive MoonBit parity tests from golden JSON data.
-Emits one *_wbtest.mbt file per font to keep individual files manageable.
-All tests use real API calls — no stubs.
+Fonts are read from disk at test time via @fs.read_file_to_bytes() —
+no size limits, no embedded byte literals.
+Tests must run with --target native (file I/O requires native target).
 """
 
 import json, os, glob
@@ -10,8 +11,6 @@ import json, os, glob
 GOLDEN_DIR = os.path.join(os.path.dirname(__file__), "..", "golden", "data")
 OUTPUT_DIR = os.path.join(os.path.dirname(__file__), "..", "..", "src", "parity")
 FONT_DIR = os.path.join(os.path.dirname(__file__), "..", "fonts")
-MAX_FONT_SIZE = 2_000_000  # 2MB — fits DejaVuSans.ttc (1.5MB)
-MAX_WOFF_SIZE = 500_000  # include real WOFFs
 
 
 def vn(f):
@@ -22,20 +21,16 @@ def esc(s):
     return s.replace("\\", "\\\\").replace('"', '\\"')
 
 
-def bytes_lit(fp):
-    with open(fp, "rb") as f:
-        data = f.read()
-    chunks = []
-    for i in range(0, len(data), 20):
-        chunks.append("    " + ", ".join(f"0x{b:02X}" for b in data[i:i+20]) + ",")
-    return "[\n" + "\n".join(chunks) + "\n  ]"
-
-
 FMT = {".ttf": "TrueType", ".otf": "CffOpenType", ".ttc": "TrueTypeCollection",
        ".woff": "Woff1", ".pfb": "Type1Pfb", ".bdf": "Bdf"}
 
 
-def gen_font_tests(ff, fp, golden):
+def font_path_expr(ff):
+    """Return MoonBit expression for the font file path (relative to project root)."""
+    return f'"test/fonts/{ff}"'
+
+
+def gen_font_tests(ff, golden):
     """Generate test lines for one font. Returns (lines, test_count)."""
     v = vn(ff)
     meta = golden["metadata"]
@@ -44,23 +39,26 @@ def gen_font_tests(ff, fp, golden):
     kerning = golden["kerning"]
     ext = os.path.splitext(ff)[1].lower()
     upe = meta.get("units_per_em", 0)
+    path = font_path_expr(ff)
 
     L = [f"// Parity tests for {ff}", "// AUTO-GENERATED — do not edit", ""]
-    L += [f"///|", f"let {v}_data : Bytes = {bytes_lit(fp)}", ""]
+
+    # Helper: load font data
+    L += [f"///|", f"fn load_{v}() -> Bytes {{", f"  try! @fs.read_file_to_bytes({path})", f"}}", ""]
     tc = 0
 
     # T1: format detection
     L += [f"///|", f'test "parity/{ff}: format" {{']
     if ext == ".ttf":
-        L += [f'  inspect(@base.detect_format({v}_data) is (TrueType | TrueTypeCollection), content="true")']
+        L += [f'  inspect(@base.detect_format(load_{v}()) is (TrueType | TrueTypeCollection), content="true")']
     else:
-        L += [f'  inspect(@base.detect_format({v}_data), content="{FMT.get(ext, "Unknown")}")']
+        L += [f'  inspect(@base.detect_format(load_{v}()), content="{FMT.get(ext, "Unknown")}")']
     L += ["}", ""]
     tc += 1
 
     # T2: loads
     L += [f"///|", f'test "parity/{ff}: loads" {{',
-          f'  inspect((try? @freetype.from_bytes({v}_data)) is Ok(_), content="true")',
+          f'  inspect((try? @freetype.from_bytes(load_{v}())) is Ok(_), content="true")',
           "}", ""]
     tc += 1
 
@@ -69,7 +67,7 @@ def gen_font_tests(ff, fp, golden):
 
     # T3: metadata
     L += [f"///|", f'test "parity/{ff}: metadata" {{',
-          f"  let f = @freetype.from_bytes({v}_data)"]
+          f"  let f = @freetype.from_bytes(load_{v}())"]
     if meta.get("family_name"):
         L += [f'  inspect(f.family_name, content="{esc(meta["family_name"])}")']
     L += [f'  inspect(f.num_glyphs, content="{meta["num_glyphs"]}")']
@@ -89,7 +87,7 @@ def gen_font_tests(ff, fp, golden):
     bbox = meta.get("bbox", {})
     if bbox and upe > 0:
         L += [f"///|", f'test "parity/{ff}: bbox" {{',
-              f"  let f = @freetype.from_bytes({v}_data)",
+              f"  let f = @freetype.from_bytes(load_{v}())",
               f'  inspect(f.bbox.x_min, content="{bbox["xMin"]}")',
               f'  inspect(f.bbox.y_min, content="{bbox["yMin"]}")',
               f'  inspect(f.bbox.x_max, content="{bbox["xMax"]}")',
@@ -101,7 +99,7 @@ def gen_font_tests(ff, fp, golden):
     ff_ = meta.get("face_flags", 0)
     if upe > 0:
         L += [f"///|", f'test "parity/{ff}: flags" {{',
-              f"  let f = @freetype.from_bytes({v}_data)",
+              f"  let f = @freetype.from_bytes(load_{v}())",
               f'  inspect(f.is_scalable(), content="{str(bool(ff_ & 1)).lower()}")',
               f'  inspect(f.is_sfnt(), content="{str(bool(ff_ & 8)).lower()}")',
               f'  inspect(f.has_horizontal(), content="{str(bool(ff_ & 16)).lower()}")',
@@ -113,7 +111,7 @@ def gen_font_tests(ff, fp, golden):
     n_cm = meta.get("num_charmaps", 0)
     if n_cm > 0 and upe > 0:
         L += [f"///|", f'test "parity/{ff}: charmaps" {{',
-              f"  let f = @freetype.from_bytes({v}_data)",
+              f"  let f = @freetype.from_bytes(load_{v}())",
               f'  inspect(f.charmaps.length(), content="{n_cm}")']
         for ci, cm in enumerate(charmaps):
             L += [f"  if f.charmaps.length() > {ci} {{",
@@ -123,7 +121,7 @@ def gen_font_tests(ff, fp, golden):
         L += ["}", ""]
         tc += 1
 
-    # T7: charmap entries — real get_char_index calls
+    # T7: charmap entries
     best_cm = None
     for cm in charmaps:
         if cm.get("entries") and cm["platform_id"] == 3 and cm["encoding_id"] == 1:
@@ -135,32 +133,28 @@ def gen_font_tests(ff, fp, golden):
                 best_cm = cm
                 break
     if best_cm and upe > 0:
-        entries = best_cm["entries"][:50]  # up to 50 entries
+        entries = best_cm["entries"][:50]
         L += [f"///|", f'test "parity/{ff}: charmap entries" {{',
-              f"  let f = @freetype.from_bytes({v}_data)"]
+              f"  let f = @freetype.from_bytes(load_{v}())"]
         for code, gid in entries:
             L += [f"  inspect(@freetype.get_char_index(f, {code}U), content=\"{gid}\")"]
         L += ["}", ""]
         tc += 1
 
-    # T8: glyph outline NO_SCALE (skip PFB — driver doesn't wire load_glyph yet)
-    if ext == ".pfb":
-        noscale = []
-    else:
+    # T8: glyph outlines (NO_SCALE) — skip PFB (driver not wired)
+    if ext != ".pfb":
         noscale = [g for g in glyphs if g["load_flags"] == "NO_SCALE" and g["outline"]["n_points"] > 0]
-    # Deduplicate by glyph_index
-    seen_gids = set()
-    noscale_dedup = []
-    for g in noscale:
-        if g["glyph_index"] not in seen_gids:
-            seen_gids.add(g["glyph_index"])
-            noscale_dedup.append(g)
-    if noscale_dedup and upe > 0:
-        for gi, g in enumerate(noscale_dedup[:3]):
+        seen_gids = set()
+        noscale_dedup = []
+        for g in noscale:
+            if g["glyph_index"] not in seen_gids:
+                seen_gids.add(g["glyph_index"])
+                noscale_dedup.append(g)
+        for g in noscale_dedup[:3]:
             o = g["outline"]
             L += [f"///|",
                   f'test "parity/{ff}: glyph {g["glyph_index"]} outline NO_SCALE" {{',
-                  f"  let f = @freetype.from_bytes({v}_data)",
+                  f"  let f = @freetype.from_bytes(load_{v}())",
                   f"  @freetype.load_glyph(f, {g['glyph_index']}U, load_flags=@base.load_no_scale)",
                   f'  inspect(f.glyph.outline.n_points(), content="{o["n_points"]}")',
                   f'  inspect(f.glyph.outline.n_contours(), content="{o["n_contours"]}")']
@@ -171,23 +165,21 @@ def gen_font_tests(ff, fp, golden):
             L += ["}", ""]
             tc += 1
 
-    # T9: glyph metrics at 16ppem (skip PFB — units_per_em not wired)
-    if ext == ".pfb":
-        default_16 = []
-    else:
+    # T9: glyph metrics at 16ppem — skip PFB
+    if ext != ".pfb":
         default_16 = [g for g in glyphs if g["load_flags"] == "DEFAULT"
                       and g["size_ppem"] == 16 and g["outline"]["n_points"] > 0]
-    if default_16 and upe > 0:
-        g = default_16[0]
-        m = g["metrics"]
-        L += [f"///|",
-              f'test "parity/{ff}: glyph metrics at 16ppem" {{',
-              f"  let f = @freetype.from_bytes({v}_data)",
-              f"  @freetype.set_pixel_sizes(f, 0U, 16U)",
-              f"  @freetype.load_glyph(f, {g['glyph_index']}U)",
-              f'  inspect(f.glyph.metrics.hori_advance, content="{m["horiAdvance"]}")',
-              "}", ""]
-        tc += 1
+        if default_16:
+            g = default_16[0]
+            m = g["metrics"]
+            L += [f"///|",
+                  f'test "parity/{ff}: glyph metrics at 16ppem" {{',
+                  f"  let f = @freetype.from_bytes(load_{v}())",
+                  f"  @freetype.set_pixel_sizes(f, 0U, 16U)",
+                  f"  @freetype.load_glyph(f, {g['glyph_index']}U)",
+                  f'  inspect(f.glyph.metrics.hori_advance, content="{m["horiAdvance"]}")',
+                  "}", ""]
+            tc += 1
 
     # T10: TTC multi-face
     if ext == ".ttc":
@@ -195,7 +187,7 @@ def gen_font_tests(ff, fp, golden):
         if nf > 1:
             L += [f"///|", f'test "parity/{ff}: TTC multi-face" {{']
             for fi in range(min(nf, 3)):
-                L += [f"  let f{fi} = @freetype.from_bytes({v}_data, face_index={fi})",
+                L += [f"  let f{fi} = @freetype.from_bytes(load_{v}(), face_index={fi})",
                       f'  inspect(f{fi}.num_glyphs > 0L, content="true")']
             L += ["}", ""]
             tc += 1
@@ -203,7 +195,7 @@ def gen_font_tests(ff, fp, golden):
     # T11: kerning
     if kerning:
         L += [f"///|", f'test "parity/{ff}: kerning" {{',
-              f"  let f = @freetype.from_bytes({v}_data)"]
+              f"  let f = @freetype.from_bytes(load_{v}())"]
         for kp in kerning[:20]:
             L += [f"  inspect(@freetype.get_kerning(f, {kp['left']}U, {kp['right']}U).0, content=\"{kp['x']}\")"]
         L += ["}", ""]
@@ -225,21 +217,14 @@ def main():
         fp = os.path.join(FONT_DIR, ff)
         if not os.path.exists(fp):
             continue
-        sz = os.path.getsize(fp)
-        if sz > MAX_FONT_SIZE:
-            print(f"  [skip] {ff} ({sz:,}B > {MAX_FONT_SIZE:,}B)")
-            continue
-        ext = os.path.splitext(ff)[1].lower()
-        if ext == ".woff" and sz > MAX_WOFF_SIZE:
-            print(f"  [skip] {ff} ({sz:,}B WOFF > {MAX_WOFF_SIZE:,}B — zlib stack overflow)")
-            continue
         fonts.append((ff, fp, json.load(open(gf))))
+        sz = os.path.getsize(fp)
         print(f"  [include] {ff} ({sz:,}B)")
 
     total_tests = 0
     total_files = 0
     for ff, fp, golden in fonts:
-        lines, tc = gen_font_tests(ff, fp, golden)
+        lines, tc = gen_font_tests(ff, golden)
         safe_name = vn(ff)
         out_path = os.path.join(OUTPUT_DIR, f"parity_{safe_name}_wbtest.mbt")
         with open(out_path, "w") as f:
@@ -249,6 +234,7 @@ def main():
         print(f"    → {os.path.basename(out_path)} ({tc} tests)")
 
     print(f"\n  Total: {total_tests} tests across {total_files} fonts, 0 stubs")
+    print(f"  Run with: moon test src/parity --target native")
 
 
 if __name__ == "__main__":

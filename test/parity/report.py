@@ -30,8 +30,9 @@ def main():
         return 1
 
     # Run MoonBit parity tests and capture results
+    # Parity tests use @fs.read_file_to_bytes() so must run on native target
     result = subprocess.run(
-        ["moon", "test", "src/parity", "-v"],
+        ["moon", "test", "src/parity", "--target", "native", "-v"],
         capture_output=True, text=True, cwd=PROJECT_ROOT,
     )
     test_output = result.stdout + result.stderr

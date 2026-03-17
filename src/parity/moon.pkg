@@ -1,5 +1,5 @@
 import {
   "bikallem/freetype",
   "bikallem/freetype/base",
-  "bikallem/freetype/types",
+  "moonbitlang/x/fs" @fs,
 } for "wbtest"
