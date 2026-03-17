@@ -1,0 +1,34 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "bikallem/freetype/otvalid"
+
+import {
+  "bikallem/freetype/error",
+  "bikallem/freetype/stream",
+}
+
+// Values
+pub fn validate_class_def(@stream.ByteReader, UInt) -> Array[ValidationLevel] raise @error.FTError
+
+pub fn validate_coverage(@stream.ByteReader, UInt) -> Array[ValidationLevel] raise @error.FTError
+
+pub fn validate_gdef(@stream.ByteReader, UInt) -> Array[ValidationLevel] raise @error.FTError
+
+pub fn validate_gpos(@stream.ByteReader, UInt) -> Array[ValidationLevel] raise @error.FTError
+
+pub fn validate_gsub(@stream.ByteReader, UInt) -> Array[ValidationLevel] raise @error.FTError
+
+// Errors
+
+// Types and methods
+pub(all) enum ValidationLevel {
+  Valid
+  Warning(String)
+  Error(String)
+}
+pub impl Eq for ValidationLevel
+pub impl Show for ValidationLevel
+
+// Type aliases
+
+// Traits
+

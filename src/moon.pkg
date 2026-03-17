@@ -18,4 +18,7 @@ import {
   "bikallem/freetype/bdf",
   "bikallem/freetype/pcf",
   "bikallem/freetype/winfonts",
+  "bikallem/freetype/cache",
+  "bikallem/freetype/otvalid",
+  "bikallem/freetype/gxvalid",
 }

@@ -1,0 +1,27 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "bikallem/freetype/gxvalid"
+
+import {
+  "bikallem/freetype/error",
+  "bikallem/freetype/stream",
+}
+
+// Values
+pub fn validate_feat(@stream.ByteReader, UInt, UInt) -> GxValidationResult raise @error.FTError
+
+pub fn validate_kern_apple(@stream.ByteReader, UInt, UInt) -> GxValidationResult
+
+// Errors
+
+// Types and methods
+pub(all) struct GxValidationResult {
+  table_tag : UInt
+  issues : Array[String]
+}
+pub impl Eq for GxValidationResult
+pub impl Show for GxValidationResult
+
+// Type aliases
+
+// Traits
+

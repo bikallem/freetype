@@ -1,0 +1,49 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "bikallem/freetype/cache"
+
+import {
+  "bikallem/freetype/types",
+}
+
+// Values
+
+// Errors
+
+// Types and methods
+pub(all) struct CacheEntry[V] {
+  key : UInt64
+  value : V
+  mut access_time : Int
+}
+pub impl[V : Show] Show for CacheEntry[V]
+
+pub(all) struct CachedGlyph {
+  outline : @types.Outline
+  metrics : @types.GlyphMetrics
+  advance_width : Int64
+}
+pub impl Show for CachedGlyph
+
+pub(all) struct CmapCache {
+  mut entries : Map[UInt64, UInt]
+  max_entries : Int
+}
+pub fn CmapCache::insert(Self, UInt, UInt, UInt) -> Unit
+pub fn CmapCache::lookup(Self, UInt, UInt) -> UInt?
+pub fn CmapCache::new(max_entries? : Int) -> Self
+pub impl Show for CmapCache
+
+pub(all) struct GlyphCache {
+  mut entries : Map[UInt64, CacheEntry[CachedGlyph]]
+  max_entries : Int
+  mut current_time : Int
+}
+pub fn GlyphCache::insert(Self, UInt, UInt, CachedGlyph) -> Unit
+pub fn GlyphCache::lookup(Self, UInt, UInt) -> CachedGlyph?
+pub fn GlyphCache::new(max_entries? : Int) -> Self
+pub impl Show for GlyphCache
+
+// Type aliases
+
+// Traits
+
