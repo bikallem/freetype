@@ -11,6 +11,12 @@ test/fonts/*.otf
 test/fonts/*.woff
 test/fonts/*.bdf
 test/fonts/*.pcf
+test/fonts/*.tar.*
+test/fonts/*.zip
+test/fonts/.downloaded
+
+# Golden generator binary
+test/golden/generate/gen_golden
 
 # Dolt database files (added by bd init)
 .dolt/

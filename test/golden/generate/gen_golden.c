@@ -212,7 +212,7 @@ static void process_font(FT_Library library, const char *font_path, const char *
     /* Build output filename */
     const char *basename = strrchr(font_path, '/');
     basename = basename ? basename + 1 : font_path;
-    char output_path[1024];
+    char output_path[2048];
     snprintf(output_path, sizeof(output_path), "%s/%s.json", output_dir, basename);
 
     FILE *fp = fopen(output_path, "w");
@@ -264,7 +264,16 @@ int main(int argc, char *argv[]) {
     struct dirent *entry;
     while ((entry = readdir(dir)) != NULL) {
         if (entry->d_name[0] == '.') continue;
-        char path[1024];
+        /* Only process font files by extension */
+        const char *ext = strrchr(entry->d_name, '.');
+        if (!ext) continue;
+        if (strcmp(ext, ".ttf") && strcmp(ext, ".otf") &&
+            strcmp(ext, ".ttc") && strcmp(ext, ".woff") &&
+            strcmp(ext, ".pfb") && strcmp(ext, ".pfa") &&
+            strcmp(ext, ".bdf") && strcmp(ext, ".pcf") &&
+            strcmp(ext, ".fnt") && strcmp(ext, ".fon"))
+            continue;
+        char path[2048];
         snprintf(path, sizeof(path), "%s/%s", font_dir, entry->d_name);
         process_font(library, path, output_dir);
     }

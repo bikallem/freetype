@@ -1,7 +1,17 @@
 FREETYPE_DIR = ../../../vendor/freetype-c
 CC ?= cc
 CFLAGS = -Wall -Wextra -O2 -I$(FREETYPE_DIR)/include
-LDFLAGS = -L$(FREETYPE_DIR)/objs -lfreetype -lz -lm -lbz2 -lpng
+
+# Find zlib: prefer -lz, fall back to libz.so.1 on systems without zlib-dev
+ZLIB := $(shell $(CC) -lz -xc /dev/null -o /dev/null 2>/dev/null && echo "-lz" || echo "")
+ifeq ($(ZLIB),)
+  ZLIB := $(wildcard /usr/lib/x86_64-linux-gnu/libz.so.1)
+  ifeq ($(ZLIB),)
+    ZLIB := $(wildcard /usr/lib/libz.so.1)
+  endif
+endif
+
+LDFLAGS = -L$(FREETYPE_DIR)/objs -lfreetype $(ZLIB) -lm
 
 FONT_DIR = ../../fonts
 OUTPUT_DIR = ../data
@@ -10,9 +20,8 @@ OUTPUT_DIR = ../data
 
 all: gen_golden
 
-gen_golden: gen_golden.c
-	$(CC) $(CFLAGS) -o $@ $< $(LDFLAGS) 2>/dev/null || \
-	$(CC) $(CFLAGS) -o $@ $< -L$(FREETYPE_DIR)/objs -lfreetype -lz -lm
+gen_golden: gen_golden.c $(FREETYPE_DIR)/objs/libfreetype.a
+	$(CC) $(CFLAGS) -o $@ $< $(LDFLAGS)
 
 generate: gen_golden
 	@mkdir -p $(OUTPUT_DIR)
