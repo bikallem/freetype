@@ -9,9 +9,9 @@ import {
 // Values
 pub fn calc_subr_bias(Int) -> Int
 
-pub fn execute_type1(Bytes, Array[Bytes], Int64) -> (@types.Outline, Int64) raise @error.FTError
+pub fn execute_type1(Bytes, Array[Bytes], Int64) -> (@types.Outline, Int64, Array[StemHint], Array[StemHint]) raise @error.FTError
 
-pub fn execute_type2(Bytes, Int64, Int64, local_subrs? : Array[Bytes], global_subrs? : Array[Bytes]) -> (@types.Outline, Int64) raise @error.FTError
+pub fn execute_type2(Bytes, Int64, Int64, local_subrs? : Array[Bytes], global_subrs? : Array[Bytes]) -> (@types.Outline, Int64, Array[StemHint], Array[StemHint]) raise @error.FTError
 
 // Errors
 

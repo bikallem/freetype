@@ -6,6 +6,8 @@ import {
 }
 
 // Values
+pub fn is_cid_font(Bytes) -> Bool
+
 pub fn parse_cid_font(Bytes) -> CidFont raise @error.FTError
 
 // Errors

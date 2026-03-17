@@ -11,6 +11,8 @@ import {
 }
 
 // Values
+pub fn apply_avar(Int, Array[AvarSegment]) -> Int
+
 pub let arg_1_and_2_are_words : UInt
 
 pub let args_are_xy_values : UInt
@@ -25,7 +27,15 @@ pub fn load_tt_glyph(Bytes, Array[UInt], UInt, UInt, depth? : Int) -> @types.Out
 
 pub let more_components : UInt
 
+pub fn normalize_axis(@fixed.Fixed, VarAxis) -> Int
+
+pub fn normalize_coordinates(Array[VarAxis], Array[@fixed.Fixed], AvarTable?) -> Array[Int]
+
 pub let overlap_compound : UInt
+
+pub fn parse_avar(@stream.ByteReader, UInt, UInt, Int) -> AvarTable raise @error.FTError
+
+pub fn parse_fvar(@stream.ByteReader, UInt, UInt) -> FvarTable raise @error.FTError
 
 pub fn parse_loca(@stream.ByteReader, UInt, UInt, UInt, Int) -> Array[UInt] raise @error.FTError
 
@@ -44,6 +54,17 @@ pub let we_have_instructions : UInt
 // Errors
 
 // Types and methods
+pub(all) struct AvarSegment {
+  from_coord : Int
+  to_coord : Int
+}
+pub impl Show for AvarSegment
+
+pub(all) struct AvarTable {
+  axis_maps : Array[Array[AvarSegment]]
+}
+pub impl Show for AvarTable
+
 pub(all) struct CompositeComponent {
   flags : UInt
   glyph_index : UInt
@@ -61,6 +82,12 @@ pub(all) struct FuncDef {
   end_ : Int
 }
 pub impl Show for FuncDef
+
+pub(all) struct FvarTable {
+  axes : Array[VarAxis]
+  instances : Array[NamedInstance]
+}
+pub impl Show for FvarTable
 
 pub(all) struct GraphicsState {
   mut rp0 : Int
@@ -100,14 +127,26 @@ pub(all) struct InterpContext {
   mut gs : GraphicsState
   mut func_defs : Map[Int, FuncDef]
   mut loop_count : Int
+  mut zone0_org : Array[@types.Vector]
+  mut zone0_cur : Array[@types.Vector]
+  mut zone0_tags : Array[Byte]
   mut zone0_points : Array[@types.Vector]
+  mut zone1_org : Array[@types.Vector]
+  mut zone1_cur : Array[@types.Vector]
   mut zone1_points : Array[@types.Vector]
   mut zone1_tags : Array[Byte]
+  mut zone1_touch : Array[Byte]
   mut error : Bool
 }
 pub fn InterpContext::execute(Self, Bytes) -> Unit raise @error.FTError
 pub fn InterpContext::new(cvt? : Array[Int64], storage_size? : Int, max_stack? : Int) -> Self
 pub impl Show for InterpContext
+
+pub(all) struct NamedInstance {
+  name_id : UInt
+  coordinates : Array[@fixed.Fixed]
+}
+pub impl Show for NamedInstance
 
 pub(all) struct TtFaceData {
   sfnt : @sfnt.SfntData
@@ -119,6 +158,15 @@ pub(all) struct TtFaceData {
   cvt : Array[Int64]
 }
 pub impl Show for TtFaceData
+
+pub(all) struct VarAxis {
+  tag : UInt
+  min_value : @fixed.Fixed
+  default_value : @fixed.Fixed
+  max_value : @fixed.Fixed
+  name_id : UInt
+}
+pub impl Show for VarAxis
 
 // Type aliases
 

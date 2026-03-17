@@ -3,6 +3,7 @@ package "bikallem/freetype/cff"
 
 import {
   "bikallem/freetype/error",
+  "bikallem/freetype/psaux",
   "bikallem/freetype/stream",
   "bikallem/freetype/types",
 }
@@ -10,7 +11,7 @@ import {
 // Values
 pub fn load_cff(Bytes, Int) -> CffFont raise @error.FTError
 
-pub fn load_cff_glyph(CffFont, UInt) -> (@types.Outline, Int64) raise @error.FTError
+pub fn load_cff_glyph(CffFont, UInt) -> (@types.Outline, Int64, Array[@psaux.StemHint], Array[@psaux.StemHint]) raise @error.FTError
 
 pub fn parse_cff_index(@stream.ByteReader) -> CffIndex raise @error.FTError
 

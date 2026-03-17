@@ -7,11 +7,21 @@ import {
 }
 
 // Values
+pub fn auto_hint_outline(@types.Outline, ScriptMetrics) -> Unit
+
 pub fn compute_edges(Array[Segment], @fixed.Fixed) -> Array[Edge]
 
 pub fn compute_segments(@types.Outline, SegmentDir) -> Array[Segment]
 
 pub fn detect_script(UInt) -> Script
+
+pub fn detect_stems(Array[Edge]) -> Array[Stem]
+
+pub fn fit_blue_zones(Array[Edge], Array[BlueZone], @fixed.Fixed) -> Unit
+
+pub fn fit_edges(Array[Edge], Array[Stem], @fixed.Fixed) -> Unit
+
+pub fn interpolate_points(@types.Outline, Array[Edge], @fixed.Fixed, Bool) -> Unit
 
 // Errors
 

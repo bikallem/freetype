@@ -3,12 +3,22 @@ package "bikallem/freetype/pshinter"
 
 import {
   "bikallem/freetype/fixed",
+  "bikallem/freetype/psaux",
+  "bikallem/freetype/types",
 }
 
 // Values
 pub fn align_stem(Int64, Int64, @fixed.Fixed) -> (Int64, Int64)
 
 pub fn apply_blue_zone(Int64, Array[BlueZone], @fixed.Fixed, Int64) -> Int64?
+
+pub fn build_ps_globals(Array[Int], Array[Int], Int, Int, @fixed.Fixed, Int, Int) -> PsGlobals
+
+pub fn fit_stems(Array[@psaux.StemHint], PsGlobals, @fixed.Fixed, Bool) -> Array[FittedStem]
+
+pub fn hint_outline(@types.Outline, Array[@psaux.StemHint], Array[@psaux.StemHint], PsGlobals, @fixed.Fixed) -> Unit
+
+pub fn interpolate_points(@types.Outline, Array[FittedStem], Array[FittedStem], @fixed.Fixed) -> Unit
 
 // Errors
 
@@ -20,6 +30,15 @@ pub(all) struct BlueZone {
 }
 pub impl Eq for BlueZone
 pub impl Show for BlueZone
+
+pub(all) struct FittedStem {
+  org_pos : Int64
+  org_width : Int64
+  cur_pos : Int64
+  cur_width : Int64
+}
+pub impl Eq for FittedStem
+pub impl Show for FittedStem
 
 pub(all) struct HintMapEntry {
   org_pos : Int64
@@ -41,6 +60,12 @@ pub(all) struct PsGlobals {
 }
 pub fn PsGlobals::new() -> Self
 pub impl Show for PsGlobals
+
+pub(all) struct StemHintTable {
+  stems : Array[@psaux.StemHint]
+  fitted : Array[FittedStem]
+}
+pub impl Show for StemHintTable
 
 // Type aliases
 

@@ -1,8 +1,14 @@
 // Generated using `moon info`, DON'T EDIT IT
 package "bikallem/freetype/pfr"
 
+import {
+  "bikallem/freetype/error",
+}
+
 // Values
 pub fn is_pfr(Bytes) -> Bool
+
+pub fn parse_pfr_font(Bytes) -> PfrFont raise @error.FTError
 
 // Errors
 

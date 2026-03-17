@@ -1,10 +1,16 @@
 // Generated using `moon info`, DON'T EDIT IT
 package "bikallem/freetype/winfonts"
 
+import {
+  "bikallem/freetype/error",
+}
+
 // Values
 pub fn is_fnt_header(Bytes) -> Bool
 
 pub fn is_mz_header(Bytes) -> Bool
+
+pub fn parse_fnt_font(Bytes) -> FntFont raise @error.FTError
 
 // Errors
 

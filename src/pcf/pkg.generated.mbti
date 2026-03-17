@@ -7,6 +7,8 @@ import {
 }
 
 // Values
+pub fn parse_pcf_font(Bytes) -> PcfFont raise @error.FTError
+
 pub fn parse_pcf_header(@stream.ByteReader) -> Array[PcfTableEntry] raise @error.FTError
 
 pub let pcf_accelerators : UInt
@@ -32,13 +34,48 @@ pub let pcf_swidths : UInt
 // Errors
 
 // Types and methods
+pub(all) struct PcfEncodings {
+  min_char_or_byte2 : Int
+  max_char_or_byte2 : Int
+  min_byte1 : Int
+  max_byte1 : Int
+  default_char : Int
+  glyph_indices : Array[Int]
+}
+pub impl Show for PcfEncodings
+
 pub(all) struct PcfFont {
   mut tables : Array[PcfTableEntry]
   mut font_name : String
   mut num_glyphs : Int
+  mut properties : Array[PcfProperty]
+  mut metrics : Array[PcfMetric]
+  mut encodings : PcfEncodings?
+  mut bitmap_offsets : Array[Int]
+  mut bitmap_data : Bytes
 }
+pub fn PcfFont::get_glyph(Self, Int) -> PcfMetric?
 pub fn PcfFont::new() -> Self
 pub impl Show for PcfFont
+
+pub(all) struct PcfMetric {
+  left_bearing : Int
+  right_bearing : Int
+  width : Int
+  ascent : Int
+  descent : Int
+}
+pub impl Eq for PcfMetric
+pub impl Show for PcfMetric
+
+pub(all) struct PcfProperty {
+  name : String
+  is_string : Bool
+  string_value : String
+  int_value : Int
+}
+pub impl Eq for PcfProperty
+pub impl Show for PcfProperty
 
 pub(all) struct PcfTableEntry {
   table_type : UInt
