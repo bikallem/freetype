@@ -162,12 +162,7 @@ test "parity/minimal.otf: flags" {
 ///|
 test "parity/minimal.otf: charmaps" {
   let f = @freetype.from_bytes(minimal_otf_data)
-  inspect(
-    f.charmaps.length(),
-    content=(
-      #|1
-    ),
-  )
+  inspect(f.charmaps.length(), content="2")
   if f.charmaps.length() > 0 {
     inspect(f.charmaps[0].platform_id, content="3")
     inspect(f.charmaps[0].encoding_id, content="1")
@@ -336,18 +331,8 @@ test "parity/minimal.pfb: loads" {
 test "parity/minimal.pfb: metadata" {
   let f = @freetype.from_bytes(minimal_pfb_data)
   inspect(f.family_name, content="Minimal")
-  inspect(
-    f.num_glyphs,
-    content=(
-      #|0
-    ),
-  )
-  inspect(
-    f.units_per_em,
-    content=(
-      #|0
-    ),
-  )
+  inspect(f.num_glyphs, content="3")
+  inspect(f.units_per_em, content="1000")
   inspect(
     f.ascender,
     content=(
@@ -392,12 +377,22 @@ test "parity/minimal.pfb: charmaps" {
   inspect(
     f.charmaps.length(),
     content=(
-      #|0
+      #|1
     ),
   )
   if f.charmaps.length() > 0 {
-    inspect(f.charmaps[0].platform_id, content="3")
-    inspect(f.charmaps[0].encoding_id, content="1")
+    inspect(
+      f.charmaps[0].platform_id,
+      content=(
+        #|7
+      ),
+    )
+    inspect(
+      f.charmaps[0].encoding_id,
+      content=(
+        #|2
+      ),
+    )
   }
   if f.charmaps.length() > 1 {
     inspect(f.charmaps[1].platform_id, content="7")
@@ -408,18 +403,8 @@ test "parity/minimal.pfb: charmaps" {
 ///|
 test "parity/minimal.pfb: charmap entries" {
   let f = @freetype.from_bytes(minimal_pfb_data)
-  inspect(
-    @freetype.get_char_index(f, 32U),
-    content=(
-      #|0
-    ),
-  )
-  inspect(
-    @freetype.get_char_index(f, 65U),
-    content=(
-      #|0
-    ),
-  )
+  inspect(@freetype.get_char_index(f, 32U), content="1")
+  inspect(@freetype.get_char_index(f, 65U), content="2")
   inspect(
     @freetype.get_char_index(f, 160U),
     content=(
@@ -430,19 +415,65 @@ test "parity/minimal.pfb: charmap entries" {
 
 ///|
 test "parity/minimal.pfb: glyph outline NO_SCALE" {
-  // Type 1 glyph loading not yet wired through public API (needs eexec parsing)
   let f = @freetype.from_bytes(minimal_pfb_data)
-  let r = try? @freetype.load_glyph(f, 2U, load_flags=@base.load_no_scale)
-  // Expected to fail until Type 1 driver is fully wired
-  inspect(r is Err(_), content="true")
+  @freetype.load_glyph(f, 2U, load_flags=@base.load_no_scale)
+  inspect(
+    f.glyph.outline.n_points(),
+    content=(
+      #|4
+    ),
+  )
+  inspect(f.glyph.outline.n_contours(), content="1")
+  inspect(
+    f.glyph.outline.points[0].x,
+    content=(
+      #|0
+    ),
+  )
+  inspect(f.glyph.outline.points[0].y, content="0")
+  inspect(
+    f.glyph.outline.points[1].x,
+    content=(
+      #|50
+    ),
+  )
+  inspect(
+    f.glyph.outline.points[1].y,
+    content=(
+      #|500
+    ),
+  )
+  inspect(
+    f.glyph.outline.points[2].x,
+    content=(
+      #|250
+    ),
+  )
+  inspect(
+    f.glyph.outline.points[2].y,
+    content=(
+      #|1200
+    ),
+  )
+  inspect(
+    f.glyph.metrics.hori_advance,
+    content=(
+      #|0
+    ),
+  )
 }
 
 ///|
 test "parity/minimal.pfb: glyph metrics at 16ppem" {
-  // Type 1 driver doesn't set units_per_em yet, so set_pixel_sizes fails
   let f = @freetype.from_bytes(minimal_pfb_data)
-  let r = try? @freetype.set_pixel_sizes(f, 0U, 16U)
-  inspect(r is Err(_), content="true")
+  @freetype.set_pixel_sizes(f, 0U, 16U)
+  @freetype.load_glyph(f, 2U)
+  inspect(
+    f.glyph.metrics.hori_advance,
+    content=(
+      #|0
+    ),
+  )
 }
 
 ///|

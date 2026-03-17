@@ -6,6 +6,7 @@
 /// Type 1 font representation.
 pub(all) struct Type1Font {
   mut font_name : String
+  mut units_per_em : Int // default 1000 for Type 1
   mut encoding : Array[String] // glyph name per encoding slot (256 entries)
   mut charstrings : Map[String, Bytes] // glyph_name -> charstring data
   mut subrs : Array[Bytes] // subroutine array
@@ -28,6 +29,7 @@ pub(all) struct Type1Font {
 pub fn Type1Font::new() -> Type1Font {
   {
     font_name: "",
+    units_per_em: 1000,
     encoding: [],
     charstrings: {},
     subrs: [],
@@ -135,14 +137,18 @@ pub fn parse_type1_pfb(data : Bytes) -> Type1Font raise @error.FTError {
   if ascii_parts.length() > 0 {
     font.font_name = extract_font_name(ascii_parts[0])
     font.font_bbox = extract_font_bbox(ascii_parts[0])
+    // Parse encoding from ASCII segment
+    font.encoding = parse_encoding(ascii_parts[0])
   }
   // Decrypt binary segment (eexec encrypted private dict + charstrings)
   if binary_parts.length() > 0 {
-    let _decrypted = eexec_decrypt(binary_parts[0])
-    // In a full implementation, we would parse the decrypted data to extract
-    // charstrings, subrs, and private dict values.
-    // For now, the font struct is returned with metadata from the ASCII part.
+    let decrypted = eexec_decrypt(binary_parts[0])
+    // Parse /lenIV from decrypted data
+    font.len_iv = extract_len_iv(decrypted)
+    // Parse /CharStrings dict from decrypted data
+    font.charstrings = extract_charstrings(decrypted)
   }
+  font.units_per_em = 1000
   font
 }
 
@@ -252,6 +258,307 @@ fn extract_font_bbox(ascii_data : Bytes) -> Array[Int] {
     continue i + 1
   }
   [0, 0, 0, 0]
+}
+
+///|
+/// Parse encoding from the ASCII segment.
+/// Looks for "/Encoding StandardEncoding def" or custom "dup N /name put" entries.
+fn parse_encoding(ascii_data : Bytes) -> Array[String] {
+  let len = ascii_data.length()
+  let encoding : Array[String] = Array::make(256, ".notdef")
+  // Convert to string for easier searching
+  let buf = StringBuilder::new()
+  for i in 0..<len {
+    buf.write_char(Int::unsafe_to_char(ascii_data[i].to_int()))
+  }
+  let text = buf.to_string()
+  // Check for StandardEncoding
+  if text.contains("StandardEncoding") &&
+    text.contains("/Encoding") &&
+    not(text.contains("/Encoding 256 array")) {
+    // Use standard encoding: map code -> SID -> glyph name
+    for i in 0..<256 {
+      let sid = @psnames.standard_encoding_sid(i.reinterpret_as_uint())
+      if sid != 0 {
+        match @psnames.standard_string(sid.reinterpret_as_uint()) {
+          Some(name) => encoding[i] = name
+          None => ()
+        }
+      }
+    }
+    return encoding
+  }
+  // Look for custom encoding: "dup N /name put" entries
+  // Search for "/Encoding" first
+  let enc_keyword = "/Encoding"
+  let mut start = 0
+  let mut found_encoding = false
+  for i in 0..<(len - enc_keyword.length()) {
+    let mut match_ = true
+    for j in 0..<enc_keyword.length() {
+      if ascii_data[i + j] != enc_keyword[j].to_byte() {
+        match_ = false
+        break
+      }
+    }
+    if match_ {
+      start = i + enc_keyword.length()
+      found_encoding = true
+      break
+    }
+  }
+  if not(found_encoding) {
+    return encoding
+  }
+  // Parse "dup N /name put" entries
+  let dup_kw = "dup"
+  let put_kw = "put"
+  let mut i = start
+  while i + 10 < len {
+    // Skip whitespace
+    while i < len &&
+          (
+            ascii_data[i] == b' ' ||
+            ascii_data[i] == b'\t' ||
+            ascii_data[i] == b'\n' ||
+            ascii_data[i] == b'\r'
+          ) {
+      i += 1
+    }
+    // Check for "def" or "readonly" which ends the encoding section
+    if i + 3 <= len &&
+      ascii_data[i] == b'd' &&
+      ascii_data[i + 1] == b'e' &&
+      ascii_data[i + 2] == b'f' {
+      break
+    }
+    if i + 8 <= len &&
+      ascii_data[i] == b'r' &&
+      ascii_data[i + 1] == b'e' &&
+      ascii_data[i + 2] == b'a' &&
+      ascii_data[i + 3] == b'd' {
+      break
+    }
+    // Check for "dup"
+    if i + 3 <= len &&
+      ascii_data[i] == b'd' &&
+      ascii_data[i + 1] == b'u' &&
+      ascii_data[i + 2] == b'p' {
+      i += 3
+      // Skip whitespace
+      while i < len && (ascii_data[i] == b' ' || ascii_data[i] == b'\t') {
+        i += 1
+      }
+      // Parse number
+      let mut code = 0
+      while i < len && ascii_data[i] >= b'0' && ascii_data[i] <= b'9' {
+        code = code * 10 + (ascii_data[i].to_int() - b'0'.to_int())
+        i += 1
+      }
+      // Skip whitespace
+      while i < len && (ascii_data[i] == b' ' || ascii_data[i] == b'\t') {
+        i += 1
+      }
+      // Expect '/'
+      if i < len && ascii_data[i] == b'/' {
+        i += 1
+        let name_start = i
+        while i < len &&
+              ascii_data[i] != b' ' &&
+              ascii_data[i] != b'\t' &&
+              ascii_data[i] != b'\n' &&
+              ascii_data[i] != b'\r' {
+          i += 1
+        }
+        let name_buf = StringBuilder::new()
+        for j in name_start..<i {
+          name_buf.write_char(Int::unsafe_to_char(ascii_data[j].to_int()))
+        }
+        let name = name_buf.to_string()
+        if code >= 0 && code < 256 {
+          encoding[code] = name
+        }
+      }
+      // Skip to end of line
+      while i < len && ascii_data[i] != b'\n' && ascii_data[i] != b'\r' {
+        i += 1
+      }
+    } else {
+      // Skip to end of line
+      while i < len && ascii_data[i] != b'\n' && ascii_data[i] != b'\r' {
+        i += 1
+      }
+      i += 1
+    }
+    ignore(dup_kw)
+    ignore(put_kw)
+  }
+  encoding
+}
+
+///|
+/// Extract /lenIV value from decrypted eexec data. Default is 4.
+fn extract_len_iv(data : Bytes) -> Int {
+  let len = data.length()
+  let keyword = "/lenIV"
+  for i in 0..<(len - keyword.length()) {
+    let mut match_ = true
+    for j in 0..<keyword.length() {
+      if data[i + j] != keyword[j].to_byte() {
+        match_ = false
+        break
+      }
+    }
+    if match_ {
+      let mut k = i + keyword.length()
+      // Skip whitespace
+      while k < len && (data[k] == b' ' || data[k] == b'\t') {
+        k += 1
+      }
+      // Parse integer
+      let mut val = 0
+      while k < len && data[k] >= b'0' && data[k] <= b'9' {
+        val = val * 10 + (data[k].to_int() - b'0'.to_int())
+        k += 1
+      }
+      return val
+    }
+  }
+  4 // default
+}
+
+///|
+/// Extract charstrings from decrypted eexec data.
+/// Looks for /CharStrings dict and parses "/name N RD ..." entries.
+fn extract_charstrings(data : Bytes) -> Map[String, Bytes] {
+  let charstrings : Map[String, Bytes] = {}
+  let len = data.length()
+  // Find /CharStrings
+  let keyword = "/CharStrings"
+  let mut cs_start = -1
+  for i in 0..<(len - keyword.length()) {
+    let mut match_ = true
+    for j in 0..<keyword.length() {
+      if data[i + j] != keyword[j].to_byte() {
+        match_ = false
+        break
+      }
+    }
+    if match_ {
+      cs_start = i + keyword.length()
+      break
+    }
+  }
+  if cs_start < 0 {
+    return charstrings
+  }
+  // Skip to after "begin" or past the dict size
+  let begin_kw = "begin"
+  let mut pos = cs_start
+  for i in cs_start..<(len - begin_kw.length()) {
+    let mut match_ = true
+    for j in 0..<begin_kw.length() {
+      if data[i + j] != begin_kw[j].to_byte() {
+        match_ = false
+        break
+      }
+    }
+    if match_ {
+      pos = i + begin_kw.length()
+      break
+    }
+  }
+  // Now parse entries: /name N RD <N bytes> ND  (or -| and |-)
+  while pos < len {
+    // Skip whitespace
+    while pos < len &&
+          (
+            data[pos] == b' ' ||
+            data[pos] == b'\t' ||
+            data[pos] == b'\n' ||
+            data[pos] == b'\r'
+          ) {
+      pos += 1
+    }
+    if pos >= len {
+      break
+    }
+    // Check for "end" which terminates the dict
+    if pos + 3 <= len &&
+      data[pos] == b'e' &&
+      data[pos + 1] == b'n' &&
+      data[pos + 2] == b'd' {
+      break
+    }
+    // Expect '/' for glyph name
+    if data[pos] != b'/' {
+      pos += 1
+      continue
+    }
+    pos += 1
+    // Read name
+    let name_start = pos
+    while pos < len &&
+          data[pos] != b' ' &&
+          data[pos] != b'\t' &&
+          data[pos] != b'\n' &&
+          data[pos] != b'\r' {
+      pos += 1
+    }
+    let name_buf = StringBuilder::new()
+    for j in name_start..<pos {
+      name_buf.write_char(Int::unsafe_to_char(data[j].to_int()))
+    }
+    let name = name_buf.to_string()
+    // Skip whitespace
+    while pos < len && (data[pos] == b' ' || data[pos] == b'\t') {
+      pos += 1
+    }
+    // Parse charstring length N
+    let mut cs_len = 0
+    let mut found_digit = false
+    while pos < len && data[pos] >= b'0' && data[pos] <= b'9' {
+      cs_len = cs_len * 10 + (data[pos].to_int() - b'0'.to_int())
+      found_digit = true
+      pos += 1
+    }
+    if not(found_digit) {
+      // Not a charstring entry, skip line
+      while pos < len && data[pos] != b'\n' && data[pos] != b'\r' {
+        pos += 1
+      }
+      continue
+    }
+    // Skip whitespace
+    while pos < len && (data[pos] == b' ' || data[pos] == b'\t') {
+      pos += 1
+    }
+    // Skip "RD" or "-|" token
+    if pos + 2 <= len &&
+      (
+        (data[pos] == b'R' && data[pos + 1] == b'D') ||
+        (data[pos] == b'-' && data[pos + 1] == b'|')
+      ) {
+      pos += 2
+    }
+    // Skip single space after RD
+    if pos < len && data[pos] == b' ' {
+      pos += 1
+    }
+    // Read cs_len bytes of charstring data
+    if pos + cs_len <= len {
+      let cs_data = data[pos:pos + cs_len].to_bytes()
+      charstrings[name] = cs_data
+      pos += cs_len
+    } else {
+      break
+    }
+    // Skip rest of line (ND, noaccess def, |-, etc.)
+    while pos < len && data[pos] != b'\n' && data[pos] != b'\r' {
+      pos += 1
+    }
+  }
+  charstrings
 }
 
 ///|

@@ -20,6 +20,7 @@ pub fn parse_type1_pfb(Bytes) -> Type1Font raise @error.FTError
 // Types and methods
 pub(all) struct Type1Font {
   mut font_name : String
+  mut units_per_em : Int
   mut encoding : Array[String]
   mut charstrings : Map[String, Bytes]
   mut subrs : Array[Bytes]
