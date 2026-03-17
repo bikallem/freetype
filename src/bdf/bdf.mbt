@@ -72,7 +72,7 @@ pub fn BdfFont::new() -> BdfFont {
 /// Returns a BdfFont with header fields populated.
 pub fn parse_bdf_header(data : Bytes) -> BdfFont raise @error.FTError {
   let font = BdfFont::new()
-  let text = data.to_unchecked_string()
+  let text = bytes_to_ascii(data)
   let lines = split_lines(text)
   let mut found_startfont = false
   for _, line in lines {
@@ -105,6 +105,16 @@ pub fn parse_bdf_header(data : Bytes) -> BdfFont raise @error.FTError {
     raise @error.FTError::MissingStartfontField
   }
   font
+}
+
+///|
+/// Convert bytes (ASCII/Latin-1) to String by treating each byte as a char.
+fn bytes_to_ascii(data : Bytes) -> String {
+  let buf = StringBuilder::new()
+  for _, b in data {
+    buf.write_char(Char::from_int(b.to_int()))
+  }
+  buf.to_string()
 }
 
 ///|

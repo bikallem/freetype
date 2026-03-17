@@ -41,17 +41,19 @@ GOLDEN_GEN  := test/golden/generate/gen_golden
 GOLDEN_DATA := test/golden/data
 FONT_DIR    := test/fonts
 
-parity: | $(FONT_DIR)/.downloaded
+parity: parity-golden parity-moonbit
+
+parity-golden: | $(FONT_DIR)/.downloaded
 	@mkdir -p $(GOLDEN_DATA)
 	@if [ ! -x $(GOLDEN_GEN) ]; then \
 		$(MAKE) -C test/golden/generate gen_golden 2>/dev/null || true; \
 	fi
 	@if [ -x $(GOLDEN_GEN) ]; then \
-		fonts=$$(find $(FONT_DIR) -maxdepth 1 \( -name '*.ttf' -o -name '*.otf' \) 2>/dev/null); \
+		fonts=$$(find $(FONT_DIR) -maxdepth 1 \( -name '*.ttf' -o -name '*.otf' -o -name '*.bdf' -o -name '*.pfb' -o -name '*.woff' -o -name '*.ttc' \) 2>/dev/null); \
 		if [ -n "$$fonts" ]; then \
 			echo "parity: generating golden files..."; \
 			$(GOLDEN_GEN) $(FONT_DIR) $(GOLDEN_DATA); \
-			echo "parity: done"; \
+			echo "parity: golden files generated"; \
 		else \
 			echo "parity: no font files in $(FONT_DIR) — run: bash $(FONT_DIR)/download.sh"; \
 		fi; \
@@ -59,6 +61,10 @@ parity: | $(FONT_DIR)/.downloaded
 		echo "parity: golden generator not available (vendored FreeType not compiled)"; \
 		echo "        to enable: make -C vendor/freetype-c && make parity"; \
 	fi
+
+parity-moonbit:
+	@echo "parity: running MoonBit parity tests..."
+	moon test src/parity
 
 $(FONT_DIR)/.downloaded:
 	@mkdir -p $(FONT_DIR)

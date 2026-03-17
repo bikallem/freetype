@@ -19,18 +19,22 @@ pub fn parse_post(
   num_glyphs : UInt,
 ) -> PostTable raise @error.FTError {
   let len = length.reinterpret_as_int()
-  if len < 32 {
+  if len < 12 {
+    // Minimum: format(4) + italicAngle(4) + underlinePosition(2) + underlineThickness(2)
     raise @error.FTError::PostTableMissing
   }
   reader.seek(offset.reinterpret_as_int())
-  reader.enter_frame(32)
+  let frame_size = if len < 32 { len } else { 32 }
+  reader.enter_frame(frame_size)
   let format = reader.get_u32_be()
   let italic_angle = @fixed.Fixed::from_raw(reader.get_i32_be().to_int64())
   let underline_position = reader.get_i16_be()
   let underline_thickness = reader.get_i16_be()
-  let is_fixed_pitch = reader.get_u32_be()
+  let is_fixed_pitch = if frame_size >= 16 { reader.get_u32_be() } else { 0U }
   // Skip minMemType42, maxMemType42, minMemType1, maxMemType1 (16 bytes)
-  reader.frame_skip(16)
+  if frame_size >= 32 {
+    reader.frame_skip(16)
+  }
   reader.exit_frame()
   let glyph_names : Array[String] = []
   // Format 2.0: per-glyph name table

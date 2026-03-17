@@ -17,7 +17,7 @@ test "BdfGlyph creation" {
 ///|
 test "parse_bdf_header basic" {
   let bdf_text = "STARTFONT 2.1\nFONT -misc-fixed-medium-r-normal--13-120-75-75-C-70-iso8859-1\nSIZE 12 75 75\nFONTBOUNDINGBOX 6 13 0 -2\nCHARS 256\n"
-  let data = bdf_text.to_bytes()
+  let data = @utf8.encode(bdf_text)
   let font = @bdf.parse_bdf_header(data)
   inspect(
     font.font_name,
@@ -35,7 +35,7 @@ test "parse_bdf_header basic" {
 
 ///|
 test "parse_bdf_header missing STARTFONT" {
-  let data = "FONT test\nSIZE 12 75 75\n".to_bytes()
+  let data = @utf8.encode("FONT test\nSIZE 12 75 75\n")
   let result : Result[_, _] = Ok(@bdf.parse_bdf_header(data)) catch {
     err => Err(err)
   }

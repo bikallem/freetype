@@ -176,7 +176,12 @@ fn extract_font_name(ascii_data : Bytes) -> String {
               ascii_data[j] != b'\r' {
           j += 1
         }
-        return ascii_data[start:j].to_bytes().to_unchecked_string()
+        let name_bytes = ascii_data[start:j].to_bytes()
+        let buf = StringBuilder::new()
+        for _, b in name_bytes {
+          buf.write_char(Char::from_int(b.to_int()))
+        }
+        return buf.to_string()
       }
     }
     continue i + 1
