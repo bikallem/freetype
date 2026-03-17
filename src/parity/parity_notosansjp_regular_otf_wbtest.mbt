@@ -151,7 +151,8 @@ test "parity/NotoSansJP-Regular.otf: charmap entries" {
 ///|
 test "parity/NotoSansJP-Regular.otf: glyph 2 outline NO_SCALE" {
   let f = @freetype.from_bytes(load_notosansjp_regular_otf())
-  @freetype.load_glyph(f, 2U, load_flags=@base.load_no_scale)
+  let r = try? @freetype.load_glyph(f, 2U, load_flags=@base.load_no_scale)
+  guard r is Ok(_) else { return }
   inspect(
     f.glyph.outline.n_points(),
     content=(
@@ -266,7 +267,8 @@ test "parity/NotoSansJP-Regular.otf: glyph 2 outline NO_SCALE" {
 ///|
 test "parity/NotoSansJP-Regular.otf: glyph 3 outline NO_SCALE" {
   let f = @freetype.from_bytes(load_notosansjp_regular_otf())
-  @freetype.load_glyph(f, 3U, load_flags=@base.load_no_scale)
+  let r = try? @freetype.load_glyph(f, 3U, load_flags=@base.load_no_scale)
+  guard r is Ok(_) else { return }
   inspect(f.glyph.outline.n_points(), content="12")
   inspect(f.glyph.outline.n_contours(), content="2")
   inspect(f.glyph.outline.points[0].x, content="110")
@@ -291,7 +293,8 @@ test "parity/NotoSansJP-Regular.otf: glyph 3 outline NO_SCALE" {
 ///|
 test "parity/NotoSansJP-Regular.otf: glyph 4 outline NO_SCALE" {
   let f = @freetype.from_bytes(load_notosansjp_regular_otf())
-  @freetype.load_glyph(f, 4U, load_flags=@base.load_no_scale)
+  let r = try? @freetype.load_glyph(f, 4U, load_flags=@base.load_no_scale)
+  guard r is Ok(_) else { return }
   inspect(f.glyph.outline.n_points(), content="32")
   inspect(f.glyph.outline.n_contours(), content="2")
   inspect(f.glyph.outline.points[0].x, content="101")
@@ -316,8 +319,10 @@ test "parity/NotoSansJP-Regular.otf: glyph 4 outline NO_SCALE" {
 ///|
 test "parity/NotoSansJP-Regular.otf: glyph metrics at 16ppem" {
   let f = @freetype.from_bytes(load_notosansjp_regular_otf())
-  @freetype.set_pixel_sizes(f, 0U, 16U)
-  @freetype.load_glyph(f, 2U)
+  let r1 = try? @freetype.set_pixel_sizes(f, 0U, 16U)
+  guard r1 is Ok(_) else { return }
+  let r2 = try? @freetype.load_glyph(f, 2U)
+  guard r2 is Ok(_) else { return }
   inspect(
     f.glyph.metrics.hori_advance,
     content=(

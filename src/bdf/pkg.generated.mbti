@@ -24,6 +24,7 @@ pub(all) struct BdfFont {
   mut bbx_x_offset : Int
   mut bbx_y_offset : Int
 }
+pub fn BdfFont::get_glyph(Self, Int) -> BdfGlyph?
 pub fn BdfFont::new() -> Self
 pub impl Show for BdfFont
 

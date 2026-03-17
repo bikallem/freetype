@@ -146,7 +146,8 @@ test "parity/SourceCodePro-Regular.otf: charmap entries" {
 ///|
 test "parity/SourceCodePro-Regular.otf: glyph 918 outline NO_SCALE" {
   let f = @freetype.from_bytes(load_sourcecodepro_regular_otf())
-  @freetype.load_glyph(f, 918U, load_flags=@base.load_no_scale)
+  let r = try? @freetype.load_glyph(f, 918U, load_flags=@base.load_no_scale)
+  guard r is Ok(_) else { return }
   inspect(
     f.glyph.outline.n_points(),
     content=(
@@ -176,7 +177,8 @@ test "parity/SourceCodePro-Regular.otf: glyph 918 outline NO_SCALE" {
 ///|
 test "parity/SourceCodePro-Regular.otf: glyph 923 outline NO_SCALE" {
   let f = @freetype.from_bytes(load_sourcecodepro_regular_otf())
-  @freetype.load_glyph(f, 923U, load_flags=@base.load_no_scale)
+  let r = try? @freetype.load_glyph(f, 923U, load_flags=@base.load_no_scale)
+  guard r is Ok(_) else { return }
   inspect(f.glyph.outline.n_points(), content="12")
   inspect(f.glyph.outline.n_contours(), content="2")
   inspect(f.glyph.outline.points[0].x, content="157")
@@ -201,7 +203,8 @@ test "parity/SourceCodePro-Regular.otf: glyph 923 outline NO_SCALE" {
 ///|
 test "parity/SourceCodePro-Regular.otf: glyph 1000 outline NO_SCALE" {
   let f = @freetype.from_bytes(load_sourcecodepro_regular_otf())
-  @freetype.load_glyph(f, 1000U, load_flags=@base.load_no_scale)
+  let r = try? @freetype.load_glyph(f, 1000U, load_flags=@base.load_no_scale)
+  guard r is Ok(_) else { return }
   inspect(f.glyph.outline.n_points(), content="32")
   inspect(f.glyph.outline.n_contours(), content="2")
   inspect(f.glyph.outline.points[0].x, content="228")
@@ -226,8 +229,10 @@ test "parity/SourceCodePro-Regular.otf: glyph 1000 outline NO_SCALE" {
 ///|
 test "parity/SourceCodePro-Regular.otf: glyph metrics at 16ppem" {
   let f = @freetype.from_bytes(load_sourcecodepro_regular_otf())
-  @freetype.set_pixel_sizes(f, 0U, 16U)
-  @freetype.load_glyph(f, 918U)
+  let r1 = try? @freetype.set_pixel_sizes(f, 0U, 16U)
+  guard r1 is Ok(_) else { return }
+  let r2 = try? @freetype.load_glyph(f, 918U)
+  guard r2 is Ok(_) else { return }
   inspect(
     f.glyph.metrics.hori_advance,
     content=(

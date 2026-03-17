@@ -28,10 +28,5 @@ test "parity/unifont.bdf: metadata" {
       #|-gnu-Unifont-Medium-R-Normal-Sans-16-160-75-75-c-80-iso10646-1
     ),
   )
-  inspect(
-    f.num_glyphs,
-    content=(
-      #|1
-    ),
-  )
+  inspect(f.num_glyphs, content="57087")
 }

@@ -103,11 +103,16 @@ pub fn parse_type1_pfb(data : Bytes) -> Type1Font raise @error.FTError {
   let len = data.length()
   let ascii_parts : Array[Bytes] = []
   let binary_parts : Array[Bytes] = []
+  // Check if PFB (binary, starts with 0x80) or PFA (ASCII, starts with %!)
+  if len < 2 || data[0] != b'\x80' {
+    // PFA format: entire file is ASCII, eexec section is hex-encoded
+    return parse_type1_pfa(data)
+  }
   // Parse PFB segments
   for pos = 0; pos + 2 <= len; {
     let marker = data[pos]
     if marker != b'\x80' {
-      raise @error.FTError::InvalidFileFormat
+      break // end of PFB data
     }
     let seg_type = data[pos + 1].to_int()
     if seg_type == 3 {
@@ -150,6 +155,76 @@ pub fn parse_type1_pfb(data : Bytes) -> Type1Font raise @error.FTError {
   }
   font.units_per_em = 1000
   font
+}
+
+///|
+/// Parse a PFA (ASCII) Type 1 font.
+/// The entire file is ASCII; the eexec section is hex-encoded.
+fn parse_type1_pfa(data : Bytes) -> Type1Font raise @error.FTError {
+  let font = Type1Font::new()
+  // The whole file is ASCII
+  font.font_name = extract_font_name(data)
+  font.font_bbox = extract_font_bbox(data)
+  font.encoding = parse_encoding(data)
+  // Find "eexec" keyword — everything after it is hex-encoded encrypted data
+  let text_len = data.length()
+  let mut eexec_pos = -1
+  for i in 0..<(text_len - 5) {
+    if data[i] == b'e' &&
+      data[i + 1] == b'e' &&
+      data[i + 2] == b'x' &&
+      data[i + 3] == b'e' &&
+      data[i + 4] == b'c' {
+      eexec_pos = i + 5
+      // Skip whitespace after "eexec"
+      while eexec_pos < text_len &&
+            (
+              data[eexec_pos] == b' ' ||
+              data[eexec_pos] == b'\n' ||
+              data[eexec_pos] == b'\r'
+            ) {
+        eexec_pos += 1
+      }
+      break
+    }
+  }
+  if eexec_pos >= 0 {
+    // Decode hex characters to binary
+    let binary : Array[Byte] = []
+    let mut i = eexec_pos
+    while i + 1 < text_len {
+      let hi = hex_val(data[i])
+      let lo = hex_val(data[i + 1])
+      if hi >= 0 && lo >= 0 {
+        binary.push(((hi << 4) | lo).to_byte())
+        i += 2
+      } else if data[i] == b'\n' || data[i] == b'\r' || data[i] == b' ' {
+        i += 1 // skip whitespace
+      } else {
+        break // end of hex data (e.g., cleartomark)
+      }
+    }
+    let binary_data = Bytes::from_array(binary[:])
+    let decrypted = eexec_decrypt(binary_data)
+    font.len_iv = extract_len_iv(decrypted)
+    font.charstrings = extract_charstrings(decrypted)
+  }
+  font.units_per_em = 1000
+  font
+}
+
+///|
+fn hex_val(b : Byte) -> Int {
+  let v = b.to_int()
+  if v >= 0x30 && v <= 0x39 {
+    v - 0x30
+  } else if v >= 0x41 && v <= 0x46 {
+    v - 0x41 + 10
+  } else if v >= 0x61 && v <= 0x66 {
+    v - 0x61 + 10
+  } else {
+    -1
+  }
 }
 
 ///|
@@ -573,11 +648,10 @@ pub fn load_type1_glyph(
     None => raise @error.FTError::InvalidGlyphIndex
   }
   let decrypted = charstring_decrypt(charstring, len_iv=font.len_iv)
-  let (outline, _width) = @psaux.execute_type2(
+  let (outline, _width) = @psaux.execute_type1(
     decrypted,
+    font.subrs,
     font.default_width_x,
-    font.nominal_width_x,
-    local_subrs=font.subrs,
   )
   outline
 }

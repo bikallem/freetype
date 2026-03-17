@@ -57,12 +57,12 @@ test "parse_type1_pfb segment parsing" {
 }
 
 ///|
-test "parse_type1_pfb invalid marker" {
+test "parse_type1_pfb non-PFB routes to PFA" {
+  // Data without 0x80 marker is treated as PFA (ASCII Type 1)
   let pfb : Bytes = [0x00, 0x01, 0x00, 0x00, 0x00, 0x00]
-  let result : Result[_, _] = Ok(@type1.parse_type1_pfb(pfb)) catch {
-    err => Err(err)
-  }
-  inspect(result is Err(_), content="true")
+  let result = try? @type1.parse_type1_pfb(pfb)
+  // PFA parser returns a font (possibly empty) rather than error
+  inspect(result is Ok(_), content="true")
 }
 
 ///|

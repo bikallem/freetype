@@ -68,14 +68,61 @@ pub fn BdfFont::new() -> BdfFont {
 }
 
 ///|
-/// Parse BDF header lines (STARTFONT, FONT, SIZE, FONTBOUNDINGBOX).
-/// Returns a BdfFont with header fields populated.
+/// Look up a glyph by encoding value.
+pub fn BdfFont::get_glyph(self : BdfFont, encoding : Int) -> BdfGlyph? {
+  for _, g in self.glyphs {
+    if g.encoding == encoding {
+      return Some(g)
+    }
+  }
+  None
+}
+
+///|
+/// Parse a pair of hex character code points into a byte.
+fn parse_hex_byte(hi : Int, lo : Int) -> Byte {
+  let h = if hi >= 0x61 {
+    hi - 0x61 + 10
+  } else if hi >= 0x41 {
+    hi - 0x41 + 10
+  } else {
+    hi - 0x30
+  }
+  let l = if lo >= 0x61 {
+    lo - 0x61 + 10
+  } else if lo >= 0x41 {
+    lo - 0x41 + 10
+  } else {
+    lo - 0x30
+  }
+  ((h << 4) | l).to_byte()
+}
+
+///|
+/// Parse hex string into an array of bytes.
+fn parse_hex_to_array(s : String, out : Array[Byte]) -> Unit {
+  let len = s.length()
+  let num_bytes = len / 2
+  for i in 0..<num_bytes {
+    let hi = s[i * 2].to_int()
+    let lo = s[i * 2 + 1].to_int()
+    out.push(parse_hex_byte(hi, lo))
+  }
+}
+
+///|
+/// Parse BDF font data including header and glyph blocks.
+/// Returns a BdfFont with header fields and glyphs populated.
 pub fn parse_bdf_header(data : Bytes) -> BdfFont raise @error.FTError {
   let font = BdfFont::new()
   let text = bytes_to_ascii(data)
   let lines = split_lines(text)
+  let num_lines = lines.length()
   let mut found_startfont = false
-  for _, line in lines {
+  let mut i = 0
+  // Parse header
+  while i < num_lines {
+    let line = lines[i]
     if line.has_prefix("STARTFONT ") {
       found_startfont = true
     } else if line.has_prefix("FONT ") {
@@ -97,12 +144,56 @@ pub fn parse_bdf_header(data : Bytes) -> BdfFont raise @error.FTError {
       }
     } else if line.has_prefix("CHARS ") {
       font.num_chars = parse_int_or_zero(line[6:].to_string())
-    } else if line == "ENDPROPERTIES" || line.has_prefix("STARTCHAR ") {
-      break // Done with header
+    } else if line.has_prefix("STARTCHAR ") {
+      break // Done with header, start parsing glyphs
     }
+    i = i + 1
   }
   if not(found_startfont) {
     raise @error.FTError::MissingStartfontField
+  }
+  // Parse glyph blocks
+  while i < num_lines {
+    let line = lines[i]
+    if line.has_prefix("STARTCHAR ") {
+      let glyph = BdfGlyph::new()
+      glyph.name = line[10:].to_string()
+      i = i + 1
+      // Parse glyph properties until BITMAP
+      while i < num_lines && lines[i] != "BITMAP" {
+        let gl = lines[i]
+        if gl.has_prefix("ENCODING ") {
+          glyph.encoding = parse_int_or_zero(gl[9:].to_string())
+        } else if gl.has_prefix("BBX ") {
+          let parts = split_spaces(gl[4:].to_string())
+          if parts.length() >= 4 {
+            glyph.bbx_width = parse_int_or_zero(parts[0])
+            glyph.bbx_height = parse_int_or_zero(parts[1])
+            glyph.bbx_x_offset = parse_int_or_zero(parts[2])
+            glyph.bbx_y_offset = parse_int_or_zero(parts[3])
+          }
+        }
+        i = i + 1
+      }
+      // Skip "BITMAP" line
+      i = i + 1
+      // Read hex bitmap lines until ENDCHAR
+      let hex_lines : Array[String] = []
+      while i < num_lines && lines[i] != "ENDCHAR" {
+        hex_lines.push(lines[i])
+        i = i + 1
+      }
+      // Convert hex lines to bitmap bytes
+      let bitmap_bytes : Array[Byte] = []
+      for _, hl in hex_lines {
+        parse_hex_to_array(hl, bitmap_bytes)
+      }
+      glyph.bitmap = Bytes::from_array(bitmap_bytes[:])
+      font.glyphs.push(glyph)
+    } else if line == "ENDFONT" {
+      break
+    }
+    i = i + 1
   }
   font
 }

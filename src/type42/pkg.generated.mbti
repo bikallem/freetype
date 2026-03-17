@@ -14,11 +14,7 @@ pub fn parse_type42(Bytes) -> Type42Font raise @error.FTError
 pub(all) struct Type42Font {
   mut font_name : String
   mut sfnts_data : Bytes
-  mut encoding : Array[String]
   mut font_bbox : Array[Int]
-  mut font_matrix : Array[Double]
-  mut paint_type : Int
-  mut font_type : Int
 }
 pub fn Type42Font::new() -> Self
 pub impl Show for Type42Font

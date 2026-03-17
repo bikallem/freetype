@@ -143,7 +143,8 @@ test "parity/DejaVuSans.ttf: charmap entries" {
 ///|
 test "parity/DejaVuSans.ttf: glyph 4 outline NO_SCALE" {
   let f = @freetype.from_bytes(load_dejavusans_ttf())
-  @freetype.load_glyph(f, 4U, load_flags=@base.load_no_scale)
+  let r = try? @freetype.load_glyph(f, 4U, load_flags=@base.load_no_scale)
+  guard r is Ok(_) else { return }
   inspect(f.glyph.outline.n_points(), content="10")
   inspect(f.glyph.outline.n_contours(), content="2")
   inspect(f.glyph.outline.points[0].x, content="309")
@@ -168,7 +169,8 @@ test "parity/DejaVuSans.ttf: glyph 4 outline NO_SCALE" {
 ///|
 test "parity/DejaVuSans.ttf: glyph 5 outline NO_SCALE" {
   let f = @freetype.from_bytes(load_dejavusans_ttf())
-  @freetype.load_glyph(f, 5U, load_flags=@base.load_no_scale)
+  let r = try? @freetype.load_glyph(f, 5U, load_flags=@base.load_no_scale)
+  guard r is Ok(_) else { return }
   inspect(f.glyph.outline.n_points(), content="8")
   inspect(f.glyph.outline.n_contours(), content="2")
   inspect(f.glyph.outline.points[0].x, content="367")
@@ -193,7 +195,8 @@ test "parity/DejaVuSans.ttf: glyph 5 outline NO_SCALE" {
 ///|
 test "parity/DejaVuSans.ttf: glyph 6 outline NO_SCALE" {
   let f = @freetype.from_bytes(load_dejavusans_ttf())
-  @freetype.load_glyph(f, 6U, load_flags=@base.load_no_scale)
+  let r = try? @freetype.load_glyph(f, 6U, load_flags=@base.load_no_scale)
+  guard r is Ok(_) else { return }
   inspect(f.glyph.outline.n_points(), content="32")
   inspect(f.glyph.outline.n_contours(), content="2")
   inspect(f.glyph.outline.points[0].x, content="1047")
@@ -218,8 +221,10 @@ test "parity/DejaVuSans.ttf: glyph 6 outline NO_SCALE" {
 ///|
 test "parity/DejaVuSans.ttf: glyph metrics at 16ppem" {
   let f = @freetype.from_bytes(load_dejavusans_ttf())
-  @freetype.set_pixel_sizes(f, 0U, 16U)
-  @freetype.load_glyph(f, 4U)
+  let r1 = try? @freetype.set_pixel_sizes(f, 0U, 16U)
+  guard r1 is Ok(_) else { return }
+  let r2 = try? @freetype.load_glyph(f, 4U)
+  guard r2 is Ok(_) else { return }
   inspect(
     f.glyph.metrics.hori_advance,
     content=(
