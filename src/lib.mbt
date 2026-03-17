@@ -32,6 +32,14 @@ pub fn from_bytes(
         @base.face_flag_horizontal |
         @base.face_flag_glyph_names
       face.num_glyphs = font.charstrings.length().to_int64()
+      if font.font_bbox.length() == 4 {
+        face.bbox = @types.BBox::{
+          x_min: font.font_bbox[0].to_int64(),
+          y_min: font.font_bbox[1].to_int64(),
+          x_max: font.font_bbox[2].to_int64(),
+          y_max: font.font_bbox[3].to_int64(),
+        }
+      }
       face
     }
     Type1Pfa => {
@@ -45,7 +53,7 @@ pub fn from_bytes(
       let face = @base.FaceRec::new()
       face.family_name = font.font_name
       face.face_flags = @base.face_flag_fixed_sizes | @base.face_flag_horizontal
-      face.num_glyphs = font.num_chars.to_int64()
+      face.num_glyphs = (font.num_chars + 1).to_int64() // +1 for implicit .notdef
       face
     }
     Pcf => {

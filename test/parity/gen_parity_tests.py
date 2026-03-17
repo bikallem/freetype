@@ -178,10 +178,12 @@ def main():
             L.append(f'test "parity/{ff}: charmaps" {{')
             L.append(f"  let f = @freetype.from_bytes({v}_data)")
             L.append(f'  inspect(f.charmaps.length(), content="{n_cm}")')
-            # Verify platform/encoding IDs for each charmap
+            # Verify platform/encoding IDs for each charmap (guarded by length check)
             for ci, cm in enumerate(charmaps):
-                L.append(f'  inspect(f.charmaps[{ci}].platform_id, content="{cm["platform_id"]}")')
-                L.append(f'  inspect(f.charmaps[{ci}].encoding_id, content="{cm["encoding_id"]}")')
+                L.append(f"  if f.charmaps.length() > {ci} {{")
+                L.append(f'    inspect(f.charmaps[{ci}].platform_id, content="{cm["platform_id"]}")')
+                L.append(f'    inspect(f.charmaps[{ci}].encoding_id, content="{cm["encoding_id"]}")')
+                L.append(f"  }}")
             L.append("}")
             L.append("")
             tc += 1

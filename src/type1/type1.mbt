@@ -131,9 +131,10 @@ pub fn parse_type1_pfb(data : Bytes) -> Type1Font raise @error.FTError {
     }
     continue data_start + seg_len
   }
-  // Extract font name from ASCII segment if available
+  // Extract font name and FontBBox from ASCII segment if available
   if ascii_parts.length() > 0 {
     font.font_name = extract_font_name(ascii_parts[0])
+    font.font_bbox = extract_font_bbox(ascii_parts[0])
   }
   // Decrypt binary segment (eexec encrypted private dict + charstrings)
   if binary_parts.length() > 0 {
@@ -187,6 +188,70 @@ fn extract_font_name(ascii_data : Bytes) -> String {
     continue i + 1
   }
   ""
+}
+
+///|
+/// Extract FontBBox from the ASCII segment of a PFB file.
+/// Looks for /FontBBox {llx lly urx ury} or /FontBBox [llx lly urx ury].
+fn extract_font_bbox(ascii_data : Bytes) -> Array[Int] {
+  let len = ascii_data.length()
+  // Search for "/FontBBox"
+  for i = 0; i + 9 < len; {
+    if ascii_data[i] == b'/' &&
+      ascii_data[i + 1] == b'F' &&
+      ascii_data[i + 2] == b'o' &&
+      ascii_data[i + 3] == b'n' &&
+      ascii_data[i + 4] == b't' &&
+      ascii_data[i + 5] == b'B' &&
+      ascii_data[i + 6] == b'B' &&
+      ascii_data[i + 7] == b'o' &&
+      ascii_data[i + 8] == b'x' {
+      // Skip "/FontBBox" and whitespace
+      let mut j = i + 9
+      while j < len && (ascii_data[j] == b' ' || ascii_data[j] == b'\t') {
+        j += 1
+      }
+      // Skip opening delimiter '{' or '['
+      if j < len && (ascii_data[j] == b'{' || ascii_data[j] == b'[') {
+        j += 1
+      }
+      // Parse 4 integers
+      let nums : Array[Int] = []
+      while nums.length() < 4 && j < len {
+        // Skip whitespace
+        while j < len && (ascii_data[j] == b' ' || ascii_data[j] == b'\t') {
+          j += 1
+        }
+        if j >= len {
+          break
+        }
+        let c = ascii_data[j]
+        if c == b'}' || c == b']' {
+          break
+        }
+        // Parse number (possibly negative)
+        let mut negative = false
+        if ascii_data[j] == b'-' {
+          negative = true
+          j += 1
+        }
+        let mut num = 0
+        while j < len && ascii_data[j] >= b'0' && ascii_data[j] <= b'9' {
+          num = num * 10 + (ascii_data[j].to_int() - b'0'.to_int())
+          j += 1
+        }
+        if negative {
+          num = -num
+        }
+        nums.push(num)
+      }
+      if nums.length() == 4 {
+        return nums
+      }
+    }
+    continue i + 1
+  }
+  [0, 0, 0, 0]
 }
 
 ///|

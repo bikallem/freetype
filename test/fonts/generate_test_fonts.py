@@ -470,7 +470,7 @@ def build_cff_index(items: list) -> bytes:
 
 
 def build_cff_table() -> bytes:
-    """Build a minimal CFF table with .notdef and space glyphs."""
+    """Build a minimal CFF table with .notdef, space, and A glyphs."""
     # Header
     header = bytes([1, 0, 4, 1])  # major=1, minor=0, hdrSize=4, offSize=1
 
@@ -493,28 +493,22 @@ def build_cff_table() -> bytes:
     notdef_cs = bytes([14])  # endchar
     # space: endchar
     space_cs = bytes([14])   # endchar
+    # A: triangle outline using CFF charstring operators
+    # rmoveto(50, 0), rlineto(200, 700), rlineto(200, -700), endchar
+    a_cs = (encode_cff_int(50) + encode_cff_int(0) + bytes([21]) +    # rmoveto
+            encode_cff_int(200) + encode_cff_int(700) + bytes([5]) +   # rlineto
+            encode_cff_int(200) + encode_cff_int(-700) + bytes([5]) +  # rlineto
+            bytes([14]))  # endchar
 
-    charstrings_index = build_cff_index([notdef_cs, space_cs])
+    charstrings_index = build_cff_index([notdef_cs, space_cs, a_cs])
 
     # Charset (format 0): .notdef is implicit (gid 0), then list SIDs for remaining glyphs
-    # space = SID 1 (standard string)
-    charset = bytes([0]) + struct.pack('>H', 1)  # format 0, SID for gid 1 = "space" (SID 1 is standard)
-
-    # Actually, we need to figure out the SID. In CFF standard strings,
-    # SID 1 = "space". That's correct.
-
-    # Encoding (format 0): .notdef at code 0, space at code 32
-    # But we have a cmap table, so we can use a built-in encoding.
-    # Use encoding = 0 (Standard) to keep it simple. Or build a custom one.
-    # Let's just set encoding offset to 0 (= Standard Encoding) in Top DICT.
+    # space = SID 1 (standard string), A = SID 34 (standard string)
+    charset = bytes([0]) + struct.pack('>HH', 1, 34)  # format 0, SID for gid 1 and gid 2
 
     # Private DICT
     private_dict = b''
-    # BlueValues: empty array (just skip)
     # defaultWidthX = 0
-    private_dict += encode_cff_int(0) + bytes([20])  # 0 defaultWidthX (op 20 is wrong)
-    # Actually: defaultWidthX is operator 20, nominalWidthX is operator 21
-    # Let's keep it minimal:
     private_dict = encode_cff_int(0) + bytes([20])  # defaultWidthX = 0
 
     # Now compute the Top DICT.
@@ -555,10 +549,10 @@ def build_cff_table() -> bytes:
 
 def generate_otf() -> bytes:
     tables = {
-        'head': build_head_table(x_min=0, y_min=0, x_max=0, y_max=0,
+        'head': build_head_table(x_min=0, y_min=0, x_max=450, y_max=700,
                                  index_to_loc_format=0),
-        'hhea': build_hhea_table(num_hmetrics=2, advance_width_max=500),
-        'maxp': build_maxp_table_cff(num_glyphs=2),
+        'hhea': build_hhea_table(num_hmetrics=3, advance_width_max=500),
+        'maxp': build_maxp_table_cff(num_glyphs=3),
         'OS/2': build_os2_table(),
         'name': build_name_table(family='MinimalCFF', style='Regular'),
         'cmap': build_cmap_table_otf(),
@@ -575,19 +569,19 @@ def build_maxp_table_cff(*, num_glyphs=2) -> bytes:
 
 
 def build_cmap_table_otf() -> bytes:
-    """cmap for OTF: just map space (32) to gid 1."""
+    """cmap for OTF: map space (32) to gid 1 and A (65) to gid 2."""
     import math
-    seg_count = 2  # [32-32], [0xFFFF]
+    seg_count = 3  # [32-32], [65-65], [0xFFFF]
     seg_count_x2 = seg_count * 2
     entry_sel = int(math.floor(math.log2(seg_count)))
     search_rng = (2 ** entry_sel) * 2
     range_shift = seg_count_x2 - search_rng
 
-    end_codes = struct.pack('>HH', 32, 0xFFFF)
+    end_codes = struct.pack('>HHH', 32, 65, 0xFFFF)
     reserved = struct.pack('>H', 0)
-    start_codes = struct.pack('>HH', 32, 0xFFFF)
-    id_deltas = struct.pack('>hh', 1 - 32, 1)
-    id_range_offsets = struct.pack('>HH', 0, 0)
+    start_codes = struct.pack('>HHH', 32, 65, 0xFFFF)
+    id_deltas = struct.pack('>hhh', 1 - 32, 2 - 65, 1)
+    id_range_offsets = struct.pack('>HHH', 0, 0, 0)
 
     subtable_data = end_codes + reserved + start_codes + id_deltas + id_range_offsets
     subtable_length = 14 + len(subtable_data)
@@ -602,9 +596,10 @@ def build_cmap_table_otf() -> bytes:
 
 
 def build_hmtx_otf() -> bytes:
-    """hmtx for 2 glyphs."""
+    """hmtx for 3 glyphs."""
     data = struct.pack('>Hh', 500, 0)   # .notdef
     data += struct.pack('>Hh', 250, 0)  # space
+    data += struct.pack('>Hh', 500, 50) # A
     return data
 
 
