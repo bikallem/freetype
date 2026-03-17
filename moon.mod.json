@@ -2,13 +2,16 @@
   "name": "bikallem/freetype",
   "version": "0.1.0",
   "deps": {
-    "bikallem/compress": {
-      "path": "../compress"
-    }
+    "bikallem/compress": "0.1.1"
   },
   "source": "src",
   "repository": "",
   "license": "Apache-2.0",
-  "keywords": ["font", "freetype", "truetype", "opentype"],
+  "keywords": [
+    "font",
+    "freetype",
+    "truetype",
+    "opentype"
+  ],
   "description": "Pure MoonBit port of FreeType font library"
 }

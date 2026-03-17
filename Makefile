@@ -60,7 +60,7 @@ parity-golden: | $(FONT_DIR)/.downloaded
 	fi
 
 parity-report: parity-golden
-	@ulimit -s unlimited 2>/dev/null; python3 test/parity/report.py
+	@python3 test/parity/report.py
 
 $(FONT_DIR)/.downloaded:
 	@mkdir -p $(FONT_DIR)
