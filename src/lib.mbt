@@ -104,7 +104,7 @@ fn load_sfnt(
         glyph_index,
       )
     } else if cff_font is Some(cff) {
-      let (o, _w) = @cff.load_cff_glyph(cff, glyph_index)
+      let (o, _w, _hh, _hv) = @cff.load_cff_glyph(cff, glyph_index)
       o
     } else {
       @types.Outline::new()

@@ -314,10 +314,10 @@ pub fn load_cff(data : Bytes, offset : Int) -> CffFont raise @error.FTError {
 pub fn load_cff_glyph(
   cff : CffFont,
   glyph_index : UInt,
-) -> (@types.Outline, Int64) raise @error.FTError {
+) -> (@types.Outline, Int64, Array[@psaux.StemHint], Array[@psaux.StemHint]) raise @error.FTError {
   let charstring = cff.charstrings.get_item(glyph_index.reinterpret_as_int())
   if charstring.length() == 0 {
-    return (@types.Outline::new(), 0L)
+    return (@types.Outline::new(), 0L, [], [])
   }
   // Build subroutine arrays
   let local_subrs = match cff.local_subrs {

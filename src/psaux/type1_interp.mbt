@@ -18,14 +18,14 @@ pub fn execute_type1(
   charstring : Bytes,
   subrs : Array[Bytes],
   default_width : Int64,
-) -> (@types.Outline, Int64) raise @error.FTError {
+) -> (@types.Outline, Int64, Array[StemHint], Array[StemHint]) raise @error.FTError {
   let interp = PsInterp::new()
   interp.width = default_width
   interp.local_subrs = subrs
   let state = Type1State::new()
   exec_type1_code(interp, charstring, state)
   let outline = interp.finalize()
-  (outline, interp.width)
+  (outline, interp.width, interp.hints_h, interp.hints_v)
 }
 
 ///|

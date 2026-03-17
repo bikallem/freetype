@@ -7,14 +7,14 @@ pub fn execute_type2(
   _nominal_width : Int64,
   local_subrs? : Array[Bytes] = [],
   global_subrs? : Array[Bytes] = [],
-) -> (@types.Outline, Int64) raise @error.FTError {
+) -> (@types.Outline, Int64, Array[StemHint], Array[StemHint]) raise @error.FTError {
   let interp = PsInterp::new()
   interp.local_subrs = local_subrs
   interp.global_subrs = global_subrs
   interp.width = default_width
   exec_type2_code(interp, charstring)
   let outline = interp.finalize()
-  (outline, interp.width)
+  (outline, interp.width, interp.hints_h, interp.hints_v)
 }
 
 ///|

@@ -316,3 +316,217 @@ pub fn compute_edges(
   edges.push(current_edge)
   edges
 }
+
+// ─── Stem detection ──────────────────────────────────────────────────
+
+///|
+/// Detect stems: pairs of edges with reasonable width.
+pub fn detect_stems(edges : Array[Edge]) -> Array[Stem] {
+  let stems : Array[Stem] = []
+  let n = edges.length()
+  let mut i = 0
+  while i + 1 < n {
+    let width = edges[i + 1].position - edges[i].position
+    // Reasonable stem width: between 10 and 500 font units
+    if width > 10L && width < 500L {
+      stems.push({ edge1: i, edge2: i + 1 })
+      edges[i].linked_edge = i + 1
+      edges[i + 1].linked_edge = i
+      i += 2
+    } else {
+      i += 1
+    }
+  }
+  stems
+}
+
+// ─── Blue zone fitting ───────────────────────────────────────────────
+
+///|
+/// Fit edges to blue zones. Edges near a blue zone boundary are snapped.
+pub fn fit_blue_zones(
+  edges : Array[Edge],
+  blues : Array[BlueZone],
+  scale : @fixed.Fixed,
+) -> Unit {
+  for _, edge in edges {
+    let scaled_pos = @fixed.mul_fix(
+        scale,
+        @fixed.Fixed::from_raw(edge.position),
+      ).val
+    for _, blue in blues {
+      let ref_scaled = @fixed.mul_fix(
+          scale,
+          @fixed.Fixed::from_raw(blue.ref_pos),
+        ).val
+      let tolerance = 32L // half pixel in 26.6
+      let diff = if scaled_pos > ref_scaled {
+        scaled_pos - ref_scaled
+      } else {
+        ref_scaled - scaled_pos
+      }
+      if diff <= tolerance {
+        edge.fitted_position = blue.fitted
+        edge.blue_edge = true
+        break
+      }
+    }
+  }
+}
+
+// ─── Edge fitting ────────────────────────────────────────────────────
+
+///|
+/// Fit all edges: snap stems to pixel grid, maintain minimum widths.
+pub fn fit_edges(
+  edges : Array[Edge],
+  stems : Array[Stem],
+  scale : @fixed.Fixed,
+) -> Unit {
+  // First fit blue zone edges (already done by fit_blue_zones)
+  // Then fit stem edges
+  for _, stem in stems {
+    let e1 = edges[stem.edge1]
+    let e2 = edges[stem.edge2]
+    // Scale positions
+    let pos1 = @fixed.mul_fix(scale, @fixed.Fixed::from_raw(e1.position)).val
+    let pos2 = @fixed.mul_fix(scale, @fixed.Fixed::from_raw(e2.position)).val
+    let width = pos2 - pos1
+    // Round stem width to pixel (minimum 1 pixel = 64 in 26.6)
+    let rounded_width = if width > 0L {
+      let w = (width + 32L) & -64L
+      if w < 64L {
+        64L
+      } else {
+        w
+      }
+    } else {
+      64L
+    }
+    // If one edge is blue-fitted, derive the other
+    if e1.blue_edge {
+      e2.fitted_position = e1.fitted_position + rounded_width
+    } else if e2.blue_edge {
+      e1.fitted_position = e2.fitted_position - rounded_width
+    } else {
+      // Center the stem on the pixel grid
+      let center = (pos1 + pos2) / 2L
+      let fitted_center = (center + 32L) & -64L
+      e1.fitted_position = fitted_center - rounded_width / 2L
+      e2.fitted_position = e1.fitted_position + rounded_width
+    }
+  }
+  // Fit unlinked (non-stem) edges: round to nearest pixel
+  for _, edge in edges {
+    if edge.linked_edge < 0 && not(edge.blue_edge) {
+      let scaled = @fixed.mul_fix(scale, @fixed.Fixed::from_raw(edge.position)).val
+      edge.fitted_position = (scaled + 32L) & -64L
+    }
+  }
+}
+
+// ─── Point interpolation ─────────────────────────────────────────────
+
+///|
+/// Interpolate outline points based on fitted edges.
+/// Strong points (on an edge) move to the edge's fitted position.
+/// Weak points (between edges) are interpolated proportionally.
+pub fn interpolate_points(
+  outline : @types.Outline,
+  edges : Array[Edge],
+  scale : @fixed.Fixed,
+  is_horizontal : Bool,
+) -> Unit {
+  if edges.length() == 0 {
+    return
+  }
+  for i in 0..<outline.points.length() {
+    let coord = if is_horizontal {
+      outline.points[i].x
+    } else {
+      outline.points[i].y
+    }
+    let scaled = @fixed.mul_fix(scale, @fixed.Fixed::from_raw(coord)).val
+    // Find bracketing edges
+    let mut before_idx = -1
+    let mut after_idx = -1
+    for j, edge in edges {
+      let edge_scaled = @fixed.mul_fix(
+          scale,
+          @fixed.Fixed::from_raw(edge.position),
+        ).val
+      if edge_scaled <= scaled {
+        before_idx = j
+      }
+      if edge_scaled >= scaled && after_idx < 0 {
+        after_idx = j
+      }
+    }
+    let new_coord = if before_idx >= 0 &&
+      after_idx >= 0 &&
+      before_idx != after_idx {
+      // Interpolate between two edges
+      let e1 = edges[before_idx]
+      let e2 = edges[after_idx]
+      let org1 = @fixed.mul_fix(scale, @fixed.Fixed::from_raw(e1.position)).val
+      let org2 = @fixed.mul_fix(scale, @fixed.Fixed::from_raw(e2.position)).val
+      let range = org2 - org1
+      if range > 0L {
+        let frac = (scaled - org1) * 64L / range
+        e1.fitted_position +
+        (e2.fitted_position - e1.fitted_position) * frac / 64L
+      } else {
+        e1.fitted_position
+      }
+    } else if before_idx >= 0 {
+      // Outside right: shift by last edge's delta
+      let e = edges[before_idx]
+      let org = @fixed.mul_fix(scale, @fixed.Fixed::from_raw(e.position)).val
+      scaled + (e.fitted_position - org)
+    } else if after_idx >= 0 {
+      // Outside left: shift by first edge's delta
+      let e = edges[after_idx]
+      let org = @fixed.mul_fix(scale, @fixed.Fixed::from_raw(e.position)).val
+      scaled + (e.fitted_position - org)
+    } else {
+      scaled
+    }
+    if is_horizontal {
+      outline.points[i].x = new_coord
+    } else {
+      outline.points[i].y = new_coord
+    }
+  }
+}
+
+// ─── Main auto-hinting entry point ──────────────────────────────────
+
+///|
+/// Apply auto-hinting to an outline.
+/// Analyzes the outline for segments, edges, and stems, then fits
+/// points to the pixel grid.
+pub fn auto_hint_outline(
+  outline : @types.Outline,
+  metrics : ScriptMetrics,
+) -> Unit {
+  let scale = metrics.scale
+  if scale.val == 0L {
+    return
+  }
+  // Analyze vertical segments/edges (for horizontal fitting)
+  let v_segments = compute_segments(outline, SegmentDir::Vertical)
+  let v_edges = compute_edges(v_segments, scale)
+  let v_stems = detect_stems(v_edges)
+  // Analyze horizontal segments/edges (for vertical fitting)
+  let h_segments = compute_segments(outline, SegmentDir::Horizontal)
+  let h_edges = compute_edges(h_segments, scale)
+  let h_stems = detect_stems(h_edges)
+  // Fit blue zones (vertical direction only — blue zones are horizontal lines)
+  fit_blue_zones(h_edges, metrics.blue_zones, scale)
+  // Fit edges
+  fit_edges(v_edges, v_stems, scale)
+  fit_edges(h_edges, h_stems, scale)
+  // Interpolate points
+  interpolate_points(outline, v_edges, scale, true)
+  interpolate_points(outline, h_edges, scale, false)
+}

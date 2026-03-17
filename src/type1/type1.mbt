@@ -648,7 +648,7 @@ pub fn load_type1_glyph(
     None => raise @error.FTError::InvalidGlyphIndex
   }
   let decrypted = charstring_decrypt(charstring, len_iv=font.len_iv)
-  let (outline, _width) = @psaux.execute_type1(
+  let (outline, _width, _, _) = @psaux.execute_type1(
     decrypted,
     font.subrs,
     font.default_width_x,
