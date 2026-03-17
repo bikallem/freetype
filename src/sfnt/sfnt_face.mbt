@@ -159,8 +159,7 @@ pub fn load_sfnt_face(
   }
   // Build charmaps from cmap subtables
   if cmap_table is Some(ct) {
-    for i = 0; i < ct.subtables.length(); i = i + 1 {
-      let sub = ct.subtables[i]
+    for _, sub in ct.subtables {
       let encoding = select_encoding(sub.platform_id, sub.encoding_id)
       face.charmaps.push({
         encoding,

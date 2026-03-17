@@ -58,7 +58,7 @@ pub fn eexec_decrypt(data : Bytes, key? : UInt = 55665) -> Bytes {
   let mut k = key
   // Decrypt all bytes, capturing output after first 4 (seed bytes)
   let output : Array[Byte] = []
-  for i = 0; i < len; i = i + 1 {
+  for i in 0..<len {
     let cipher = data[i].to_uint()
     let plain = cipher ^ (k >> 8)
     if i >= 4 {
@@ -80,7 +80,7 @@ pub fn charstring_decrypt(data : Bytes, len_iv? : Int = 4) -> Bytes {
   }
   let mut k : UInt = 4330
   let output : Array[Byte] = []
-  for i = 0; i < len; i = i + 1 {
+  for i in 0..<len {
     let cipher = data[i].to_uint()
     let plain = cipher ^ (k >> 8)
     if i >= len_iv {
@@ -99,11 +99,10 @@ pub fn charstring_decrypt(data : Bytes, len_iv? : Int = 4) -> Bytes {
 pub fn parse_type1_pfb(data : Bytes) -> Type1Font raise @error.FTError {
   let font = Type1Font::new()
   let len = data.length()
-  let mut pos = 0
   let ascii_parts : Array[Bytes] = []
   let binary_parts : Array[Bytes] = []
   // Parse PFB segments
-  while pos + 2 <= len {
+  for pos = 0; pos + 2 <= len; {
     let marker = data[pos]
     if marker != b'\x80' {
       raise @error.FTError::InvalidFileFormat
@@ -120,17 +119,17 @@ pub fn parse_type1_pfb(data : Bytes) -> Type1Font raise @error.FTError {
       (data[pos + 3].to_uint().reinterpret_as_int() << 8) |
       (data[pos + 4].to_uint().reinterpret_as_int() << 16) |
       (data[pos + 5].to_uint().reinterpret_as_int() << 24)
-    pos += 6
-    if pos + seg_len > len {
+    let data_start = pos + 6
+    if data_start + seg_len > len {
       raise @error.FTError::InvalidFileFormat
     }
-    let seg_data = data[pos:pos + seg_len].to_bytes()
+    let seg_data = data[data_start:data_start + seg_len].to_bytes()
     if seg_type == 1 {
       ascii_parts.push(seg_data)
     } else if seg_type == 2 {
       binary_parts.push(seg_data)
     }
-    pos += seg_len
+    continue data_start + seg_len
   }
   // Extract font name from ASCII segment if available
   if ascii_parts.length() > 0 {
@@ -151,8 +150,7 @@ pub fn parse_type1_pfb(data : Bytes) -> Type1Font raise @error.FTError {
 fn extract_font_name(ascii_data : Bytes) -> String {
   // Look for /FontName pattern
   let len = ascii_data.length()
-  let mut i = 0
-  while i + 9 < len {
+  for i = 0; i + 9 < len; {
     if ascii_data[i] == b'/' &&
       ascii_data[i + 1] == b'F' &&
       ascii_data[i + 2] == b'o' &&
@@ -181,7 +179,7 @@ fn extract_font_name(ascii_data : Bytes) -> String {
         return ascii_data[start:j].to_bytes().to_unchecked_string()
       }
     }
-    i += 1
+    continue i + 1
   }
   ""
 }

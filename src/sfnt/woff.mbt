@@ -76,11 +76,10 @@ pub fn decompress_woff(data : Bytes) -> Bytes raise @error.FTError {
   write_u16_be(sfnt, 8, es.reinterpret_as_uint())
   write_u16_be(sfnt, 10, (nt * 16 - sr).reinterpret_as_uint())
   // Decompress each table and write to SFNT
-  let mut table_offset = sfnt_header_size
-  for i = 0; i < nt; i = i + 1 {
+  for i = 0, table_offset = sfnt_header_size; i < nt; {
     let entry = entries[i]
     // Align table offset to 4 bytes
-    table_offset = (table_offset + 3) & -4
+    let table_offset = (table_offset + 3) & -4
     // Write table record in SFNT directory
     let rec_offset = 12 + i * 16
     write_u32_be(sfnt, rec_offset, entry.tag)
@@ -107,10 +106,10 @@ pub fn decompress_woff(data : Bytes) -> Bytes raise @error.FTError {
     } else {
       orig_len
     }
-    for j = 0; j < copy_len; j = j + 1 {
+    for j in 0..<copy_len {
       sfnt[table_offset + j] = table_data[j]
     }
-    table_offset += orig_len
+    continue i + 1, table_offset + orig_len
   }
   Bytes::from_array(sfnt[:])
 }

@@ -104,7 +104,8 @@ pub fn expert_encoding_sid(code : UInt) -> Int {
 ///|
 /// Find the position of '.' in a string, or -1 if not found.
 fn find_dot(s : String) -> Int {
-  for i = 0; i < s.length(); i = i + 1 {
+  let len = s.length()
+  for i in 0..<len {
     if s[i] == '.' {
       return i
     }
@@ -117,7 +118,8 @@ fn find_dot(s : String) -> Int {
 /// Returns None if any character is not a valid uppercase hex digit.
 fn parse_uppercase_hex(s : String) -> UInt? {
   let mut result = 0U
-  for i = 0; i < s.length(); i = i + 1 {
+  let len = s.length()
+  for i in 0..<len {
     let c = s[i]
     let digit = if c >= '0' && c <= '9' {
       c.to_int() - 48 // '0'

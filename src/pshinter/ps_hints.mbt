@@ -79,8 +79,7 @@ pub fn apply_blue_zone(
   blue_shift : Int64,
 ) -> Int64? {
   let pos_scaled = @fixed.mul_fix(scale, @fixed.Fixed::from_raw(position)).val
-  for i = 0; i < zones.length(); i = i + 1 {
-    let zone = zones[i]
+  for _, zone in zones {
     let ref_scaled = @fixed.mul_fix(
         scale,
         @fixed.Fixed::from_raw(zone.position),
