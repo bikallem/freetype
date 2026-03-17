@@ -27,7 +27,7 @@ pub fn parse_hmtx(
   let ng = num_glyphs.reinterpret_as_int()
   // Read longHorMetric entries: advance_width (u16) + lsb (i16)
   let metrics : Array[LongHorMetric] = []
-  for i = 0; i < nh; i = i + 1 {
+  for _ in 0..<nh {
     let advance_width = reader.read_u16_be()
     let lsb = reader.read_i16_be()
     metrics.push({ advance_width, lsb })
@@ -35,7 +35,7 @@ pub fn parse_hmtx(
   // Remaining glyphs share the last advance width, only have lsb
   let left_side_bearings : Array[Int] = []
   let remaining = ng - nh
-  for i = 0; i < remaining; i = i + 1 {
+  for _ in 0..<remaining {
     left_side_bearings.push(reader.read_i16_be())
   }
   { metrics, left_side_bearings }

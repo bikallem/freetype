@@ -293,7 +293,7 @@ fn InterpContext::op_mindex(self : InterpContext) -> Unit {
   if k > 0 && k <= self.sp {
     let val = self.stack[self.sp - k]
     // Shift stack down
-    for i = self.sp - k; i < self.sp - 1; i = i + 1 {
+    for i in (self.sp - k)..<(self.sp - 1) {
       self.stack[i] = self.stack[i + 1]
     }
     self.stack[self.sp - 1] = val
@@ -585,7 +585,7 @@ fn InterpContext::op_call(self : InterpContext) -> Unit {
 fn InterpContext::op_loopcall(self : InterpContext) -> Unit {
   let func_id = self.pop().to_int()
   let count = self.pop().to_int()
-  for i = 0; i < count; i = i + 1 {
+  for _ in 0..<count {
     self.push(func_id.to_int64())
     self.op_call()
     if self.error {
@@ -600,7 +600,7 @@ fn InterpContext::op_loopcall(self : InterpContext) -> Unit {
 fn InterpContext::op_npushb(self : InterpContext) -> Unit {
   let n = self.code[self.ip].to_int()
   self.ip += 1
-  for i = 0; i < n; i = i + 1 {
+  for _ in 0..<n {
     self.push(self.code[self.ip].to_int().to_int64())
     self.ip += 1
   }
@@ -610,7 +610,7 @@ fn InterpContext::op_npushb(self : InterpContext) -> Unit {
 fn InterpContext::op_npushw(self : InterpContext) -> Unit {
   let n = self.code[self.ip].to_int()
   self.ip += 1
-  for i = 0; i < n; i = i + 1 {
+  for _ in 0..<n {
     let hi = self.code[self.ip].to_int()
     let lo = self.code[self.ip + 1].to_int()
     let val = (hi << 8) | lo
@@ -622,7 +622,7 @@ fn InterpContext::op_npushw(self : InterpContext) -> Unit {
 
 ///|
 fn InterpContext::op_pushb(self : InterpContext, count : Int) -> Unit {
-  for i = 0; i < count; i = i + 1 {
+  for _ in 0..<count {
     self.push(self.code[self.ip].to_int().to_int64())
     self.ip += 1
   }
@@ -630,7 +630,7 @@ fn InterpContext::op_pushb(self : InterpContext, count : Int) -> Unit {
 
 ///|
 fn InterpContext::op_pushw(self : InterpContext, count : Int) -> Unit {
-  for i = 0; i < count; i = i + 1 {
+  for _ in 0..<count {
     let hi = self.code[self.ip].to_int()
     let lo = self.code[self.ip + 1].to_int()
     let val = (hi << 8) | lo

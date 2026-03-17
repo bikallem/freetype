@@ -47,7 +47,7 @@ fn exec_type2_code(
       let num_hints = interp.hints_h.length() + interp.hints_v.length()
       // First, consume any remaining stem hints on stack
       let pairs_on_stack = interp.sp / 2
-      for i = 0; i < pairs_on_stack; i = i + 1 {
+      for _ in 0..<pairs_on_stack {
         ignore(interp.pop())
         ignore(interp.pop())
       }
@@ -124,7 +124,7 @@ fn exec_type2_op(
       let pairs = interp.sp / 2
       let hints = if op == 1 { interp.hints_h } else { interp.hints_v }
       let mut pos = 0L
-      for i = 0; i < pairs; i = i + 1 {
+      for i in 0..<pairs {
         let d1 = interp.stack[i * 2]
         let d2 = interp.stack[i * 2 + 1]
         pos += d1
@@ -147,12 +147,11 @@ fn exec_type2_op(
     }
     5 => {
       // rlineto
-      let mut i = 0
-      while i + 1 < interp.sp {
+      for i = 0; i + 1 < interp.sp; {
         let dx = interp.stack[i]
         let dy = interp.stack[i + 1]
         interp.line_to(interp.current_x + dx, interp.current_y + dy)
-        i += 2
+        continue i + 2
       }
       interp.sp = 0
       interp.stack = []
@@ -160,8 +159,9 @@ fn exec_type2_op(
     }
     6 => {
       // hlineto: alternating horizontal/vertical lines starting with horizontal
+      let sp = interp.sp
       let mut horizontal = true
-      for i = 0; i < interp.sp; i = i + 1 {
+      for i in 0..<sp {
         let d = interp.stack[i]
         if horizontal {
           interp.line_to(interp.current_x + d, interp.current_y)
@@ -176,8 +176,9 @@ fn exec_type2_op(
     }
     7 => {
       // vlineto: alternating vertical/horizontal lines starting with vertical
+      let sp = interp.sp
       let mut horizontal = false
-      for i = 0; i < interp.sp; i = i + 1 {
+      for i in 0..<sp {
         let d = interp.stack[i]
         if horizontal {
           interp.line_to(interp.current_x + d, interp.current_y)
@@ -192,8 +193,7 @@ fn exec_type2_op(
     }
     8 => {
       // rrcurveto: dx1 dy1 dx2 dy2 dx3 dy3 {dxa dya dxb dyb dxc dyc}*
-      let mut i = 0
-      while i + 5 < interp.sp {
+      for i = 0; i + 5 < interp.sp; {
         let x1 = interp.current_x + interp.stack[i]
         let y1 = interp.current_y + interp.stack[i + 1]
         let x2 = x1 + interp.stack[i + 2]
@@ -201,7 +201,7 @@ fn exec_type2_op(
         let x3 = x2 + interp.stack[i + 4]
         let y3 = y2 + interp.stack[i + 5]
         interp.curve_to(x1, y1, x2, y2, x3, y3)
-        i += 6
+        continue i + 6
       }
       interp.sp = 0
       interp.stack = []
@@ -233,7 +233,7 @@ fn exec_type2_op(
       check_width(interp)
       let pairs = interp.sp / 2
       let mut pos = 0L
-      for i = 0; i < pairs; i = i + 1 {
+      for i in 0..<pairs {
         let d1 = interp.stack[i * 2]
         let d2 = interp.stack[i * 2 + 1]
         pos += d1
@@ -264,7 +264,7 @@ fn exec_type2_op(
       check_width(interp)
       let pairs = interp.sp / 2
       let mut pos = 0L
-      for i = 0; i < pairs; i = i + 1 {
+      for i in 0..<pairs {
         let d1 = interp.stack[i * 2]
         let d2 = interp.stack[i * 2 + 1]
         pos += d1
@@ -277,8 +277,8 @@ fn exec_type2_op(
     }
     24 => {
       // rcurveline: curves then line
-      let mut i = 0
-      while i + 7 < interp.sp {
+      let sp = interp.sp
+      for i = 0; i + 7 < sp; {
         let x1 = interp.current_x + interp.stack[i]
         let y1 = interp.current_y + interp.stack[i + 1]
         let x2 = x1 + interp.stack[i + 2]
@@ -286,11 +286,11 @@ fn exec_type2_op(
         let x3 = x2 + interp.stack[i + 4]
         let y3 = y2 + interp.stack[i + 5]
         interp.curve_to(x1, y1, x2, y2, x3, y3)
-        i += 6
+        continue i + 6
       }
-      if i + 1 < interp.sp {
-        let dx = interp.stack[i]
-        let dy = interp.stack[i + 1]
+      if sp >= 2 {
+        let dx = interp.stack[sp - 2]
+        let dy = interp.stack[sp - 1]
         interp.line_to(interp.current_x + dx, interp.current_y + dy)
       }
       interp.sp = 0
@@ -299,20 +299,21 @@ fn exec_type2_op(
     }
     25 => {
       // rlinecurve: lines then curve
-      let mut i = 0
-      while i + 7 < interp.sp {
+      let sp = interp.sp
+      let curve_start = sp - 6
+      for i = 0; i + 7 < sp; {
         let dx = interp.stack[i]
         let dy = interp.stack[i + 1]
         interp.line_to(interp.current_x + dx, interp.current_y + dy)
-        i += 2
+        continue i + 2
       }
-      if i + 5 < interp.sp {
-        let x1 = interp.current_x + interp.stack[i]
-        let y1 = interp.current_y + interp.stack[i + 1]
-        let x2 = x1 + interp.stack[i + 2]
-        let y2 = y1 + interp.stack[i + 3]
-        let x3 = x2 + interp.stack[i + 4]
-        let y3 = y2 + interp.stack[i + 5]
+      if sp >= 6 {
+        let x1 = interp.current_x + interp.stack[curve_start]
+        let y1 = interp.current_y + interp.stack[curve_start + 1]
+        let x2 = x1 + interp.stack[curve_start + 2]
+        let y2 = y1 + interp.stack[curve_start + 3]
+        let x3 = x2 + interp.stack[curve_start + 4]
+        let y3 = y2 + interp.stack[curve_start + 5]
         interp.curve_to(x1, y1, x2, y2, x3, y3)
       }
       interp.sp = 0
@@ -394,9 +395,8 @@ fn exec_type2_op2(interp : PsInterp, code : Bytes, ip : Int, op : Int) -> Int {
 ///|
 /// vhcurveto: alternating vertical/horizontal tangent curves.
 fn op_vhcurveto(interp : PsInterp) -> Unit {
-  let mut i = 0
-  let mut phase = 0 // 0=v start, 1=h start
-  while i + 3 < interp.sp {
+  let sp = interp.sp
+  for i = 0, phase = 0; i + 3 < sp; {
     if phase == 0 {
       // Vertical start: dy1 dx2 dy2 dx3 [dy3]
       let dy1 = interp.stack[i]
@@ -408,13 +408,11 @@ fn op_vhcurveto(interp : PsInterp) -> Unit {
       let x2 = x1 + dx2
       let y2 = y1 + dy2
       let x3 = x2 + dx3
-      let dy3 = if i + 4 == interp.sp - 1 { interp.stack[i + 4] } else { 0L }
+      let dy3 = if i + 4 == sp - 1 { interp.stack[i + 4] } else { 0L }
       let y3 = y2 + dy3
       interp.curve_to(x1, y1, x2, y2, x3, y3)
-      i += 4
-      if dy3 != 0L {
-        i += 1
-      }
+      let step = if dy3 != 0L { 5 } else { 4 }
+      continue i + step, 1 - phase
     } else {
       // Horizontal start: dx1 dx2 dy2 dy3 [dx3]
       let dx1 = interp.stack[i]
@@ -425,16 +423,13 @@ fn op_vhcurveto(interp : PsInterp) -> Unit {
       let y1 = interp.current_y
       let x2 = x1 + dx2
       let y2 = y1 + dy2
-      let dx3 = if i + 4 == interp.sp - 1 { interp.stack[i + 4] } else { 0L }
+      let dx3 = if i + 4 == sp - 1 { interp.stack[i + 4] } else { 0L }
       let x3 = x2 + dx3
       let y3 = y2 + dy3
       interp.curve_to(x1, y1, x2, y2, x3, y3)
-      i += 4
-      if dx3 != 0L {
-        i += 1
-      }
+      let step = if dx3 != 0L { 5 } else { 4 }
+      continue i + step, 1 - phase
     }
-    phase = 1 - phase
   }
   interp.sp = 0
   interp.stack = []
@@ -443,9 +438,8 @@ fn op_vhcurveto(interp : PsInterp) -> Unit {
 ///|
 /// hvcurveto: alternating horizontal/vertical tangent curves.
 fn op_hvcurveto(interp : PsInterp) -> Unit {
-  let mut i = 0
-  let mut phase = 1 // 1=h start, 0=v start
-  while i + 3 < interp.sp {
+  let sp = interp.sp
+  for i = 0, phase = 1; i + 3 < sp; {
     if phase == 1 {
       let dx1 = interp.stack[i]
       let dx2 = interp.stack[i + 1]
@@ -455,14 +449,12 @@ fn op_hvcurveto(interp : PsInterp) -> Unit {
       let y1 = interp.current_y
       let x2 = x1 + dx2
       let y2 = y1 + dy2
-      let dx3 = if i + 4 == interp.sp - 1 { interp.stack[i + 4] } else { 0L }
+      let dx3 = if i + 4 == sp - 1 { interp.stack[i + 4] } else { 0L }
       let x3 = x2 + dx3
       let y3 = y2 + dy3
       interp.curve_to(x1, y1, x2, y2, x3, y3)
-      i += 4
-      if dx3 != 0L {
-        i += 1
-      }
+      let step = if dx3 != 0L { 5 } else { 4 }
+      continue i + step, 1 - phase
     } else {
       let dy1 = interp.stack[i]
       let dx2 = interp.stack[i + 1]
@@ -473,15 +465,12 @@ fn op_hvcurveto(interp : PsInterp) -> Unit {
       let x2 = x1 + dx2
       let y2 = y1 + dy2
       let x3 = x2 + dx3
-      let dy3 = if i + 4 == interp.sp - 1 { interp.stack[i + 4] } else { 0L }
+      let dy3 = if i + 4 == sp - 1 { interp.stack[i + 4] } else { 0L }
       let y3 = y2 + dy3
       interp.curve_to(x1, y1, x2, y2, x3, y3)
-      i += 4
-      if dy3 != 0L {
-        i += 1
-      }
+      let step = if dy3 != 0L { 5 } else { 4 }
+      continue i + step, 1 - phase
     }
-    phase = 1 - phase
   }
   interp.sp = 0
   interp.stack = []

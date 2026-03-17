@@ -60,7 +60,7 @@ pub fn parse_name(
   let count = reader.read_u16_be()
   let string_offset = reader.read_u16_be()
   let records : Array[NameRecord] = []
-  for i = 0; i < count.reinterpret_as_int(); i = i + 1 {
+  for _ in 0..<count.reinterpret_as_int() {
     let platform_id = reader.read_u16_be()
     let encoding_id = reader.read_u16_be()
     let language_id = reader.read_u16_be()
@@ -94,22 +94,19 @@ pub fn parse_name(
 /// Handles platform-specific encodings.
 pub fn NameTable::get_name(self : NameTable, name_id : UInt) -> String? {
   // Prefer Windows Unicode (platform 3, encoding 1)
-  for i = 0; i < self.records.length(); i = i + 1 {
-    let rec = self.records[i]
+  for _, rec in self.records {
     if rec.name_id == name_id && rec.platform_id == 3U && rec.encoding_id == 1U {
       return Some(decode_utf16_be(self.string_data, rec.offset, rec.length))
     }
   }
   // Fallback: Unicode platform (platform 0)
-  for i = 0; i < self.records.length(); i = i + 1 {
-    let rec = self.records[i]
+  for _, rec in self.records {
     if rec.name_id == name_id && rec.platform_id == 0U {
       return Some(decode_utf16_be(self.string_data, rec.offset, rec.length))
     }
   }
   // Fallback: Macintosh (platform 1, encoding 0 = Mac Roman)
-  for i = 0; i < self.records.length(); i = i + 1 {
-    let rec = self.records[i]
+  for _, rec in self.records {
     if rec.name_id == name_id && rec.platform_id == 1U && rec.encoding_id == 0U {
       return Some(decode_mac_roman(self.string_data, rec.offset, rec.length))
     }
@@ -152,7 +149,7 @@ fn decode_mac_roman(data : Bytes, offset : UInt, length : UInt) -> String {
   let off = offset.reinterpret_as_int()
   let len = length.reinterpret_as_int()
   let buf = StringBuilder::new()
-  for i = 0; i < len; i = i + 1 {
+  for i in 0..<len {
     let b = data[off + i].to_int()
     if b < 128 {
       buf.write_char(Char::from_int(b))

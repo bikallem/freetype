@@ -19,13 +19,13 @@ pub fn parse_loca(
   ignore(length)
   if index_format == 0 {
     // Short format: each entry is UInt16, actual offset = value * 2
-    for i = 0; i < count; i = i + 1 {
+    for _ in 0..<count {
       let raw = reader.read_u16_be()
       offsets.push(raw * 2U)
     }
   } else {
     // Long format: each entry is UInt32
-    for i = 0; i < count; i = i + 1 {
+    for _ in 0..<count {
       offsets.push(reader.read_u32_be())
     }
   }

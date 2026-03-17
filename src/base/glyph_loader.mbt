@@ -75,13 +75,13 @@ pub fn GlyphLoader::end_contour(self : GlyphLoader) -> Unit {
 pub fn GlyphLoader::add(self : GlyphLoader) -> Unit {
   let base_n_points = self.base_points.length()
   // Append current points and tags to base
-  for i = 0; i < self.current_points.length(); i = i + 1 {
-    self.base_points.push(self.current_points[i])
+  for i, pt in self.current_points {
+    self.base_points.push(pt)
     self.base_tags.push(self.current_tags[i])
   }
   // Append contours with offset
-  for i = 0; i < self.current_contours.length(); i = i + 1 {
-    let adjusted = self.current_contours[i].reinterpret_as_int() + base_n_points
+  for _, contour in self.current_contours {
+    let adjusted = contour.reinterpret_as_int() + base_n_points
     self.base_contours.push(adjusted.reinterpret_as_uint())
   }
   // Clear current

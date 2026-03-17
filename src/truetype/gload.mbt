@@ -25,7 +25,7 @@ pub fn load_simple_glyph(
   let _y_max = reader.read_i16_be()
   // Read end points of contours
   let contours : Array[UInt] = []
-  for i = 0; i < num_contours; i = i + 1 {
+  for _ in 0..<num_contours {
     contours.push(reader.read_u16_be())
   }
   let n_points = if num_contours > 0 {
@@ -46,7 +46,7 @@ pub fn load_simple_glyph(
     // Bit 3: repeat flag
     if (flag & 0x08) != b'\x00' {
       let repeat_count = reader.read_byte().to_int()
-      for j = 0; j < repeat_count; j = j + 1 {
+      for _ in 0..<repeat_count {
         flags.push(flag)
         i += 1
       }
@@ -55,8 +55,7 @@ pub fn load_simple_glyph(
   // Read x coordinates (delta-encoded)
   let x_coords : Array[Int64] = []
   let mut x = 0L
-  for i = 0; i < n_points; i = i + 1 {
-    let flag = flags[i]
+  for _, flag in flags {
     let x_short = (flag & 0x02) != b'\x00' // bit 1: x is 1 byte
     let x_same = (flag & 0x10) != b'\x00' // bit 4: x same or positive
     if x_short {
@@ -76,8 +75,7 @@ pub fn load_simple_glyph(
   // Read y coordinates (delta-encoded)
   let y_coords : Array[Int64] = []
   let mut y = 0L
-  for i = 0; i < n_points; i = i + 1 {
-    let flag = flags[i]
+  for _, flag in flags {
     let y_short = (flag & 0x04) != b'\x00' // bit 2: y is 1 byte
     let y_same = (flag & 0x20) != b'\x00' // bit 5: y same or positive
     if y_short {
@@ -95,11 +93,11 @@ pub fn load_simple_glyph(
   // Build outline
   let points : Array[@types.Vector] = []
   let tags : Array[Byte] = []
-  for i = 0; i < n_points; i = i + 1 {
+  for i, flag in flags {
     points.push({ x: x_coords[i], y: y_coords[i] })
     // Convert TT flags to FreeType tags:
     // Bit 0 of TT flag = on-curve (1) or off-curve (0)
-    let on_curve = (flags[i] & 0x01) != b'\x00'
+    let on_curve = (flag & 0x01) != b'\x00'
     tags.push(
       if on_curve {
         @types.curve_tag_on
@@ -220,8 +218,7 @@ pub fn load_tt_glyph(
     // Composite glyph
     let components = load_composite_glyph(reader)
     let loader = @base.GlyphLoader::new()
-    for i = 0; i < components.length(); i = i + 1 {
-      let comp = components[i]
+    for _, comp in components {
       // Recursively load component glyph
       let sub_outline = load_tt_glyph(
         data,
@@ -235,9 +232,9 @@ pub fn load_tt_glyph(
         (comp.flags & we_have_an_x_and_y_scale) != 0U ||
         (comp.flags & we_have_a_two_by_two) != 0U
       // Add points to loader
-      for j = 0; j < sub_outline.points.length(); j = j + 1 {
-        let mut px = sub_outline.points[j].x
-        let mut py = sub_outline.points[j].y
+      for j, point in sub_outline.points {
+        let mut px = point.x
+        let mut py = point.y
         if has_transform {
           let matrix : @fixed.Matrix = {
             xx: comp.xx,
@@ -257,7 +254,7 @@ pub fn load_tt_glyph(
         loader.add_point(px, py, sub_outline.tags[j])
       }
       // Add contour end points
-      for j = 0; j < sub_outline.contours.length(); j = j + 1 {
+      for _ in sub_outline.contours {
         loader.end_contour()
       }
       loader.add()

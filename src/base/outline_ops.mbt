@@ -6,7 +6,7 @@ pub fn outline_translate(
   dx : Int64,
   dy : Int64,
 ) -> Unit {
-  for i = 0; i < outline.points.length(); i = i + 1 {
+  for i in 0..<outline.points.length() {
     outline.points[i].x += dx
     outline.points[i].y += dy
   }
@@ -19,7 +19,7 @@ pub fn outline_transform(
   outline : @types.Outline,
   matrix : @fixed.Matrix,
 ) -> Unit {
-  for i = 0; i < outline.points.length(); i = i + 1 {
+  for i in 0..<outline.points.length() {
     let p = outline.points[i]
     let (rx, ry) = matrix.transform(p.x, p.y)
     outline.points[i].x = rx
@@ -35,13 +35,10 @@ pub fn outline_reverse(outline : @types.Outline) -> Unit {
   if n_contours == 0 {
     return
   }
-  let mut first = 0
-  for c = 0; c < n_contours; c = c + 1 {
+  for c = 0, first = 0; c < n_contours; {
     let last = outline.contours[c].reinterpret_as_int()
     // Reverse points and tags between first and last
-    let mut i = first
-    let mut j = last
-    while i < j {
+    for i = first, j = last; i < j; {
       // Swap points
       let tmp_pt = outline.points[i]
       outline.points[i] = outline.points[j]
@@ -50,10 +47,9 @@ pub fn outline_reverse(outline : @types.Outline) -> Unit {
       let tmp_tag = outline.tags[i]
       outline.tags[i] = outline.tags[j]
       outline.tags[j] = tmp_tag
-      i += 1
-      j -= 1
+      continue i + 1, j - 1
     }
-    first = last + 1
+    continue c + 1, last + 1
   }
   // Flip fill direction flag
   outline.flags = outline.flags ^ @types.outline_reverse_fill
@@ -88,8 +84,7 @@ pub fn outline_decompose(
     { x: (v.x << shift) - delta, y: (v.y << shift) - delta }
   }
 
-  let mut first = 0
-  for c = 0; c < n_contours; c = c + 1 {
+  for c = 0, first = 0; c < n_contours; {
     let last = outline.contours[c].reinterpret_as_int()
     // Find first on-curve point
     let mut start = first
@@ -144,8 +139,7 @@ pub fn outline_decompose(
         }
         // Close contour
         (funcs.line_to)(apply(mid))
-        first = last + 1
-        continue
+        continue c + 1, last + 1
       }
     }
     // Normal case: start point is on-curve
@@ -187,7 +181,7 @@ pub fn outline_decompose(
         i = if i < last { i + 1 } else { first }
       }
     }
-    first = last + 1
+    continue c + 1, last + 1
   }
 }
 
@@ -202,11 +196,10 @@ pub fn outline_get_orientation(outline : @types.Outline) -> Int {
   }
   // Use the shoelace formula (signed area)
   let mut area = 0L
-  let mut prev = outline.points[n_points - 1]
-  for i = 0; i < n_points; i = i + 1 {
+  for i = 0, prev = outline.points[n_points - 1]; i < n_points; {
     let curr = outline.points[i]
     area += (prev.x - curr.x) * (prev.y + curr.y)
-    prev = curr
+    continue i + 1, curr
   }
   if area > 0L {
     1 // clockwise (TrueType convention)

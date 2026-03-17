@@ -40,7 +40,7 @@ pub fn parse_post(
     let actual_count = if table_num_glyphs < ng { table_num_glyphs } else { ng }
     // Read glyph name indices
     let indices : Array[UInt] = []
-    for i = 0; i < actual_count; i = i + 1 {
+    for _ in 0..<actual_count {
       indices.push(reader.read_u16_be())
     }
     // Read Pascal strings (extra names beyond the 258 Mac standard names)
@@ -55,15 +55,15 @@ pub fn parse_post(
       }
       let name_bytes = reader.read_bytes(slen)
       let buf = StringBuilder::new()
-      for j = 0; j < slen; j = j + 1 {
+      for j in 0..<slen {
         buf.write_char(Char::from_int(name_bytes[j].to_int()))
       }
       extra_names.push(buf.to_string())
     }
     ignore(remaining_start)
     // Resolve indices to names
-    for i = 0; i < actual_count; i = i + 1 {
-      let idx = indices[i].reinterpret_as_int()
+    for _, idx_val in indices {
+      let idx = idx_val.reinterpret_as_int()
       if idx < 258 {
         glyph_names.push(@psnames.macintosh_name(idx.reinterpret_as_uint()))
       } else {

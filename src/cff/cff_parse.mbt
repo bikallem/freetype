@@ -16,7 +16,7 @@ pub fn parse_cff_index(
   let off_size = reader.read_byte().to_int()
   // Read count+1 offsets
   let offsets : Array[UInt] = []
-  for i = 0; i < count.reinterpret_as_int() + 1; i = i + 1 {
+  for _ in 0..<(count.reinterpret_as_int() + 1) {
     let off = match off_size {
       1 => reader.read_byte().to_uint()
       2 => reader.read_u16_be()
@@ -258,8 +258,8 @@ pub fn load_cff(data : Bytes, offset : Int) -> CffFont raise @error.FTError {
   let name = if name_index.count > 0U {
     let name_bytes = name_index.get_item(0)
     let buf = StringBuilder::new()
-    for i = 0; i < name_bytes.length(); i = i + 1 {
-      buf.write_char(Char::from_int(name_bytes[i].to_int()))
+    for _, b in name_bytes {
+      buf.write_char(Char::from_int(b.to_int()))
     }
     buf.to_string()
   } else {
@@ -322,16 +322,18 @@ pub fn load_cff_glyph(
   // Build subroutine arrays
   let local_subrs = match cff.local_subrs {
     Some(idx) => {
+      let count = idx.count.reinterpret_as_int()
       let subrs : Array[Bytes] = []
-      for i = 0; i < idx.count.reinterpret_as_int(); i = i + 1 {
+      for i in 0..<count {
         subrs.push(idx.get_item(i))
       }
       subrs
     }
     None => []
   }
+  let global_count = cff.global_subrs.count.reinterpret_as_int()
   let global_subrs_arr : Array[Bytes] = []
-  for i = 0; i < cff.global_subrs.count.reinterpret_as_int(); i = i + 1 {
+  for i in 0..<global_count {
     global_subrs_arr.push(cff.global_subrs.get_item(i))
   }
   @psaux.execute_type2(

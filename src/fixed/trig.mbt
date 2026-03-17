@@ -98,8 +98,7 @@ fn trig_pseudo_rotate(x : Int64, y : Int64, theta : Int64) -> (Int64, Int64) {
     rx = tmp
     th = th - angle_pi2
   }
-  let mut b = 1L
-  for i = 1; i < trig_max_iters; i = i + 1 {
+  for i = 1, b = 1L; i < trig_max_iters; {
     let arctan = trig_arctan_table[i - 1]
     if th < 0L {
       let xtemp = rx + ((ry + b) >> i)
@@ -112,7 +111,7 @@ fn trig_pseudo_rotate(x : Int64, y : Int64, theta : Int64) -> (Int64, Int64) {
       rx = xtemp
       th = th - arctan
     }
-    b = b << 1
+    continue i + 1, b << 1
   }
   (rx, ry)
 }
@@ -141,8 +140,7 @@ fn trig_pseudo_polarize(x : Int64, y : Int64) -> (Int64, Int64) {
     ry = rx
     rx = tmp
   }
-  let mut b = 1L
-  for i = 1; i < trig_max_iters; i = i + 1 {
+  for i = 1, b = 1L; i < trig_max_iters; {
     let arctan = trig_arctan_table[i - 1]
     if ry > 0L {
       let xtemp = rx + ((ry + b) >> i)
@@ -155,7 +153,7 @@ fn trig_pseudo_polarize(x : Int64, y : Int64) -> (Int64, Int64) {
       rx = xtemp
       theta = theta - arctan
     }
-    b = b << 1
+    continue i + 1, b << 1
   }
   // Round theta to reduce accumulated arctan table rounding errors
   if theta >= 0L {

@@ -100,12 +100,11 @@ pub fn sqrt_fixed(v : UInt64) -> UInt {
   // Initial guess: 1 << ((17 + MSB(v)) >> 1)
   let m = msb(v.to_uint())
   let mut q : UInt64 = 1UL << ((17 + m) >> 1)
-  let mut cont = true
-  while cont {
+  for ;; {
     let t = q
     q = (t + r / t + 1UL) >> 1
     if q == t {
-      cont = false
+      break
     }
   }
   q.to_uint()

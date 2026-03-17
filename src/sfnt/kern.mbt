@@ -30,7 +30,7 @@ pub fn parse_kern(
   if version == 0U {
     // Microsoft format: version(2), nTables(2)
     let n_tables = reader.read_u16_be().reinterpret_as_int()
-    for t = 0; t < n_tables; t = t + 1 {
+    for _ in 0..<n_tables {
       let sub_version = reader.read_u16_be()
       let sub_length = reader.read_u16_be().reinterpret_as_int()
       let coverage = reader.read_u16_be()
@@ -43,7 +43,7 @@ pub fn parse_kern(
         let _search_range = reader.read_u16_be()
         let _entry_selector = reader.read_u16_be()
         let _range_shift = reader.read_u16_be()
-        for i = 0; i < n_pairs; i = i + 1 {
+        for _ in 0..<n_pairs {
           let left = reader.read_u16_be()
           let right = reader.read_u16_be()
           let value = reader.read_i16_be()
@@ -76,20 +76,19 @@ pub fn KernTable::get_kerning(
   right : UInt,
 ) -> Int {
   let key = (left.reinterpret_as_int() << 16) | right.reinterpret_as_int()
-  let mut lo = 0
-  let mut hi = self.pairs.length() - 1
-  while lo <= hi {
+  for lo = 0, hi = self.pairs.length() - 1; lo <= hi; {
     let mid = (lo + hi) / 2
     let pair = self.pairs[mid]
     let pair_key = (pair.left.reinterpret_as_int() << 16) |
       pair.right.reinterpret_as_int()
     if key < pair_key {
-      hi = mid - 1
+      continue lo, mid - 1
     } else if key > pair_key {
-      lo = mid + 1
+      continue mid + 1, hi
     } else {
       return pair.value
     }
+  } nobreak {
+    0
   }
-  0
 }

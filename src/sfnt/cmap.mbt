@@ -23,7 +23,7 @@ pub fn parse_cmap_header(
   let version = reader.read_u16_be()
   let num_tables = reader.read_u16_be()
   let subtables : Array[CmapSubtable] = []
-  for i = 0; i < num_tables.reinterpret_as_int(); i = i + 1 {
+  for _ in 0..<num_tables.reinterpret_as_int() {
     let platform_id = reader.read_u16_be()
     let encoding_id = reader.read_u16_be()
     let sub_offset = reader.read_u32_be()
@@ -98,7 +98,7 @@ fn parse_cmap_format0(
   let _length = reader.read_u16_be()
   let _language = reader.read_u16_be()
   let glyph_ids = FixedArray::make(256, b'\x00')
-  for i = 0; i < 256; i = i + 1 {
+  for i in 0..<256 {
     glyph_ids[i] = reader.read_byte()
   }
   { glyph_ids, }
@@ -142,36 +142,35 @@ fn parse_cmap_format4(
   let _range_shift = reader.read_u16_be()
   // endCode[segCount]
   let end_codes : Array[UInt] = []
-  for i = 0; i < seg_count; i = i + 1 {
+  for _ in 0..<seg_count {
     end_codes.push(reader.read_u16_be())
   }
   // reservedPad
   let _reserved = reader.read_u16_be()
   // startCode[segCount]
   let start_codes : Array[UInt] = []
-  for i = 0; i < seg_count; i = i + 1 {
+  for _ in 0..<seg_count {
     start_codes.push(reader.read_u16_be())
   }
   // idDelta[segCount]
   let id_deltas : Array[Int] = []
-  for i = 0; i < seg_count; i = i + 1 {
+  for _ in 0..<seg_count {
     id_deltas.push(reader.read_i16_be())
   }
   // idRangeOffset[segCount]
   let id_range_offset_start = reader.position()
   let id_range_offsets : Array[UInt] = []
-  for i = 0; i < seg_count; i = i + 1 {
+  for _ in 0..<seg_count {
     id_range_offsets.push(reader.read_u16_be())
   }
   // Remaining bytes are the glyphIdArray
   let glyph_array_start = reader.position()
   let glyph_array_end = abs_offset + length
   let glyph_ids : Array[UInt] = []
-  let mut pos = glyph_array_start
-  while pos + 1 < glyph_array_end {
+  for pos = glyph_array_start; pos + 1 < glyph_array_end; {
     reader.seek(pos)
     glyph_ids.push(reader.read_u16_be())
-    pos += 2
+    continue pos + 2
   }
   {
     seg_count,
@@ -190,14 +189,12 @@ pub fn CmapFormat4::char_index(self : CmapFormat4, charcode : UInt) -> UInt {
     return 0U
   }
   // Binary search for the segment containing charcode
-  let mut lo = 0
-  let mut hi = self.seg_count - 1
-  while lo <= hi {
+  for lo = 0, hi = self.seg_count - 1; lo <= hi; {
     let mid = (lo + hi) / 2
     if charcode > self.end_codes[mid] {
-      lo = mid + 1
+      continue mid + 1, hi
     } else if charcode < self.start_codes[mid] {
-      hi = mid - 1
+      continue lo, mid - 1
     } else {
       // Found: charcode is in segment [startCode[mid], endCode[mid]]
       let range_offset = self.id_range_offsets[mid]
@@ -225,8 +222,9 @@ pub fn CmapFormat4::char_index(self : CmapFormat4, charcode : UInt) -> UInt {
       }
       return 0U
     }
+  } nobreak {
+    0U
   }
-  0U
 }
 
 // ---------------------------------------------------------------------------
@@ -251,7 +249,7 @@ fn parse_cmap_format6(
   let first_code = reader.read_u16_be()
   let entry_count = reader.read_u16_be()
   let glyph_ids : Array[UInt] = []
-  for i = 0; i < entry_count.reinterpret_as_int(); i = i + 1 {
+  for _ in 0..<entry_count.reinterpret_as_int() {
     glyph_ids.push(reader.read_u16_be())
   }
   { first_code, entry_count, glyph_ids }
@@ -298,7 +296,7 @@ fn parse_cmap_format12(
   let num_groups = reader.read_u32_be().reinterpret_as_int()
   ignore(abs_offset)
   let groups : Array[CmapFormat12Group] = []
-  for i = 0; i < num_groups; i = i + 1 {
+  for _ in 0..<num_groups {
     let start_char_code = reader.read_u32_be()
     let end_char_code = reader.read_u32_be()
     let start_glyph_id = reader.read_u32_be()
@@ -310,18 +308,17 @@ fn parse_cmap_format12(
 ///|
 pub fn CmapFormat12::char_index(self : CmapFormat12, charcode : UInt) -> UInt {
   // Binary search
-  let mut lo = 0
-  let mut hi = self.groups.length() - 1
-  while lo <= hi {
+  for lo = 0, hi = self.groups.length() - 1; lo <= hi; {
     let mid = (lo + hi) / 2
     let g = self.groups[mid]
     if charcode > g.end_char_code {
-      lo = mid + 1
+      continue mid + 1, hi
     } else if charcode < g.start_char_code {
-      hi = mid - 1
+      continue lo, mid - 1
     } else {
       return g.start_glyph_id + (charcode - g.start_char_code)
     }
+  } nobreak {
+    0U
   }
-  0U
 }

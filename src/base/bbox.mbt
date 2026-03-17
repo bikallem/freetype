@@ -27,7 +27,7 @@ pub fn outline_get_bbox(outline : @types.Outline) -> @types.BBox {
   }
 
   // Quick path: just check all on-curve points first
-  for i = 1; i < n_points; i = i + 1 {
+  for i in 1..<n_points {
     let tag = @types.curve_tag(outline.tags[i])
     if tag == @types.curve_tag_on {
       update(outline.points[i].x, outline.points[i].y)
@@ -35,8 +35,7 @@ pub fn outline_get_bbox(outline : @types.Outline) -> @types.BBox {
   }
   // Now check off-curve points for potential extrema
   let n_contours = outline.n_contours()
-  let mut first = 0
-  for c = 0; c < n_contours; c = c + 1 {
+  for c = 0, first = 0; c < n_contours; {
     let last = outline.contours[c].reinterpret_as_int()
     let mut i = first
     while i <= last {
@@ -60,7 +59,7 @@ pub fn outline_get_bbox(outline : @types.Outline) -> @types.BBox {
       }
       i += 1
     }
-    first = last + 1
+    continue c + 1, last + 1
   }
   { x_min, y_min, x_max, y_max }
 }
@@ -78,7 +77,7 @@ pub fn outline_get_cbox(outline : @types.Outline) -> @types.BBox {
   let mut y_min = outline.points[0].y
   let mut x_max = x_min
   let mut y_max = y_min
-  for i = 1; i < n_points; i = i + 1 {
+  for i in 1..<n_points {
     let p = outline.points[i]
     if p.x < x_min {
       x_min = p.x

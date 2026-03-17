@@ -50,7 +50,7 @@ pub fn decompress_woff(data : Bytes) -> Bytes raise @error.FTError {
   // Parse WOFF table directory entries
   let entries : Array[WoffTableEntry] = []
   let nt = num_tables.reinterpret_as_int()
-  for i = 0; i < nt; i = i + 1 {
+  for _ in 0..<nt {
     let tag = reader.read_u32_be()
     let offset = reader.read_u32_be()
     let comp_length = reader.read_u32_be()
@@ -67,13 +67,11 @@ pub fn decompress_woff(data : Bytes) -> Bytes raise @error.FTError {
   write_u32_be(sfnt, 0, flavor)
   write_u16_be(sfnt, 4, num_tables)
   // Compute searchRange, entrySelector, rangeShift
-  let mut sr = 1
-  let mut es = 0
-  while sr * 2 <= nt {
-    sr *= 2
-    es += 1
+  let (sr, es) = for sr = 1, es = 0; sr * 2 <= nt; {
+    continue sr * 2, es + 1
+  } nobreak {
+    (sr * 16, es)
   }
-  sr *= 16
   write_u16_be(sfnt, 6, sr.reinterpret_as_uint())
   write_u16_be(sfnt, 8, es.reinterpret_as_uint())
   write_u16_be(sfnt, 10, (nt * 16 - sr).reinterpret_as_uint())

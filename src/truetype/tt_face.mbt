@@ -31,7 +31,7 @@ pub fn init_tt_face(
       reader.seek(r.offset.reinterpret_as_int())
       let count = r.length.reinterpret_as_int() / 2
       let values : Array[Int64] = []
-      for i = 0; i < count; i = i + 1 {
+      for _ in 0..<count {
         // CVT values are FWord (signed 16-bit), stored as 26.6 for hinting
         let v = reader.read_i16_be()
         values.push(v.to_int64() << 6) // convert to 26.6

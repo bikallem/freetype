@@ -30,7 +30,7 @@ pub fn parse_table_directory(
   let entry_selector = reader.read_u16_be()
   let range_shift = reader.read_u16_be()
   let tables : Array[TableRecord] = []
-  for i = 0; i < num_tables.reinterpret_as_int(); i = i + 1 {
+  for _ in 0..<num_tables.reinterpret_as_int() {
     let tag = reader.read_u32_be()
     let checksum = reader.read_u32_be()
     let offset = reader.read_u32_be()
@@ -53,9 +53,9 @@ pub fn TableDirectory::find_table(
   self : TableDirectory,
   tag : UInt,
 ) -> TableRecord? {
-  for i = 0; i < self.tables.length(); i = i + 1 {
-    if self.tables[i].tag == tag {
-      return Some(self.tables[i])
+  for _, table in self.tables {
+    if table.tag == tag {
+      return Some(table)
     }
   }
   None
@@ -82,7 +82,7 @@ pub fn parse_ttc_header(
   let version = reader.read_u32_be()
   let num_fonts = reader.read_u32_be()
   let offsets : Array[UInt] = []
-  for i = 0; i < num_fonts.reinterpret_as_int(); i = i + 1 {
+  for _ in 0..<num_fonts.reinterpret_as_int() {
     offsets.push(reader.read_u32_be())
   }
   { tag, version, num_fonts, offsets }
