@@ -45,7 +45,7 @@ GOLDEN_GEN  := test/golden/generate/gen_golden
 GOLDEN_DATA := test/golden/data
 FONT_DIR    := test/fonts
 
-parity: parity-golden parity-moonbit
+parity: parity-golden parity-report
 
 parity-golden: | $(FONT_DIR)/.downloaded
 	@mkdir -p $(GOLDEN_DATA)
@@ -55,20 +55,12 @@ parity-golden: | $(FONT_DIR)/.downloaded
 	@if [ -x $(GOLDEN_GEN) ]; then \
 		fonts=$$(find $(FONT_DIR) -maxdepth 1 \( -name '*.ttf' -o -name '*.otf' -o -name '*.bdf' -o -name '*.pfb' -o -name '*.woff' -o -name '*.ttc' \) 2>/dev/null); \
 		if [ -n "$$fonts" ]; then \
-			echo "parity: generating golden files..."; \
-			$(GOLDEN_GEN) $(FONT_DIR) $(GOLDEN_DATA); \
-			echo "parity: golden files generated"; \
-		else \
-			echo "parity: no font files in $(FONT_DIR) — run: bash $(FONT_DIR)/download.sh"; \
+			$(GOLDEN_GEN) $(FONT_DIR) $(GOLDEN_DATA) >/dev/null; \
 		fi; \
-	else \
-		echo "parity: golden generator not available (vendored FreeType not compiled)"; \
-		echo "        to enable: make -C vendor/freetype-c && make parity"; \
 	fi
 
-parity-moonbit:
-	@echo "parity: running MoonBit parity tests..."
-	moon test src/parity
+parity-report: parity-golden
+	@python3 test/parity/report.py
 
 $(FONT_DIR)/.downloaded:
 	@mkdir -p $(FONT_DIR)
