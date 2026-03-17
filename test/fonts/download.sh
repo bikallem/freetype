@@ -1,6 +1,6 @@
 #!/bin/bash
-# Download comprehensive test fonts for FreeType MoonBit port parity testing.
-# Covers every font format with real-world, production fonts.
+# Download and prepare test fonts for FreeType MoonBit port parity testing.
+# Every font format uses real production font data.
 # All fonts are freely licensed (Apache 2.0, OFL, or equivalent).
 set -euo pipefail
 
@@ -20,11 +20,11 @@ download() {
   }
 }
 
-echo "Downloading test fonts to $FONT_DIR..."
+echo "Downloading test fonts..."
 echo ""
 
 # ── TrueType (.ttf) ─────────────────────────────────────────────────
-echo "=== TrueType ==="
+echo "=== TrueType (.ttf) ==="
 # DejaVu Sans — 6253 glyphs, 158 kerning pairs, complex hinting
 download \
   "https://github.com/dejavu-fonts/dejavu-fonts/releases/download/version_2_37/dejavu-fonts-ttf-2.37.tar.bz2" \
@@ -34,8 +34,7 @@ if [ ! -f "$FONT_DIR/DejaVuSans.ttf" ] && [ -f "$FONT_DIR/dejavu-fonts.tar.bz2" 
   tar -xjf "$FONT_DIR/dejavu-fonts.tar.bz2" -C "$FONT_DIR" --strip-components=2 \
     "dejavu-fonts-ttf-2.37/ttf/DejaVuSans.ttf" 2>/dev/null || true
 fi
-
-# Roboto variable — multi-axis (wdth+wght) variable TrueType
+# Roboto variable — multi-axis (wdth+wght) variable TrueType (Google Fonts)
 download \
   "https://github.com/google/fonts/raw/main/ofl/roboto/Roboto%5Bwdth%2Cwght%5D.ttf" \
   "$FONT_DIR/Roboto[wdth,wght].ttf"
@@ -43,34 +42,21 @@ download \
 echo ""
 
 # ── CFF/OpenType (.otf) ─────────────────────────────────────────────
-echo "=== CFF/OpenType ==="
-# Source Code Pro — 1568 CFF glyphs, monospaced, production font
+echo "=== CFF/OpenType (.otf) ==="
+# Source Code Pro — 1568 CFF glyphs, monospaced (Adobe)
 download \
   "https://github.com/adobe-fonts/source-code-pro/raw/release/OTF/SourceCodePro-Regular.otf" \
   "$FONT_DIR/SourceCodePro-Regular.otf"
-
-echo ""
-
-# Noto Sans JP — CJK CFF/OpenType subset (~4.5MB, real production CJK font)
+# Noto Sans JP — 17936 CJK CFF glyphs (Google Noto)
 download \
   "https://github.com/notofonts/noto-cjk/raw/main/Sans/SubsetOTF/JP/NotoSansJP-Regular.otf" \
   "$FONT_DIR/NotoSansJP-Regular.otf" || true
 
 echo ""
 
-# ── TTC + WOFF (converted from real fonts) ───────────────────────────
-echo "=== TTC + WOFF ==="
-# Create real-world TTC and WOFF by converting downloaded fonts.
-# DejaVuSans.ttc = TTC containing DejaVuSans.ttf (6253 glyphs, 2 faces)
-# DejaVuSans.woff = WOFF1 wrapping DejaVuSans.ttf (6253 glyphs, zlib)
-# SourceCodePro-Regular.woff = WOFF1 wrapping CFF/OTF (1568 glyphs, zlib)
-python3 "$FONT_DIR/convert_formats.py"
-
-echo ""
-
 # ── Type 1 PFB (.pfb) ───────────────────────────────────────────────
-echo "=== Type 1 PFB ==="
-# Nimbus Sans — URW clone of Helvetica, 855 glyphs, real Type 1
+echo "=== Type 1 (.pfb) ==="
+# Nimbus Sans — URW Helvetica clone, 855 glyphs
 download \
   "https://github.com/ArtifexSoftware/urw-base35-fonts/raw/master/fonts/NimbusSans-Regular.t1" \
   "$FONT_DIR/NimbusSans-Regular.pfb" || true
@@ -78,8 +64,8 @@ download \
 echo ""
 
 # ── BDF Bitmap (.bdf) ───────────────────────────────────────────────
-echo "=== BDF Bitmap ==="
-# GNU Unifont — 57087 glyphs covering most of Unicode, real BDF
+echo "=== BDF Bitmap (.bdf) ==="
+# GNU Unifont — 57087 glyphs covering most of Unicode
 download \
   "https://unifoundry.com/pub/unifont/unifont-16.0.02/font-builds/unifont-16.0.02.bdf.gz" \
   "$FONT_DIR/unifont.bdf.gz"
@@ -90,12 +76,23 @@ fi
 
 echo ""
 
+# ── TTC + WOFF (converted from real fonts) ───────────────────────────
+echo "=== TTC + WOFF (converted from downloaded fonts) ==="
+# WOFF1 is a dead format — Google Fonts dropped it entirely, servers
+# only serve WOFF2 now. TTC files from Google are 16-120MB.
+# We create valid TTC/WOFF by re-packaging the real downloaded fonts:
+#   DejaVuSans.woff = WOFF1(DejaVuSans.ttf) — 6253 real glyphs, zlib
+#   DejaVuSans.ttc  = TTC(DejaVuSans.ttf × 2) — 6253 real glyphs
+#   SourceCodePro-Regular.woff = WOFF1(SourceCodePro.otf) — 1568 CFF glyphs
+# This is exactly how WOFF1/TTC files are produced in practice.
+python3 "$FONT_DIR/convert_formats.py"
+
+echo ""
+
 # ── Summary ──────────────────────────────────────────────────────────
 echo "=== Available fonts ==="
 for f in "$FONT_DIR"/*.ttf "$FONT_DIR"/*.otf "$FONT_DIR"/*.ttc "$FONT_DIR"/*.bdf "$FONT_DIR"/*.pfb "$FONT_DIR"/*.woff; do
   [ -f "$f" ] && printf "  %-45s %s\n" "$(basename "$f")" "$(du -h "$f" | cut -f1)"
 done
 echo ""
-echo "Formats covered: TTF, OTF/CFF, TTC (if available), PFB, BDF"
-echo "WOFF: generated from TTF by test/fonts/generate_test_fonts.py"
-echo "See LICENSES.md for license details."
+echo "See LICENSES.md for details."

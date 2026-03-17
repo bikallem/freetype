@@ -217,6 +217,10 @@ def main():
         fp = os.path.join(FONT_DIR, ff)
         if not os.path.exists(fp):
             continue
+        # Skip synthetic minimal fonts — real fonts cover all formats
+        if ff.startswith("minimal."):
+            print(f"  [skip] {ff} (synthetic — real font covers this format)")
+            continue
         fonts.append((ff, fp, json.load(open(gf))))
         sz = os.path.getsize(fp)
         print(f"  [include] {ff} ({sz:,}B)")
