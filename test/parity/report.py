@@ -84,9 +84,17 @@ def main():
 
     # Per-font test results
     categories = [
-        "format", "loads", "metadata", "bbox", "flags",
-        "charmaps", "charmap entries", "glyph outline NO_SCALE",
-        "glyph metrics at 16ppem", "TTC multi-face", "kerning",
+        ("format", "format"),
+        ("loads", "loads"),
+        ("metadata", "metadata"),
+        ("bbox", "bbox"),
+        ("flags", "flags"),
+        ("charmaps", "charmaps"),
+        ("charmap entries", "charmap entries"),
+        ("glyph outline", "outline NO_SCALE"),
+        ("glyph metrics", "glyph metrics"),
+        ("TTC multi-face", "TTC multi-face"),
+        ("kerning", "kerning"),
     ]
 
     # Build per-font status grid
@@ -103,20 +111,22 @@ def main():
     for font in sorted(fonts_tested):
         short = font.split(".")[0][:6]
         ext = os.path.splitext(font)[1]
-        hdr += f" {short+ext:>8s}"
+        hdr += f" {short+ext:>10s}"
     print(hdr)
     print("  " + "-" * 74)
 
-    for cat in categories:
-        row = f"  {cat:<28s}"
+    for display_name, match_key in categories:
+        row = f"  {display_name:<28s}"
         for font in sorted(fonts_tested):
-            test_name = f"parity/{font}: {cat}"
-            if test_name in passed_tests:
-                row += f" {'PASS':>8s}"
-            elif test_name in failed_tests:
-                row += f" {'FAIL':>8s}"
+            font_prefix = f"parity/{font}: "
+            matched_pass = any(t.startswith(font_prefix) and match_key in t for t in passed_tests)
+            matched_fail = any(t.startswith(font_prefix) and match_key in t for t in failed_tests)
+            if matched_fail:
+                row += f" {'FAIL':>10s}"
+            elif matched_pass:
+                row += f" {'PASS':>10s}"
             else:
-                row += f" {'--':>8s}"
+                row += f" {'--':>10s}"
         print(row)
     print("  " + "-" * 74)
     print()
@@ -139,12 +149,12 @@ def main():
     apis = [
         ("from_bytes(data)", "loads", "Font loading from raw bytes"),
         ("get_char_index(face, charcode)", "charmap entries", "Charcode → glyph index mapping"),
-        ("load_glyph(face, gid, flags)", "glyph outline NO_SCALE", "Glyph outline loading"),
-        ("set_pixel_sizes(face, w, h)", "glyph metrics at 16ppem", "Size-dependent glyph scaling"),
+        ("load_glyph(face, gid, flags)", "outline NO_SCALE", "Glyph outline loading"),
+        ("set_pixel_sizes(face, w, h)", "glyph metrics", "Size-dependent glyph scaling"),
         ("get_kerning(face, l, r)", "kerning", "Kerning pair lookup"),
     ]
     for api, cat, desc in apis:
-        has_any = any(f"parity/{f}: {cat}" in passed_tests for f in fonts_tested)
+        has_any = any(any(cat in t and t.startswith(f"parity/{f}: ") for t in passed_tests) for f in fonts_tested)
         status = "TESTED" if has_any else "NOT TESTED"
         print(f"  {status:>10s}  {api:<35s} {desc}")
     print("  " + "-" * 74)
@@ -160,7 +170,7 @@ def main():
     for ext, name in all_fmts:
         has_font = any(f.endswith(ext) for f in fonts_tested)
         load_ok = any(f"parity/{f}: loads" in passed_tests for f in fonts_tested if f.endswith(ext))
-        glyph_ok = any(f"parity/{f}: glyph outline NO_SCALE" in passed_tests for f in fonts_tested if f.endswith(ext))
+        glyph_ok = any(any(t.startswith(f"parity/{f}: glyph") and "outline" in t for t in passed_tests) for f in fonts_tested if f.endswith(ext))
         status = "FULL" if (load_ok and glyph_ok) else ("LOAD" if load_ok else ("FONT" if has_font else "MISSING"))
         print(f"  {status:>7s}  {name:<25s} {ext}")
     print("  " + "-" * 74)
