@@ -17,10 +17,16 @@ pub(all) struct InterpContext {
   mut func_defs : Map[Int, FuncDef]
   // Loop counter
   mut loop_count : Int
-  // Points (zone 1 = glyph, zone 0 = twilight)
-  mut zone0_points : Array[@types.Vector]
-  mut zone1_points : Array[@types.Vector]
+  // Points (zone 0 = twilight, zone 1 = glyph)
+  mut zone0_org : Array[@types.Vector] // twilight zone original points
+  mut zone0_cur : Array[@types.Vector] // twilight zone current points
+  mut zone0_tags : Array[Byte]
+  mut zone0_points : Array[@types.Vector] // alias for backwards compat
+  mut zone1_org : Array[@types.Vector] // glyph zone original points
+  mut zone1_cur : Array[@types.Vector] // glyph zone current (hinted) points
+  mut zone1_points : Array[@types.Vector] // alias for backwards compat
   mut zone1_tags : Array[Byte]
+  mut zone1_touch : Array[Byte] // touch flags per point (bit 0 = x touched, bit 1 = y touched)
   // Error state
   mut error : Bool
 } derive(Show)
@@ -37,7 +43,7 @@ pub(all) struct GraphicsState {
   mut projection_vector_y : Int64
   mut dual_projection_x : Int64
   mut dual_projection_y : Int64
-  mut round_state : Int // 0=off, 1=to_grid, etc.
+  mut round_state : Int // 0=off, 1=to_grid, 2=to_half_grid, 3=to_double_grid, 4=down_to_grid, 5=up_to_grid
   mut minimum_distance : Int64 // 26.6
   mut control_value_cut_in : Int64 // 26.6
   mut single_width_cut_in : Int64 // 26.6
@@ -106,9 +112,15 @@ pub fn InterpContext::new(
     gs: GraphicsState::default(),
     func_defs: {},
     loop_count: 1,
+    zone0_org: [],
+    zone0_cur: [],
+    zone0_tags: [],
     zone0_points: [],
+    zone1_org: [],
+    zone1_cur: [],
     zone1_points: [],
     zone1_tags: [],
+    zone1_touch: [],
     error: false,
   }
 }
@@ -132,6 +144,173 @@ fn InterpContext::pop(self : InterpContext) -> Int64 {
     self.error = true
     0L
   }
+}
+
+// --- Zone point helpers ---
+
+///|
+/// Get current point coordinates from the given zone.
+fn InterpContext::get_zone_point(
+  self : InterpContext,
+  zone : Int,
+  idx : Int,
+) -> (Int64, Int64) {
+  let points = if zone == 0 { self.zone0_cur } else { self.zone1_cur }
+  if idx >= 0 && idx < points.length() {
+    (points[idx].x, points[idx].y)
+  } else {
+    (0L, 0L)
+  }
+}
+
+///|
+/// Set current point coordinates in the given zone.
+fn InterpContext::set_zone_point(
+  self : InterpContext,
+  zone : Int,
+  idx : Int,
+  x : Int64,
+  y : Int64,
+) -> Unit {
+  let points = if zone == 0 { self.zone0_cur } else { self.zone1_cur }
+  if idx >= 0 && idx < points.length() {
+    points[idx].x = x
+    points[idx].y = y
+  }
+}
+
+///|
+/// Get original point coordinates from the given zone.
+fn InterpContext::get_zone_org(
+  self : InterpContext,
+  zone : Int,
+  idx : Int,
+) -> (Int64, Int64) {
+  let points = if zone == 0 { self.zone0_org } else { self.zone1_org }
+  if idx >= 0 && idx < points.length() {
+    (points[idx].x, points[idx].y)
+  } else {
+    (0L, 0L)
+  }
+}
+
+// --- Projection/distance helpers ---
+
+///|
+/// Project (x,y) onto the projection vector. Result is 26.6.
+fn InterpContext::project(self : InterpContext, x : Int64, y : Int64) -> Int64 {
+  (x * self.gs.projection_vector_x + y * self.gs.projection_vector_y) >> 14
+}
+
+///|
+/// Project (x,y) onto the dual projection vector. Result is 26.6.
+fn InterpContext::dual_project(
+  self : InterpContext,
+  x : Int64,
+  y : Int64,
+) -> Int64 {
+  (x * self.gs.dual_projection_x + y * self.gs.dual_projection_y) >> 14
+}
+
+///|
+/// Move a point along the freedom vector by distance (26.6).
+fn InterpContext::move_point(
+  self : InterpContext,
+  zone : Int,
+  idx : Int,
+  distance : Int64,
+) -> Unit {
+  let points = if zone == 0 { self.zone0_cur } else { self.zone1_cur }
+  if idx >= 0 && idx < points.length() {
+    points[idx].x = points[idx].x +
+      ((distance * self.gs.freedom_vector_x) >> 14)
+    points[idx].y = points[idx].y +
+      ((distance * self.gs.freedom_vector_y) >> 14)
+    // Mark point as touched
+    let touch = if zone == 0 { self.zone0_tags } else { self.zone1_touch }
+    if idx < touch.length() {
+      let mut flags = touch[idx].to_int()
+      // Touch in x if freedom vector has x component
+      if self.gs.freedom_vector_x != 0L {
+        flags = flags | 0x01
+      }
+      // Touch in y if freedom vector has y component
+      if self.gs.freedom_vector_y != 0L {
+        flags = flags | 0x02
+      }
+      touch[idx] = flags.to_byte()
+    }
+  }
+}
+
+///|
+/// Round a 26.6 distance according to the current round_state.
+fn InterpContext::round_value(self : InterpContext, distance : Int64) -> Int64 {
+  let sign : Int64 = if distance >= 0L { 1L } else { -1L }
+  let d = if distance < 0L { -distance } else { distance }
+  let result = match self.gs.round_state {
+    0 => d // round off
+    1 => (d + 32L) & -64L // round to grid (nearest multiple of 64)
+    2 => { // round to half grid
+      let r = (d & -64L) + 32L
+      r
+    }
+    3 => (d + 16L) & -32L // round to double grid (nearest multiple of 32)
+    4 => d & -64L // round down to grid (floor)
+    5 => (d + 63L) & -64L // round up to grid (ceiling)
+    _ => (d + 32L) & -64L // default: round to grid
+  }
+  sign * result
+}
+
+///|
+/// Normalize a vector (dx,dy) to 2.14 unit vector.
+fn normalize_vector(dx : Int64, dy : Int64) -> (Int64, Int64) {
+  if dx == 0L && dy == 0L {
+    return (0x4000L, 0L)
+  }
+  // Compute length using integer square root approximation
+  let ax = if dx < 0L { -dx } else { dx }
+  let ay = if dy < 0L { -dy } else { dy }
+  // Use the larger component to avoid overflow
+  if ax == 0L {
+    return (0L, if dy > 0L { 0x4000L } else { -0x4000L })
+  }
+  if ay == 0L {
+    return (if dx > 0L { 0x4000L } else { -0x4000L }, 0L)
+  }
+  // Compute length = sqrt(dx*dx + dy*dy) using shift to avoid overflow
+  // Scale down if needed to prevent overflow in multiplication
+  let mut sdx = dx
+  let mut sdy = dy
+  while (if sdx < 0L { -sdx } else { sdx }) > 0x4000L ||
+        (if sdy < 0L { -sdy } else { sdy }) > 0x4000L {
+    sdx = sdx >> 1
+    sdy = sdy >> 1
+  }
+  let len_sq = sdx * sdx + sdy * sdy
+  // Integer square root
+  let mut r = 1L
+  let mut s = len_sq
+  while s > 0L {
+    s = s >> 2
+    r = r << 1
+  }
+  // Newton's method
+  for _ in 0..<10 {
+    if r == 0L {
+      break
+    }
+    r = (r + len_sq / r) >> 1
+  }
+  let length = r
+  if length == 0L {
+    return (0x4000L, 0L)
+  }
+  // Result in 2.14: component * 0x4000 / length (using scaled values)
+  let rx = sdx * 0x4000L / length
+  let ry = sdy * 0x4000L / length
+  (rx, ry)
 }
 
 ///|
@@ -176,6 +355,13 @@ fn InterpContext::exec_opcode(self : InterpContext, opcode : Int) -> Unit {
     0x67 => self.op_ceiling() // CEILING
     0x8A => self.op_roll() // ROLL
     0x6C => self.op_nround() // NROUND[00]
+    0x6D => self.op_nround() // NROUND[01]
+    0x6E => self.op_nround() // NROUND[10]
+    0x6F => self.op_nround() // NROUND[11]
+    0x68 => self.op_round() // ROUND[00]
+    0x69 => self.op_round() // ROUND[01]
+    0x6A => self.op_round() // ROUND[10]
+    0x6B => self.op_round() // ROUND[11]
     // --- Comparison ---
     0x50 => self.op_lt() // LT
     0x51 => self.op_lteq() // LTEQ
@@ -225,20 +411,127 @@ fn InterpContext::exec_opcode(self : InterpContext, opcode : Int) -> Unit {
       self.gs.zp2 = z
     }
     0x17 => self.loop_count = self.pop().to_int() // SLOOP
-    0x18 => () // RTG (round to grid - default)
-    0x19 => self.gs.round_state = 0 // RTHG (round to half grid)
+    // --- Rounding opcodes ---
+    0x18 => self.gs.round_state = 1 // RTG (round to grid)
+    0x19 => self.gs.round_state = 2 // RTHG (round to half grid)
+    0x3D => self.gs.round_state = 3 // RTDG (round to double grid)
+    0x7A => self.gs.round_state = 0 // ROFF (round off)
+    0x76 => { // SROUND
+      ignore(self.pop()) // consume period/phase/threshold arg
+      self.gs.round_state = 1 // treat as round to grid
+    }
+    0x77 => { // S45ROUND
+      ignore(self.pop()) // consume period/phase/threshold arg
+      self.gs.round_state = 1 // treat as round to grid
+    }
+    0x7C => self.gs.round_state = 5 // RUTG (round up to grid)
+    0x7D => self.gs.round_state = 4 // RDTG (round down to grid)
+    // --- Other graphics state ---
     0x1A => self.gs.minimum_distance = self.pop() // SMD
-    0x4D => () // FLIPON
-    0x4E => () // FLIPOFF
-    0x76 => self.gs.round_state = 1 // SROUND
-    0x7C => self.gs.round_state = 0 // RUTG
-    0x7D => self.gs.round_state = 1 // RDTG
+    0x1D => self.gs.control_value_cut_in = self.pop() // SCVTCI
+    0x1E => self.gs.single_width_cut_in = self.pop() // SSWCI
+    0x1F => self.gs.single_width_value = self.pop() // SSW
+    0x4D => self.gs.auto_flip = true // FLIPON
+    0x4E => self.gs.auto_flip = false // FLIPOFF
     0x4F => () // DEBUG (no-op)
+    0x85 => ignore(self.pop()) // SCANCTRL
+    0x8D => ignore(self.pop()) // SCANTYPE
     0x88 => self.op_getinfo() // GETINFO
     0x91 => self.op_getvariation() // GETVARIATION
+    // --- Vector opcodes ---
+    0x02 => { // SPVTCA[0] - set PV to y-axis
+      self.gs.projection_vector_x = 0L
+      self.gs.projection_vector_y = 0x4000L
+      self.gs.dual_projection_x = 0L
+      self.gs.dual_projection_y = 0x4000L
+    }
+    0x03 => { // SPVTCA[1] - set PV to x-axis
+      self.gs.projection_vector_x = 0x4000L
+      self.gs.projection_vector_y = 0L
+      self.gs.dual_projection_x = 0x4000L
+      self.gs.dual_projection_y = 0L
+    }
+    0x04 => { // SFVTCA[0] - set FV to y-axis
+      self.gs.freedom_vector_x = 0L
+      self.gs.freedom_vector_y = 0x4000L
+    }
+    0x05 => { // SFVTCA[1] - set FV to x-axis
+      self.gs.freedom_vector_x = 0x4000L
+      self.gs.freedom_vector_y = 0L
+    }
+    0x06 => self.op_spvtl(0) // SPVTL[0] - set PV parallel to line
+    0x07 => self.op_spvtl(1) // SPVTL[1] - set PV perpendicular to line
+    0x08 => self.op_sfvtl(0) // SFVTL[0] - set FV parallel to line
+    0x09 => self.op_sfvtl(1) // SFVTL[1] - set FV perpendicular to line
+    0x0A => { // SPVFS - set PV from stack
+      let y = self.pop()
+      let x = self.pop()
+      self.gs.projection_vector_x = x
+      self.gs.projection_vector_y = y
+      self.gs.dual_projection_x = x
+      self.gs.dual_projection_y = y
+    }
+    0x0B => { // SFVFS - set FV from stack
+      let y = self.pop()
+      let x = self.pop()
+      self.gs.freedom_vector_x = x
+      self.gs.freedom_vector_y = y
+    }
+    0x0C => { // GPV - get projection vector
+      self.push(self.gs.projection_vector_x)
+      self.push(self.gs.projection_vector_y)
+    }
+    0x0D => { // GFV - get freedom vector
+      self.push(self.gs.freedom_vector_x)
+      self.push(self.gs.freedom_vector_y)
+    }
+    0x0E => { // SFVTPV - set FV to PV
+      self.gs.freedom_vector_x = self.gs.projection_vector_x
+      self.gs.freedom_vector_y = self.gs.projection_vector_y
+    }
     // --- Measurement ---
+    0x46 => self.op_gc(0) // GC[0] - get coordinate (current)
+    0x47 => self.op_gc(1) // GC[1] - get coordinate (original)
+    0x48 => self.op_scfs() // SCFS - set coordinate from stack
+    0x49 => self.op_md(0) // MD[0] - measure distance (current)
+    0x4A => self.op_md(1) // MD[1] - measure distance (original)
     0x4B => self.push(64L) // MPPEM (stub: return 64 = 1 pixel ppem)
     0x4C => self.push(64L) // MPS (stub)
+    // --- Point movement opcodes ---
+    0x2E => self.op_mdap(0) // MDAP[0]
+    0x2F => self.op_mdap(1) // MDAP[1]
+    0x3E => self.op_miap(0) // MIAP[0]
+    0x3F => self.op_miap(1) // MIAP[1]
+    0x30 => self.op_iup(0) // IUP[0] - interpolate untouched y
+    0x31 => self.op_iup(1) // IUP[1] - interpolate untouched x
+    0x32 => self.op_shp(0) // SHP[0]
+    0x33 => self.op_shp(1) // SHP[1]
+    0x34 => self.op_shc(0) // SHC[0]
+    0x35 => self.op_shc(1) // SHC[1]
+    0x36 => self.op_shz(0) // SHZ[0]
+    0x37 => self.op_shz(1) // SHZ[1]
+    0x38 => self.op_shpix() // SHPIX
+    0x39 => self.op_ip() // IP
+    0x3A => self.op_msirp(0) // MSIRP[0]
+    0x3B => self.op_msirp(1) // MSIRP[1]
+    0x3C => self.op_alignrp() // ALIGNRP
+    0x27 => self.op_alignpts() // ALIGNPTS
+    0x0F => self.op_isect() // ISECT
+    // MDRP[00000] - MDRP[11111]
+    _ if opcode >= 0xC0 && opcode <= 0xDF => self.op_mdrp(opcode - 0xC0)
+    // MIRP[00000] - MIRP[11111]
+    _ if opcode >= 0xE0 && opcode <= 0xFF => self.op_mirp(opcode - 0xE0)
+    // --- Delta instructions ---
+    0x5D => self.op_deltap(1) // DELTAP1
+    0x71 => self.op_deltap(2) // DELTAP2
+    0x72 => self.op_deltap(3) // DELTAP3
+    0x73 => self.op_deltac(1) // DELTAC1
+    0x74 => self.op_deltac(2) // DELTAC2
+    0x75 => self.op_deltac(3) // DELTAC3
+    // --- FLIP instructions ---
+    0x80 => self.op_flippt() // FLIPPT
+    0x81 => self.op_fliprgon() // FLIPRGON
+    0x82 => self.op_fliprgoff() // FLIPRGOFF
     // --- Misc ---
     _ => () // Unimplemented opcodes are no-ops for now
   }
@@ -329,7 +622,7 @@ fn InterpContext::op_sub(self : InterpContext) -> Unit {
 fn InterpContext::op_mul(self : InterpContext) -> Unit {
   let b = self.pop()
   let a = self.pop()
-  // 26.6 × 26.6 → 26.6 (divide by 64)
+  // 26.6 * 26.6 -> 26.6 (divide by 64)
   self.push((a * b + 32L) >> 6)
 }
 
@@ -370,6 +663,13 @@ fn InterpContext::op_ceiling(self : InterpContext) -> Unit {
 ///|
 fn InterpContext::op_nround(self : InterpContext) -> Unit {
   ignore(self) // No rounding, just leave value
+}
+
+///|
+/// ROUND opcode: pop value, round it, push result.
+fn InterpContext::op_round(self : InterpContext) -> Unit {
+  let val = self.pop()
+  self.push(self.round_value(val))
 }
 
 // --- Comparison ---
@@ -706,4 +1006,676 @@ fn InterpContext::op_getinfo(self : InterpContext) -> Unit {
 fn InterpContext::op_getvariation(self : InterpContext) -> Unit {
   // Stub: push 0 (no variation)
   self.push(0L)
+}
+
+// --- Vector opcodes ---
+
+///|
+/// SPVTL[a] - Set projection vector to line between two points.
+/// a=0: parallel to line, a=1: perpendicular to line.
+fn InterpContext::op_spvtl(self : InterpContext, flag : Int) -> Unit {
+  let p2_idx = self.pop().to_int()
+  let p1_idx = self.pop().to_int()
+  let (x1, y1) = self.get_zone_point(self.gs.zp2, p2_idx)
+  let (x2, y2) = self.get_zone_point(self.gs.zp1, p1_idx)
+  let mut dx = x1 - x2
+  let mut dy = y1 - y2
+  if flag == 1 {
+    // Perpendicular: rotate 90 degrees
+    let tmp = dx
+    dx = -dy
+    dy = tmp
+  }
+  let (nx, ny) = normalize_vector(dx, dy)
+  self.gs.projection_vector_x = nx
+  self.gs.projection_vector_y = ny
+  self.gs.dual_projection_x = nx
+  self.gs.dual_projection_y = ny
+}
+
+///|
+/// SFVTL[a] - Set freedom vector to line between two points.
+fn InterpContext::op_sfvtl(self : InterpContext, flag : Int) -> Unit {
+  let p2_idx = self.pop().to_int()
+  let p1_idx = self.pop().to_int()
+  let (x1, y1) = self.get_zone_point(self.gs.zp2, p2_idx)
+  let (x2, y2) = self.get_zone_point(self.gs.zp1, p1_idx)
+  let mut dx = x1 - x2
+  let mut dy = y1 - y2
+  if flag == 1 {
+    let tmp = dx
+    dx = -dy
+    dy = tmp
+  }
+  let (nx, ny) = normalize_vector(dx, dy)
+  self.gs.freedom_vector_x = nx
+  self.gs.freedom_vector_y = ny
+}
+
+// --- Measurement opcodes ---
+
+///|
+/// GC[a] - Get Coordinate projected along PV.
+/// a=0: current position, a=1: original position.
+fn InterpContext::op_gc(self : InterpContext, flag : Int) -> Unit {
+  let point_idx = self.pop().to_int()
+  if flag == 0 {
+    let (x, y) = self.get_zone_point(self.gs.zp2, point_idx)
+    self.push(self.project(x, y))
+  } else {
+    let (x, y) = self.get_zone_org(self.gs.zp2, point_idx)
+    self.push(self.dual_project(x, y))
+  }
+}
+
+///|
+/// SCFS - Set Coordinate From Stack.
+fn InterpContext::op_scfs(self : InterpContext) -> Unit {
+  let value = self.pop()
+  let point_idx = self.pop().to_int()
+  let (x, y) = self.get_zone_point(self.gs.zp2, point_idx)
+  let cur_proj = self.project(x, y)
+  let delta = value - cur_proj
+  self.move_point(self.gs.zp2, point_idx, delta)
+}
+
+///|
+/// MD[a] - Measure Distance between two points.
+/// a=0: measure in grid-fitted (current) outline, a=1: measure in original.
+fn InterpContext::op_md(self : InterpContext, flag : Int) -> Unit {
+  let p2_idx = self.pop().to_int()
+  let p1_idx = self.pop().to_int()
+  if flag == 0 {
+    // Current outline
+    let (x1, y1) = self.get_zone_point(self.gs.zp1, p1_idx)
+    let (x2, y2) = self.get_zone_point(self.gs.zp0, p2_idx)
+    let d = self.project(x1, y1) - self.project(x2, y2)
+    self.push(d)
+  } else {
+    // Original outline
+    let (x1, y1) = self.get_zone_org(self.gs.zp1, p1_idx)
+    let (x2, y2) = self.get_zone_org(self.gs.zp0, p2_idx)
+    let d = self.dual_project(x1, y1) - self.dual_project(x2, y2)
+    self.push(d)
+  }
+}
+
+// --- Point movement opcodes ---
+
+///|
+/// MDAP[a] - Move Direct Absolute Point.
+/// Pop point number, optionally round, set rp0=rp1=point.
+fn InterpContext::op_mdap(self : InterpContext, flag : Int) -> Unit {
+  let point_idx = self.pop().to_int()
+  if flag == 1 {
+    // Round the point's coordinate
+    let (x, y) = self.get_zone_point(self.gs.zp0, point_idx)
+    let cur_dist = self.project(x, y)
+    let rounded = self.round_value(cur_dist)
+    let delta = rounded - cur_dist
+    self.move_point(self.gs.zp0, point_idx, delta)
+  } else {
+    // Just mark as touched
+    let touch = if self.gs.zp0 == 0 {
+      self.zone0_tags
+    } else {
+      self.zone1_touch
+    }
+    if point_idx >= 0 && point_idx < touch.length() {
+      let mut flags = touch[point_idx].to_int()
+      if self.gs.freedom_vector_x != 0L {
+        flags = flags | 0x01
+      }
+      if self.gs.freedom_vector_y != 0L {
+        flags = flags | 0x02
+      }
+      touch[point_idx] = flags.to_byte()
+    }
+  }
+  self.gs.rp0 = point_idx
+  self.gs.rp1 = point_idx
+}
+
+///|
+/// MIAP[a] - Move Indirect Absolute Point.
+/// Pop CVT index + point, move point to CVT value.
+fn InterpContext::op_miap(self : InterpContext, flag : Int) -> Unit {
+  let cvt_idx = self.pop().to_int()
+  let point_idx = self.pop().to_int()
+  let cvt_dist = if cvt_idx >= 0 && cvt_idx < self.cvt.length() {
+    self.cvt[cvt_idx]
+  } else {
+    0L
+  }
+  let (x, y) = self.get_zone_point(self.gs.zp0, point_idx)
+  let cur_dist = self.project(x, y)
+  let new_dist = if flag == 1 {
+    // Round the CVT value
+    let (ox, oy) = self.get_zone_org(self.gs.zp0, point_idx)
+    let org_dist = self.dual_project(ox, oy)
+    // Apply cut-in test
+    let diff = if cvt_dist - org_dist >= 0L {
+      cvt_dist - org_dist
+    } else {
+      org_dist - cvt_dist
+    }
+    if diff > self.gs.control_value_cut_in {
+      self.round_value(org_dist)
+    } else {
+      self.round_value(cvt_dist)
+    }
+  } else {
+    cvt_dist
+  }
+  let delta = new_dist - cur_dist
+  self.move_point(self.gs.zp0, point_idx, delta)
+  self.gs.rp0 = point_idx
+  self.gs.rp1 = point_idx
+}
+
+///|
+/// IUP[a] - Interpolate Untouched Points.
+/// a=0: interpolate y coordinates, a=1: interpolate x coordinates.
+fn InterpContext::op_iup(self : InterpContext, flag : Int) -> Unit {
+  let n_points = self.zone1_cur.length()
+  if n_points == 0 {
+    return
+  }
+  let touch_mask : Int = if flag == 1 { 0x01 } else { 0x02 } // x or y
+  // Process each contour
+  // For simplicity, treat all points as one contour if contour info not available
+  // Find touched points and interpolate between them
+  let start = 0
+  // Find contour boundaries from zone1_tags (on-curve/off-curve flags)
+  // For now, process all points as a single run
+  let end = n_points
+  // Collect indices of touched points in this contour
+  let touched : Array[Int] = []
+  for i in start..<end {
+    if i < self.zone1_touch.length() {
+      if (self.zone1_touch[i].to_int() & touch_mask) != 0 {
+        touched.push(i)
+      }
+    }
+  }
+  if touched.length() == 0 {
+    return
+  }
+  // Interpolate untouched points between consecutive touched points
+  for ti = 0; ti < touched.length(); ti = ti + 1 {
+    let t1 = touched[ti]
+    let t2 = touched[(ti + 1) % touched.length()]
+    // Interpolate points between t1 and t2
+    let range_start = t1 + 1
+    let range_end = if t2 > t1 { t2 } else { end }
+    if flag == 1 {
+      // Interpolate x
+      let org1_x = if t1 < self.zone1_org.length() {
+        self.zone1_org[t1].x
+      } else {
+        0L
+      }
+      let cur1_x = self.zone1_cur[t1].x
+      let org2_x = if t2 < self.zone1_org.length() {
+        self.zone1_org[t2].x
+      } else {
+        0L
+      }
+      let cur2_x = self.zone1_cur[t2].x
+      for i in range_start..<range_end {
+        if i < self.zone1_touch.length() &&
+          (self.zone1_touch[i].to_int() & touch_mask) == 0 {
+          let org_x = if i < self.zone1_org.length() {
+            self.zone1_org[i].x
+          } else {
+            0L
+          }
+          self.zone1_cur[i].x = interp_value(
+            org_x, org1_x, org2_x, cur1_x, cur2_x,
+          )
+        }
+      }
+    } else {
+      // Interpolate y
+      let org1_y = if t1 < self.zone1_org.length() {
+        self.zone1_org[t1].y
+      } else {
+        0L
+      }
+      let cur1_y = self.zone1_cur[t1].y
+      let org2_y = if t2 < self.zone1_org.length() {
+        self.zone1_org[t2].y
+      } else {
+        0L
+      }
+      let cur2_y = self.zone1_cur[t2].y
+      for i in range_start..<range_end {
+        if i < self.zone1_touch.length() &&
+          (self.zone1_touch[i].to_int() & touch_mask) == 0 {
+          let org_y = if i < self.zone1_org.length() {
+            self.zone1_org[i].y
+          } else {
+            0L
+          }
+          self.zone1_cur[i].y = interp_value(
+            org_y, org1_y, org2_y, cur1_y, cur2_y,
+          )
+        }
+      }
+    }
+  }
+  ignore(start)
+}
+
+///|
+/// Interpolate a value between two reference points.
+fn interp_value(
+  org : Int64,
+  org1 : Int64,
+  org2 : Int64,
+  cur1 : Int64,
+  cur2 : Int64,
+) -> Int64 {
+  if org1 == org2 {
+    // Reference points are at same position; shift by same delta
+    return cur1 + (org - org1)
+  }
+  // Clamp to range
+  let (lo_org, lo_cur, hi_org, hi_cur) = if org1 < org2 {
+    (org1, cur1, org2, cur2)
+  } else {
+    (org2, cur2, org1, cur1)
+  }
+  if org <= lo_org {
+    // Before first reference: shift
+    lo_cur + (org - lo_org)
+  } else if org >= hi_org {
+    // After second reference: shift
+    hi_cur + (org - hi_org)
+  } else {
+    // Between references: linear interpolation
+    let range = hi_org - lo_org
+    let offset = org - lo_org
+    lo_cur + (hi_cur - lo_cur) * offset / range
+  }
+}
+
+///|
+/// SHP[a] - Shift Point using reference point.
+/// a=0: use rp2 in zp1, a=1: use rp1 in zp0.
+fn InterpContext::op_shp(self : InterpContext, flag : Int) -> Unit {
+  // Get reference point delta
+  let (rp_zone, rp_idx) = if flag == 0 {
+    (self.gs.zp1, self.gs.rp2)
+  } else {
+    (self.gs.zp0, self.gs.rp1)
+  }
+  let (rx, ry) = self.get_zone_point(rp_zone, rp_idx)
+  let (rox, roy) = self.get_zone_org(rp_zone, rp_idx)
+  let delta = self.project(rx, ry) - self.project(rox, roy)
+  let count = self.loop_count
+  self.loop_count = 1
+  for _ in 0..<count {
+    let point_idx = self.pop().to_int()
+    self.move_point(self.gs.zp2, point_idx, delta)
+  }
+}
+
+///|
+/// SHC[a] - Shift Contour.
+fn InterpContext::op_shc(self : InterpContext, flag : Int) -> Unit {
+  let _contour = self.pop().to_int()
+  // Get reference point delta
+  let (rp_zone, rp_idx) = if flag == 0 {
+    (self.gs.zp1, self.gs.rp2)
+  } else {
+    (self.gs.zp0, self.gs.rp1)
+  }
+  let (rx, ry) = self.get_zone_point(rp_zone, rp_idx)
+  let (rox, roy) = self.get_zone_org(rp_zone, rp_idx)
+  let delta = self.project(rx, ry) - self.project(rox, roy)
+  // Move all points in zone2 by delta (simplified: we don't track contour boundaries here)
+  let n = if self.gs.zp2 == 0 {
+    self.zone0_cur.length()
+  } else {
+    self.zone1_cur.length()
+  }
+  for i in 0..<n {
+    self.move_point(self.gs.zp2, i, delta)
+  }
+}
+
+///|
+/// SHZ[a] - Shift Zone.
+fn InterpContext::op_shz(self : InterpContext, flag : Int) -> Unit {
+  let _zone = self.pop().to_int()
+  let (rp_zone, rp_idx) = if flag == 0 {
+    (self.gs.zp1, self.gs.rp2)
+  } else {
+    (self.gs.zp0, self.gs.rp1)
+  }
+  let (rx, ry) = self.get_zone_point(rp_zone, rp_idx)
+  let (rox, roy) = self.get_zone_org(rp_zone, rp_idx)
+  let delta = self.project(rx, ry) - self.project(rox, roy)
+  let n = if self.gs.zp2 == 0 {
+    self.zone0_cur.length()
+  } else {
+    self.zone1_cur.length()
+  }
+  for i in 0..<n {
+    self.move_point(self.gs.zp2, i, delta)
+  }
+}
+
+///|
+/// SHPIX - Shift point by pixel amount.
+fn InterpContext::op_shpix(self : InterpContext) -> Unit {
+  let distance = self.pop()
+  let count = self.loop_count
+  self.loop_count = 1
+  for _ in 0..<count {
+    let point_idx = self.pop().to_int()
+    self.move_point(self.gs.zp2, point_idx, distance)
+  }
+}
+
+///|
+/// IP - Interpolate Point.
+fn InterpContext::op_ip(self : InterpContext) -> Unit {
+  let count = self.loop_count
+  self.loop_count = 1
+  // Get rp1 and rp2 positions
+  let (r1x, r1y) = self.get_zone_point(self.gs.zp0, self.gs.rp1)
+  let (r2x, r2y) = self.get_zone_point(self.gs.zp1, self.gs.rp2)
+  let (r1ox, r1oy) = self.get_zone_org(self.gs.zp0, self.gs.rp1)
+  let (r2ox, r2oy) = self.get_zone_org(self.gs.zp1, self.gs.rp2)
+  let cur_dist = self.project(r2x, r2y) - self.project(r1x, r1y)
+  let org_dist = self.dual_project(r2ox, r2oy) - self.dual_project(r1ox, r1oy)
+  for _ in 0..<count {
+    let point_idx = self.pop().to_int()
+    let (ox, oy) = self.get_zone_org(self.gs.zp2, point_idx)
+    let org_offset = self.dual_project(ox, oy) - self.dual_project(r1ox, r1oy)
+    let new_offset = if org_dist != 0L {
+      org_offset * cur_dist / org_dist
+    } else {
+      0L
+    }
+    let (px, py) = self.get_zone_point(self.gs.zp2, point_idx)
+    let cur_offset = self.project(px, py) - self.project(r1x, r1y)
+    let delta = new_offset - cur_offset
+    self.move_point(self.gs.zp2, point_idx, delta)
+  }
+}
+
+///|
+/// MSIRP[a] - Move Stack Indirect Relative Point.
+fn InterpContext::op_msirp(self : InterpContext, flag : Int) -> Unit {
+  let distance = self.pop()
+  let point_idx = self.pop().to_int()
+  let (rx, ry) = self.get_zone_point(self.gs.zp0, self.gs.rp0)
+  let rp_proj = self.project(rx, ry)
+  let (px, py) = self.get_zone_point(self.gs.zp1, point_idx)
+  let p_proj = self.project(px, py)
+  let target = rp_proj + distance
+  let delta = target - p_proj
+  self.move_point(self.gs.zp1, point_idx, delta)
+  self.gs.rp1 = self.gs.rp0
+  self.gs.rp2 = point_idx
+  if flag == 1 {
+    self.gs.rp0 = point_idx
+  }
+}
+
+///|
+/// ALIGNRP - Align to Reference Point.
+fn InterpContext::op_alignrp(self : InterpContext) -> Unit {
+  let count = self.loop_count
+  self.loop_count = 1
+  let (rx, ry) = self.get_zone_point(self.gs.zp0, self.gs.rp0)
+  let rp_proj = self.project(rx, ry)
+  for _ in 0..<count {
+    let point_idx = self.pop().to_int()
+    let (px, py) = self.get_zone_point(self.gs.zp1, point_idx)
+    let p_proj = self.project(px, py)
+    let delta = rp_proj - p_proj
+    self.move_point(self.gs.zp1, point_idx, delta)
+  }
+}
+
+///|
+/// ALIGNPTS - Align Points.
+fn InterpContext::op_alignpts(self : InterpContext) -> Unit {
+  let p2_idx = self.pop().to_int()
+  let p1_idx = self.pop().to_int()
+  let (x1, y1) = self.get_zone_point(self.gs.zp0, p1_idx)
+  let (x2, y2) = self.get_zone_point(self.gs.zp1, p2_idx)
+  let d1 = self.project(x1, y1)
+  let d2 = self.project(x2, y2)
+  let mid = (d1 + d2) / 2L
+  self.move_point(self.gs.zp0, p1_idx, mid - d1)
+  self.move_point(self.gs.zp1, p2_idx, mid - d2)
+}
+
+///|
+/// ISECT - Move point to intersection of two lines.
+fn InterpContext::op_isect(self : InterpContext) -> Unit {
+  let b1 = self.pop().to_int()
+  let b0 = self.pop().to_int()
+  let a1 = self.pop().to_int()
+  let a0 = self.pop().to_int()
+  let point_idx = self.pop().to_int()
+  // Get line A endpoints
+  let (ax0, ay0) = self.get_zone_point(self.gs.zp1, a0)
+  let (ax1, ay1) = self.get_zone_point(self.gs.zp1, a1)
+  // Get line B endpoints
+  let (bx0, by0) = self.get_zone_point(self.gs.zp0, b0)
+  let (bx1, by1) = self.get_zone_point(self.gs.zp0, b1)
+  // Compute intersection
+  let dax = ax1 - ax0
+  let day = ay1 - ay0
+  let dbx = bx1 - bx0
+  let dby = by1 - by0
+  let denom = dax * dby - day * dbx
+  if denom == 0L {
+    // Lines are parallel; move to midpoint of a0 and b0
+    let mx = (ax0 + bx0) / 2L
+    let my = (ay0 + by0) / 2L
+    self.set_zone_point(self.gs.zp2, point_idx, mx, my)
+  } else {
+    let t_num = (bx0 - ax0) * dby - (by0 - ay0) * dbx
+    let ix = ax0 + dax * t_num / denom
+    let iy = ay0 + day * t_num / denom
+    self.set_zone_point(self.gs.zp2, point_idx, ix, iy)
+  }
+  // Mark point as touched in both x and y
+  let touch = if self.gs.zp2 == 0 { self.zone0_tags } else { self.zone1_touch }
+  if point_idx >= 0 && point_idx < touch.length() {
+    touch[point_idx] = (touch[point_idx].to_int() | 0x03).to_byte()
+  }
+}
+
+///|
+/// MDRP[flags] - Move Direct Relative Point.
+/// Flags: bit0=round, bit1=min_distance, bits2-3=color, bit4=set_rp0.
+fn InterpContext::op_mdrp(self : InterpContext, flags : Int) -> Unit {
+  let point_idx = self.pop().to_int()
+  // Measure original distance
+  let (ox, oy) = self.get_zone_org(self.gs.zp1, point_idx)
+  let (rox, roy) = self.get_zone_org(self.gs.zp0, self.gs.rp0)
+  let mut dist = self.dual_project(ox, oy) - self.dual_project(rox, roy)
+  // Round if flag bit 0
+  if (flags & 0x04) != 0 {
+    dist = self.round_value(dist)
+  }
+  // Enforce minimum distance if flag bit 1
+  if (flags & 0x08) != 0 {
+    let min_dist = self.gs.minimum_distance
+    if dist >= 0L {
+      if dist < min_dist {
+        dist = min_dist
+      }
+    } else if dist > -min_dist {
+      dist = -min_dist
+    }
+  }
+  // Get current rp0 position
+  let (rx, ry) = self.get_zone_point(self.gs.zp0, self.gs.rp0)
+  let rp_proj = self.project(rx, ry)
+  // Move point to rp0 + dist
+  let (px, py) = self.get_zone_point(self.gs.zp1, point_idx)
+  let p_proj = self.project(px, py)
+  let target = rp_proj + dist
+  let delta = target - p_proj
+  self.move_point(self.gs.zp1, point_idx, delta)
+  self.gs.rp1 = self.gs.rp0
+  self.gs.rp2 = point_idx
+  if (flags & 0x10) != 0 {
+    self.gs.rp0 = point_idx
+  }
+}
+
+///|
+/// MIRP[flags] - Move Indirect Relative Point.
+/// Like MDRP but uses CVT entry for distance.
+fn InterpContext::op_mirp(self : InterpContext, flags : Int) -> Unit {
+  let cvt_idx = self.pop().to_int()
+  let point_idx = self.pop().to_int()
+  let cvt_dist = if cvt_idx >= 0 && cvt_idx < self.cvt.length() {
+    self.cvt[cvt_idx]
+  } else {
+    0L
+  }
+  // Get original distance for auto-flip
+  let (ox, oy) = self.get_zone_org(self.gs.zp1, point_idx)
+  let (rox, roy) = self.get_zone_org(self.gs.zp0, self.gs.rp0)
+  let org_dist = self.dual_project(ox, oy) - self.dual_project(rox, roy)
+  let mut dist = cvt_dist
+  // Auto-flip: if original distance is negative but CVT positive (or vice versa), flip
+  if self.gs.auto_flip {
+    if (org_dist >= 0L && dist < 0L) || (org_dist < 0L && dist >= 0L) {
+      dist = -dist
+    }
+  }
+  // Apply cut-in test
+  let diff = if dist - org_dist >= 0L {
+    dist - org_dist
+  } else {
+    org_dist - dist
+  }
+  if diff > self.gs.control_value_cut_in {
+    dist = org_dist
+  }
+  // Round if flag bit 2 (distance color encoding offset)
+  if (flags & 0x04) != 0 {
+    dist = self.round_value(dist)
+  }
+  // Enforce minimum distance if flag bit 3
+  if (flags & 0x08) != 0 {
+    let min_dist = self.gs.minimum_distance
+    if dist >= 0L {
+      if dist < min_dist {
+        dist = min_dist
+      }
+    } else if dist > -min_dist {
+      dist = -min_dist
+    }
+  }
+  // Get current rp0 position
+  let (rx, ry) = self.get_zone_point(self.gs.zp0, self.gs.rp0)
+  let rp_proj = self.project(rx, ry)
+  // Move point
+  let (px, py) = self.get_zone_point(self.gs.zp1, point_idx)
+  let p_proj = self.project(px, py)
+  let target = rp_proj + dist
+  let delta = target - p_proj
+  self.move_point(self.gs.zp1, point_idx, delta)
+  self.gs.rp1 = self.gs.rp0
+  self.gs.rp2 = point_idx
+  if (flags & 0x10) != 0 {
+    self.gs.rp0 = point_idx
+  }
+}
+
+// --- Delta instructions ---
+
+///|
+/// DELTAP[n] - Delta exception for points.
+fn InterpContext::op_deltap(self : InterpContext, selector : Int) -> Unit {
+  let n = self.pop().to_int()
+  let ppem_base = self.gs.delta_base + (selector - 1) * 16
+  for _ in 0..<n {
+    let arg = self.pop().to_int()
+    let point_idx = self.pop().to_int()
+    let ppem_offset = (arg >> 4) & 0x0F
+    let ppem = ppem_base + ppem_offset
+    // Check if current ppem matches (stub: assume ppem=64 from MPPEM)
+    if ppem == 64 {
+      let magnitude = arg & 0x0F
+      // magnitude 0-7: -(8-magnitude) steps, 8-15: +(magnitude-7) steps
+      let step = if magnitude < 8 { -(8 - magnitude) } else { magnitude - 7 }
+      let delta = step.to_int64() << 6 >> self.gs.delta_shift
+      self.move_point(self.gs.zp0, point_idx, delta)
+    }
+  }
+}
+
+///|
+/// DELTAC[n] - Delta exception for CVT values.
+fn InterpContext::op_deltac(self : InterpContext, selector : Int) -> Unit {
+  let n = self.pop().to_int()
+  let ppem_base = self.gs.delta_base + (selector - 1) * 16
+  for _ in 0..<n {
+    let arg = self.pop().to_int()
+    let cvt_idx = self.pop().to_int()
+    let ppem_offset = (arg >> 4) & 0x0F
+    let ppem = ppem_base + ppem_offset
+    if ppem == 64 {
+      let magnitude = arg & 0x0F
+      let step = if magnitude < 8 { -(8 - magnitude) } else { magnitude - 7 }
+      let delta = step.to_int64() << 6 >> self.gs.delta_shift
+      if cvt_idx >= 0 && cvt_idx < self.cvt.length() {
+        self.cvt[cvt_idx] = self.cvt[cvt_idx] + delta
+      }
+    }
+  }
+}
+
+// --- FLIP instructions ---
+
+///|
+/// FLIPPT - Flip on-curve/off-curve flag for points.
+fn InterpContext::op_flippt(self : InterpContext) -> Unit {
+  let count = self.loop_count
+  self.loop_count = 1
+  for _ in 0..<count {
+    let point_idx = self.pop().to_int()
+    if point_idx >= 0 && point_idx < self.zone1_tags.length() {
+      // Toggle bit 0 (on-curve flag)
+      self.zone1_tags[point_idx] = (self.zone1_tags[point_idx].to_int() ^ 0x01).to_byte()
+    }
+  }
+}
+
+///|
+/// FLIPRGON - Flip range of points to on-curve.
+fn InterpContext::op_fliprgon(self : InterpContext) -> Unit {
+  let high = self.pop().to_int()
+  let low = self.pop().to_int()
+  for i in low..<=high {
+    if i >= 0 && i < self.zone1_tags.length() {
+      self.zone1_tags[i] = (self.zone1_tags[i].to_int() | 0x01).to_byte()
+    }
+  }
+}
+
+///|
+/// FLIPRGOFF - Flip range of points to off-curve.
+fn InterpContext::op_fliprgoff(self : InterpContext) -> Unit {
+  let high = self.pop().to_int()
+  let low = self.pop().to_int()
+  for i in low..<=high {
+    if i >= 0 && i < self.zone1_tags.length() {
+      self.zone1_tags[i] = (self.zone1_tags[i].to_int() & 0xFE).to_byte()
+    }
+  }
 }

@@ -253,3 +253,60 @@ test "parity/DejaVuSans.woff: kerning" {
   inspect(@freetype.get_kerning(f, 36U, 92U).0, content="-139")
   inspect(@freetype.get_kerning(f, 37U, 38U).0, content="-36")
 }
+
+///|
+test "parity/DejaVuSans.woff: hinted outline DEFAULT 16ppem" {
+  let f = @freetype.from_bytes(load_dejavusans_woff())
+  let r1 = try? @freetype.set_pixel_sizes(f, 0U, 16U)
+  guard r1 is Ok(_) else { return }
+  let r2 = try? @freetype.load_glyph(f, 4U)
+  guard r2 is Ok(_) else { return }
+  inspect(f.glyph.outline.n_points(), content="10")
+  inspect(
+    f.glyph.metrics.width,
+    content=(
+      #|102
+    ),
+  )
+  inspect(
+    f.glyph.metrics.height,
+    content=(
+      #|747
+    ),
+  )
+  inspect(
+    f.glyph.metrics.hori_advance,
+    content=(
+      #|411
+    ),
+  )
+}
+
+///|
+test "parity/DejaVuSans.woff: outline NO_HINTING 16ppem" {
+  let f = @freetype.from_bytes(load_dejavusans_woff())
+  let r1 = try? @freetype.set_pixel_sizes(f, 0U, 16U)
+  guard r1 is Ok(_) else { return }
+  let r2 = try? @freetype.load_glyph(f, 4U, load_flags=@base.load_no_hinting)
+  guard r2 is Ok(_) else { return }
+  inspect(f.glyph.metrics.hori_advance, content="411")
+}
+
+///|
+test "parity/DejaVuSans.woff: outline FORCE_AUTOHINT 16ppem" {
+  let f = @freetype.from_bytes(load_dejavusans_woff())
+  let r1 = try? @freetype.set_pixel_sizes(f, 0U, 16U)
+  guard r1 is Ok(_) else { return }
+  let r2 = try? @freetype.load_glyph(
+    f,
+    4U,
+    load_flags=@base.load_force_autohint,
+  )
+  guard r2 is Ok(_) else { return }
+  inspect(
+    f.glyph.metrics.hori_advance,
+    content=(
+      #|411
+    ),
+  )
+}

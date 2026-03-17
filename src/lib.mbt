@@ -52,6 +52,29 @@ pub fn from_bytes(
 }
 
 ///|
+/// Mutable container for passing PS hint data from the load closure to load_glyph.
+priv struct PsHintCache {
+  mut h_hints : Array[@psaux.StemHint]
+  mut v_hints : Array[@psaux.StemHint]
+  mut globals : @pshinter.PsGlobals
+  mut has_hints : Bool
+}
+
+///|
+fn PsHintCache::new() -> PsHintCache {
+  {
+    h_hints: [],
+    v_hints: [],
+    globals: @pshinter.PsGlobals::new(),
+    has_hints: false,
+  }
+}
+
+///|
+/// Module-level hint cache for passing hint data from load closures to load_glyph.
+let ps_hint_cache : PsHintCache = PsHintCache::new()
+
+///|
 /// Load an SFNT-based font (TrueType, CFF/OpenType, TTC).
 fn load_sfnt(
   data : Bytes,
@@ -88,6 +111,20 @@ fn load_sfnt(
   // Build the closure-based driver ops
   let kern_table = sfnt_data.kern
   let hmtx = sfnt_data.hmtx
+  // Build PS hint globals for CFF fonts
+  if cff_font is Some(cff) {
+    let pd = cff.private_dict
+    let defaults = @pshinter.PsGlobals::new()
+    ps_hint_cache.globals = @pshinter.build_ps_globals(
+      pd.blue_values.map(fn(v) { v.to_int() }),
+      pd.other_blues.map(fn(v) { v.to_int() }),
+      pd.std_hw.to_int(),
+      pd.std_vw.to_int(),
+      defaults.blue_scale,
+      defaults.blue_shift.to_int(),
+      defaults.blue_fuzz.to_int(),
+    )
+  }
   let char_index_fn : (UInt) -> UInt = match cmap_lookup {
     Some(cl) => fn(charcode) { cl.char_index(charcode) }
     None => fn(_charcode) { 0U }
@@ -97,6 +134,7 @@ fn load_sfnt(
     load_flags,
   ) raise @error.FTError {
     let outline = if tt_data is Some(tt) {
+      ps_hint_cache.has_hints = false
       @truetype.load_tt_glyph(
         data,
         tt.glyph_offsets,
@@ -104,9 +142,14 @@ fn load_sfnt(
         glyph_index,
       )
     } else if cff_font is Some(cff) {
-      let (o, _w, _hh, _hv) = @cff.load_cff_glyph(cff, glyph_index)
+      let (o, _w, hh, hv) = @cff.load_cff_glyph(cff, glyph_index)
+      // Store stem hints in the cache for use during point scaling
+      ps_hint_cache.h_hints = hh
+      ps_hint_cache.v_hints = hv
+      ps_hint_cache.has_hints = hh.length() > 0 || hv.length() > 0
       o
     } else {
+      ps_hint_cache.has_hints = false
       @types.Outline::new()
     }
     ignore(load_flags)
@@ -329,16 +372,32 @@ pub fn load_glyph(
           x_scale,
           @fixed.Fixed::from_raw(slot_data.metrics_hori_advance),
         ).val
-      // Scale outline points
-      for i, _pt in face.glyph.outline.points {
-        face.glyph.outline.points[i].x = @fixed.mul_fix(
-            x_scale,
-            @fixed.Fixed::from_raw(face.glyph.outline.points[i].x),
-          ).val
-        face.glyph.outline.points[i].y = @fixed.mul_fix(
-            y_scale,
-            @fixed.Fixed::from_raw(face.glyph.outline.points[i].y),
-          ).val
+      // Apply PS hinting or plain scaling to outline points
+      let no_hinting = (load_flags & @base.load_no_hinting) != 0
+      if not(no_hinting) && ps_hint_cache.has_hints {
+        // PS hinting: interpolate points based on fitted stems
+        // hint_outline scales points to 26.6 pixels with grid-fitting
+        @pshinter.hint_outline(
+          face.glyph.outline,
+          ps_hint_cache.h_hints,
+          ps_hint_cache.v_hints,
+          ps_hint_cache.globals,
+          y_scale,
+        )
+        // Clear the cache to avoid stale data
+        ps_hint_cache.has_hints = false
+      } else {
+        // Plain scaling: scale outline points
+        for i, _pt in face.glyph.outline.points {
+          face.glyph.outline.points[i].x = @fixed.mul_fix(
+              x_scale,
+              @fixed.Fixed::from_raw(face.glyph.outline.points[i].x),
+            ).val
+          face.glyph.outline.points[i].y = @fixed.mul_fix(
+              y_scale,
+              @fixed.Fixed::from_raw(face.glyph.outline.points[i].y),
+            ).val
+        }
       }
     } else {
       // No scale set — return font units

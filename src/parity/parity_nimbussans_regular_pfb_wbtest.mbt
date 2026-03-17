@@ -511,3 +511,40 @@ test "parity/NimbusSans-Regular.pfb: glyph metrics at 16ppem" {
   guard r2 is Ok(_) else { return }
   inspect(f.glyph.metrics.hori_advance, content="256")
 }
+
+///|
+test "parity/NimbusSans-Regular.pfb: hinted outline DEFAULT 16ppem" {
+  let f = @freetype.from_bytes(load_nimbussans_regular_pfb())
+  let r1 = try? @freetype.set_pixel_sizes(f, 0U, 16U)
+  guard r1 is Ok(_) else { return }
+  let r2 = try? @freetype.load_glyph(f, 274U)
+  guard r2 is Ok(_) else { return }
+  inspect(f.glyph.outline.n_points(), content="10")
+  inspect(f.glyph.metrics.width, content="192")
+  inspect(f.glyph.metrics.height, content="768")
+  inspect(f.glyph.metrics.hori_advance, content="256")
+}
+
+///|
+test "parity/NimbusSans-Regular.pfb: outline NO_HINTING 16ppem" {
+  let f = @freetype.from_bytes(load_nimbussans_regular_pfb())
+  let r1 = try? @freetype.set_pixel_sizes(f, 0U, 16U)
+  guard r1 is Ok(_) else { return }
+  let r2 = try? @freetype.load_glyph(f, 274U, load_flags=@base.load_no_hinting)
+  guard r2 is Ok(_) else { return }
+  inspect(f.glyph.metrics.hori_advance, content="285")
+}
+
+///|
+test "parity/NimbusSans-Regular.pfb: outline FORCE_AUTOHINT 16ppem" {
+  let f = @freetype.from_bytes(load_nimbussans_regular_pfb())
+  let r1 = try? @freetype.set_pixel_sizes(f, 0U, 16U)
+  guard r1 is Ok(_) else { return }
+  let r2 = try? @freetype.load_glyph(
+    f,
+    274U,
+    load_flags=@base.load_force_autohint,
+  )
+  guard r2 is Ok(_) else { return }
+  inspect(f.glyph.metrics.hori_advance, content="256")
+}

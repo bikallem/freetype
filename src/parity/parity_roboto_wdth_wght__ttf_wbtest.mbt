@@ -220,3 +220,60 @@ test "parity/Roboto[wdth,wght].ttf: glyph metrics at 16ppem" {
     ),
   )
 }
+
+///|
+test "parity/Roboto[wdth,wght].ttf: hinted outline DEFAULT 16ppem" {
+  let f = @freetype.from_bytes(load_roboto_wdth_wght__ttf())
+  let r1 = try? @freetype.set_pixel_sizes(f, 0U, 16U)
+  guard r1 is Ok(_) else { return }
+  let r2 = try? @freetype.load_glyph(f, 5U)
+  guard r2 is Ok(_) else { return }
+  inspect(f.glyph.outline.n_points(), content="16")
+  inspect(
+    f.glyph.metrics.width,
+    content=(
+      #|110
+    ),
+  )
+  inspect(
+    f.glyph.metrics.height,
+    content=(
+      #|734
+    ),
+  )
+  inspect(
+    f.glyph.metrics.hori_advance,
+    content=(
+      #|264
+    ),
+  )
+}
+
+///|
+test "parity/Roboto[wdth,wght].ttf: outline NO_HINTING 16ppem" {
+  let f = @freetype.from_bytes(load_roboto_wdth_wght__ttf())
+  let r1 = try? @freetype.set_pixel_sizes(f, 0U, 16U)
+  guard r1 is Ok(_) else { return }
+  let r2 = try? @freetype.load_glyph(f, 5U, load_flags=@base.load_no_hinting)
+  guard r2 is Ok(_) else { return }
+  inspect(f.glyph.metrics.hori_advance, content="264")
+}
+
+///|
+test "parity/Roboto[wdth,wght].ttf: outline FORCE_AUTOHINT 16ppem" {
+  let f = @freetype.from_bytes(load_roboto_wdth_wght__ttf())
+  let r1 = try? @freetype.set_pixel_sizes(f, 0U, 16U)
+  guard r1 is Ok(_) else { return }
+  let r2 = try? @freetype.load_glyph(
+    f,
+    5U,
+    load_flags=@base.load_force_autohint,
+  )
+  guard r2 is Ok(_) else { return }
+  inspect(
+    f.glyph.metrics.hori_advance,
+    content=(
+      #|264
+    ),
+  )
+}

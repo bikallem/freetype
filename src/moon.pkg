@@ -9,4 +9,6 @@ import {
   "bikallem/freetype/cff",
   "bikallem/freetype/type1",
   "bikallem/freetype/bdf",
+  "bikallem/freetype/pshinter",
+  "bikallem/freetype/psaux",
 }

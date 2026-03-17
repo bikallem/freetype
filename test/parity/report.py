@@ -94,6 +94,9 @@ def main():
         ("charmap entries", "charmap entries"),
         ("glyph outline", "outline NO_SCALE"),
         ("glyph metrics", "glyph metrics"),
+        ("hinted (DEFAULT)", "hinted outline DEFAULT"),
+        ("unhinted (NO_HINT)", "outline NO_HINTING"),
+        ("auto-hinted", "outline FORCE_AUTOHINT"),
         ("TTC multi-face", "TTC multi-face"),
         ("kerning", "kerning"),
     ]

@@ -330,3 +330,65 @@ test "parity/NotoSansJP-Regular.otf: glyph metrics at 16ppem" {
     ),
   )
 }
+
+///|
+test "parity/NotoSansJP-Regular.otf: hinted outline DEFAULT 16ppem" {
+  let f = @freetype.from_bytes(load_notosansjp_regular_otf())
+  let r1 = try? @freetype.set_pixel_sizes(f, 0U, 16U)
+  guard r1 is Ok(_) else { return }
+  let r2 = try? @freetype.load_glyph(f, 2U)
+  guard r2 is Ok(_) else { return }
+  inspect(
+    f.glyph.outline.n_points(),
+    content=(
+      #|13
+    ),
+  )
+  inspect(
+    f.glyph.metrics.width,
+    content=(
+      #|135
+    ),
+  )
+  inspect(
+    f.glyph.metrics.height,
+    content=(
+      #|142
+    ),
+  )
+  inspect(
+    f.glyph.metrics.hori_advance,
+    content=(
+      #|331
+    ),
+  )
+}
+
+///|
+test "parity/NotoSansJP-Regular.otf: outline NO_HINTING 16ppem" {
+  let f = @freetype.from_bytes(load_notosansjp_regular_otf())
+  let r1 = try? @freetype.set_pixel_sizes(f, 0U, 16U)
+  guard r1 is Ok(_) else { return }
+  let r2 = try? @freetype.load_glyph(f, 2U, load_flags=@base.load_no_hinting)
+  guard r2 is Ok(_) else { return }
+  inspect(f.glyph.metrics.hori_advance, content="331")
+}
+
+///|
+test "parity/NotoSansJP-Regular.otf: outline FORCE_AUTOHINT 16ppem" {
+  let f = @freetype.from_bytes(load_notosansjp_regular_otf())
+  let r1 = try? @freetype.set_pixel_sizes(f, 0U, 16U)
+  guard r1 is Ok(_) else { return }
+  let r2 = try? @freetype.load_glyph(
+    f,
+    2U,
+    load_flags=@base.load_force_autohint,
+  )
+  guard r2 is Ok(_) else { return }
+  inspect(
+    f.glyph.metrics.hori_advance,
+    content=(
+      #|331
+    ),
+  )
+}

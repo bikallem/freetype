@@ -204,6 +204,61 @@ def gen_font_tests(ff, golden):
         L += ["}", ""]
         tc += 1
 
+    # T12: Hinted outline (DEFAULT at 16ppem) — tests TT/PS hinting
+    if ext != ".bdf" and upe > 0:
+        default_16_all = [g for g in glyphs if g["load_flags"] == "DEFAULT"
+                          and g["size_ppem"] == 16 and g["outline"]["n_points"] > 0]
+        if default_16_all:
+            g = default_16_all[0]
+            o = g["outline"]
+            L += [f"///|",
+                  f'test "parity/{ff}: hinted outline DEFAULT 16ppem" {{',
+                  f"  let f = @freetype.from_bytes(load_{v}())",
+                  f"  let r1 = try? @freetype.set_pixel_sizes(f, 0U, 16U)",
+                  f"  guard r1 is Ok(_) else {{ return }}",
+                  f"  let r2 = try? @freetype.load_glyph(f, {g['glyph_index']}U)",
+                  f"  guard r2 is Ok(_) else {{ return }}",
+                  f'  inspect(f.glyph.outline.n_points(), content="{o["n_points"]}")',
+                  f'  inspect(f.glyph.metrics.width, content="{g["metrics"]["width"]}")',
+                  f'  inspect(f.glyph.metrics.height, content="{g["metrics"]["height"]}")',
+                  f'  inspect(f.glyph.metrics.hori_advance, content="{g["metrics"]["horiAdvance"]}")',
+                  "}", ""]
+            tc += 1
+
+    # T13: NO_HINTING outline at 16ppem — baseline for hinting comparison
+    if ext != ".bdf" and upe > 0:
+        nohint_16 = [g for g in glyphs if g["load_flags"] == "NO_HINTING"
+                     and g["size_ppem"] == 16 and g["outline"]["n_points"] > 0]
+        if nohint_16:
+            g = nohint_16[0]
+            L += [f"///|",
+                  f'test "parity/{ff}: outline NO_HINTING 16ppem" {{',
+                  f"  let f = @freetype.from_bytes(load_{v}())",
+                  f"  let r1 = try? @freetype.set_pixel_sizes(f, 0U, 16U)",
+                  f"  guard r1 is Ok(_) else {{ return }}",
+                  f"  let r2 = try? @freetype.load_glyph(f, {g['glyph_index']}U, load_flags=@base.load_no_hinting)",
+                  f"  guard r2 is Ok(_) else {{ return }}",
+                  f'  inspect(f.glyph.metrics.hori_advance, content="{g["metrics"]["horiAdvance"]}")',
+                  "}", ""]
+            tc += 1
+
+    # T14: FORCE_AUTOHINT outline — tests auto-hinter
+    if ext != ".bdf" and upe > 0:
+        autohint_16 = [g for g in glyphs if g["load_flags"] == "FORCE_AUTOHINT"
+                       and g["size_ppem"] == 16 and g["outline"]["n_points"] > 0]
+        if autohint_16:
+            g = autohint_16[0]
+            L += [f"///|",
+                  f'test "parity/{ff}: outline FORCE_AUTOHINT 16ppem" {{',
+                  f"  let f = @freetype.from_bytes(load_{v}())",
+                  f"  let r1 = try? @freetype.set_pixel_sizes(f, 0U, 16U)",
+                  f"  guard r1 is Ok(_) else {{ return }}",
+                  f"  let r2 = try? @freetype.load_glyph(f, {g['glyph_index']}U, load_flags=@base.load_force_autohint)",
+                  f"  guard r2 is Ok(_) else {{ return }}",
+                  f'  inspect(f.glyph.metrics.hori_advance, content="{g["metrics"]["horiAdvance"]}")',
+                  "}", ""]
+            tc += 1
+
     return L, tc
 
 
