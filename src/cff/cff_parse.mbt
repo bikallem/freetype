@@ -259,7 +259,7 @@ pub fn load_cff(data : Bytes, offset : Int) -> CffFont raise @error.FTError {
     let name_bytes = name_index.get_item(0)
     let buf = StringBuilder::new()
     for _, b in name_bytes {
-      buf.write_char(Char::from_int(b.to_int()))
+      buf.write_char(Int::unsafe_to_char(b.to_int()))
     }
     buf.to_string()
   } else {

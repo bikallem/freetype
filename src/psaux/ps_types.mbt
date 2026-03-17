@@ -70,7 +70,7 @@ fn PsInterp::push(self : PsInterp, val : Int64) -> Unit {
 fn PsInterp::pop(self : PsInterp) -> Int64 {
   if self.sp > 0 {
     self.sp -= 1
-    self.stack.pop().or(0L)
+    self.stack.pop().unwrap_or(0L)
   } else {
     0L
   }

@@ -112,7 +112,7 @@ pub fn parse_bdf_header(data : Bytes) -> BdfFont raise @error.FTError {
 fn bytes_to_ascii(data : Bytes) -> String {
   let buf = StringBuilder::new()
   for _, b in data {
-    buf.write_char(Char::from_int(b.to_int()))
+    buf.write_char(Int::unsafe_to_char(b.to_int()))
   }
   buf.to_string()
 }

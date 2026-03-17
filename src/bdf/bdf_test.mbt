@@ -39,5 +39,5 @@ test "parse_bdf_header missing STARTFONT" {
   let result : Result[_, _] = Ok(@bdf.parse_bdf_header(data)) catch {
     err => Err(err)
   }
-  inspect(result.is_err(), content="true")
+  inspect(result is Err(_), content="true")
 }

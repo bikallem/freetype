@@ -35,5 +35,5 @@ test "parse_pcf_header invalid signature" {
   let result : Result[_, _] = Ok(@pcf.parse_pcf_header(reader)) catch {
     err => Err(err)
   }
-  inspect(result.is_err(), content="true")
+  inspect(result is Err(_), content="true")
 }

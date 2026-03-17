@@ -24,5 +24,5 @@ test "parse_cid_font rejects short data" {
   let result : Result[_, _] = Ok(@cid.parse_cid_font(data)) catch {
     err => Err(err)
   }
-  inspect(result.is_err(), content="true")
+  inspect(result is Err(_), content="true")
 }

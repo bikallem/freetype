@@ -4,7 +4,7 @@
 pub fn execute_type2(
   charstring : Bytes,
   default_width : Int64,
-  nominal_width : Int64,
+  _nominal_width : Int64,
   local_subrs? : Array[Bytes] = [],
   global_subrs? : Array[Bytes] = [],
 ) -> (@types.Outline, Int64) raise @error.FTError {

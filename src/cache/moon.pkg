@@ -1,5 +1,4 @@
 import {
-  "bikallem/freetype/error",
   "bikallem/freetype/types",
-  "bikallem/freetype/base",
+  "moonbitlang/core/int",
 }

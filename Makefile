@@ -1,7 +1,7 @@
 .PHONY: all build test fmt clean parity bench check
 
 # Default: build, format, and test (no bench — it's slow)
-all: build fmt test parity
+all: build fmt test parity info
 
 # ── Build ──────────────────────────────────────────────────────────
 build:
@@ -18,6 +18,10 @@ fmt:
 # ── Test ───────────────────────────────────────────────────────────
 test:
 	moon test
+
+# ── Info ───────────────────────────────────────────────────────────
+info: 
+	moon info
 
 # ── Clean ──────────────────────────────────────────────────────────
 clean:

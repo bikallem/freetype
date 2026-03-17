@@ -132,12 +132,12 @@ fn decode_utf16_be(data : Bytes, offset : UInt, length : UInt) -> String {
       let low = (hi2 << 8) | lo2
       if low >= 0xDC00 && low <= 0xDFFF {
         let cp = ((code - 0xD800) << 10) + (low - 0xDC00) + 0x10000
-        buf.write_char(Char::from_int(cp))
+        buf.write_char(Int::unsafe_to_char(cp))
         i += 4
         continue
       }
     }
-    buf.write_char(Char::from_int(code))
+    buf.write_char(Int::unsafe_to_char(code))
     i += 2
   }
   buf.to_string()
@@ -152,7 +152,7 @@ fn decode_mac_roman(data : Bytes, offset : UInt, length : UInt) -> String {
   for i in 0..<len {
     let b = data[off + i].to_int()
     if b < 128 {
-      buf.write_char(Char::from_int(b))
+      buf.write_char(Int::unsafe_to_char(b))
     } else {
       buf.write_char('?')
     }

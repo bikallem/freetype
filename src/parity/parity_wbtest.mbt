@@ -41,7 +41,7 @@ test "parity/minimal.bdf: format detection" {
 ///|
 test "parity/minimal.bdf: loads without error" {
   let result = try? @freetype.from_bytes(minimal_bdf_data)
-  inspect(result.is_ok(), content="true")
+  inspect(result is Ok(_), content="true")
 }
 
 ///|
@@ -123,7 +123,7 @@ test "parity/minimal.otf: format detection" {
 ///|
 test "parity/minimal.otf: loads without error" {
   let result = try? @freetype.from_bytes(minimal_otf_data)
-  inspect(result.is_ok(), content="true")
+  inspect(result is Ok(_), content="true")
 }
 
 ///|
@@ -285,7 +285,7 @@ test "parity/minimal.pfb: format detection" {
 ///|
 test "parity/minimal.pfb: loads without error" {
   let result = try? @freetype.from_bytes(minimal_pfb_data)
-  inspect(result.is_ok(), content="true")
+  inspect(result is Ok(_), content="true")
 }
 
 ///|
@@ -438,7 +438,7 @@ test "parity/minimal.ttc: format detection" {
 ///|
 test "parity/minimal.ttc: loads without error" {
   let result = try? @freetype.from_bytes(minimal_ttc_data)
-  inspect(result.is_ok(), content="true")
+  inspect(result is Ok(_), content="true")
 }
 
 ///|
@@ -546,7 +546,7 @@ test "parity/minimal.ttf: format detection" {
 ///|
 test "parity/minimal.ttf: loads without error" {
   let result = try? @freetype.from_bytes(minimal_ttf_data)
-  inspect(result.is_ok(), content="true")
+  inspect(result is Ok(_), content="true")
 }
 
 ///|
@@ -645,7 +645,7 @@ test "parity/minimal.woff: format detection" {
 ///|
 test "parity/minimal.woff: loads without error" {
   let result = try? @freetype.from_bytes(minimal_woff_data)
-  inspect(result.is_ok(), content="true")
+  inspect(result is Ok(_), content="true")
 }
 
 ///|

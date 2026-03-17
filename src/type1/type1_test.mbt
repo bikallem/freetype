@@ -62,7 +62,7 @@ test "parse_type1_pfb invalid marker" {
   let result : Result[_, _] = Ok(@type1.parse_type1_pfb(pfb)) catch {
     err => Err(err)
   }
-  inspect(result.is_err(), content="true")
+  inspect(result is Err(_), content="true")
 }
 
 ///|
@@ -73,6 +73,6 @@ test "Type1Font creation" {
   inspect(font.paint_type, content="0")
   inspect(font.std_hw, content="0")
   inspect(font.std_vw, content="0")
-  inspect(font.charstrings.size(), content="0")
+  inspect(font.charstrings.length(), content="0")
   inspect(font.subrs.length(), content="0")
 }

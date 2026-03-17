@@ -179,7 +179,7 @@ fn extract_font_name(ascii_data : Bytes) -> String {
         let name_bytes = ascii_data[start:j].to_bytes()
         let buf = StringBuilder::new()
         for _, b in name_bytes {
-          buf.write_char(Char::from_int(b.to_int()))
+          buf.write_char(Int::unsafe_to_char(b.to_int()))
         }
         return buf.to_string()
       }

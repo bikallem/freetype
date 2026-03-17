@@ -14,7 +14,7 @@ test "parse_type42 rejects short data" {
   let result : Result[_, _] = Ok(@type42.parse_type42(data)) catch {
     err => Err(err)
   }
-  inspect(result.is_err(), content="true")
+  inspect(result is Err(_), content="true")
 }
 
 ///|

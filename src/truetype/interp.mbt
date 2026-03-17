@@ -236,7 +236,6 @@ fn InterpContext::exec_opcode(self : InterpContext, opcode : Int) -> Unit {
     0x4F => () // DEBUG (no-op)
     0x88 => self.op_getinfo() // GETINFO
     0x91 => self.op_getvariation() // GETVARIATION
-    0x22 => () // Already handled: CLEAR
     // --- Measurement ---
     0x4B => self.push(64L) // MPPEM (stub: return 64 = 1 pixel ppem)
     0x4C => self.push(64L) // MPS (stub)
@@ -370,7 +369,7 @@ fn InterpContext::op_ceiling(self : InterpContext) -> Unit {
 
 ///|
 fn InterpContext::op_nround(self : InterpContext) -> Unit {
-  () // No rounding, just leave value
+  ignore(self) // No rounding, just leave value
 }
 
 // --- Comparison ---

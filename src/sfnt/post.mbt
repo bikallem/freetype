@@ -60,7 +60,7 @@ pub fn parse_post(
       let name_bytes = reader.read_bytes(slen)
       let buf = StringBuilder::new()
       for j in 0..<slen {
-        buf.write_char(Char::from_int(name_bytes[j].to_int()))
+        buf.write_char(Int::unsafe_to_char(name_bytes[j].to_int()))
       }
       extra_names.push(buf.to_string())
     }
