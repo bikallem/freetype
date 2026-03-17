@@ -71,7 +71,7 @@ pub fn CidFont::new() -> CidFont {
 /// Parse a CID font from raw data.
 /// This is a minimal implementation; CID fonts are relatively rare.
 pub fn parse_cid_font(data : Bytes) -> CidFont raise @error.FTError {
-  let _ = data
+  ignore(data)
   // CID fonts use a specialized binary format with:
   // - CIDSystemInfo dictionary
   // - FDArray with per-FD private dicts

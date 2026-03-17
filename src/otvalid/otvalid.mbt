@@ -69,7 +69,7 @@ pub fn validate_class_def(
       let count = reader.read_u16_be()
       // Just validate we can read all class values
       for i = 0U; i < count; i = i + 1U {
-        let _ = reader.read_u16_be()
+        ignore(reader.read_u16_be())
       }
       results.push(Valid)
     }

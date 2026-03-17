@@ -43,8 +43,8 @@ pub fn from_bytes(
       face
     }
     Woff2 => raise @error.FTError::UnimplementedFeature
+    Cid => raise @error.FTError::UnknownFileFormat
     Unknown => raise @error.FTError::UnknownFileFormat
-    _ => raise @error.FTError::UnknownFileFormat
   }
 }
 
@@ -409,6 +409,6 @@ pub fn get_kerning(
       let x = (ops.get_kerning)(left_glyph, right_glyph)
       (x.to_int64(), 0L)
     }
-    _ => (0L, 0L)
+    Empty | Type1Ops(_) => (0L, 0L)
   }
 }
