@@ -10,7 +10,10 @@ import json, os, glob
 GOLDEN_DIR = os.path.join(os.path.dirname(__file__), "..", "golden", "data")
 OUTPUT_DIR = os.path.join(os.path.dirname(__file__), "..", "..", "src", "parity")
 FONT_DIR = os.path.join(os.path.dirname(__file__), "..", "fonts")
-MAX_FONT_SIZE = 1_000_000  # 1MB
+MAX_FONT_SIZE = 2_000_000  # 2MB — fits DejaVuSans.ttc (1.5MB)
+# WOFF files > 50KB cause stack overflow in bikallem/compress zlib inflater
+# (recursive flate decoder hits WASM stack limit). Skip large WOFFs for now.
+MAX_WOFF_SIZE = 50_000
 
 
 def vn(f):
@@ -227,6 +230,10 @@ def main():
         sz = os.path.getsize(fp)
         if sz > MAX_FONT_SIZE:
             print(f"  [skip] {ff} ({sz:,}B > {MAX_FONT_SIZE:,}B)")
+            continue
+        ext = os.path.splitext(ff)[1].lower()
+        if ext == ".woff" and sz > MAX_WOFF_SIZE:
+            print(f"  [skip] {ff} ({sz:,}B WOFF > {MAX_WOFF_SIZE:,}B — zlib stack overflow)")
             continue
         fonts.append((ff, fp, json.load(open(gf))))
         print(f"  [include] {ff} ({sz:,}B)")
