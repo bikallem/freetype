@@ -13,8 +13,7 @@ pub fn from_bytes(
       let decompressed = @sfnt.decompress_woff(data)
       from_bytes(decompressed, face_index~)
     }
-    Type1Pfb => load_type1_pfb(data)
-    Type1Pfa => load_type1_pfb(data) // PFA uses same parser (handles both)
+    Type1Pfb | Type1Pfa => load_type1_pfb(data)
     Bdf => {
       let font = @bdf.parse_bdf_header(data)
       let face = @base.FaceRec::new()
@@ -28,25 +27,8 @@ pub fn from_bytes(
       face.face_flags = @base.face_flag_fixed_sizes | @base.face_flag_horizontal
       face
     }
-    WindowsFnt => {
-      let face = @base.FaceRec::new()
-      face.face_flags = @base.face_flag_fixed_sizes | @base.face_flag_horizontal
-      face
-    }
-    Pfr => {
-      let face = @base.FaceRec::new()
-      face.face_flags = @base.face_flag_scalable | @base.face_flag_horizontal
-      face
-    }
     Woff2 => raise @error.FTError::UnimplementedFeature
-    Cid => {
-      // CID-keyed fonts — parse metadata but no glyph loading yet
-      let face = @base.FaceRec::new()
-      face.face_flags = @base.face_flag_scalable |
-        @base.face_flag_horizontal |
-        @base.face_flag_cid_keyed
-      face
-    }
-    Unknown => raise @error.FTError::UnknownFileFormat
+    // Obsolete/dead formats not supported: CID, Type 42, PFR, Windows FNT
+    Cid | WindowsFnt | Pfr | Unknown => raise @error.FTError::UnknownFileFormat
   }
 }

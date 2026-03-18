@@ -32,7 +32,7 @@ pub let face_flag_glyph_names : Int64 = 1L << 9
 pub let face_flag_hinter : Int64 = 1L << 11
 
 ///|
-pub let face_flag_cid_keyed : Int64 = 1L << 12
+// CID-keyed flag removed — standalone CID fonts not supported (CID-in-CFF works via CFF driver)
 
 ///|
 pub let face_flag_tricky : Int64 = 1L << 13

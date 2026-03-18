@@ -1,8 +1,0 @@
-import {
-  "bikallem/freetype/error",
-  "bikallem/freetype/stream",
-}
-
-import {
-  "moonbitlang/core/encoding/utf8" @utf8,
-} for "test"

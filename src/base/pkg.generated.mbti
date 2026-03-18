@@ -10,8 +10,6 @@ import {
 // Values
 pub fn detect_format(Bytes) -> FontFormat
 
-pub let face_flag_cid_keyed : Int64
-
 pub let face_flag_color : Int64
 
 pub let face_flag_fixed_sizes : Int64

@@ -14,12 +14,11 @@ Pure MoonBit port of the [FreeType](https://freetype.org/) font library. A full 
 | WOFF1 | `.woff` | Full | `sfnt/woff.mbt` — zlib decompression via `bikallem/compress` |
 | WOFF2 | `.woff2` | Not yet | Blocked on Brotli in `bikallem/compress` ([ticket](https://github.com/bikallem/freetype)) |
 | Type 1 (PFB/PFA) | `.pfb` `.pfa` | Full | `type1/` — PFB/PFA parsing, eexec, Type 1 charstrings |
-| CID-keyed | — | Metadata | `cid/` — CIDSystemInfo, CIDCount, FDArray, FontBBox |
-| Type 42 | — | Metadata | `type42/` — sfnts hex extraction, delegates to TrueType |
 | BDF (bitmap) | `.bdf` | Full | `bdf/` — header + glyph bitmap extraction |
 | PCF (bitmap) | `.pcf` | Full | `pcf/` — TOC, properties, metrics, encodings, bitmaps |
-| PFR | — | Metadata | `pfr/` — header and physical font record parsing |
-| Windows FNT | `.fnt` `.fon` | Metadata | `winfonts/` — FNT v2/v3 header, face name, dimensions |
+
+Obsolete formats **not supported**: CID-keyed (standalone), Type 42, PFR (Bitstream), Windows FNT/FON.
+CID-keyed fonts inside CFF/OpenType are supported through the CFF driver.
 
 **Core capabilities:**
 
@@ -125,11 +124,8 @@ src/
   pshinter/            # PostScript hinting: stem alignment, blue zones
   psnames/             # Glyph name ↔ Unicode mapping
   type1/               # Type 1 PFB: segment parsing, eexec decryption
-  cid/                 # CID-keyed font structures
-  type42/              # Type 42 (PS-wrapped TrueType) structures
   autofit/             # Auto-hinter: script detection, segment/edge analysis
-  pfr/, bdf/, pcf/,
-    winfonts/          # Minor format drivers
+  bdf/, pcf/           # Bitmap font drivers
   cache/               # Glyph/charmap LRU cache
   otvalid/, gxvalid/   # OpenType and GX/AAT table validation
   parity/              # Parity tests (read fonts from disk, compare with C FreeType)
