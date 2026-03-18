@@ -1,0 +1,6 @@
+import {
+  "bikallem/freetype",
+  "bikallem/freetype/base",
+  "moonbitlang/x/fs" @fs,
+  "moonbitlang/core/bench",
+}
