@@ -78,171 +78,314 @@ pub fn BdfFont::get_glyph(self : BdfFont, encoding : Int) -> BdfGlyph? {
   None
 }
 
+// ---------------------------------------------------------------------------
+// Zero-allocation byte-level helpers
+// ---------------------------------------------------------------------------
+
 ///|
-/// Parse a pair of hex character code points into a byte.
-fn parse_hex_byte(hi : Int, lo : Int) -> Byte {
-  let h = @stream.hex_digit_value(hi)
-  let l = @stream.hex_digit_value(lo)
-  ((h << 4) | l).to_byte()
+/// Check if the bytes at data[start..end) start with the given ASCII prefix.
+fn bytes_starts_with(
+  data : Bytes,
+  start : Int,
+  end : Int,
+  prefix : String,
+) -> Bool {
+  let plen = prefix.length()
+  if end - start < plen {
+    return false
+  }
+  for i in 0..<plen {
+    if data[start + i].to_int() != prefix[i].to_int() {
+      return false
+    }
+  }
+  true
 }
 
 ///|
-/// Parse hex string into an array of bytes.
-fn parse_hex_to_array(s : String, out : Array[Byte]) -> Unit {
-  let len = s.length()
-  let num_bytes = len / 2
-  for i in 0..<num_bytes {
-    let hi = s[i * 2].to_int()
-    let lo = s[i * 2 + 1].to_int()
-    out.push(parse_hex_byte(hi, lo))
+/// Check if data[start..end) equals the given ASCII string exactly.
+fn bytes_equals(data : Bytes, start : Int, end : Int, s : String) -> Bool {
+  let slen = s.length()
+  if end - start != slen {
+    return false
+  }
+  for i in 0..<slen {
+    if data[start + i].to_int() != s[i].to_int() {
+      return false
+    }
+  }
+  true
+}
+
+///|
+/// Convert bytes in data[start..end) to a String (ASCII).
+fn bytes_to_string(data : Bytes, start : Int, end : Int) -> String {
+  let buf = StringBuilder::new(size_hint=end - start)
+  for i = start; i < end; {
+    buf.write_char(Int::unsafe_to_char(data[i].to_int()))
+    continue i + 1
+  }
+  buf.to_string()
+}
+
+///|
+/// Parse an integer directly from bytes in data[start..end).
+/// Handles optional leading '-' or '+' sign. Returns 0 on empty/invalid.
+fn bytes_parse_int(data : Bytes, start : Int, end : Int) -> Int {
+  if start >= end {
+    return 0
+  }
+  let mut i = start
+  let mut negative = false
+  if data[i] == b'-' {
+    negative = true
+    i = i + 1
+  } else if data[i] == b'+' {
+    i = i + 1
+  }
+  let mut result = 0
+  while i < end {
+    let c = data[i].to_int()
+    if c >= 0x30 && c <= 0x39 {
+      result = result * 10 + (c - 0x30)
+    } else {
+      break
+    }
+    i = i + 1
+  }
+  if negative {
+    -result
+  } else {
+    result
   }
 }
+
+///|
+/// Skip spaces and tabs starting at pos, return new position.
+fn bytes_skip_spaces(data : Bytes, pos : Int, end : Int) -> Int {
+  let mut p = pos
+  while p < end && (data[p] == b' ' || data[p] == b'\t') {
+    p = p + 1
+  }
+  p
+}
+
+///|
+/// Find the end of a whitespace-delimited token starting at pos.
+fn bytes_find_token_end(data : Bytes, pos : Int, end : Int) -> Int {
+  let mut p = pos
+  while p < end && data[p] != b' ' && data[p] != b'\t' {
+    p = p + 1
+  }
+  p
+}
+
+///|
+/// Parse space-separated integers from data[start..end) into out array.
+/// Parses up to `max` integers.
+fn bytes_parse_int_fields(
+  data : Bytes,
+  start : Int,
+  end : Int,
+  out : Array[Int],
+  max : Int,
+) -> Unit {
+  let mut pos = bytes_skip_spaces(data, start, end)
+  let mut count = 0
+  while pos < end && count < max {
+    let tok_end = bytes_find_token_end(data, pos, end)
+    out.push(bytes_parse_int(data, pos, tok_end))
+    count = count + 1
+    pos = bytes_skip_spaces(data, tok_end, end)
+  }
+}
+
+///|
+/// Parse hex bitmap bytes directly from data[start..end) into out array.
+fn parse_hex_line_bytes(
+  data : Bytes,
+  start : Int,
+  end : Int,
+  out : Array[Byte],
+) -> Unit {
+  let mut i = start
+  while i + 1 < end {
+    let hi = @stream.hex_digit_value(data[i].to_int())
+    let lo = @stream.hex_digit_value(data[i + 1].to_int())
+    if hi >= 0 && lo >= 0 {
+      out.push(((hi << 4) | lo).to_byte())
+    }
+    i = i + 2
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Main parser — scans Bytes directly, no String conversion
+// ---------------------------------------------------------------------------
 
 ///|
 /// Parse BDF font data including header and glyph blocks.
 /// Returns a BdfFont with header fields and glyphs populated.
 pub fn parse_bdf_header(data : Bytes) -> BdfFont raise @error.FTError {
   let font = BdfFont::new()
-  let text = bytes_to_ascii(data)
-  let lines = split_lines(text)
-  let num_lines = lines.length()
+  let len = data.length()
   let mut found_startfont = false
-  let mut i = 0
-  // Parse header
-  while i < num_lines {
-    let line = lines[i]
-    if line.has_prefix("STARTFONT ") {
-      found_startfont = true
-    } else if line.has_prefix("FONT ") {
-      font.font_name = line[5:].to_string()
-    } else if line.has_prefix("SIZE ") {
-      let parts = split_spaces(line[5:].to_string())
-      if parts.length() >= 3 {
-        font.point_size = parse_int_or_zero(parts[0])
-        font.x_resolution = parse_int_or_zero(parts[1])
-        font.y_resolution = parse_int_or_zero(parts[2])
-      }
-    } else if line.has_prefix("FONTBOUNDINGBOX ") {
-      let parts = split_spaces(line[16:].to_string())
-      if parts.length() >= 4 {
-        font.bbx_width = parse_int_or_zero(parts[0])
-        font.bbx_height = parse_int_or_zero(parts[1])
-        font.bbx_x_offset = parse_int_or_zero(parts[2])
-        font.bbx_y_offset = parse_int_or_zero(parts[3])
-      }
-    } else if line.has_prefix("CHARS ") {
-      font.num_chars = parse_int_or_zero(line[6:].to_string())
-    } else if line.has_prefix("STARTCHAR ") {
-      break // Done with header, start parsing glyphs
+  let mut pos = 0
+  // --- Parse header ---
+  while pos < len {
+    // Find end of line
+    let line_start = pos
+    let mut line_end = pos
+    while line_end < len && data[line_end] != b'\n' && data[line_end] != b'\r' {
+      line_end = line_end + 1
     }
-    i = i + 1
+    // Process header line
+    if bytes_starts_with(data, line_start, line_end, "STARTFONT ") {
+      found_startfont = true
+    } else if bytes_starts_with(data, line_start, line_end, "FONT ") {
+      font.font_name = bytes_to_string(data, line_start + 5, line_end)
+    } else if bytes_starts_with(data, line_start, line_end, "SIZE ") {
+      let fields : Array[Int] = []
+      bytes_parse_int_fields(data, line_start + 5, line_end, fields, 3)
+      if fields.length() >= 3 {
+        font.point_size = fields[0]
+        font.x_resolution = fields[1]
+        font.y_resolution = fields[2]
+      }
+    } else if bytes_starts_with(data, line_start, line_end, "FONTBOUNDINGBOX ") {
+      let fields : Array[Int] = []
+      bytes_parse_int_fields(data, line_start + 16, line_end, fields, 4)
+      if fields.length() >= 4 {
+        font.bbx_width = fields[0]
+        font.bbx_height = fields[1]
+        font.bbx_x_offset = fields[2]
+        font.bbx_y_offset = fields[3]
+      }
+    } else if bytes_starts_with(data, line_start, line_end, "CHARS ") {
+      font.num_chars = bytes_parse_int(
+        data,
+        bytes_skip_spaces(data, line_start + 6, line_end),
+        line_end,
+      )
+    } else if bytes_starts_with(data, line_start, line_end, "STARTCHAR ") {
+      // Don't advance pos past this line — glyph loop will re-read it
+      break
+    }
+    // Skip line ending
+    pos = line_end
+    if pos < len && data[pos] == b'\r' {
+      pos = pos + 1
+    }
+    if pos < len && data[pos] == b'\n' {
+      pos = pos + 1
+    }
   }
   if not(found_startfont) {
     raise @error.FTError::MissingStartfontField
   }
-  // Parse glyph blocks
-  while i < num_lines {
-    let line = lines[i]
-    if line.has_prefix("STARTCHAR ") {
+  // --- Parse glyph blocks ---
+  while pos < len {
+    // Find end of line
+    let line_start = pos
+    let mut line_end = pos
+    while line_end < len && data[line_end] != b'\n' && data[line_end] != b'\r' {
+      line_end = line_end + 1
+    }
+    if bytes_starts_with(data, line_start, line_end, "STARTCHAR ") {
       let glyph = BdfGlyph::new()
-      glyph.name = line[10:].to_string()
-      i = i + 1
+      glyph.name = bytes_to_string(data, line_start + 10, line_end)
+      // Advance past STARTCHAR line
+      pos = line_end
+      if pos < len && data[pos] == b'\r' {
+        pos = pos + 1
+      }
+      if pos < len && data[pos] == b'\n' {
+        pos = pos + 1
+      }
       // Parse glyph properties until BITMAP
-      while i < num_lines && lines[i] != "BITMAP" {
-        let gl = lines[i]
-        if gl.has_prefix("ENCODING ") {
-          glyph.encoding = parse_int_or_zero(gl[9:].to_string())
-        } else if gl.has_prefix("BBX ") {
-          let parts = split_spaces(gl[4:].to_string())
-          if parts.length() >= 4 {
-            glyph.bbx_width = parse_int_or_zero(parts[0])
-            glyph.bbx_height = parse_int_or_zero(parts[1])
-            glyph.bbx_x_offset = parse_int_or_zero(parts[2])
-            glyph.bbx_y_offset = parse_int_or_zero(parts[3])
+      while pos < len {
+        let gs = pos
+        let mut ge = pos
+        while ge < len && data[ge] != b'\n' && data[ge] != b'\r' {
+          ge = ge + 1
+        }
+        if bytes_equals(data, gs, ge, "BITMAP") {
+          // Advance past BITMAP line
+          pos = ge
+          if pos < len && data[pos] == b'\r' {
+            pos = pos + 1
+          }
+          if pos < len && data[pos] == b'\n' {
+            pos = pos + 1
+          }
+          break
+        } else if bytes_starts_with(data, gs, ge, "ENCODING ") {
+          glyph.encoding = bytes_parse_int(
+            data,
+            bytes_skip_spaces(data, gs + 9, ge),
+            ge,
+          )
+        } else if bytes_starts_with(data, gs, ge, "BBX ") {
+          let fields : Array[Int] = []
+          bytes_parse_int_fields(data, gs + 4, ge, fields, 4)
+          if fields.length() >= 4 {
+            glyph.bbx_width = fields[0]
+            glyph.bbx_height = fields[1]
+            glyph.bbx_x_offset = fields[2]
+            glyph.bbx_y_offset = fields[3]
           }
         }
-        i = i + 1
+        // Advance past this glyph property line
+        pos = ge
+        if pos < len && data[pos] == b'\r' {
+          pos = pos + 1
+        }
+        if pos < len && data[pos] == b'\n' {
+          pos = pos + 1
+        }
       }
-      // Skip "BITMAP" line
-      i = i + 1
       // Read hex bitmap lines until ENDCHAR
-      let hex_lines : Array[String] = []
-      while i < num_lines && lines[i] != "ENDCHAR" {
-        hex_lines.push(lines[i])
-        i = i + 1
-      }
-      // Convert hex lines to bitmap bytes
       let bitmap_bytes : Array[Byte] = []
-      for _, hl in hex_lines {
-        parse_hex_to_array(hl, bitmap_bytes)
+      while pos < len {
+        let hs = pos
+        let mut he = pos
+        while he < len && data[he] != b'\n' && data[he] != b'\r' {
+          he = he + 1
+        }
+        if bytes_equals(data, hs, he, "ENDCHAR") {
+          // Advance past ENDCHAR line
+          pos = he
+          if pos < len && data[pos] == b'\r' {
+            pos = pos + 1
+          }
+          if pos < len && data[pos] == b'\n' {
+            pos = pos + 1
+          }
+          break
+        }
+        parse_hex_line_bytes(data, hs, he, bitmap_bytes)
+        pos = he
+        if pos < len && data[pos] == b'\r' {
+          pos = pos + 1
+        }
+        if pos < len && data[pos] == b'\n' {
+          pos = pos + 1
+        }
       }
       glyph.bitmap = Bytes::from_array(bitmap_bytes[:])
       font.glyphs.push(glyph)
-    } else if line == "ENDFONT" {
+      continue // Don't advance pos again — already past ENDCHAR
+    } else if bytes_equals(data, line_start, line_end, "ENDFONT") {
       break
     }
-    i = i + 1
+    // Advance past this line
+    pos = line_end
+    if pos < len && data[pos] == b'\r' {
+      pos = pos + 1
+    }
+    if pos < len && data[pos] == b'\n' {
+      pos = pos + 1
+    }
   }
   font
-}
-
-///|
-/// Convert bytes (ASCII/Latin-1) to String by treating each byte as a char.
-fn bytes_to_ascii(data : Bytes) -> String {
-  @stream.bytes_to_ascii(data)
-}
-
-///|
-/// Split a string into lines on '\n'.
-fn split_lines(s : String) -> Array[String] {
-  let lines : Array[String] = []
-  let mut start = 0
-  let len = s.length()
-  for i in 0..<len {
-    if s[i] == '\n' {
-      let line = s[start:i].to_string()
-      // Strip trailing '\r'
-      let trimmed = if line.length() > 0 && line[line.length() - 1] == '\r' {
-        line[:line.length() - 1].to_string()
-      } else {
-        line
-      }
-      lines.push(trimmed)
-      start = i + 1
-    }
-  }
-  if start < len {
-    lines.push(s[start:].to_string())
-  }
-  lines
-}
-
-///|
-/// Split a string on spaces.
-fn split_spaces(s : String) -> Array[String] {
-  let parts : Array[String] = []
-  let len = s.length()
-  let mut start = 0
-  let mut in_word = false
-  for i in 0..<len {
-    if s[i] == ' ' || s[i] == '\t' {
-      if in_word {
-        parts.push(s[start:i].to_string())
-        in_word = false
-      }
-    } else if not(in_word) {
-      start = i
-      in_word = true
-    }
-  }
-  if in_word {
-    parts.push(s[start:].to_string())
-  }
-  parts
-}
-
-///|
-/// Parse an integer from a string, returning 0 on failure.
-fn parse_int_or_zero(s : String) -> Int {
-  @stream.parse_int_from_string(s)
 }
