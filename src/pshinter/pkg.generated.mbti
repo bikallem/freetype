@@ -23,7 +23,7 @@ pub fn interpolate_points(@types.Outline, Array[FittedStem], Array[FittedStem], 
 // Errors
 
 // Types and methods
-pub(all) struct BlueZone {
+pub struct BlueZone {
   position : Int64
   overshoot : Int64
   is_bottom : Bool
@@ -31,7 +31,7 @@ pub(all) struct BlueZone {
 pub impl Eq for BlueZone
 pub impl Show for BlueZone
 
-pub(all) struct FittedStem {
+pub struct FittedStem {
   org_pos : Int64
   org_width : Int64
   cur_pos : Int64
@@ -40,14 +40,14 @@ pub(all) struct FittedStem {
 pub impl Eq for FittedStem
 pub impl Show for FittedStem
 
-pub(all) struct HintMapEntry {
+pub struct HintMapEntry {
   org_pos : Int64
   cur_pos : Int64
 }
 pub impl Eq for HintMapEntry
 pub impl Show for HintMapEntry
 
-pub(all) struct PsGlobals {
+pub struct PsGlobals {
   blue_values : Array[BlueZone]
   other_blues : Array[BlueZone]
   blue_scale : @fixed.Fixed
@@ -61,7 +61,7 @@ pub(all) struct PsGlobals {
 pub fn PsGlobals::new() -> Self
 pub impl Show for PsGlobals
 
-pub(all) struct StemHintTable {
+pub struct StemHintTable {
   stems : Array[@psaux.StemHint]
   fitted : Array[FittedStem]
 }

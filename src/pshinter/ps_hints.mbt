@@ -1,6 +1,6 @@
 ///|
 /// Blue zone for PostScript hinting.
-pub(all) struct BlueZone {
+pub struct BlueZone {
   position : Int64 // reference position (font units)
   overshoot : Int64 // overshoot position
   is_bottom : Bool // true for bottom zones (descender, baseline)
@@ -8,7 +8,7 @@ pub(all) struct BlueZone {
 
 ///|
 /// Global hinting data for a PostScript font.
-pub(all) struct PsGlobals {
+pub struct PsGlobals {
   blue_values : Array[BlueZone]
   other_blues : Array[BlueZone]
   blue_scale : @fixed.Fixed
@@ -37,21 +37,21 @@ pub fn PsGlobals::new() -> PsGlobals {
 
 ///|
 /// Hint map entry: maps a stem edge to a fitted pixel position.
-pub(all) struct HintMapEntry {
+pub struct HintMapEntry {
   org_pos : Int64 // original position (font units)
   cur_pos : Int64 // fitted position (26.6 pixels)
 } derive(Eq, Show)
 
 ///|
 /// A stem hint table: original stems from charstring plus fitted results.
-pub(all) struct StemHintTable {
+pub struct StemHintTable {
   stems : Array[@psaux.StemHint] // from charstring interpreter
   fitted : Array[FittedStem] // after fitting
 } derive(Show)
 
 ///|
 /// A fitted stem: original and pixel-aligned positions.
-pub(all) struct FittedStem {
+pub struct FittedStem {
   org_pos : Int64 // original position (font units)
   org_width : Int64 // original width (font units)
   cur_pos : Int64 // fitted position (26.6 pixels)

@@ -1,6 +1,6 @@
 ///|
 /// Bitmap strike size descriptor.
-pub(all) struct BitmapSize {
+pub struct BitmapSize {
   height : Int // vertical pixel distance between baselines
   width : Int // average glyph width in pixels
   size : Int64 // nominal size in 26.6 fractional points
@@ -122,7 +122,7 @@ pub fn GlyphSlot::new() -> GlyphSlot {
 
 ///|
 /// Sub-glyph record for composite glyphs.
-pub(all) struct SubGlyph {
+pub struct SubGlyph {
   index : UInt // glyph index of component
   flags : UInt // composite flags
   arg1 : Int // first argument (offset or point index)

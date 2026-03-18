@@ -4,7 +4,7 @@
 
 ///|
 /// A variation axis definition from the fvar table.
-pub(all) struct VarAxis {
+pub struct VarAxis {
   tag : UInt // 4-byte tag (e.g., 'wght', 'wdth')
   min_value : @fixed.Fixed // minimum value (16.16)
   default_value : @fixed.Fixed // default value
@@ -14,14 +14,14 @@ pub(all) struct VarAxis {
 
 ///|
 /// A named instance (preset axis coordinates).
-pub(all) struct NamedInstance {
+pub struct NamedInstance {
   name_id : UInt
   coordinates : Array[@fixed.Fixed] // one value per axis
 } derive(Show)
 
 ///|
 /// Parsed fvar table.
-pub(all) struct FvarTable {
+pub struct FvarTable {
   axes : Array[VarAxis]
   instances : Array[NamedInstance]
 } derive(Show)
@@ -85,14 +85,14 @@ pub fn parse_fvar(
 
 ///|
 /// Avar segment map entry (piecewise linear mapping).
-pub(all) struct AvarSegment {
+pub struct AvarSegment {
   from_coord : Int // normalized input (-1..1 as F2Dot14)
   to_coord : Int // normalized output
 } derive(Show)
 
 ///|
 /// Parsed avar table: per-axis normalization remapping.
-pub(all) struct AvarTable {
+pub struct AvarTable {
   axis_maps : Array[Array[AvarSegment]] // one segment map per axis
 } derive(Show)
 

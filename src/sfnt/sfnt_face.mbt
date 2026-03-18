@@ -1,6 +1,6 @@
 ///|
 /// SFNT face data — all parsed tables for an SFNT-based font.
-pub(all) struct SfntData {
+pub struct SfntData {
   table_dir : TableDirectory
   head : HeadTable
   hhea : HheaTable

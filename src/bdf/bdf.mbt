@@ -4,7 +4,7 @@
 
 ///|
 /// BDF glyph representation.
-pub(all) struct BdfGlyph {
+pub struct BdfGlyph {
   mut encoding : Int // character encoding value
   mut bbx_width : Int // bounding box width
   mut bbx_height : Int // bounding box height
@@ -29,20 +29,20 @@ pub fn BdfGlyph::new() -> BdfGlyph {
 
 ///|
 /// BDF font property.
-pub(all) struct BdfProperty {
+pub struct BdfProperty {
   name : String
   value : String
 } derive(Eq, Show)
 
 ///|
 /// BDF font representation.
-pub(all) struct BdfFont {
+pub struct BdfFont {
   mut font_name : String
   mut point_size : Int
   mut x_resolution : Int
   mut y_resolution : Int
-  mut properties : Array[BdfProperty]
-  mut glyphs : Array[BdfGlyph]
+  properties : Array[BdfProperty]
+  glyphs : Array[BdfGlyph]
   mut num_chars : Int
   mut bbx_width : Int // global bounding box
   mut bbx_height : Int

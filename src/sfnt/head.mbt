@@ -1,6 +1,6 @@
 ///|
 /// Parsed 'head' table — font header.
-pub(all) struct HeadTable {
+pub struct HeadTable {
   major_version : UInt // typically 1
   minor_version : UInt // typically 0
   font_revision : @fixed.Fixed // 16.16

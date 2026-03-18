@@ -1,6 +1,6 @@
 ///|
 /// Result of validating an Apple Advanced Typography (AAT/GX) table.
-pub(all) struct GxValidationResult {
+pub struct GxValidationResult {
   table_tag : UInt
   issues : Array[String]
 } derive(Eq, Show)

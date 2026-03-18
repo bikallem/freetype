@@ -1,6 +1,6 @@
 ///|
 /// WOFF1 header.
-pub(all) struct WoffHeader {
+pub struct WoffHeader {
   signature : UInt // 'wOFF'
   flavor : UInt // The "sfnt version" of the original font
   length : UInt // Total size of WOFF file
@@ -17,7 +17,7 @@ pub(all) struct WoffHeader {
 
 ///|
 /// WOFF1 table directory entry.
-pub(all) struct WoffTableEntry {
+pub struct WoffTableEntry {
   tag : UInt
   offset : UInt
   comp_length : UInt // compressed length in WOFF file

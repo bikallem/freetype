@@ -16,33 +16,33 @@ pub fn execute_type2(Bytes, Int64, Int64, local_subrs? : Array[Bytes], global_su
 // Errors
 
 // Types and methods
-pub(all) struct CallFrame {
+pub struct CallFrame {
   code : Bytes
   ip : Int
 }
 pub impl Show for CallFrame
 
-pub(all) struct PsInterp {
+pub struct PsInterp {
   mut stack : Array[Int64]
-  mut points : Array[@types.Vector]
-  mut tags : Array[Byte]
-  mut contours : Array[UInt]
+  points : Array[@types.Vector]
+  tags : Array[Byte]
+  contours : Array[UInt]
   mut current_x : Int64
   mut current_y : Int64
   mut path_started : Bool
-  mut hints_h : Array[StemHint]
-  mut hints_v : Array[StemHint]
+  hints_h : Array[StemHint]
+  hints_v : Array[StemHint]
   mut width : Int64
   mut width_set : Bool
   mut local_subrs : Array[Bytes]
   mut global_subrs : Array[Bytes]
-  mut call_stack : Array[CallFrame]
+  call_stack : Array[CallFrame]
 }
 pub fn PsInterp::finalize(Self) -> @types.Outline
 pub fn PsInterp::new() -> Self
 pub impl Show for PsInterp
 
-pub(all) struct StemHint {
+pub struct StemHint {
   position : Int64
   width : Int64
 }

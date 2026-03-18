@@ -1,9 +1,9 @@
 ///|
 /// TrueType-specific face data, stored in FaceRec.driver_data.
-pub(all) struct TtFaceData {
+pub struct TtFaceData {
   sfnt : @sfnt.SfntData
   // Glyph location table ('loca')
-  mut glyph_offsets : Array[UInt] // offset of each glyph in 'glyf' table
+  glyph_offsets : Array[UInt] // offset of each glyph in 'glyf' table
   // Raw table references
   glyf_offset : UInt // offset of 'glyf' table in font data
   glyf_length : UInt

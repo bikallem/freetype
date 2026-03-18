@@ -26,16 +26,16 @@ pub fn interpolate_points(@types.Outline, Array[Edge], @fixed.Fixed, Bool) -> Un
 // Errors
 
 // Types and methods
-pub(all) struct AxisHints {
-  mut segments : Array[Segment]
-  mut edges : Array[Edge]
-  mut stems : Array[Stem]
+pub struct AxisHints {
+  segments : Array[Segment]
+  edges : Array[Edge]
+  stems : Array[Stem]
 }
 pub fn AxisHints::new() -> Self
 pub impl Eq for AxisHints
 pub impl Show for AxisHints
 
-pub(all) struct BlueZone {
+pub struct BlueZone {
   ref_pos : Int64
   shoot : Int64
   fitted : Int64
@@ -43,11 +43,11 @@ pub(all) struct BlueZone {
 pub impl Eq for BlueZone
 pub impl Show for BlueZone
 
-pub(all) struct Edge {
-  mut position : Int64
+pub struct Edge {
+  position : Int64
   mut fitted_position : Int64
   mut linked_edge : Int
-  mut is_serif : Bool
+  is_serif : Bool
   mut blue_edge : Bool
   mut num_segments : Int
 }
@@ -55,9 +55,9 @@ pub fn Edge::new(Int64) -> Self
 pub impl Eq for Edge
 pub impl Show for Edge
 
-pub(all) struct GlyphHints {
-  mut x_axis : AxisHints
-  mut y_axis : AxisHints
+pub struct GlyphHints {
+  x_axis : AxisHints
+  y_axis : AxisHints
 }
 pub fn GlyphHints::new() -> Self
 pub impl Eq for GlyphHints
@@ -81,7 +81,7 @@ pub fn ScriptMetrics::new() -> Self
 pub impl Eq for ScriptMetrics
 pub impl Show for ScriptMetrics
 
-pub(all) struct Segment {
+pub struct Segment {
   position : Int64
   min_coord : Int64
   max_coord : Int64
@@ -90,6 +90,7 @@ pub(all) struct Segment {
   last_point : Int
   num_points : Int
 }
+pub fn Segment::new(position~ : Int64, min_coord~ : Int64, max_coord~ : Int64, direction~ : SegmentDir, first_point~ : Int, last_point~ : Int, num_points~ : Int) -> Self
 pub impl Eq for Segment
 pub impl Show for Segment
 
@@ -100,7 +101,7 @@ pub(all) enum SegmentDir {
 pub impl Eq for SegmentDir
 pub impl Show for SegmentDir
 
-pub(all) struct Stem {
+pub struct Stem {
   edge1 : Int
   edge2 : Int
 }

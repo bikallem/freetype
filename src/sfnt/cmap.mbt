@@ -1,6 +1,6 @@
 ///|
 /// Cmap subtable header.
-pub(all) struct CmapSubtable {
+pub struct CmapSubtable {
   platform_id : UInt
   encoding_id : UInt
   offset : UInt // offset from beginning of cmap table
@@ -8,7 +8,7 @@ pub(all) struct CmapSubtable {
 
 ///|
 /// Parsed cmap table header.
-pub(all) struct CmapTable {
+pub struct CmapTable {
   version : UInt
   subtables : Array[CmapSubtable]
 } derive(Show)
@@ -86,9 +86,14 @@ pub fn parse_cmap_subtable(
 // ---------------------------------------------------------------------------
 
 ///|
-pub(all) struct CmapFormat0 {
+pub struct CmapFormat0 {
   glyph_ids : FixedArray[Byte] // 256 entries
 } derive(Show)
+
+///|
+pub fn CmapFormat0::new(glyph_ids~ : FixedArray[Byte]) -> CmapFormat0 {
+  { glyph_ids, }
+}
 
 ///|
 fn parse_cmap_format0(
@@ -119,7 +124,7 @@ pub fn CmapFormat0::char_index(self : CmapFormat0, charcode : UInt) -> UInt {
 // ---------------------------------------------------------------------------
 
 ///|
-pub(all) struct CmapFormat4 {
+pub struct CmapFormat4 {
   seg_count : Int
   end_codes : Array[UInt]
   start_codes : Array[UInt]
@@ -234,11 +239,20 @@ pub fn CmapFormat4::char_index(self : CmapFormat4, charcode : UInt) -> UInt {
 // ---------------------------------------------------------------------------
 
 ///|
-pub(all) struct CmapFormat6 {
+pub struct CmapFormat6 {
   first_code : UInt
   entry_count : UInt
   glyph_ids : Array[UInt]
 } derive(Show)
+
+///|
+pub fn CmapFormat6::new(
+  first_code~ : UInt,
+  entry_count~ : UInt,
+  glyph_ids~ : Array[UInt],
+) -> CmapFormat6 {
+  { first_code, entry_count, glyph_ids }
+}
 
 ///|
 fn parse_cmap_format6(
@@ -277,16 +291,30 @@ pub fn CmapFormat6::char_index(self : CmapFormat6, charcode : UInt) -> UInt {
 // ---------------------------------------------------------------------------
 
 ///|
-pub(all) struct CmapFormat12Group {
+pub struct CmapFormat12Group {
   start_char_code : UInt
   end_char_code : UInt
   start_glyph_id : UInt
 } derive(Eq, Show)
 
 ///|
-pub(all) struct CmapFormat12 {
+pub fn CmapFormat12Group::new(
+  start_char_code~ : UInt,
+  end_char_code~ : UInt,
+  start_glyph_id~ : UInt,
+) -> CmapFormat12Group {
+  { start_char_code, end_char_code, start_glyph_id }
+}
+
+///|
+pub struct CmapFormat12 {
   groups : Array[CmapFormat12Group]
 } derive(Show)
+
+///|
+pub fn CmapFormat12::new(groups~ : Array[CmapFormat12Group]) -> CmapFormat12 {
+  { groups, }
+}
 
 ///|
 fn parse_cmap_format12(

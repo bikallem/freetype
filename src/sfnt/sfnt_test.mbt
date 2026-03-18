@@ -35,17 +35,27 @@ test "parse_table_directory: minimal SFNT" {
 
 ///|
 test "TableDirectory::find_table" {
-  let dir : @sfnt.TableDirectory = {
-    sfnt_version: 0x00010000U,
-    num_tables: 2U,
-    search_range: 0U,
-    entry_selector: 0U,
-    range_shift: 0U,
-    tables: [
-      { tag: @types.tag_head, checksum: 0U, offset: 100U, length: 54U },
-      { tag: @types.tag_hhea, checksum: 0U, offset: 200U, length: 36U },
+  let dir = @sfnt.TableDirectory::new(
+    sfnt_version=0x00010000U,
+    num_tables=2U,
+    search_range=0U,
+    entry_selector=0U,
+    range_shift=0U,
+    tables=[
+      @sfnt.TableRecord::new(
+        tag=@types.tag_head,
+        checksum=0U,
+        offset=100U,
+        length=54U,
+      ),
+      @sfnt.TableRecord::new(
+        tag=@types.tag_hhea,
+        checksum=0U,
+        offset=200U,
+        length=36U,
+      ),
     ],
-  }
+  )
   inspect(dir.find_table(@types.tag_head) is Some(_), content="true")
   inspect(dir.find_table(@types.tag_hhea) is Some(_), content="true")
   inspect(dir.find_table(@types.tag_glyf) is Some(_), content="false")
@@ -56,7 +66,7 @@ test "CmapFormat0::char_index" {
   let glyph_ids = FixedArray::make(256, b'\x00')
   glyph_ids[65] = b'\x24' // 'A' → glyph 36
   glyph_ids[66] = b'\x25' // 'B' → glyph 37
-  let cmap = @sfnt.CmapFormat0::{ glyph_ids, }
+  let cmap = @sfnt.CmapFormat0::new(glyph_ids~)
   inspect(cmap.char_index(65U), content="36")
   inspect(cmap.char_index(66U), content="37")
   inspect(cmap.char_index(0U), content="0")
@@ -65,11 +75,9 @@ test "CmapFormat0::char_index" {
 
 ///|
 test "CmapFormat6::char_index" {
-  let cmap = @sfnt.CmapFormat6::{
-    first_code: 32U,
-    entry_count: 3U,
-    glyph_ids: [10U, 11U, 12U],
-  }
+  let cmap = @sfnt.CmapFormat6::new(first_code=32U, entry_count=3U, glyph_ids=[
+    10U, 11U, 12U,
+  ])
   inspect(cmap.char_index(32U), content="10")
   inspect(cmap.char_index(33U), content="11")
   inspect(cmap.char_index(34U), content="12")
@@ -79,12 +87,18 @@ test "CmapFormat6::char_index" {
 
 ///|
 test "CmapFormat12::char_index" {
-  let cmap = @sfnt.CmapFormat12::{
-    groups: [
-      { start_char_code: 32U, end_char_code: 126U, start_glyph_id: 3U },
-      { start_char_code: 0x4E00U, end_char_code: 0x9FFFU, start_glyph_id: 500U },
-    ],
-  }
+  let cmap = @sfnt.CmapFormat12::new(groups=[
+    @sfnt.CmapFormat12Group::new(
+      start_char_code=32U,
+      end_char_code=126U,
+      start_glyph_id=3U,
+    ),
+    @sfnt.CmapFormat12Group::new(
+      start_char_code=0x4E00U,
+      end_char_code=0x9FFFU,
+      start_glyph_id=500U,
+    ),
+  ])
   // ASCII 'A' (65) → 3 + (65 - 32) = 36
   inspect(cmap.char_index(65U), content="36")
   // CJK: 0x4E00 → 500
@@ -98,13 +112,11 @@ test "CmapFormat12::char_index" {
 
 ///|
 test "KernTable::get_kerning" {
-  let kern = @sfnt.KernTable::{
-    pairs: [
-      { left: 36U, right: 55U, value: -80 },
-      { left: 36U, right: 82U, value: -50 },
-      { left: 55U, right: 36U, value: -30 },
-    ],
-  }
+  let kern = @sfnt.KernTable::new(pairs=[
+    @sfnt.KernPair::new(left=36U, right=55U, value=-80),
+    @sfnt.KernPair::new(left=36U, right=82U, value=-50),
+    @sfnt.KernPair::new(left=55U, right=36U, value=-30),
+  ])
   inspect(kern.get_kerning(36U, 55U), content="-80")
   inspect(kern.get_kerning(36U, 82U), content="-50")
   inspect(kern.get_kerning(55U, 36U), content="-30")
@@ -113,13 +125,13 @@ test "KernTable::get_kerning" {
 
 ///|
 test "HmtxTable::get_metrics" {
-  let hmtx = @sfnt.HmtxTable::{
-    metrics: [
-      { advance_width: 600U, lsb: 50 },
-      { advance_width: 700U, lsb: 60 },
+  let hmtx = @sfnt.HmtxTable::new(
+    metrics=[
+      @sfnt.LongHorMetric::new(advance_width=600U, lsb=50),
+      @sfnt.LongHorMetric::new(advance_width=700U, lsb=60),
     ],
-    left_side_bearings: [30, 40],
-  }
+    left_side_bearings=[30, 40],
+  )
   // First metric
   let (aw, lsb) = hmtx.get_metrics(0U)
   inspect(aw, content="600")
@@ -135,22 +147,22 @@ test "HmtxTable::get_metrics" {
 test "decode_utf16_be" {
   // "AB" in UTF-16 BE = 0x00 0x41 0x00 0x42
   let data : Bytes = [0x00, 0x41, 0x00, 0x42]
-  let name_table : @sfnt.NameTable = {
-    format: 0U,
-    count: 1U,
-    string_offset: 0U,
-    records: [
-      {
-        platform_id: 3U,
-        encoding_id: 1U,
-        language_id: 0x0409U,
-        name_id: @sfnt.name_id_font_family,
-        length: 4U,
-        offset: 0U,
-      },
+  let name_table = @sfnt.NameTable::new(
+    format=0U,
+    count=1U,
+    string_offset=0U,
+    records=[
+      @sfnt.NameRecord::new(
+        platform_id=3U,
+        encoding_id=1U,
+        language_id=0x0409U,
+        name_id=@sfnt.name_id_font_family,
+        length=4U,
+        offset=0U,
+      ),
     ],
-    string_data: data,
-  }
+    string_data=data,
+  )
   inspect(
     name_table.get_name(@sfnt.name_id_font_family),
     content=(

@@ -1,19 +1,19 @@
 ///|
 /// PostScript charstring interpreter context.
 /// Shared between Type 1 and Type 2 (CFF) charstring processing.
-pub(all) struct PsInterp {
+pub struct PsInterp {
   // Operand stack
   mut stack : Array[Int64]
   // Path state
-  mut points : Array[@types.Vector]
-  mut tags : Array[Byte]
-  mut contours : Array[UInt]
+  points : Array[@types.Vector]
+  tags : Array[Byte]
+  contours : Array[UInt]
   mut current_x : Int64 // current point
   mut current_y : Int64
   mut path_started : Bool
   // Hint state
-  mut hints_h : Array[StemHint] // horizontal stem hints
-  mut hints_v : Array[StemHint] // vertical stem hints
+  hints_h : Array[StemHint] // horizontal stem hints
+  hints_v : Array[StemHint] // vertical stem hints
   // Width
   mut width : Int64 // advance width (set by first operator)
   mut width_set : Bool
@@ -21,19 +21,19 @@ pub(all) struct PsInterp {
   mut local_subrs : Array[Bytes]
   mut global_subrs : Array[Bytes]
   // Call stack for subroutine returns
-  mut call_stack : Array[CallFrame]
+  call_stack : Array[CallFrame]
 } derive(Show)
 
 ///|
 /// A stem hint (horizontal or vertical).
-pub(all) struct StemHint {
+pub struct StemHint {
   position : Int64 // start position (font units)
   width : Int64 // stem width (font units)
 } derive(Eq, Show)
 
 ///|
 /// Call stack frame for subroutine returns.
-pub(all) struct CallFrame {
+pub struct CallFrame {
   code : Bytes
   ip : Int
 } derive(Show)

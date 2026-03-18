@@ -21,7 +21,7 @@ pub(all) enum SegmentDir {
 
 ///|
 /// A segment is a run of consecutive points along one direction.
-pub(all) struct Segment {
+pub struct Segment {
   position : Int64 // position along the perpendicular axis
   min_coord : Int64 // minimum extent along the parallel axis
   max_coord : Int64 // maximum extent along the parallel axis
@@ -32,12 +32,33 @@ pub(all) struct Segment {
 } derive(Eq, Show)
 
 ///|
+pub fn Segment::new(
+  position~ : Int64,
+  min_coord~ : Int64,
+  max_coord~ : Int64,
+  direction~ : SegmentDir,
+  first_point~ : Int,
+  last_point~ : Int,
+  num_points~ : Int,
+) -> Segment {
+  {
+    position,
+    min_coord,
+    max_coord,
+    direction,
+    first_point,
+    last_point,
+    num_points,
+  }
+}
+
+///|
 /// An edge is formed by merging nearby segments.
-pub(all) struct Edge {
-  mut position : Int64 // original position in font units
+pub struct Edge {
+  position : Int64 // original position in font units
   mut fitted_position : Int64 // fitted position in 26.6 pixels
   mut linked_edge : Int // index of linked edge (-1 if none)
-  mut is_serif : Bool // true if this is a serif edge
+  is_serif : Bool // true if this is a serif edge
   mut blue_edge : Bool // true if aligned to a blue zone
   mut num_segments : Int // number of segments contributing to this edge
 } derive(Eq, Show)
@@ -56,17 +77,17 @@ pub fn Edge::new(position : Int64) -> Edge {
 
 ///|
 /// A stem is a pair of edges forming a vertical or horizontal stem.
-pub(all) struct Stem {
+pub struct Stem {
   edge1 : Int // index of first edge
   edge2 : Int // index of second edge
 } derive(Eq, Show)
 
 ///|
 /// Hints along one axis.
-pub(all) struct AxisHints {
-  mut segments : Array[Segment]
-  mut edges : Array[Edge]
-  mut stems : Array[Stem]
+pub struct AxisHints {
+  segments : Array[Segment]
+  edges : Array[Edge]
+  stems : Array[Stem]
 } derive(Eq, Show)
 
 ///|
@@ -76,9 +97,9 @@ pub fn AxisHints::new() -> AxisHints {
 
 ///|
 /// Per-glyph hinting data.
-pub(all) struct GlyphHints {
-  mut x_axis : AxisHints
-  mut y_axis : AxisHints
+pub struct GlyphHints {
+  x_axis : AxisHints
+  y_axis : AxisHints
 } derive(Eq, Show)
 
 ///|
@@ -88,7 +109,7 @@ pub fn GlyphHints::new() -> GlyphHints {
 
 ///|
 /// Blue zone for Latin script auto-hinting.
-pub(all) struct BlueZone {
+pub struct BlueZone {
   ref_pos : Int64 // reference position (overshoot position)
   shoot : Int64 // overshoot position
   fitted : Int64 // fitted position in 26.6

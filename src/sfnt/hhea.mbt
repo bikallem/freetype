@@ -1,6 +1,6 @@
 ///|
 /// Parsed 'hhea' (horizontal header) table.
-pub(all) struct HheaTable {
+pub struct HheaTable {
   major_version : UInt
   minor_version : UInt
   ascender : Int // typographic ascent (FUnits)

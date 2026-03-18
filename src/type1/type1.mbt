@@ -4,24 +4,24 @@
 
 ///|
 /// Type 1 font representation.
-pub(all) struct Type1Font {
+pub struct Type1Font {
   mut font_name : String
   mut units_per_em : Int // default 1000 for Type 1
   mut encoding : Array[String] // glyph name per encoding slot (256 entries)
   mut charstrings : Map[String, Bytes] // glyph_name -> charstring data
-  mut subrs : Array[Bytes] // subroutine array
+  subrs : Array[Bytes] // subroutine array
   // Private dict values
-  mut blue_values : Array[Int] // BlueValues alignment zones
-  mut other_blues : Array[Int] // OtherBlues alignment zones
-  mut std_hw : Int // StdHW (dominant horizontal stem width)
-  mut std_vw : Int // StdVW (dominant vertical stem width)
-  mut default_width_x : Int64 // defaultWidthX
-  mut nominal_width_x : Int64 // nominalWidthX
+  blue_values : Array[Int] // BlueValues alignment zones
+  other_blues : Array[Int] // OtherBlues alignment zones
+  std_hw : Int // StdHW (dominant horizontal stem width)
+  std_vw : Int // StdVW (dominant vertical stem width)
+  default_width_x : Int64 // defaultWidthX
+  nominal_width_x : Int64 // nominalWidthX
   mut len_iv : Int // lenIV for charstring decryption (default 4)
-  mut paint_type : Int // PaintType (0 = fill, 2 = stroke)
-  mut font_matrix : Array[Double] // FontMatrix (6 elements)
+  paint_type : Int // PaintType (0 = fill, 2 = stroke)
+  font_matrix : Array[Double] // FontMatrix (6 elements)
   mut font_bbox : Array[Int] // FontBBox [llx lly urx ury]
-  mut unique_id : Int // UniqueID
+  unique_id : Int // UniqueID
 } derive(Show)
 
 ///|

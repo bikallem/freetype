@@ -21,9 +21,9 @@ pub fn init_tt_face(@sfnt.SfntData, @base.FaceRec) -> TtFaceData raise @error.FT
 
 pub fn load_composite_glyph(@stream.ByteReader) -> Array[CompositeComponent] raise @error.FTError
 
-pub fn load_simple_glyph(@stream.ByteReader, Int) -> @types.Outline raise @error.FTError
+pub fn load_simple_glyph(@stream.ByteReader, Int) -> (@types.Outline, Bytes) raise @error.FTError
 
-pub fn load_tt_glyph(Bytes, Array[UInt], UInt, UInt, depth? : Int) -> @types.Outline raise @error.FTError
+pub fn load_tt_glyph(Bytes, Array[UInt], UInt, UInt, depth? : Int) -> (@types.Outline, Bytes) raise @error.FTError
 
 pub let more_components : UInt
 
@@ -54,18 +54,18 @@ pub let we_have_instructions : UInt
 // Errors
 
 // Types and methods
-pub(all) struct AvarSegment {
+pub struct AvarSegment {
   from_coord : Int
   to_coord : Int
 }
 pub impl Show for AvarSegment
 
-pub(all) struct AvarTable {
+pub struct AvarTable {
   axis_maps : Array[Array[AvarSegment]]
 }
 pub impl Show for AvarTable
 
-pub(all) struct CompositeComponent {
+pub struct CompositeComponent {
   flags : UInt
   glyph_index : UInt
   arg1 : Int
@@ -77,19 +77,19 @@ pub(all) struct CompositeComponent {
 }
 pub impl Show for CompositeComponent
 
-pub(all) struct FuncDef {
+pub struct FuncDef {
   start : Int
   end_ : Int
 }
 pub impl Show for FuncDef
 
-pub(all) struct FvarTable {
+pub struct FvarTable {
   axes : Array[VarAxis]
   instances : Array[NamedInstance]
 }
 pub impl Show for FvarTable
 
-pub(all) struct GraphicsState {
+pub struct GraphicsState {
   mut rp0 : Int
   mut rp1 : Int
   mut rp2 : Int
@@ -105,11 +105,11 @@ pub(all) struct GraphicsState {
   mut single_width_cut_in : Int64
   mut single_width_value : Int64
   mut auto_flip : Bool
-  mut delta_base : Int
-  mut delta_shift : Int
-  mut instruct_control : Int
-  mut scan_control : Bool
-  mut scan_type : Int
+  delta_base : Int
+  delta_shift : Int
+  instruct_control : Int
+  scan_control : Bool
+  scan_type : Int
   mut zp0 : Int
   mut zp1 : Int
   mut zp2 : Int
@@ -136,21 +136,22 @@ pub(all) struct InterpContext {
   mut zone1_points : Array[@types.Vector]
   mut zone1_tags : Array[Byte]
   mut zone1_touch : Array[Byte]
+  mut ppem : Int
   mut error : Bool
 }
 pub fn InterpContext::execute(Self, Bytes) -> Unit raise @error.FTError
 pub fn InterpContext::new(cvt? : Array[Int64], storage_size? : Int, max_stack? : Int) -> Self
 pub impl Show for InterpContext
 
-pub(all) struct NamedInstance {
+pub struct NamedInstance {
   name_id : UInt
   coordinates : Array[@fixed.Fixed]
 }
 pub impl Show for NamedInstance
 
-pub(all) struct TtFaceData {
+pub struct TtFaceData {
   sfnt : @sfnt.SfntData
-  mut glyph_offsets : Array[UInt]
+  glyph_offsets : Array[UInt]
   glyf_offset : UInt
   glyf_length : UInt
   fpgm : Bytes
@@ -159,7 +160,7 @@ pub(all) struct TtFaceData {
 }
 pub impl Show for TtFaceData
 
-pub(all) struct VarAxis {
+pub struct VarAxis {
   tag : UInt
   min_value : @fixed.Fixed
   default_value : @fixed.Fixed

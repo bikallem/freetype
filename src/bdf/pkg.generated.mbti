@@ -11,13 +11,13 @@ pub fn parse_bdf_header(Bytes) -> BdfFont raise @error.FTError
 // Errors
 
 // Types and methods
-pub(all) struct BdfFont {
+pub struct BdfFont {
   mut font_name : String
   mut point_size : Int
   mut x_resolution : Int
   mut y_resolution : Int
-  mut properties : Array[BdfProperty]
-  mut glyphs : Array[BdfGlyph]
+  properties : Array[BdfProperty]
+  glyphs : Array[BdfGlyph]
   mut num_chars : Int
   mut bbx_width : Int
   mut bbx_height : Int
@@ -28,7 +28,7 @@ pub fn BdfFont::get_glyph(Self, Int) -> BdfGlyph?
 pub fn BdfFont::new() -> Self
 pub impl Show for BdfFont
 
-pub(all) struct BdfGlyph {
+pub struct BdfGlyph {
   mut encoding : Int
   mut bbx_width : Int
   mut bbx_height : Int
@@ -40,7 +40,7 @@ pub(all) struct BdfGlyph {
 pub fn BdfGlyph::new() -> Self
 pub impl Show for BdfGlyph
 
-pub(all) struct BdfProperty {
+pub struct BdfProperty {
   name : String
   value : String
 }

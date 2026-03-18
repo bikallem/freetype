@@ -1,6 +1,6 @@
 ///|
 /// SFNT table directory entry.
-pub(all) struct TableRecord {
+pub struct TableRecord {
   tag : UInt // 4-byte tag
   checksum : UInt
   offset : UInt // offset from beginning of file
@@ -8,8 +8,18 @@ pub(all) struct TableRecord {
 } derive(Eq, Show)
 
 ///|
+pub fn TableRecord::new(
+  tag~ : UInt,
+  checksum~ : UInt,
+  offset~ : UInt,
+  length~ : UInt,
+) -> TableRecord {
+  { tag, checksum, offset, length }
+}
+
+///|
 /// Parsed SFNT table directory.
-pub(all) struct TableDirectory {
+pub struct TableDirectory {
   sfnt_version : UInt // 0x00010000 for TT, 'OTTO' for CFF, 'true' for Apple TT
   num_tables : UInt
   search_range : UInt
@@ -17,6 +27,25 @@ pub(all) struct TableDirectory {
   range_shift : UInt
   tables : Array[TableRecord]
 } derive(Show)
+
+///|
+pub fn TableDirectory::new(
+  sfnt_version~ : UInt,
+  num_tables~ : UInt,
+  search_range~ : UInt,
+  entry_selector~ : UInt,
+  range_shift~ : UInt,
+  tables~ : Array[TableRecord],
+) -> TableDirectory {
+  {
+    sfnt_version,
+    num_tables,
+    search_range,
+    entry_selector,
+    range_shift,
+    tables,
+  }
+}
 
 ///|
 /// Parse the SFNT table directory from a ByteReader.
@@ -65,7 +94,7 @@ pub fn TableDirectory::find_table(
 
 ///|
 /// TrueType Collection (TTC) header.
-pub(all) struct TtcHeader {
+pub struct TtcHeader {
   version : UInt // major.minor (1.0 or 2.0)
   num_fonts : UInt
   offsets : Array[UInt] // offset to each font's table directory

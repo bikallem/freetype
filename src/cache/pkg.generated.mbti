@@ -10,22 +10,23 @@ import {
 // Errors
 
 // Types and methods
-pub(all) struct CacheEntry[V] {
+pub struct CacheEntry[V] {
   key : UInt64
   value : V
   mut access_time : Int
 }
 pub impl[V : Show] Show for CacheEntry[V]
 
-pub(all) struct CachedGlyph {
+pub struct CachedGlyph {
   outline : @types.Outline
   metrics : @types.GlyphMetrics
   advance_width : Int64
 }
+pub fn CachedGlyph::new(outline~ : @types.Outline, metrics~ : @types.GlyphMetrics, advance_width~ : Int64) -> Self
 pub impl Show for CachedGlyph
 
-pub(all) struct CmapCache {
-  mut entries : Map[UInt64, UInt]
+pub struct CmapCache {
+  entries : Map[UInt64, UInt]
   max_entries : Int
 }
 pub fn CmapCache::insert(Self, UInt, UInt, UInt) -> Unit
@@ -33,8 +34,8 @@ pub fn CmapCache::lookup(Self, UInt, UInt) -> UInt?
 pub fn CmapCache::new(max_entries? : Int) -> Self
 pub impl Show for CmapCache
 
-pub(all) struct GlyphCache {
-  mut entries : Map[UInt64, CacheEntry[CachedGlyph]]
+pub struct GlyphCache {
+  entries : Map[UInt64, CacheEntry[CachedGlyph]]
   max_entries : Int
   mut current_time : Int
 }

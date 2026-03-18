@@ -15,7 +15,7 @@ pub fn parse_int_from_string(String) -> Int
 // Errors
 
 // Types and methods
-pub(all) struct ByteReader {
+pub struct ByteReader {
   data : Bytes
   size : Int
   mut pos : Int

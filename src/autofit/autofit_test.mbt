@@ -57,33 +57,33 @@ test "compute_segments on square" {
 ///|
 test "compute_edges merges nearby segments" {
   let segments : Array[@autofit.Segment] = [
-    {
-      position: 100L,
-      min_coord: 0L,
-      max_coord: 50L,
-      direction: @autofit.SegmentDir::Vertical,
-      first_point: 0,
-      last_point: 1,
-      num_points: 2,
-    },
-    {
-      position: 110L,
-      min_coord: 0L,
-      max_coord: 50L,
-      direction: @autofit.SegmentDir::Vertical,
-      first_point: 2,
-      last_point: 3,
-      num_points: 2,
-    },
-    {
-      position: 300L,
-      min_coord: 0L,
-      max_coord: 50L,
-      direction: @autofit.SegmentDir::Vertical,
-      first_point: 4,
-      last_point: 5,
-      num_points: 2,
-    },
+    @autofit.Segment::new(
+      position=100L,
+      min_coord=0L,
+      max_coord=50L,
+      direction=@autofit.SegmentDir::Vertical,
+      first_point=0,
+      last_point=1,
+      num_points=2,
+    ),
+    @autofit.Segment::new(
+      position=110L,
+      min_coord=0L,
+      max_coord=50L,
+      direction=@autofit.SegmentDir::Vertical,
+      first_point=2,
+      last_point=3,
+      num_points=2,
+    ),
+    @autofit.Segment::new(
+      position=300L,
+      min_coord=0L,
+      max_coord=50L,
+      direction=@autofit.SegmentDir::Vertical,
+      first_point=4,
+      last_point=5,
+      num_points=2,
+    ),
   ]
   let scale = @fixed.Fixed::from_int(1)
   let edges = @autofit.compute_edges(segments, scale)

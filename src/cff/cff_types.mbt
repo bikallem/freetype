@@ -1,6 +1,6 @@
 ///|
 /// CFF INDEX structure: array of variable-length data items.
-pub(all) struct CffIndex {
+pub struct CffIndex {
   count : UInt
   off_size : Int // 1, 2, 3, or 4 bytes per offset
   offsets : Array[UInt] // count+1 offsets
@@ -9,8 +9,20 @@ pub(all) struct CffIndex {
 } derive(Show)
 
 ///|
+/// Creates a CFF INDEX from parsed components.
+pub fn CffIndex::new(
+  count~ : UInt,
+  off_size~ : Int,
+  offsets~ : Array[UInt],
+  data_start~ : Int,
+  data~ : Bytes,
+) -> CffIndex {
+  { count, off_size, offsets, data_start, data }
+}
+
+///|
 /// CFF header.
-pub(all) struct CffHeader {
+pub struct CffHeader {
   major : Int
   minor : Int
   hdr_size : Int
@@ -19,7 +31,7 @@ pub(all) struct CffHeader {
 
 ///|
 /// CFF Top DICT values.
-pub(all) struct CffTopDict {
+pub struct CffTopDict {
   mut charset_offset : UInt
   mut encoding_offset : UInt
   mut charstrings_offset : UInt
@@ -52,7 +64,7 @@ pub fn CffTopDict::new() -> CffTopDict {
 
 ///|
 /// CFF Private DICT values.
-pub(all) struct CffPrivateDict {
+pub struct CffPrivateDict {
   mut default_width_x : Int64
   mut nominal_width_x : Int64
   mut subrs_offset : UInt // relative to start of Private DICT
@@ -77,7 +89,7 @@ pub fn CffPrivateDict::new() -> CffPrivateDict {
 
 ///|
 /// Parsed CFF font data.
-pub(all) struct CffFont {
+pub struct CffFont {
   header : CffHeader
   name : String // font name from Name INDEX
   top_dict : CffTopDict
@@ -86,6 +98,6 @@ pub(all) struct CffFont {
   global_subrs : CffIndex // Global Subr INDEX
   local_subrs : CffIndex? // Local Subr INDEX (from Private DICT)
   num_glyphs : UInt
-  mut cached_local_subrs : Array[Bytes]
-  mut cached_global_subrs : Array[Bytes]
+  cached_local_subrs : Array[Bytes]
+  cached_global_subrs : Array[Bytes]
 } derive(Show)

@@ -101,7 +101,7 @@ pub let style_flag_italic : Int
 // Errors
 
 // Types and methods
-pub(all) struct BitmapSize {
+pub struct BitmapSize {
   height : Int
   width : Int
   size : Int64
@@ -169,6 +169,7 @@ pub(all) struct FaceRec {
   mut underline_thickness : Int
   mut glyph : GlyphSlot
   mut size : SizeRec
+  mut var_coords : Array[Int]
   mut driver_data : DriverData
 }
 pub fn FaceRec::has_color(Self) -> Bool
@@ -203,7 +204,7 @@ pub(all) enum FontFormat {
 pub impl Eq for FontFormat
 pub impl Show for FontFormat
 
-pub(all) struct GlyphLoader {
+pub struct GlyphLoader {
   mut base_points : Array[@types.Vector]
   mut base_tags : Array[Byte]
   mut base_contours : Array[UInt]
@@ -261,9 +262,10 @@ pub(all) struct OutlineFuncs {
 
 pub(all) struct SfntOps {
   char_index : (UInt) -> UInt
-  load_glyph : (UInt, Int) -> (GlyphSlotData, @types.Outline) raise @error.FTError
+  load_glyph : (UInt, Int) -> (GlyphSlotData, @types.Outline, Bytes) raise @error.FTError
   get_kerning : (UInt, UInt) -> Int
   apply_hints : (@types.Outline, @fixed.Fixed) -> Bool
+  tt_hint : (@types.Outline, Bytes, @fixed.Fixed, @fixed.Fixed, UInt) -> Bool
   num_glyphs : UInt
   raw_data : Bytes
 }
@@ -275,7 +277,7 @@ pub(all) struct SizeRec {
 pub fn SizeRec::new() -> Self
 pub impl Show for SizeRec
 
-pub(all) struct SubGlyph {
+pub struct SubGlyph {
   index : UInt
   flags : UInt
   arg1 : Int

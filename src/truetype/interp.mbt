@@ -35,7 +35,7 @@ pub(all) struct InterpContext {
 
 ///|
 /// Graphics state for the TrueType interpreter.
-pub(all) struct GraphicsState {
+pub struct GraphicsState {
   mut rp0 : Int
   mut rp1 : Int
   mut rp2 : Int
@@ -51,11 +51,11 @@ pub(all) struct GraphicsState {
   mut single_width_cut_in : Int64 // 26.6
   mut single_width_value : Int64 // 26.6
   mut auto_flip : Bool
-  mut delta_base : Int
-  mut delta_shift : Int
-  mut instruct_control : Int
-  mut scan_control : Bool
-  mut scan_type : Int
+  delta_base : Int
+  delta_shift : Int
+  instruct_control : Int
+  scan_control : Bool
+  scan_type : Int
   // Zone pointers
   mut zp0 : Int // 0 or 1
   mut zp1 : Int
@@ -93,7 +93,7 @@ pub fn GraphicsState::default() -> GraphicsState {
 
 ///|
 /// Function definition (from FDEF instruction).
-pub(all) struct FuncDef {
+pub struct FuncDef {
   start : Int // start offset in code
   end_ : Int // end offset (ENDF position)
 } derive(Show)

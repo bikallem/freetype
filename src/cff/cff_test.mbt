@@ -73,13 +73,13 @@ test "parse_private_dict: defaultWidthX" {
 
 ///|
 test "CffIndex::get_item out of range" {
-  let idx = @cff.CffIndex::{
-    count: 1U,
-    off_size: 1,
-    offsets: [1U, 4U],
-    data_start: 0,
-    data: b"abc",
-  }
+  let idx = @cff.CffIndex::new(
+    count=1U,
+    off_size=1,
+    offsets=[1U, 4U],
+    data_start=0,
+    data=b"abc",
+  )
   let item = idx.get_item(5)
   inspect(item.length(), content="0")
 }

@@ -1,6 +1,6 @@
 ///|
 /// Parsed 'post' (PostScript) table header.
-pub(all) struct PostTable {
+pub struct PostTable {
   format : UInt // 0x00010000, 0x00020000, 0x00025000, 0x00030000
   italic_angle : @fixed.Fixed
   underline_position : Int

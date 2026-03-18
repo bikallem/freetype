@@ -34,7 +34,7 @@ pub let pcf_swidths : UInt
 // Errors
 
 // Types and methods
-pub(all) struct PcfEncodings {
+pub struct PcfEncodings {
   min_char_or_byte2 : Int
   max_char_or_byte2 : Int
   min_byte1 : Int
@@ -44,7 +44,7 @@ pub(all) struct PcfEncodings {
 }
 pub impl Show for PcfEncodings
 
-pub(all) struct PcfFont {
+pub struct PcfFont {
   mut tables : Array[PcfTableEntry]
   mut font_name : String
   mut num_glyphs : Int
@@ -58,7 +58,7 @@ pub fn PcfFont::get_glyph(Self, Int) -> PcfMetric?
 pub fn PcfFont::new() -> Self
 pub impl Show for PcfFont
 
-pub(all) struct PcfMetric {
+pub struct PcfMetric {
   left_bearing : Int
   right_bearing : Int
   width : Int
@@ -68,7 +68,7 @@ pub(all) struct PcfMetric {
 pub impl Eq for PcfMetric
 pub impl Show for PcfMetric
 
-pub(all) struct PcfProperty {
+pub struct PcfProperty {
   name : String
   is_string : Bool
   string_value : String
@@ -77,7 +77,7 @@ pub(all) struct PcfProperty {
 pub impl Eq for PcfProperty
 pub impl Show for PcfProperty
 
-pub(all) struct PcfTableEntry {
+pub struct PcfTableEntry {
   table_type : UInt
   format : UInt
   size : UInt

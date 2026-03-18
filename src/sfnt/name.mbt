@@ -1,6 +1,6 @@
 ///|
 /// A single name record from the 'name' table.
-pub(all) struct NameRecord {
+pub struct NameRecord {
   platform_id : UInt
   encoding_id : UInt
   language_id : UInt
@@ -10,14 +10,37 @@ pub(all) struct NameRecord {
 } derive(Show)
 
 ///|
+pub fn NameRecord::new(
+  platform_id~ : UInt,
+  encoding_id~ : UInt,
+  language_id~ : UInt,
+  name_id~ : UInt,
+  length~ : UInt,
+  offset~ : UInt,
+) -> NameRecord {
+  { platform_id, encoding_id, language_id, name_id, length, offset }
+}
+
+///|
 /// Parsed 'name' table.
-pub(all) struct NameTable {
+pub struct NameTable {
   format : UInt
   count : UInt
   string_offset : UInt // offset from start of table to string storage
   records : Array[NameRecord]
   string_data : Bytes // raw string storage
 } derive(Show)
+
+///|
+pub fn NameTable::new(
+  format~ : UInt,
+  count~ : UInt,
+  string_offset~ : UInt,
+  records~ : Array[NameRecord],
+  string_data~ : Bytes,
+) -> NameTable {
+  { format, count, string_offset, records, string_data }
+}
 
 ///|
 // Name IDs

@@ -115,7 +115,7 @@ pub fn load_simple_glyph(
 
 ///|
 /// A composite glyph component parsed from 'glyf'.
-pub(all) struct CompositeComponent {
+pub struct CompositeComponent {
   flags : UInt
   glyph_index : UInt
   arg1 : Int // x offset or point index

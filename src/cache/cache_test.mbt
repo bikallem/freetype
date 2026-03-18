@@ -1,11 +1,11 @@
 ///|
 test "GlyphCache insert and lookup" {
   let cache = @cache.GlyphCache::new(max_entries=10)
-  let glyph : @cache.CachedGlyph = {
-    outline: @types.Outline::new(),
-    metrics: @types.GlyphMetrics::new(),
-    advance_width: 600L,
-  }
+  let glyph = @cache.CachedGlyph::new(
+    outline=@types.Outline::new(),
+    metrics=@types.GlyphMetrics::new(),
+    advance_width=600L,
+  )
   cache.insert(1U, 42U, glyph)
   let result = cache.lookup(1U, 42U)
   inspect(result is Some(_), content="true")
@@ -22,21 +22,21 @@ test "GlyphCache miss returns None" {
 ///|
 test "GlyphCache LRU eviction" {
   let cache = @cache.GlyphCache::new(max_entries=2)
-  let glyph_a : @cache.CachedGlyph = {
-    outline: @types.Outline::new(),
-    metrics: @types.GlyphMetrics::new(),
-    advance_width: 100L,
-  }
-  let glyph_b : @cache.CachedGlyph = {
-    outline: @types.Outline::new(),
-    metrics: @types.GlyphMetrics::new(),
-    advance_width: 200L,
-  }
-  let glyph_c : @cache.CachedGlyph = {
-    outline: @types.Outline::new(),
-    metrics: @types.GlyphMetrics::new(),
-    advance_width: 300L,
-  }
+  let glyph_a = @cache.CachedGlyph::new(
+    outline=@types.Outline::new(),
+    metrics=@types.GlyphMetrics::new(),
+    advance_width=100L,
+  )
+  let glyph_b = @cache.CachedGlyph::new(
+    outline=@types.Outline::new(),
+    metrics=@types.GlyphMetrics::new(),
+    advance_width=200L,
+  )
+  let glyph_c = @cache.CachedGlyph::new(
+    outline=@types.Outline::new(),
+    metrics=@types.GlyphMetrics::new(),
+    advance_width=300L,
+  )
   cache.insert(1U, 1U, glyph_a)
   cache.insert(1U, 2U, glyph_b)
   // Access glyph_a to make it more recently used

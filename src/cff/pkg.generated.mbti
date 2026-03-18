@@ -22,7 +22,7 @@ pub fn parse_top_dict(Bytes) -> CffTopDict
 // Errors
 
 // Types and methods
-pub(all) struct CffFont {
+pub struct CffFont {
   header : CffHeader
   name : String
   top_dict : CffTopDict
@@ -31,12 +31,12 @@ pub(all) struct CffFont {
   global_subrs : CffIndex
   local_subrs : CffIndex?
   num_glyphs : UInt
-  mut cached_local_subrs : Array[Bytes]
-  mut cached_global_subrs : Array[Bytes]
+  cached_local_subrs : Array[Bytes]
+  cached_global_subrs : Array[Bytes]
 }
 pub impl Show for CffFont
 
-pub(all) struct CffHeader {
+pub struct CffHeader {
   major : Int
   minor : Int
   hdr_size : Int
@@ -44,7 +44,7 @@ pub(all) struct CffHeader {
 }
 pub impl Show for CffHeader
 
-pub(all) struct CffIndex {
+pub struct CffIndex {
   count : UInt
   off_size : Int
   offsets : Array[UInt]
@@ -52,9 +52,10 @@ pub(all) struct CffIndex {
   data : Bytes
 }
 pub fn CffIndex::get_item(Self, Int) -> Bytes
+pub fn CffIndex::new(count~ : UInt, off_size~ : Int, offsets~ : Array[UInt], data_start~ : Int, data~ : Bytes) -> Self
 pub impl Show for CffIndex
 
-pub(all) struct CffPrivateDict {
+pub struct CffPrivateDict {
   mut default_width_x : Int64
   mut nominal_width_x : Int64
   mut subrs_offset : UInt
@@ -66,7 +67,7 @@ pub(all) struct CffPrivateDict {
 pub fn CffPrivateDict::new() -> Self
 pub impl Show for CffPrivateDict
 
-pub(all) struct CffTopDict {
+pub struct CffTopDict {
   mut charset_offset : UInt
   mut encoding_offset : UInt
   mut charstrings_offset : UInt

@@ -4,6 +4,7 @@ package "bikallem/freetype"
 import {
   "bikallem/freetype/base",
   "bikallem/freetype/error",
+  "bikallem/freetype/fixed",
 }
 
 // Values
@@ -16,6 +17,8 @@ pub fn get_kerning(@base.FaceRec, UInt, UInt) -> (Int64, Int64)
 pub fn load_glyph(@base.FaceRec, UInt, load_flags? : Int) -> Unit raise @error.FTError
 
 pub fn set_pixel_sizes(@base.FaceRec, UInt, UInt) -> Unit raise @error.FTError
+
+pub fn set_var_design_coordinates(@base.FaceRec, Array[(@fixed.Fixed, UInt)]) -> Unit raise @error.FTError
 
 // Errors
 

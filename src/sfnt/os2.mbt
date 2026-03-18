@@ -1,6 +1,6 @@
 ///|
 /// Parsed 'OS/2' table (key fields only).
-pub(all) struct Os2Table {
+pub struct Os2Table {
   version : UInt
   x_avg_char_width : Int
   us_weight_class : UInt

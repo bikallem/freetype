@@ -1,6 +1,6 @@
 ///|
 /// Parsed 'maxp' (maximum profile) table.
-pub(all) struct MaxpTable {
+pub struct MaxpTable {
   version : UInt // 0x00005000 for CFF, 0x00010000 for TrueType
   num_glyphs : UInt
   // TrueType-specific fields (version 1.0):
