@@ -301,7 +301,6 @@ pub impl Eq for TableRecord
 pub impl Show for TableRecord
 
 pub(all) struct TtcHeader {
-  tag : UInt
   version : UInt
   num_fonts : UInt
   offsets : Array[UInt]

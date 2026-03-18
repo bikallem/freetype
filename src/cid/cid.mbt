@@ -188,30 +188,7 @@ fn read_ps_token(data : Bytes, start : Int) -> (String, Int) {
 ///|
 /// Parse an integer from a PostScript token string.
 fn parse_ps_int(s : String) -> Int {
-  let mut result = 0
-  let mut negative = false
-  let mut i = 0
-  let len = s.length()
-  if len > 0 && s[i] == '-' {
-    negative = true
-    i += 1
-  } else if len > 0 && s[i] == '+' {
-    i += 1
-  }
-  while i < len {
-    let c = s[i].to_int()
-    if c >= 0x30 && c <= 0x39 {
-      result = result * 10 + (c - 0x30)
-    } else {
-      break
-    }
-    i += 1
-  }
-  if negative {
-    -result
-  } else {
-    result
-  }
+  @stream.parse_int_from_string(s)
 }
 
 ///|

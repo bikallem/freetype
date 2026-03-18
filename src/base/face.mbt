@@ -154,6 +154,7 @@ pub(all) struct SfntOps {
   char_index : (UInt) -> UInt // charcode → glyph index
   load_glyph : (UInt, Int) -> (GlyphSlotData, @types.Outline) raise @error.FTError // (glyph_index, load_flags) → slot data
   get_kerning : (UInt, UInt) -> Int // (left, right) → kern value
+  apply_hints : (@types.Outline, @fixed.Fixed) -> Bool // (outline, y_scale) → true if hints were applied
   num_glyphs : UInt
   raw_data : Bytes // font file bytes (for re-parsing if needed)
 }

@@ -45,7 +45,7 @@ fn exec_type2_code(
       check_width(interp)
       let num_hints = interp.hints_h.length() + interp.hints_v.length()
       // First, consume any remaining stem hints on stack
-      let pairs_on_stack = interp.sp / 2
+      let pairs_on_stack = interp.stack.length() / 2
       for _ in 0..<pairs_on_stack {
         ignore(interp.pop())
         ignore(interp.pop())
@@ -100,11 +100,17 @@ fn exec_type2_code(
 }
 
 ///|
-/// Check if width needs to be set from stack operand.
+/// Mark that the width-setting window has passed.
+/// Per CFF spec, the optional width operand appears as the first stack element
+/// before the first path-building or hint operator, only if the argument count
+/// is odd for that operator. Extracting it correctly requires per-operator
+/// knowledge of expected argument counts, which is handled inline at each call
+/// site that needs it (e.g. hstem/vstem check for odd pair counts). This
+/// function simply closes the width-setting window to prevent later operators
+/// from misinterpreting stack contents.
 fn check_width(interp : PsInterp) -> Unit {
   if not(interp.width_set) {
     interp.width_set = true
-    // Width is first operand if stack has odd number of args before first path op
   }
 }
 
@@ -121,7 +127,7 @@ fn exec_type2_op(
     1 | 3 => {
       // hstem (1) / vstem (3)
       check_width(interp)
-      let pairs = interp.sp / 2
+      let pairs = interp.stack.length() / 2
       let hints = if op == 1 { interp.hints_h } else { interp.hints_v }
       let mut pos = 0L
       for i in 0..<pairs {
@@ -131,14 +137,13 @@ fn exec_type2_op(
         hints.push({ position: pos, width: d2 })
         pos += d2
       }
-      interp.sp = 0
       interp.stack = []
       ip
     }
     4 => {
       // vmoveto
       check_width(interp)
-      if interp.sp > 1 && not(interp.width_set) {
+      if interp.stack.length() > 1 && not(interp.width_set) {
         // First arg is width
       }
       let dy = interp.pop()
@@ -147,19 +152,18 @@ fn exec_type2_op(
     }
     5 => {
       // rlineto
-      for i = 0; i + 1 < interp.sp; {
+      for i = 0; i + 1 < interp.stack.length(); {
         let dx = interp.stack[i]
         let dy = interp.stack[i + 1]
         interp.line_to(interp.current_x + dx, interp.current_y + dy)
         continue i + 2
       }
-      interp.sp = 0
       interp.stack = []
       ip
     }
     6 => {
       // hlineto: alternating horizontal/vertical lines starting with horizontal
-      let sp = interp.sp
+      let sp = interp.stack.length()
       let mut horizontal = true
       for i in 0..<sp {
         let d = interp.stack[i]
@@ -170,13 +174,12 @@ fn exec_type2_op(
         }
         horizontal = not(horizontal)
       }
-      interp.sp = 0
       interp.stack = []
       ip
     }
     7 => {
       // vlineto: alternating vertical/horizontal lines starting with vertical
-      let sp = interp.sp
+      let sp = interp.stack.length()
       let mut horizontal = false
       for i in 0..<sp {
         let d = interp.stack[i]
@@ -187,13 +190,12 @@ fn exec_type2_op(
         }
         horizontal = not(horizontal)
       }
-      interp.sp = 0
       interp.stack = []
       ip
     }
     8 => {
       // rrcurveto: dx1 dy1 dx2 dy2 dx3 dy3 {dxa dya dxb dyb dxc dyc}*
-      for i = 0; i + 5 < interp.sp; {
+      for i = 0; i + 5 < interp.stack.length(); {
         let x1 = interp.current_x + interp.stack[i]
         let y1 = interp.current_y + interp.stack[i + 1]
         let x2 = x1 + interp.stack[i + 2]
@@ -203,7 +205,6 @@ fn exec_type2_op(
         interp.curve_to(x1, y1, x2, y2, x3, y3)
         continue i + 6
       }
-      interp.sp = 0
       interp.stack = []
       ip
     }
@@ -231,7 +232,7 @@ fn exec_type2_op(
     18 => {
       // hstemhm (same as hstem but for hint masks)
       check_width(interp)
-      let pairs = interp.sp / 2
+      let pairs = interp.stack.length() / 2
       let mut pos = 0L
       for i in 0..<pairs {
         let d1 = interp.stack[i * 2]
@@ -240,7 +241,6 @@ fn exec_type2_op(
         interp.hints_h.push({ position: pos, width: d2 })
         pos += d2
       }
-      interp.sp = 0
       interp.stack = []
       ip
     }
@@ -262,7 +262,7 @@ fn exec_type2_op(
     23 => {
       // vstemhm (same as vstem but for hint masks)
       check_width(interp)
-      let pairs = interp.sp / 2
+      let pairs = interp.stack.length() / 2
       let mut pos = 0L
       for i in 0..<pairs {
         let d1 = interp.stack[i * 2]
@@ -271,13 +271,12 @@ fn exec_type2_op(
         interp.hints_v.push({ position: pos, width: d2 })
         pos += d2
       }
-      interp.sp = 0
       interp.stack = []
       ip
     }
     24 => {
       // rcurveline: curves then line
-      let sp = interp.sp
+      let sp = interp.stack.length()
       for i = 0; i + 7 < sp; {
         let x1 = interp.current_x + interp.stack[i]
         let y1 = interp.current_y + interp.stack[i + 1]
@@ -293,13 +292,12 @@ fn exec_type2_op(
         let dy = interp.stack[sp - 1]
         interp.line_to(interp.current_x + dx, interp.current_y + dy)
       }
-      interp.sp = 0
       interp.stack = []
       ip
     }
     25 => {
       // rlinecurve: lines then curve
-      let sp = interp.sp
+      let sp = interp.stack.length()
       let curve_start = sp - 6
       for i = 0; i + 7 < sp; {
         let dx = interp.stack[i]
@@ -316,7 +314,6 @@ fn exec_type2_op(
         let y3 = y2 + interp.stack[curve_start + 5]
         interp.curve_to(x1, y1, x2, y2, x3, y3)
       }
-      interp.sp = 0
       interp.stack = []
       ip
     }
@@ -357,7 +354,7 @@ fn exec_type2_op2(interp : PsInterp, code : Bytes, ip : Int, op : Int) -> Int {
     0 => ip // dotsection (deprecated, no-op)
     34 => {
       // hflex
-      if interp.sp >= 7 {
+      if interp.stack.length() >= 7 {
         let dx1 = interp.stack[0]
         let dx2 = interp.stack[1]
         let dy2 = interp.stack[2]
@@ -380,12 +377,10 @@ fn exec_type2_op2(interp : PsInterp, code : Bytes, ip : Int, op : Int) -> Int {
         let y6 = interp.current_y
         interp.curve_to(x4, y4, x5, y5, x6, y6)
       }
-      interp.sp = 0
       interp.stack = []
       ip
     }
     _ => {
-      interp.sp = 0
       interp.stack = []
       ip
     }
@@ -395,7 +390,7 @@ fn exec_type2_op2(interp : PsInterp, code : Bytes, ip : Int, op : Int) -> Int {
 ///|
 /// vhcurveto: alternating vertical/horizontal tangent curves.
 fn op_vhcurveto(interp : PsInterp) -> Unit {
-  let sp = interp.sp
+  let sp = interp.stack.length()
   for i = 0, phase = 0; i + 3 < sp; {
     if phase == 0 {
       // Vertical start: dy1 dx2 dy2 dx3 [dy3]
@@ -431,14 +426,13 @@ fn op_vhcurveto(interp : PsInterp) -> Unit {
       continue i + step, 1 - phase
     }
   }
-  interp.sp = 0
   interp.stack = []
 }
 
 ///|
 /// hvcurveto: alternating horizontal/vertical tangent curves.
 fn op_hvcurveto(interp : PsInterp) -> Unit {
-  let sp = interp.sp
+  let sp = interp.stack.length()
   for i = 0, phase = 1; i + 3 < sp; {
     if phase == 1 {
       let dx1 = interp.stack[i]
@@ -472,7 +466,6 @@ fn op_hvcurveto(interp : PsInterp) -> Unit {
       continue i + step, 1 - phase
     }
   }
-  interp.sp = 0
   interp.stack = []
 }
 

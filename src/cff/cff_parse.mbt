@@ -297,6 +297,23 @@ pub fn load_cff(data : Bytes, offset : Int) -> CffFont raise @error.FTError {
   } else {
     None
   }
+  // Build cached subroutine arrays once at load time
+  let cached_local_subrs : Array[Bytes] = match local_subrs {
+    Some(idx) => {
+      let count = idx.count.reinterpret_as_int()
+      let subrs : Array[Bytes] = []
+      for i in 0..<count {
+        subrs.push(idx.get_item(i))
+      }
+      subrs
+    }
+    None => []
+  }
+  let global_count = global_subrs.count.reinterpret_as_int()
+  let cached_global_subrs : Array[Bytes] = []
+  for i in 0..<global_count {
+    cached_global_subrs.push(global_subrs.get_item(i))
+  }
   {
     header,
     name,
@@ -306,6 +323,8 @@ pub fn load_cff(data : Bytes, offset : Int) -> CffFont raise @error.FTError {
     global_subrs,
     local_subrs,
     num_glyphs,
+    cached_local_subrs,
+    cached_global_subrs,
   }
 }
 
@@ -319,28 +338,12 @@ pub fn load_cff_glyph(
   if charstring.length() == 0 {
     return (@types.Outline::new(), 0L, [], [])
   }
-  // Build subroutine arrays
-  let local_subrs = match cff.local_subrs {
-    Some(idx) => {
-      let count = idx.count.reinterpret_as_int()
-      let subrs : Array[Bytes] = []
-      for i in 0..<count {
-        subrs.push(idx.get_item(i))
-      }
-      subrs
-    }
-    None => []
-  }
-  let global_count = cff.global_subrs.count.reinterpret_as_int()
-  let global_subrs_arr : Array[Bytes] = []
-  for i in 0..<global_count {
-    global_subrs_arr.push(cff.global_subrs.get_item(i))
-  }
+  // Use cached subroutine arrays (built once at load time)
   @psaux.execute_type2(
     charstring,
     cff.private_dict.default_width_x,
     cff.private_dict.nominal_width_x,
-    local_subrs~,
-    global_subrs=global_subrs_arr,
+    local_subrs=cff.cached_local_subrs,
+    global_subrs=cff.cached_global_subrs,
   )
 }

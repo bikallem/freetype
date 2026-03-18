@@ -102,7 +102,7 @@ fn exec_type1_op(
   match op {
     1 | 3 => {
       // hstem (1) / vstem (3)
-      let pairs = interp.sp / 2
+      let pairs = interp.stack.length() / 2
       let hints = if op == 1 { interp.hints_h } else { interp.hints_v }
       let mut pos = 0L
       for i in 0..<pairs {
@@ -112,7 +112,6 @@ fn exec_type1_op(
         hints.push({ position: pos, width: d2 })
         pos += d2
       }
-      interp.sp = 0
       interp.stack = []
       ip
     }
@@ -131,13 +130,12 @@ fn exec_type1_op(
     }
     5 => {
       // rlineto (dx dy)
-      for i = 0; i + 1 < interp.sp; {
+      for i = 0; i + 1 < interp.stack.length(); {
         let dx = interp.stack[i]
         let dy = interp.stack[i + 1]
         interp.line_to(interp.current_x + dx, interp.current_y + dy)
         continue i + 2
       }
-      interp.sp = 0
       interp.stack = []
       ip
     }
@@ -155,7 +153,7 @@ fn exec_type1_op(
     }
     8 => {
       // rrcurveto (dx1 dy1 dx2 dy2 dx3 dy3)
-      for i = 0; i + 5 < interp.sp; {
+      for i = 0; i + 5 < interp.stack.length(); {
         let x1 = interp.current_x + interp.stack[i]
         let y1 = interp.current_y + interp.stack[i + 1]
         let x2 = x1 + interp.stack[i + 2]
@@ -165,7 +163,6 @@ fn exec_type1_op(
         interp.curve_to(x1, y1, x2, y2, x3, y3)
         continue i + 6
       }
-      interp.sp = 0
       interp.stack = []
       ip
     }
@@ -240,7 +237,7 @@ fn exec_type1_op(
     }
     30 => {
       // vhcurveto (dy1 dx2 dy2 dx3)
-      if interp.sp >= 4 {
+      if interp.stack.length() >= 4 {
         let dy1 = interp.stack[0]
         let dx2 = interp.stack[1]
         let dy2 = interp.stack[2]
@@ -253,13 +250,12 @@ fn exec_type1_op(
         let y3 = y2
         interp.curve_to(x1, y1, x2, y2, x3, y3)
       }
-      interp.sp = 0
       interp.stack = []
       ip
     }
     31 => {
       // hvcurveto (dx1 dx2 dy2 dy3)
-      if interp.sp >= 4 {
+      if interp.stack.length() >= 4 {
         let dx1 = interp.stack[0]
         let dx2 = interp.stack[1]
         let dy2 = interp.stack[2]
@@ -272,7 +268,6 @@ fn exec_type1_op(
         let y3 = y2 + dy3
         interp.curve_to(x1, y1, x2, y2, x3, y3)
       }
-      interp.sp = 0
       interp.stack = []
       ip
     }
@@ -296,40 +291,37 @@ fn exec_type1_op2(
       ip
     1 => {
       // vstem3 (y0 dy0 y1 dy1 y2 dy2) — 3 vertical stems
-      if interp.sp >= 6 {
+      if interp.stack.length() >= 6 {
         for i in 0..<3 {
           let p = interp.stack[i * 2]
           let w = interp.stack[i * 2 + 1]
           interp.hints_v.push({ position: p, width: w })
         }
       }
-      interp.sp = 0
       interp.stack = []
       ip
     }
     2 => {
       // hstem3 (x0 dx0 x1 dx1 x2 dx2) — 3 horizontal stems
-      if interp.sp >= 6 {
+      if interp.stack.length() >= 6 {
         for i in 0..<3 {
           let p = interp.stack[i * 2]
           let w = interp.stack[i * 2 + 1]
           interp.hints_h.push({ position: p, width: w })
         }
       }
-      interp.sp = 0
       interp.stack = []
       ip
     }
     6 => {
       // seac (asb adx ady bchar achar) — accented character composite
       // For now, skip seac and return empty outline
-      interp.sp = 0
       interp.stack = []
       ip + code.length() // stop execution
     }
     7 => {
       // sbw (sbx sby wx wy) — set sidebearing and width (2D)
-      if interp.sp >= 4 {
+      if interp.stack.length() >= 4 {
         let sbx = interp.stack[0]
         let sby = interp.stack[1]
         let wx = interp.stack[2]
@@ -339,7 +331,6 @@ fn exec_type1_op2(
         interp.current_x = sbx
         interp.current_y = sby
       }
-      interp.sp = 0
       interp.stack = []
       ip
     }
@@ -417,19 +408,17 @@ fn exec_type1_op2(
     }
     33 => {
       // setcurrentpoint (x y)
-      if interp.sp >= 2 {
+      if interp.stack.length() >= 2 {
         let x = interp.stack[0]
         let y = interp.stack[1]
         interp.current_x = x
         interp.current_y = y
       }
-      interp.sp = 0
       interp.stack = []
       ip
     }
     _ => {
       // Unknown two-byte operator
-      interp.sp = 0
       interp.stack = []
       ip
     }

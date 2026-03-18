@@ -52,29 +52,6 @@ pub fn from_bytes(
 }
 
 ///|
-/// Mutable container for passing PS hint data from the load closure to load_glyph.
-priv struct PsHintCache {
-  mut h_hints : Array[@psaux.StemHint]
-  mut v_hints : Array[@psaux.StemHint]
-  mut globals : @pshinter.PsGlobals
-  mut has_hints : Bool
-}
-
-///|
-fn PsHintCache::new() -> PsHintCache {
-  {
-    h_hints: [],
-    v_hints: [],
-    globals: @pshinter.PsGlobals::new(),
-    has_hints: false,
-  }
-}
-
-///|
-/// Module-level hint cache for passing hint data from load closures to load_glyph.
-let ps_hint_cache : PsHintCache = PsHintCache::new()
-
-///|
 /// Load an SFNT-based font (TrueType, CFF/OpenType, TTC).
 fn load_sfnt(
   data : Bytes,
@@ -111,11 +88,18 @@ fn load_sfnt(
   // Build the closure-based driver ops
   let kern_table = sfnt_data.kern
   let hmtx = sfnt_data.hmtx
+  // Per-face hint state (captured by closures below, avoids module-level mutable)
+  let hint_h_hints : Ref[Array[@psaux.StemHint]] = Ref::new([])
+  let hint_v_hints : Ref[Array[@psaux.StemHint]] = Ref::new([])
+  let hint_has_hints : Ref[Bool] = Ref::new(false)
   // Build PS hint globals for CFF fonts
+  let hint_globals : Ref[@pshinter.PsGlobals] = Ref::new(
+    @pshinter.PsGlobals::new(),
+  )
   if cff_font is Some(cff) {
     let pd = cff.private_dict
     let defaults = @pshinter.PsGlobals::new()
-    ps_hint_cache.globals = @pshinter.build_ps_globals(
+    hint_globals.val = @pshinter.build_ps_globals(
       pd.blue_values.map(fn(v) { v.to_int() }),
       pd.other_blues.map(fn(v) { v.to_int() }),
       pd.std_hw.to_int(),
@@ -133,8 +117,9 @@ fn load_sfnt(
     glyph_index,
     load_flags,
   ) raise @error.FTError {
+    let no_hinting = (load_flags & @base.load_no_hinting) != 0
     let outline = if tt_data is Some(tt) {
-      ps_hint_cache.has_hints = false
+      hint_has_hints.val = false
       @truetype.load_tt_glyph(
         data,
         tt.glyph_offsets,
@@ -143,16 +128,19 @@ fn load_sfnt(
       )
     } else if cff_font is Some(cff) {
       let (o, _w, hh, hv) = @cff.load_cff_glyph(cff, glyph_index)
-      // Store stem hints in the cache for use during point scaling
-      ps_hint_cache.h_hints = hh
-      ps_hint_cache.v_hints = hv
-      ps_hint_cache.has_hints = hh.length() > 0 || hv.length() > 0
+      if no_hinting {
+        hint_has_hints.val = false
+      } else {
+        // Store stem hints for use during point scaling
+        hint_h_hints.val = hh
+        hint_v_hints.val = hv
+        hint_has_hints.val = hh.length() > 0 || hv.length() > 0
+      }
       o
     } else {
-      ps_hint_cache.has_hints = false
+      hint_has_hints.val = false
       @types.Outline::new()
     }
-    ignore(load_flags)
     // Compute metrics from outline bbox + hmtx
     let (advance_width, _lsb) = hmtx.get_metrics(glyph_index)
     let bb = @base.outline_get_bbox(outline)
@@ -165,6 +153,24 @@ fn load_sfnt(
     }
     (slot_data, outline)
   }
+  let apply_hints_fn : (@types.Outline, @fixed.Fixed) -> Bool = fn(
+    outline,
+    y_scale,
+  ) {
+    if hint_has_hints.val {
+      @pshinter.hint_outline(
+        outline,
+        hint_h_hints.val,
+        hint_v_hints.val,
+        hint_globals.val,
+        y_scale,
+      )
+      hint_has_hints.val = false
+      true
+    } else {
+      false
+    }
+  }
   let kern_fn : (UInt, UInt) -> Int = match kern_table {
     Some(k) => fn(left, right) { k.get_kerning(left, right) }
     None => fn(_left, _right) { 0 }
@@ -173,6 +179,7 @@ fn load_sfnt(
     char_index: char_index_fn,
     load_glyph: load_glyph_fn,
     get_kerning: kern_fn,
+    apply_hints: apply_hints_fn,
     num_glyphs: sfnt_data.maxp.num_glyphs,
     raw_data: data,
   })
@@ -264,6 +271,11 @@ fn load_type1_pfb(data : Bytes) -> @base.FaceRec raise @error.FTError {
   }
   // Build glyph name list for index lookup
   let glyph_names : Array[String] = font.charstrings.keys().collect()
+  // Build O(1) name-to-index map
+  let name_to_index : Map[String, UInt] = {}
+  for i, name in glyph_names {
+    name_to_index[name] = i.reinterpret_as_uint()
+  }
   // Set up Type1Ops driver data
   let char_index_fn : (UInt) -> UInt = fn(charcode) {
     if charcode >= 256U {
@@ -273,13 +285,10 @@ fn load_type1_pfb(data : Bytes) -> @base.FaceRec raise @error.FTError {
     if glyph_name == ".notdef" {
       return 0U
     }
-    // Find glyph_name in glyph_names list
-    for i, name in glyph_names {
-      if name == glyph_name {
-        return i.reinterpret_as_uint()
-      }
+    match name_to_index.get(glyph_name) {
+      Some(idx) => idx
+      None => 0U
     }
-    0U
   }
   let load_glyph_fn : (UInt, Int) -> (@base.GlyphSlotData, @types.Outline) raise @error.FTError = fn(
     glyph_index,
@@ -374,19 +383,15 @@ pub fn load_glyph(
         ).val
       // Apply PS hinting or plain scaling to outline points
       let no_hinting = (load_flags & @base.load_no_hinting) != 0
-      if not(no_hinting) && ps_hint_cache.has_hints {
-        // PS hinting: interpolate points based on fitted stems
-        // hint_outline scales points to 26.6 pixels with grid-fitting
-        @pshinter.hint_outline(
-          face.glyph.outline,
-          ps_hint_cache.h_hints,
-          ps_hint_cache.v_hints,
-          ps_hint_cache.globals,
-          y_scale,
-        )
-        // Clear the cache to avoid stale data
-        ps_hint_cache.has_hints = false
+      let did_hint = if not(no_hinting) {
+        match face.driver_data {
+          SfntDriver(ops) => (ops.apply_hints)(face.glyph.outline, y_scale)
+          _ => false
+        }
       } else {
+        false
+      }
+      if not(did_hint) {
         // Plain scaling: scale outline points
         for i, _pt in face.glyph.outline.points {
           face.glyph.outline.points[i].x = @fixed.mul_fix(

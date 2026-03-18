@@ -95,15 +95,7 @@ fn extract_sfnts(text : String) -> Bytes {
 
 ///|
 fn hex_digit(c : UInt16) -> Int {
-  if c >= '0' && c <= '9' {
-    c.to_int() - 0x30
-  } else if c >= 'a' && c <= 'f' {
-    c.to_int() - 0x61 + 10
-  } else if c >= 'A' && c <= 'F' {
-    c.to_int() - 0x41 + 10
-  } else {
-    -1
-  }
+  @stream.hex_digit_value(c.to_int())
 }
 
 ///|
@@ -205,33 +197,10 @@ fn split_on_space(s : String) -> Array[String] {
 
 ///|
 fn parse_int_simple(s : String) -> Int {
-  let mut result = 0
-  let mut neg = false
-  let mut i = 0
-  let len = s.length()
-  if len > 0 && s[0] == '-' {
-    neg = true
-    i = 1
-  }
-  while i < len {
-    let c = s[i]
-    if c >= '0' && c <= '9' {
-      result = result * 10 + (c.to_int() - 0x30)
-    }
-    i += 1
-  }
-  if neg {
-    -result
-  } else {
-    result
-  }
+  @stream.parse_int_from_string(s)
 }
 
 ///|
 fn bytes_to_ascii(data : Bytes) -> String {
-  let buf = StringBuilder::new()
-  for _, b in data {
-    buf.write_char(Int::unsafe_to_char(b.to_int()))
-  }
-  buf.to_string()
+  @stream.bytes_to_ascii(data)
 }

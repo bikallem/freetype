@@ -1,5 +1,6 @@
 import {
   "bikallem/freetype/error",
+  "bikallem/freetype/stream",
   "bikallem/freetype/types",
   "bikallem/freetype/psaux",
   "bikallem/freetype/psnames",

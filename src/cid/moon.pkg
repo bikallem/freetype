@@ -1,3 +1,4 @@
 import {
   "bikallem/freetype/error",
+  "bikallem/freetype/stream",
 }

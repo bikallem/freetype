@@ -41,14 +41,6 @@ pub fn GlyphLoader::reset(self : GlyphLoader) -> Unit {
 }
 
 ///|
-/// Prepare for loading a new glyph. Clears current but keeps base.
-pub fn GlyphLoader::prepare(self : GlyphLoader) -> Unit {
-  self.current_points = []
-  self.current_tags = []
-  self.current_contours = []
-}
-
-///|
 /// Add a point to the current sub-glyph.
 pub fn GlyphLoader::add_point(
   self : GlyphLoader,
@@ -85,7 +77,9 @@ pub fn GlyphLoader::add(self : GlyphLoader) -> Unit {
     self.base_contours.push(adjusted.reinterpret_as_uint())
   }
   // Clear current
-  self.prepare()
+  self.current_points = []
+  self.current_tags = []
+  self.current_contours = []
 }
 
 ///|

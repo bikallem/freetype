@@ -86,4 +86,6 @@ pub(all) struct CffFont {
   global_subrs : CffIndex // Global Subr INDEX
   local_subrs : CffIndex? // Local Subr INDEX (from Private DICT)
   num_glyphs : UInt
+  mut cached_local_subrs : Array[Bytes]
+  mut cached_global_subrs : Array[Bytes]
 } derive(Show)

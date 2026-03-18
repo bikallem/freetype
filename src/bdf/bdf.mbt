@@ -81,20 +81,8 @@ pub fn BdfFont::get_glyph(self : BdfFont, encoding : Int) -> BdfGlyph? {
 ///|
 /// Parse a pair of hex character code points into a byte.
 fn parse_hex_byte(hi : Int, lo : Int) -> Byte {
-  let h = if hi >= 0x61 {
-    hi - 0x61 + 10
-  } else if hi >= 0x41 {
-    hi - 0x41 + 10
-  } else {
-    hi - 0x30
-  }
-  let l = if lo >= 0x61 {
-    lo - 0x61 + 10
-  } else if lo >= 0x41 {
-    lo - 0x41 + 10
-  } else {
-    lo - 0x30
-  }
+  let h = @stream.hex_digit_value(hi)
+  let l = @stream.hex_digit_value(lo)
   ((h << 4) | l).to_byte()
 }
 
@@ -201,11 +189,7 @@ pub fn parse_bdf_header(data : Bytes) -> BdfFont raise @error.FTError {
 ///|
 /// Convert bytes (ASCII/Latin-1) to String by treating each byte as a char.
 fn bytes_to_ascii(data : Bytes) -> String {
-  let buf = StringBuilder::new()
-  for _, b in data {
-    buf.write_char(Int::unsafe_to_char(b.to_int()))
-  }
-  buf.to_string()
+  @stream.bytes_to_ascii(data)
 }
 
 ///|
@@ -260,27 +244,5 @@ fn split_spaces(s : String) -> Array[String] {
 ///|
 /// Parse an integer from a string, returning 0 on failure.
 fn parse_int_or_zero(s : String) -> Int {
-  let mut result = 0
-  let mut negative = false
-  let start = if s.length() > 0 && s[0] == '-' {
-    negative = true
-    1
-  } else {
-    0
-  }
-  let len = s.length()
-  for i = start; i < len; {
-    let c = s[i]
-    if c >= '0' && c <= '9' {
-      result = result * 10 + (c.to_int() - '0'.to_int())
-    } else {
-      break
-    }
-    continue i + 1
-  }
-  if negative {
-    -result
-  } else {
-    result
-  }
+  @stream.parse_int_from_string(s)
 }

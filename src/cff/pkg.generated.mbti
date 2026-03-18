@@ -31,6 +31,8 @@ pub(all) struct CffFont {
   global_subrs : CffIndex
   local_subrs : CffIndex?
   num_glyphs : UInt
+  mut cached_local_subrs : Array[Bytes]
+  mut cached_global_subrs : Array[Bytes]
 }
 pub impl Show for CffFont
 

@@ -24,7 +24,6 @@ pub impl Show for CallFrame
 
 pub(all) struct PsInterp {
   mut stack : Array[Int64]
-  mut sp : Int
   mut points : Array[@types.Vector]
   mut tags : Array[Byte]
   mut contours : Array[UInt]

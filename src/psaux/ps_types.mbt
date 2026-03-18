@@ -4,7 +4,6 @@
 pub(all) struct PsInterp {
   // Operand stack
   mut stack : Array[Int64]
-  mut sp : Int
   // Path state
   mut points : Array[@types.Vector]
   mut tags : Array[Byte]
@@ -43,7 +42,6 @@ pub(all) struct CallFrame {
 pub fn PsInterp::new() -> PsInterp {
   {
     stack: [],
-    sp: 0,
     points: [],
     tags: [],
     contours: [],
@@ -63,17 +61,11 @@ pub fn PsInterp::new() -> PsInterp {
 ///|
 fn PsInterp::push(self : PsInterp, val : Int64) -> Unit {
   self.stack.push(val)
-  self.sp += 1
 }
 
 ///|
 fn PsInterp::pop(self : PsInterp) -> Int64 {
-  if self.sp > 0 {
-    self.sp -= 1
-    self.stack.pop().unwrap_or(0L)
-  } else {
-    0L
-  }
+  self.stack.pop().unwrap_or(0L)
 }
 
 ///|

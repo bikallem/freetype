@@ -6,6 +6,11 @@ import {
 }
 
 // Values
+pub fn bytes_to_ascii(Bytes) -> String
+
+pub fn hex_digit_value(Int) -> Int
+
+pub fn parse_int_from_string(String) -> Int
 
 // Errors
 

@@ -64,7 +64,6 @@ pub fn TableDirectory::find_table(
 ///|
 /// TrueType Collection (TTC) header.
 pub(all) struct TtcHeader {
-  tag : UInt // 'ttcf'
   version : UInt // major.minor (1.0 or 2.0)
   num_fonts : UInt
   offsets : Array[UInt] // offset to each font's table directory
@@ -85,5 +84,5 @@ pub fn parse_ttc_header(
   for _ in 0..<num_fonts.reinterpret_as_int() {
     offsets.push(reader.read_u32_be())
   }
-  { tag, version, num_fonts, offsets }
+  { version, num_fonts, offsets }
 }

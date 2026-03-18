@@ -215,16 +215,7 @@ fn parse_type1_pfa(data : Bytes) -> Type1Font raise @error.FTError {
 
 ///|
 fn hex_val(b : Byte) -> Int {
-  let v = b.to_int()
-  if v >= 0x30 && v <= 0x39 {
-    v - 0x30
-  } else if v >= 0x41 && v <= 0x46 {
-    v - 0x41 + 10
-  } else if v >= 0x61 && v <= 0x66 {
-    v - 0x61 + 10
-  } else {
-    -1
-  }
+  @stream.hex_digit_value(b.to_int())
 }
 
 ///|

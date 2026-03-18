@@ -220,7 +220,6 @@ pub fn GlyphLoader::base_n_contours(Self) -> Int
 pub fn GlyphLoader::base_n_points(Self) -> Int
 pub fn GlyphLoader::end_contour(Self) -> Unit
 pub fn GlyphLoader::new() -> Self
-pub fn GlyphLoader::prepare(Self) -> Unit
 pub fn GlyphLoader::reset(Self) -> Unit
 pub fn GlyphLoader::to_outline(Self) -> @types.Outline
 pub impl Show for GlyphLoader
@@ -266,6 +265,7 @@ pub(all) struct SfntOps {
   char_index : (UInt) -> UInt
   load_glyph : (UInt, Int) -> (GlyphSlotData, @types.Outline) raise @error.FTError
   get_kerning : (UInt, UInt) -> Int
+  apply_hints : (@types.Outline, @fixed.Fixed) -> Bool
   num_glyphs : UInt
   raw_data : Bytes
 }
