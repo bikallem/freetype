@@ -1,9 +1,0 @@
-import {
-  "bikallem/freetype",
-  "bikallem/freetype/base",
-  "moonbitlang/x/fs" @fs,
-}
-
-options(
-  is_main: true,
-)
