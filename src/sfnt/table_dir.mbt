@@ -1,11 +1,31 @@
 ///|
 /// SFNT table directory entry.
-pub struct TableRecord {
+struct TableRecord {
   tag : UInt // 4-byte tag
   checksum : UInt
   offset : UInt // offset from beginning of file
   length : UInt
 } derive(Eq, Show)
+
+///|
+pub fn TableRecord::tag(self : TableRecord) -> UInt {
+  self.tag
+}
+
+///|
+pub fn TableRecord::checksum(self : TableRecord) -> UInt {
+  self.checksum
+}
+
+///|
+pub fn TableRecord::offset(self : TableRecord) -> UInt {
+  self.offset
+}
+
+///|
+pub fn TableRecord::length(self : TableRecord) -> UInt {
+  self.length
+}
 
 ///|
 pub fn TableRecord::new(
@@ -19,7 +39,7 @@ pub fn TableRecord::new(
 
 ///|
 /// Parsed SFNT table directory.
-pub struct TableDirectory {
+struct TableDirectory {
   sfnt_version : UInt // 0x00010000 for TT, 'OTTO' for CFF, 'true' for Apple TT
   num_tables : UInt
   search_range : UInt
@@ -27,6 +47,21 @@ pub struct TableDirectory {
   range_shift : UInt
   tables : Array[TableRecord]
 } derive(Show)
+
+///|
+pub fn TableDirectory::sfnt_version(self : TableDirectory) -> UInt {
+  self.sfnt_version
+}
+
+///|
+pub fn TableDirectory::num_tables(self : TableDirectory) -> UInt {
+  self.num_tables
+}
+
+///|
+pub fn TableDirectory::tables(self : TableDirectory) -> Array[TableRecord] {
+  self.tables
+}
 
 ///|
 pub fn TableDirectory::new(
@@ -94,7 +129,7 @@ pub fn TableDirectory::find_table(
 
 ///|
 /// TrueType Collection (TTC) header.
-pub struct TtcHeader {
+struct TtcHeader {
   version : UInt // major.minor (1.0 or 2.0)
   num_fonts : UInt
   offsets : Array[UInt] // offset to each font's table directory

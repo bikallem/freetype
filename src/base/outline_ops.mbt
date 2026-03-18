@@ -6,9 +6,9 @@ pub fn outline_translate(
   dx : Int64,
   dy : Int64,
 ) -> Unit {
-  for i in 0..<outline.points.length() {
-    outline.points[i].set_x(outline.points[i].x + dx)
-    outline.points[i].set_y(outline.points[i].y + dy)
+  for i in 0..<outline.points().length() {
+    outline.points()[i].set_x(outline.points()[i].x() + dx)
+    outline.points()[i].set_y(outline.points()[i].y() + dy)
   }
 }
 
@@ -19,11 +19,11 @@ pub fn outline_transform(
   outline : @types.Outline,
   matrix : @fixed.Matrix,
 ) -> Unit {
-  for i in 0..<outline.points.length() {
-    let p = outline.points[i]
-    let (rx, ry) = matrix.transform(p.x, p.y)
-    outline.points[i].set_x(rx)
-    outline.points[i].set_y(ry)
+  for i in 0..<outline.points().length() {
+    let p = outline.points()[i]
+    let (rx, ry) = matrix.transform(p.x(), p.y())
+    outline.points()[i].set_x(rx)
+    outline.points()[i].set_y(ry)
   }
 }
 
@@ -36,29 +36,29 @@ pub fn outline_reverse(outline : @types.Outline) -> Unit {
     return
   }
   for c = 0, first = 0; c < n_contours; {
-    let last = outline.contours[c].reinterpret_as_int()
+    let last = outline.contours()[c].reinterpret_as_int()
     // Reverse points and tags between first and last
     for i = first, j = last; i < j; {
       // Swap points
-      let tmp_pt = outline.points[i]
-      outline.points[i] = outline.points[j]
-      outline.points[j] = tmp_pt
+      let tmp_pt = outline.points()[i]
+      outline.points()[i] = outline.points()[j]
+      outline.points()[j] = tmp_pt
       // Swap tags
-      let tmp_tag = outline.tags[i]
-      outline.tags[i] = outline.tags[j]
-      outline.tags[j] = tmp_tag
+      let tmp_tag = outline.tags()[i]
+      outline.tags()[i] = outline.tags()[j]
+      outline.tags()[j] = tmp_tag
       continue i + 1, j - 1
     }
     continue c + 1, last + 1
   }
   // Flip fill direction flag
-  outline.set_flags(outline.flags ^ @types.outline_reverse_fill)
+  outline.set_flags(outline.flags() ^ @types.outline_reverse_fill)
 }
 
 ///|
 /// Callback interface for outline decomposition.
 /// MoonBit version of FT_Outline_Funcs.
-pub struct OutlineFuncs {
+struct OutlineFuncs {
   move_to : (@types.Vector) -> Unit raise @error.FTError
   line_to : (@types.Vector) -> Unit raise @error.FTError
   conic_to : (@types.Vector, @types.Vector) -> Unit raise @error.FTError
@@ -93,37 +93,40 @@ pub fn outline_decompose(
   let shift = funcs.shift
   let delta = funcs.delta
   fn apply(v : @types.Vector) -> @types.Vector {
-    @types.Vector::new((v.x << shift) - delta, (v.y << shift) - delta)
+    @types.Vector::new((v.x() << shift) - delta, (v.y() << shift) - delta)
   }
 
   for c = 0, first = 0; c < n_contours; {
-    let last = outline.contours[c].reinterpret_as_int()
+    let last = outline.contours()[c].reinterpret_as_int()
     // Find first on-curve point
     let mut start = first
-    let mut start_ct = @types.CurveTag::from_byte(outline.tags[start])
+    let mut start_ct = @types.CurveTag::from_byte(outline.tags()[start])
     // If first point is off-curve conic, check last point
     if start_ct == Conic {
-      let last_ct = @types.CurveTag::from_byte(outline.tags[last])
+      let last_ct = @types.CurveTag::from_byte(outline.tags()[last])
       if last_ct == On {
         start = last
         start_ct = On
       } else {
         // Both off-curve: start at virtual on-curve midpoint
-        let p0 = outline.points[first]
-        let p1 = outline.points[last]
-        let mid = @types.Vector::new((p0.x + p1.x) / 2L, (p0.y + p1.y) / 2L)
+        let p0 = outline.points()[first]
+        let p1 = outline.points()[last]
+        let mid = @types.Vector::new(
+          (p0.x() + p1.x()) / 2L,
+          (p0.y() + p1.y()) / 2L,
+        )
         (funcs.move_to)(apply(mid))
         // Process from first point
         let mut i = first
         while i <= last {
-          let pt = apply(outline.points[i])
-          match @types.CurveTag::from_byte(outline.tags[i]) {
+          let pt = apply(outline.points()[i])
+          match @types.CurveTag::from_byte(outline.tags()[i]) {
             On => (funcs.line_to)(pt)
             Conic => {
               // Look ahead for next on-curve or another conic
               let next_i = if i < last { i + 1 } else { first }
-              let next_pt = apply(outline.points[next_i])
-              match @types.CurveTag::from_byte(outline.tags[next_i]) {
+              let next_pt = apply(outline.points()[next_i])
+              match @types.CurveTag::from_byte(outline.tags()[next_i]) {
                 On => {
                   (funcs.conic_to)(pt, next_pt)
                   i += 1 // skip the on-curve point we just consumed
@@ -131,8 +134,8 @@ pub fn outline_decompose(
                 Conic | Cubic => {
                   // Two consecutive off-curve: insert virtual on-curve midpoint
                   let virt = @types.Vector::new(
-                    (pt.x + next_pt.x) / 2L,
-                    (pt.y + next_pt.y) / 2L,
+                    (pt.x() + next_pt.x()) / 2L,
+                    (pt.y() + next_pt.y()) / 2L,
                   )
                   (funcs.conic_to)(pt, virt)
                 }
@@ -140,9 +143,9 @@ pub fn outline_decompose(
             }
             Cubic =>
               if i + 1 <= last {
-                let ctrl2 = apply(outline.points[i + 1])
+                let ctrl2 = apply(outline.points()[i + 1])
                 let next_i = if i + 2 <= last { i + 2 } else { first }
-                let to = apply(outline.points[next_i])
+                let to = apply(outline.points()[next_i])
                 (funcs.cubic_to)(pt, ctrl2, to)
                 i += 2
               }
@@ -155,26 +158,26 @@ pub fn outline_decompose(
       }
     }
     // Normal case: start point is on-curve
-    let start_pt = apply(outline.points[start])
+    let start_pt = apply(outline.points()[start])
     (funcs.move_to)(start_pt)
     let mut i = if start == last { first } else { start + 1 }
     let mut done = false
     while not(done) {
-      let pt = apply(outline.points[i])
-      match @types.CurveTag::from_byte(outline.tags[i]) {
+      let pt = apply(outline.points()[i])
+      match @types.CurveTag::from_byte(outline.tags()[i]) {
         On => (funcs.line_to)(pt)
         Conic => {
           let next_i = if i < last { i + 1 } else { first }
-          let next_pt = apply(outline.points[next_i])
-          match @types.CurveTag::from_byte(outline.tags[next_i]) {
+          let next_pt = apply(outline.points()[next_i])
+          match @types.CurveTag::from_byte(outline.tags()[next_i]) {
             On => {
               (funcs.conic_to)(pt, next_pt)
               i = next_i
             }
             Conic | Cubic => {
               let virt = @types.Vector::new(
-                (pt.x + next_pt.x) / 2L,
-                (pt.y + next_pt.y) / 2L,
+                (pt.x() + next_pt.x()) / 2L,
+                (pt.y() + next_pt.y()) / 2L,
               )
               (funcs.conic_to)(pt, virt)
             }
@@ -183,9 +186,9 @@ pub fn outline_decompose(
         Cubic => {
           // Cubic: expect two off-curve points + one on-curve
           let next_i = if i < last { i + 1 } else { first }
-          let ctrl2 = apply(outline.points[next_i])
+          let ctrl2 = apply(outline.points()[next_i])
           let to_i = if next_i < last { next_i + 1 } else { first }
-          let to = apply(outline.points[to_i])
+          let to = apply(outline.points()[to_i])
           (funcs.cubic_to)(pt, ctrl2, to)
           i = to_i
         }
@@ -211,9 +214,9 @@ pub fn outline_get_orientation(outline : @types.Outline) -> Int {
   }
   // Use the shoelace formula (signed area)
   let mut area = 0L
-  for i = 0, prev = outline.points[n_points - 1]; i < n_points; {
-    let curr = outline.points[i]
-    area += (prev.x - curr.x) * (prev.y + curr.y)
+  for i = 0, prev = outline.points()[n_points - 1]; i < n_points; {
+    let curr = outline.points()[i]
+    area += (prev.x() - curr.x()) * (prev.y() + curr.y())
     continue i + 1, curr
   }
   if area > 0L {

@@ -22,7 +22,7 @@ pub fn BitmapSize::new(
 ///|
 /// Core face record containing font metadata and state.
 /// Replaces C's FT_FaceRec. Mutable because glyph loading mutates state.
-pub struct FaceRec {
+struct FaceRec {
   // --- Identification ---
   num_faces : Int64 // number of faces in the font file
   face_index : Int64 // index of this face in the file
@@ -71,7 +71,7 @@ pub struct FaceRec {
 
 ///|
 /// Size object: holds size-specific metrics.
-pub struct SizeRec {
+struct SizeRec {
   mut metrics : @types.SizeMetrics
 } derive(Show)
 
@@ -88,7 +88,7 @@ pub fn SizeRec::set_metrics(self : SizeRec, v : @types.SizeMetrics) -> Unit {
 ///|
 /// Glyph slot: holds the result of loading a single glyph.
 /// Reused across glyph loads (mutable).
-pub struct GlyphSlot {
+struct GlyphSlot {
   mut glyph_index : UInt
   mut metrics : @types.GlyphMetrics
   mut linear_hori_advance : @fixed.Fixed // 16.16 unhinted
@@ -169,7 +169,7 @@ pub impl Show for DriverData with output(self, logger) {
 
 ///|
 /// SFNT driver operations — closures that capture the parsed font data.
-pub struct SfntOps {
+struct SfntOps {
   char_index : (UInt) -> UInt // charcode → glyph index
   load_glyph : (UInt, Int) -> (GlyphSlotData, @types.Outline, Bytes) raise @error.FTError // (glyph_index, load_flags) → (slot data, outline, tt instructions)
   get_kerning : (UInt, UInt) -> Int // (left, right) → kern value
@@ -209,7 +209,7 @@ pub impl Show for SfntOps with output(self, logger) {
 
 ///|
 /// Data returned from glyph loading (before being stored in GlyphSlot).
-pub struct GlyphSlotData {
+struct GlyphSlotData {
   metrics_width : Int64
   metrics_height : Int64
   metrics_hori_bearing_x : Int64
@@ -236,7 +236,7 @@ pub fn GlyphSlotData::new(
 
 ///|
 /// Type 1 driver operations.
-pub struct Type1Ops {
+struct Type1Ops {
   char_index : (UInt) -> UInt
   load_glyph : (UInt, Int) -> (GlyphSlotData, @types.Outline) raise @error.FTError
 }
@@ -511,4 +511,328 @@ pub fn GlyphSlot::set_num_subglyphs(self : GlyphSlot, v : UInt) -> Unit {
 ///|
 pub fn GlyphSlot::set_subglyphs(self : GlyphSlot, v : Array[SubGlyph]) -> Unit {
   self.subglyphs = v
+}
+
+// --- FaceRec getters (for external packages) ---
+
+///|
+pub fn FaceRec::num_faces(self : FaceRec) -> Int64 {
+  self.num_faces
+}
+
+///|
+pub fn FaceRec::face_index(self : FaceRec) -> Int64 {
+  self.face_index
+}
+
+///|
+pub fn FaceRec::face_flags(self : FaceRec) -> Int64 {
+  self.face_flags
+}
+
+///|
+pub fn FaceRec::style_flags(self : FaceRec) -> Int {
+  self.style_flags
+}
+
+///|
+pub fn FaceRec::num_glyphs(self : FaceRec) -> Int64 {
+  self.num_glyphs
+}
+
+///|
+pub fn FaceRec::family_name(self : FaceRec) -> String {
+  self.family_name
+}
+
+///|
+pub fn FaceRec::style_name(self : FaceRec) -> String {
+  self.style_name
+}
+
+///|
+pub fn FaceRec::available_sizes(self : FaceRec) -> Array[BitmapSize] {
+  self.available_sizes
+}
+
+///|
+pub fn FaceRec::charmaps(self : FaceRec) -> Array[CharMapRec] {
+  self.charmaps
+}
+
+///|
+pub fn FaceRec::active_charmap(self : FaceRec) -> Int {
+  self.active_charmap
+}
+
+///|
+pub fn FaceRec::bbox(self : FaceRec) -> @types.BBox {
+  self.bbox
+}
+
+///|
+pub fn FaceRec::units_per_em(self : FaceRec) -> UInt {
+  self.units_per_em
+}
+
+///|
+pub fn FaceRec::ascender(self : FaceRec) -> Int {
+  self.ascender
+}
+
+///|
+pub fn FaceRec::descender(self : FaceRec) -> Int {
+  self.descender
+}
+
+///|
+pub fn FaceRec::height(self : FaceRec) -> Int {
+  self.height
+}
+
+///|
+pub fn FaceRec::max_advance_width(self : FaceRec) -> Int {
+  self.max_advance_width
+}
+
+///|
+pub fn FaceRec::max_advance_height(self : FaceRec) -> Int {
+  self.max_advance_height
+}
+
+///|
+pub fn FaceRec::underline_position(self : FaceRec) -> Int {
+  self.underline_position
+}
+
+///|
+pub fn FaceRec::underline_thickness(self : FaceRec) -> Int {
+  self.underline_thickness
+}
+
+///|
+pub fn FaceRec::glyph(self : FaceRec) -> GlyphSlot {
+  self.glyph
+}
+
+///|
+pub fn FaceRec::size(self : FaceRec) -> SizeRec {
+  self.size
+}
+
+///|
+pub fn FaceRec::var_coords(self : FaceRec) -> Array[Int] {
+  self.var_coords
+}
+
+///|
+pub fn FaceRec::driver_data(self : FaceRec) -> DriverData {
+  self.driver_data
+}
+
+// --- GlyphSlot getters (for external packages) ---
+
+///|
+pub fn GlyphSlot::glyph_index(self : GlyphSlot) -> UInt {
+  self.glyph_index
+}
+
+///|
+pub fn GlyphSlot::metrics(self : GlyphSlot) -> @types.GlyphMetrics {
+  self.metrics
+}
+
+///|
+pub fn GlyphSlot::linear_hori_advance(self : GlyphSlot) -> @fixed.Fixed {
+  self.linear_hori_advance
+}
+
+///|
+pub fn GlyphSlot::linear_vert_advance(self : GlyphSlot) -> @fixed.Fixed {
+  self.linear_vert_advance
+}
+
+///|
+pub fn GlyphSlot::advance(self : GlyphSlot) -> @types.Vector {
+  self.advance
+}
+
+///|
+pub fn GlyphSlot::format(self : GlyphSlot) -> @types.GlyphFormat {
+  self.format
+}
+
+///|
+pub fn GlyphSlot::bitmap(self : GlyphSlot) -> @types.Bitmap {
+  self.bitmap
+}
+
+///|
+pub fn GlyphSlot::bitmap_left(self : GlyphSlot) -> Int {
+  self.bitmap_left
+}
+
+///|
+pub fn GlyphSlot::bitmap_top(self : GlyphSlot) -> Int {
+  self.bitmap_top
+}
+
+///|
+pub fn GlyphSlot::outline(self : GlyphSlot) -> @types.Outline {
+  self.outline
+}
+
+///|
+pub fn GlyphSlot::lsb_delta(self : GlyphSlot) -> Int64 {
+  self.lsb_delta
+}
+
+///|
+pub fn GlyphSlot::rsb_delta(self : GlyphSlot) -> Int64 {
+  self.rsb_delta
+}
+
+///|
+pub fn GlyphSlot::num_subglyphs(self : GlyphSlot) -> UInt {
+  self.num_subglyphs
+}
+
+///|
+pub fn GlyphSlot::subglyphs(self : GlyphSlot) -> Array[SubGlyph] {
+  self.subglyphs
+}
+
+// --- SizeRec getters ---
+
+///|
+pub fn SizeRec::metrics(self : SizeRec) -> @types.SizeMetrics {
+  self.metrics
+}
+
+// --- GlyphSlotData getters ---
+
+///|
+pub fn GlyphSlotData::metrics_width(self : GlyphSlotData) -> Int64 {
+  self.metrics_width
+}
+
+///|
+pub fn GlyphSlotData::metrics_height(self : GlyphSlotData) -> Int64 {
+  self.metrics_height
+}
+
+///|
+pub fn GlyphSlotData::metrics_hori_bearing_x(self : GlyphSlotData) -> Int64 {
+  self.metrics_hori_bearing_x
+}
+
+///|
+pub fn GlyphSlotData::metrics_hori_bearing_y(self : GlyphSlotData) -> Int64 {
+  self.metrics_hori_bearing_y
+}
+
+///|
+pub fn GlyphSlotData::metrics_hori_advance(self : GlyphSlotData) -> Int64 {
+  self.metrics_hori_advance
+}
+
+// --- SfntOps getters ---
+
+///|
+pub fn SfntOps::char_index(self : SfntOps) -> (UInt) -> UInt {
+  self.char_index
+}
+
+///|
+pub fn SfntOps::load_glyph(
+  self : SfntOps,
+) -> (UInt, Int) -> (GlyphSlotData, @types.Outline, Bytes) raise @error.FTError {
+  self.load_glyph
+}
+
+///|
+pub fn SfntOps::get_kerning(self : SfntOps) -> (UInt, UInt) -> Int {
+  self.get_kerning
+}
+
+///|
+pub fn SfntOps::apply_hints(
+  self : SfntOps,
+) -> (@types.Outline, @fixed.Fixed) -> Bool {
+  self.apply_hints
+}
+
+///|
+pub fn SfntOps::tt_hint(
+  self : SfntOps,
+) -> (@types.Outline, Bytes, @fixed.Fixed, @fixed.Fixed, UInt) -> Bool {
+  self.tt_hint
+}
+
+///|
+pub fn SfntOps::num_glyphs(self : SfntOps) -> UInt {
+  self.num_glyphs
+}
+
+///|
+pub fn SfntOps::raw_data(self : SfntOps) -> Bytes {
+  self.raw_data
+}
+
+// --- Type1Ops getters ---
+
+///|
+pub fn Type1Ops::char_index(self : Type1Ops) -> (UInt) -> UInt {
+  self.char_index
+}
+
+///|
+pub fn Type1Ops::load_glyph(
+  self : Type1Ops,
+) -> (UInt, Int) -> (GlyphSlotData, @types.Outline) raise @error.FTError {
+  self.load_glyph
+}
+
+// --- SubGlyph getters ---
+
+///|
+pub fn SubGlyph::index(self : SubGlyph) -> UInt {
+  self.index
+}
+
+///|
+pub fn SubGlyph::flags(self : SubGlyph) -> UInt {
+  self.flags
+}
+
+///|
+pub fn SubGlyph::arg1(self : SubGlyph) -> Int {
+  self.arg1
+}
+
+///|
+pub fn SubGlyph::arg2(self : SubGlyph) -> Int {
+  self.arg2
+}
+
+///|
+pub fn SubGlyph::transform(self : SubGlyph) -> @fixed.Matrix {
+  self.transform
+}
+
+// --- CharMapRec getters ---
+
+///|
+pub fn CharMapRec::encoding(self : CharMapRec) -> Encoding {
+  self.encoding
+}
+
+///|
+pub fn CharMapRec::platform_id(self : CharMapRec) -> UInt {
+  self.platform_id
+}
+
+///|
+pub fn CharMapRec::encoding_id(self : CharMapRec) -> UInt {
+  self.encoding_id
 }

@@ -1,7 +1,7 @@
 ///|
 test "GlyphCache insert and lookup" {
-  let cache = @cache.GlyphCache::new(max_entries=10)
-  let glyph = @cache.CachedGlyph::new(
+  let cache = GlyphCache::new(max_entries=10)
+  let glyph = CachedGlyph::new(
     outline=@types.Outline::new(),
     metrics=@types.GlyphMetrics::new(),
     advance_width=600L,
@@ -14,25 +14,25 @@ test "GlyphCache insert and lookup" {
 
 ///|
 test "GlyphCache miss returns None" {
-  let cache = @cache.GlyphCache::new(max_entries=10)
+  let cache = GlyphCache::new(max_entries=10)
   let result = cache.lookup(1U, 99U)
   inspect(result is None, content="true")
 }
 
 ///|
 test "GlyphCache LRU eviction" {
-  let cache = @cache.GlyphCache::new(max_entries=2)
-  let glyph_a = @cache.CachedGlyph::new(
+  let cache = GlyphCache::new(max_entries=2)
+  let glyph_a = CachedGlyph::new(
     outline=@types.Outline::new(),
     metrics=@types.GlyphMetrics::new(),
     advance_width=100L,
   )
-  let glyph_b = @cache.CachedGlyph::new(
+  let glyph_b = CachedGlyph::new(
     outline=@types.Outline::new(),
     metrics=@types.GlyphMetrics::new(),
     advance_width=200L,
   )
-  let glyph_c = @cache.CachedGlyph::new(
+  let glyph_c = CachedGlyph::new(
     outline=@types.Outline::new(),
     metrics=@types.GlyphMetrics::new(),
     advance_width=300L,
@@ -50,7 +50,7 @@ test "GlyphCache LRU eviction" {
 
 ///|
 test "CmapCache insert and lookup" {
-  let cache = @cache.CmapCache::new(max_entries=100)
+  let cache = CmapCache::new(max_entries=100)
   cache.insert(1U, 65U, 10U)
   let result = cache.lookup(1U, 65U)
   inspect(result, content="Some(10)")
@@ -58,14 +58,14 @@ test "CmapCache insert and lookup" {
 
 ///|
 test "CmapCache miss returns None" {
-  let cache = @cache.CmapCache::new(max_entries=100)
+  let cache = CmapCache::new(max_entries=100)
   let result = cache.lookup(1U, 65U)
   inspect(result, content="None")
 }
 
 ///|
 test "CmapCache eviction when full" {
-  let cache = @cache.CmapCache::new(max_entries=2)
+  let cache = CmapCache::new(max_entries=2)
   cache.insert(1U, 65U, 10U)
   cache.insert(1U, 66U, 11U)
   cache.insert(1U, 67U, 12U)

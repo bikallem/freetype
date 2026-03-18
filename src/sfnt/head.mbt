@@ -1,6 +1,6 @@
 ///|
 /// Parsed 'head' table — font header.
-pub struct HeadTable {
+struct HeadTable {
   major_version : UInt // typically 1
   minor_version : UInt // typically 0
   font_revision : @fixed.Fixed // 16.16
@@ -20,6 +20,46 @@ pub struct HeadTable {
   index_to_loc_format : Int // 0 = short offsets, 1 = long offsets
   glyph_data_format : Int
 } derive(Show)
+
+///|
+pub fn HeadTable::units_per_em(self : HeadTable) -> UInt {
+  self.units_per_em
+}
+
+///|
+pub fn HeadTable::x_min(self : HeadTable) -> Int {
+  self.x_min
+}
+
+///|
+pub fn HeadTable::y_min(self : HeadTable) -> Int {
+  self.y_min
+}
+
+///|
+pub fn HeadTable::x_max(self : HeadTable) -> Int {
+  self.x_max
+}
+
+///|
+pub fn HeadTable::y_max(self : HeadTable) -> Int {
+  self.y_max
+}
+
+///|
+pub fn HeadTable::mac_style(self : HeadTable) -> UInt {
+  self.mac_style
+}
+
+///|
+pub fn HeadTable::index_to_loc_format(self : HeadTable) -> Int {
+  self.index_to_loc_format
+}
+
+///|
+pub fn HeadTable::flags(self : HeadTable) -> UInt {
+  self.flags
+}
 
 ///|
 /// Parse the 'head' table.

@@ -1,6 +1,6 @@
 ///|
 /// TrueType-specific face data, stored in FaceRec.driver_data.
-pub struct TtFaceData {
+struct TtFaceData {
   sfnt : @sfnt.SfntData
   // Glyph location table ('loca')
   glyph_offsets : Array[UInt] // offset of each glyph in 'glyf' table
@@ -43,3 +43,38 @@ pub let use_my_metrics : UInt = 0x0200U
 
 ///|
 pub let overlap_compound : UInt = 0x0400U
+
+///|
+pub fn TtFaceData::sfnt(self : TtFaceData) -> @sfnt.SfntData {
+  self.sfnt
+}
+
+///|
+pub fn TtFaceData::glyph_offsets(self : TtFaceData) -> Array[UInt] {
+  self.glyph_offsets
+}
+
+///|
+pub fn TtFaceData::glyf_offset(self : TtFaceData) -> UInt {
+  self.glyf_offset
+}
+
+///|
+pub fn TtFaceData::glyf_length(self : TtFaceData) -> UInt {
+  self.glyf_length
+}
+
+///|
+pub fn TtFaceData::fpgm(self : TtFaceData) -> Bytes {
+  self.fpgm
+}
+
+///|
+pub fn TtFaceData::prep(self : TtFaceData) -> Bytes {
+  self.prep
+}
+
+///|
+pub fn TtFaceData::cvt(self : TtFaceData) -> Array[Int64] {
+  self.cvt
+}

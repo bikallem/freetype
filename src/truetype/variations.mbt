@@ -4,7 +4,7 @@
 
 ///|
 /// A variation axis definition from the fvar table.
-pub struct VarAxis {
+struct VarAxis {
   tag : UInt // 4-byte tag (e.g., 'wght', 'wdth')
   min_value : @fixed.Fixed // minimum value (16.16)
   default_value : @fixed.Fixed // default value
@@ -14,14 +14,14 @@ pub struct VarAxis {
 
 ///|
 /// A named instance (preset axis coordinates).
-pub struct NamedInstance {
+struct NamedInstance {
   name_id : UInt
   coordinates : Array[@fixed.Fixed] // one value per axis
 } derive(Show)
 
 ///|
 /// Parsed fvar table.
-pub struct FvarTable {
+struct FvarTable {
   axes : Array[VarAxis]
   instances : Array[NamedInstance]
 } derive(Show)
@@ -85,14 +85,14 @@ pub fn parse_fvar(
 
 ///|
 /// Avar segment map entry (piecewise linear mapping).
-pub struct AvarSegment {
+struct AvarSegment {
   from_coord : Int // normalized input (-1..1 as F2Dot14)
   to_coord : Int // normalized output
 } derive(Show)
 
 ///|
 /// Parsed avar table: per-axis normalization remapping.
-pub struct AvarTable {
+struct AvarTable {
   axis_maps : Array[Array[AvarSegment]] // one segment map per axis
 } derive(Show)
 
@@ -130,13 +130,13 @@ pub fn parse_avar(
 ///|
 /// Normalize an axis value to [-1, 1] range (as Fixed 2.14).
 pub fn normalize_axis(value : @fixed.Fixed, axis : VarAxis) -> Int {
-  let v = value.val
-  let def = axis.default_value.val
+  let v = value.val()
+  let def = axis.default_value.val()
   if v == def {
     return 0
   }
   if v < def {
-    let min = axis.min_value.val
+    let min = axis.min_value.val()
     if min >= def {
       return 0
     }
@@ -149,7 +149,7 @@ pub fn normalize_axis(value : @fixed.Fixed, axis : VarAxis) -> Int {
       result.to_int()
     }
   } else {
-    let max = axis.max_value.val
+    let max = axis.max_value.val()
     if max <= def {
       return 0
     }
@@ -212,4 +212,39 @@ pub fn normalize_coordinates(
     normalized.push(norm)
   }
   normalized
+}
+
+///|
+pub fn FvarTable::axes(self : FvarTable) -> Array[VarAxis] {
+  self.axes
+}
+
+///|
+pub fn FvarTable::instances(self : FvarTable) -> Array[NamedInstance] {
+  self.instances
+}
+
+///|
+pub fn VarAxis::tag(self : VarAxis) -> UInt {
+  self.tag
+}
+
+///|
+pub fn VarAxis::min_value(self : VarAxis) -> @fixed.Fixed {
+  self.min_value
+}
+
+///|
+pub fn VarAxis::default_value(self : VarAxis) -> @fixed.Fixed {
+  self.default_value
+}
+
+///|
+pub fn VarAxis::max_value(self : VarAxis) -> @fixed.Fixed {
+  self.max_value
+}
+
+///|
+pub fn VarAxis::name_id(self : VarAxis) -> UInt {
+  self.name_id
 }

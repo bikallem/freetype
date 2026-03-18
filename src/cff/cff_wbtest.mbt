@@ -3,7 +3,7 @@ test "CffIndex: empty" {
   // Empty INDEX: count=0
   let data : Bytes = [0x00, 0x00]
   let reader = @stream.ByteReader::new(data)
-  let idx = @cff.parse_cff_index(reader)
+  let idx = parse_cff_index(reader)
   inspect(idx.count, content="0")
 }
 
@@ -18,7 +18,7 @@ test "CffIndex: single item" {
      b'a', b'b', b'c',
   ] // data
   let reader = @stream.ByteReader::new(data)
-  let idx = @cff.parse_cff_index(reader)
+  let idx = parse_cff_index(reader)
   inspect(idx.count, content="1")
   let item = idx.get_item(0)
   inspect(item.length(), content="3")
@@ -36,7 +36,7 @@ test "CffIndex: two items" {
      b'b', b'y', b'e', // item 1: "bye"
   ]
   let reader = @stream.ByteReader::new(data)
-  let idx = @cff.parse_cff_index(reader)
+  let idx = parse_cff_index(reader)
   inspect(idx.count, content="2")
   inspect(idx.get_item(0).length(), content="2")
   inspect(idx.get_item(1).length(), content="3")
@@ -49,7 +49,7 @@ test "parse_top_dict: charstrings offset" {
   // So b1 = 100 - 108 = negative, try different encoding
   // 100 = 100 + 139 = 239 (single byte)
   let data : Bytes = [239, 17]
-  let dict = @cff.parse_top_dict(data)
+  let dict = parse_top_dict(data)
   inspect(dict.charstrings_offset, content="100")
 }
 
@@ -58,7 +58,7 @@ test "parse_top_dict: Private dict" {
   // Private: size 50, offset 200
   // 50 = 189, 200 = 28 0x00 0xC8
   let data : Bytes = [189, 28, 0x00, 0xC8, 18]
-  let dict = @cff.parse_top_dict(data)
+  let dict = parse_top_dict(data)
   inspect(dict.private_size, content="50")
   inspect(dict.private_offset, content="200")
 }
@@ -67,13 +67,13 @@ test "parse_top_dict: Private dict" {
 test "parse_private_dict: defaultWidthX" {
   // defaultWidthX = 500: 28 0x01 0xF4 20
   let data : Bytes = [28, 0x01, 0xF4, 20]
-  let dict = @cff.parse_private_dict(data)
+  let dict = parse_private_dict(data)
   inspect(dict.default_width_x, content="500")
 }
 
 ///|
 test "CffIndex::get_item out of range" {
-  let idx = @cff.CffIndex::new(
+  let idx = CffIndex::new(
     count=1U,
     off_size=1,
     offsets=[1U, 4U],
@@ -86,7 +86,7 @@ test "CffIndex::get_item out of range" {
 
 ///|
 test "CffTopDict::new defaults" {
-  let dict = @cff.CffTopDict::new()
+  let dict = CffTopDict::new()
   inspect(dict.charset_offset, content="0")
   inspect(dict.is_cid, content="false")
 }

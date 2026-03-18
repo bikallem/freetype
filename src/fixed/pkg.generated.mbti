@@ -51,9 +51,7 @@ pub fn vector_unit(Int64) -> (Fixed, Fixed)
 // Errors
 
 // Types and methods
-pub struct F26Dot6 {
-  val : Int64
-}
+type F26Dot6
 pub fn F26Dot6::ceil(Self) -> Self
 pub fn F26Dot6::floor(Self) -> Self
 pub fn F26Dot6::from_int(Int) -> Self
@@ -62,6 +60,7 @@ pub fn F26Dot6::from_raw(Int64) -> Self
 pub fn F26Dot6::round(Self) -> Self
 pub fn F26Dot6::to_int(Self) -> Int
 pub fn F26Dot6::to_raw(Self) -> Int64
+pub fn F26Dot6::val(Self) -> Int64
 pub fn F26Dot6::zero() -> Self
 pub impl Add for F26Dot6
 pub impl Compare for F26Dot6
@@ -70,21 +69,18 @@ pub impl Neg for F26Dot6
 pub impl Show for F26Dot6
 pub impl Sub for F26Dot6
 
-pub struct F2Dot14 {
-  val : Int
-}
+type F2Dot14
 pub fn F2Dot14::from_raw(Int) -> Self
 pub fn F2Dot14::one() -> Self
 pub fn F2Dot14::to_fixed(Self) -> Fixed
 pub fn F2Dot14::to_raw(Self) -> Int
+pub fn F2Dot14::val(Self) -> Int
 pub fn F2Dot14::zero() -> Self
 pub impl Compare for F2Dot14
 pub impl Eq for F2Dot14
 pub impl Show for F2Dot14
 
-pub struct Fixed {
-  val : Int64
-}
+type Fixed
 pub fn Fixed::ceil(Self) -> Self
 pub fn Fixed::floor(Self) -> Self
 pub fn Fixed::from_int(Int) -> Self
@@ -93,6 +89,7 @@ pub fn Fixed::one() -> Self
 pub fn Fixed::round(Self) -> Self
 pub fn Fixed::to_int(Self) -> Int
 pub fn Fixed::to_raw(Self) -> Int64
+pub fn Fixed::val(Self) -> Int64
 pub fn Fixed::zero() -> Self
 pub impl Add for Fixed
 pub impl Compare for Fixed
@@ -101,17 +98,20 @@ pub impl Neg for Fixed
 pub impl Show for Fixed
 pub impl Sub for Fixed
 
-pub struct Matrix {
-  mut xx : Fixed
-  mut xy : Fixed
-  mut yx : Fixed
-  mut yy : Fixed
-}
+type Matrix
 pub fn Matrix::identity() -> Self
 pub fn Matrix::invert(Self) -> Unit raise @error.FTError
 pub fn Matrix::multiply(Self, Self) -> Unit
 pub fn Matrix::new(Fixed, Fixed, Fixed, Fixed) -> Self
+pub fn Matrix::set_xx(Self, Fixed) -> Unit
+pub fn Matrix::set_xy(Self, Fixed) -> Unit
+pub fn Matrix::set_yx(Self, Fixed) -> Unit
+pub fn Matrix::set_yy(Self, Fixed) -> Unit
 pub fn Matrix::transform(Self, Int64, Int64) -> (Int64, Int64)
+pub fn Matrix::xx(Self) -> Fixed
+pub fn Matrix::xy(Self) -> Fixed
+pub fn Matrix::yx(Self) -> Fixed
+pub fn Matrix::yy(Self) -> Fixed
 pub impl Eq for Matrix
 pub impl Show for Matrix
 

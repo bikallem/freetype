@@ -1,6 +1,6 @@
 ///|
 test "PcfFont creation" {
-  let font = @pcf.PcfFont::new()
+  let font = PcfFont::new()
   inspect(font.font_name, content="")
   inspect(font.num_glyphs, content="0")
   inspect(font.tables.length(), content="0")
@@ -21,7 +21,7 @@ test "parse_pcf_header valid" {
      0x18, 0x00, 0x00, 0x00, // offset = 24
   ]
   let reader = @stream.ByteReader::new(data)
-  let tables = @pcf.parse_pcf_header(reader)
+  let tables = parse_pcf_header(reader)
   inspect(tables.length(), content="1")
   inspect(tables[0].table_type, content="1")
   inspect(tables[0].size, content="100")
@@ -32,7 +32,7 @@ test "parse_pcf_header valid" {
 test "parse_pcf_header invalid signature" {
   let data : Bytes = [0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00]
   let reader = @stream.ByteReader::new(data)
-  let result : Result[_, _] = Ok(@pcf.parse_pcf_header(reader)) catch {
+  let result : Result[_, _] = Ok(parse_pcf_header(reader)) catch {
     err => Err(err)
   }
   inspect(result is Err(_), content="true")

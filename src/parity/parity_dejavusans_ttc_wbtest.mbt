@@ -25,28 +25,28 @@ test "parity/DejaVuSans.ttc: loads" {
 ///|
 test "parity/DejaVuSans.ttc: metadata" {
   let f = @freetype.from_bytes(load_dejavusans_ttc())
-  inspect(f.family_name, content="DejaVu Sans")
-  inspect(f.num_glyphs, content="6253")
-  inspect(f.units_per_em, content="2048")
-  inspect(f.ascender, content="1901")
-  inspect(f.descender, content="-483")
-  inspect(f.height, content="2384")
+  inspect(f.family_name(), content="DejaVu Sans")
+  inspect(f.num_glyphs(), content="6253")
+  inspect(f.units_per_em(), content="2048")
+  inspect(f.ascender(), content="1901")
+  inspect(f.descender(), content="-483")
+  inspect(f.height(), content="2384")
   inspect(
-    f.underline_position,
+    f.underline_position(),
     content=(
       #|-130
     ),
   )
-  inspect(f.underline_thickness, content="90")
+  inspect(f.underline_thickness(), content="90")
 }
 
 ///|
 test "parity/DejaVuSans.ttc: bbox" {
   let f = @freetype.from_bytes(load_dejavusans_ttc())
-  inspect(f.bbox.x_min, content="-2090")
-  inspect(f.bbox.y_min, content="-948")
-  inspect(f.bbox.x_max, content="3673")
-  inspect(f.bbox.y_max, content="2524")
+  inspect(f.bbox().x_min(), content="-2090")
+  inspect(f.bbox().y_min(), content="-948")
+  inspect(f.bbox().x_max(), content="3673")
+  inspect(f.bbox().y_max(), content="2524")
 }
 
 ///|
@@ -61,26 +61,26 @@ test "parity/DejaVuSans.ttc: flags" {
 ///|
 test "parity/DejaVuSans.ttc: charmaps" {
   let f = @freetype.from_bytes(load_dejavusans_ttc())
-  inspect(f.charmaps.length(), content="5")
-  if f.charmaps.length() > 0 {
-    inspect(f.charmaps[0].platform_id, content="0")
-    inspect(f.charmaps[0].encoding_id, content="3")
+  inspect(f.charmaps().length(), content="5")
+  if f.charmaps().length() > 0 {
+    inspect(f.charmaps()[0].platform_id(), content="0")
+    inspect(f.charmaps()[0].encoding_id(), content="3")
   }
-  if f.charmaps.length() > 1 {
-    inspect(f.charmaps[1].platform_id, content="0")
-    inspect(f.charmaps[1].encoding_id, content="10")
+  if f.charmaps().length() > 1 {
+    inspect(f.charmaps()[1].platform_id(), content="0")
+    inspect(f.charmaps()[1].encoding_id(), content="10")
   }
-  if f.charmaps.length() > 2 {
-    inspect(f.charmaps[2].platform_id, content="1")
-    inspect(f.charmaps[2].encoding_id, content="0")
+  if f.charmaps().length() > 2 {
+    inspect(f.charmaps()[2].platform_id(), content="1")
+    inspect(f.charmaps()[2].encoding_id(), content="0")
   }
-  if f.charmaps.length() > 3 {
-    inspect(f.charmaps[3].platform_id, content="3")
-    inspect(f.charmaps[3].encoding_id, content="1")
+  if f.charmaps().length() > 3 {
+    inspect(f.charmaps()[3].platform_id(), content="3")
+    inspect(f.charmaps()[3].encoding_id(), content="1")
   }
-  if f.charmaps.length() > 4 {
-    inspect(f.charmaps[4].platform_id, content="3")
-    inspect(f.charmaps[4].encoding_id, content="10")
+  if f.charmaps().length() > 4 {
+    inspect(f.charmaps()[4].platform_id(), content="3")
+    inspect(f.charmaps()[4].encoding_id(), content="10")
   }
 }
 
@@ -144,25 +144,25 @@ test "parity/DejaVuSans.ttc: glyph 4 outline NO_SCALE" {
   let f = @freetype.from_bytes(load_dejavusans_ttc())
   let r = try? @freetype.load_glyph(f, 4U, load_flags=@base.load_no_scale)
   guard r is Ok(_) else { return }
-  inspect(f.glyph.outline.n_points(), content="10")
-  inspect(f.glyph.outline.n_contours(), content="2")
-  inspect(f.glyph.outline.points[0].x, content="309")
-  inspect(f.glyph.outline.points[0].y, content="254")
-  inspect(f.glyph.outline.points[1].x, content="512")
-  inspect(f.glyph.outline.points[1].y, content="254")
-  inspect(f.glyph.outline.points[2].x, content="512")
-  inspect(f.glyph.outline.points[2].y, content="0")
-  inspect(f.glyph.outline.points[3].x, content="309")
-  inspect(f.glyph.outline.points[3].y, content="0")
-  inspect(f.glyph.outline.points[4].x, content="309")
-  inspect(f.glyph.outline.points[4].y, content="1493")
-  inspect(f.glyph.outline.points[5].x, content="512")
-  inspect(f.glyph.outline.points[5].y, content="1493")
-  inspect(f.glyph.outline.points[6].x, content="512")
-  inspect(f.glyph.outline.points[6].y, content="838")
-  inspect(f.glyph.outline.points[7].x, content="492")
-  inspect(f.glyph.outline.points[7].y, content="481")
-  inspect(f.glyph.metrics.hori_advance, content="821")
+  inspect(f.glyph().outline().n_points(), content="10")
+  inspect(f.glyph().outline().n_contours(), content="2")
+  inspect(f.glyph().outline().points()[0].x(), content="309")
+  inspect(f.glyph().outline().points()[0].y(), content="254")
+  inspect(f.glyph().outline().points()[1].x(), content="512")
+  inspect(f.glyph().outline().points()[1].y(), content="254")
+  inspect(f.glyph().outline().points()[2].x(), content="512")
+  inspect(f.glyph().outline().points()[2].y(), content="0")
+  inspect(f.glyph().outline().points()[3].x(), content="309")
+  inspect(f.glyph().outline().points()[3].y(), content="0")
+  inspect(f.glyph().outline().points()[4].x(), content="309")
+  inspect(f.glyph().outline().points()[4].y(), content="1493")
+  inspect(f.glyph().outline().points()[5].x(), content="512")
+  inspect(f.glyph().outline().points()[5].y(), content="1493")
+  inspect(f.glyph().outline().points()[6].x(), content="512")
+  inspect(f.glyph().outline().points()[6].y(), content="838")
+  inspect(f.glyph().outline().points()[7].x(), content="492")
+  inspect(f.glyph().outline().points()[7].y(), content="481")
+  inspect(f.glyph().metrics().hori_advance(), content="821")
 }
 
 ///|
@@ -170,25 +170,25 @@ test "parity/DejaVuSans.ttc: glyph 5 outline NO_SCALE" {
   let f = @freetype.from_bytes(load_dejavusans_ttc())
   let r = try? @freetype.load_glyph(f, 5U, load_flags=@base.load_no_scale)
   guard r is Ok(_) else { return }
-  inspect(f.glyph.outline.n_points(), content="8")
-  inspect(f.glyph.outline.n_contours(), content="2")
-  inspect(f.glyph.outline.points[0].x, content="367")
-  inspect(f.glyph.outline.points[0].y, content="1493")
-  inspect(f.glyph.outline.points[1].x, content="367")
-  inspect(f.glyph.outline.points[1].y, content="938")
-  inspect(f.glyph.outline.points[2].x, content="197")
-  inspect(f.glyph.outline.points[2].y, content="938")
-  inspect(f.glyph.outline.points[3].x, content="197")
-  inspect(f.glyph.outline.points[3].y, content="1493")
-  inspect(f.glyph.outline.points[4].x, content="745")
-  inspect(f.glyph.outline.points[4].y, content="1493")
-  inspect(f.glyph.outline.points[5].x, content="745")
-  inspect(f.glyph.outline.points[5].y, content="938")
-  inspect(f.glyph.outline.points[6].x, content="575")
-  inspect(f.glyph.outline.points[6].y, content="938")
-  inspect(f.glyph.outline.points[7].x, content="575")
-  inspect(f.glyph.outline.points[7].y, content="1493")
-  inspect(f.glyph.metrics.hori_advance, content="942")
+  inspect(f.glyph().outline().n_points(), content="8")
+  inspect(f.glyph().outline().n_contours(), content="2")
+  inspect(f.glyph().outline().points()[0].x(), content="367")
+  inspect(f.glyph().outline().points()[0].y(), content="1493")
+  inspect(f.glyph().outline().points()[1].x(), content="367")
+  inspect(f.glyph().outline().points()[1].y(), content="938")
+  inspect(f.glyph().outline().points()[2].x(), content="197")
+  inspect(f.glyph().outline().points()[2].y(), content="938")
+  inspect(f.glyph().outline().points()[3].x(), content="197")
+  inspect(f.glyph().outline().points()[3].y(), content="1493")
+  inspect(f.glyph().outline().points()[4].x(), content="745")
+  inspect(f.glyph().outline().points()[4].y(), content="1493")
+  inspect(f.glyph().outline().points()[5].x(), content="745")
+  inspect(f.glyph().outline().points()[5].y(), content="938")
+  inspect(f.glyph().outline().points()[6].x(), content="575")
+  inspect(f.glyph().outline().points()[6].y(), content="938")
+  inspect(f.glyph().outline().points()[7].x(), content="575")
+  inspect(f.glyph().outline().points()[7].y(), content="1493")
+  inspect(f.glyph().metrics().hori_advance(), content="942")
 }
 
 ///|
@@ -196,25 +196,25 @@ test "parity/DejaVuSans.ttc: glyph 6 outline NO_SCALE" {
   let f = @freetype.from_bytes(load_dejavusans_ttc())
   let r = try? @freetype.load_glyph(f, 6U, load_flags=@base.load_no_scale)
   guard r is Ok(_) else { return }
-  inspect(f.glyph.outline.n_points(), content="32")
-  inspect(f.glyph.outline.n_contours(), content="2")
-  inspect(f.glyph.outline.points[0].x, content="1047")
-  inspect(f.glyph.outline.points[0].y, content="901")
-  inspect(f.glyph.outline.points[1].x, content="756")
-  inspect(f.glyph.outline.points[1].y, content="901")
-  inspect(f.glyph.outline.points[2].x, content="672")
-  inspect(f.glyph.outline.points[2].y, content="567")
-  inspect(f.glyph.outline.points[3].x, content="965")
-  inspect(f.glyph.outline.points[3].y, content="567")
-  inspect(f.glyph.outline.points[4].x, content="897")
-  inspect(f.glyph.outline.points[4].y, content="1470")
-  inspect(f.glyph.outline.points[5].x, content="793")
-  inspect(f.glyph.outline.points[5].y, content="1055")
-  inspect(f.glyph.outline.points[6].x, content="1085")
-  inspect(f.glyph.outline.points[6].y, content="1055")
-  inspect(f.glyph.outline.points[7].x, content="1190")
-  inspect(f.glyph.outline.points[7].y, content="1470")
-  inspect(f.glyph.metrics.hori_advance, content="1716")
+  inspect(f.glyph().outline().n_points(), content="32")
+  inspect(f.glyph().outline().n_contours(), content="2")
+  inspect(f.glyph().outline().points()[0].x(), content="1047")
+  inspect(f.glyph().outline().points()[0].y(), content="901")
+  inspect(f.glyph().outline().points()[1].x(), content="756")
+  inspect(f.glyph().outline().points()[1].y(), content="901")
+  inspect(f.glyph().outline().points()[2].x(), content="672")
+  inspect(f.glyph().outline().points()[2].y(), content="567")
+  inspect(f.glyph().outline().points()[3].x(), content="965")
+  inspect(f.glyph().outline().points()[3].y(), content="567")
+  inspect(f.glyph().outline().points()[4].x(), content="897")
+  inspect(f.glyph().outline().points()[4].y(), content="1470")
+  inspect(f.glyph().outline().points()[5].x(), content="793")
+  inspect(f.glyph().outline().points()[5].y(), content="1055")
+  inspect(f.glyph().outline().points()[6].x(), content="1085")
+  inspect(f.glyph().outline().points()[6].y(), content="1055")
+  inspect(f.glyph().outline().points()[7].x(), content="1190")
+  inspect(f.glyph().outline().points()[7].y(), content="1470")
+  inspect(f.glyph().metrics().hori_advance(), content="1716")
 }
 
 ///|
@@ -225,7 +225,7 @@ test "parity/DejaVuSans.ttc: glyph metrics at 16ppem" {
   let r2 = try? @freetype.load_glyph(f, 4U)
   guard r2 is Ok(_) else { return }
   inspect(
-    f.glyph.metrics.hori_advance,
+    f.glyph().metrics().hori_advance(),
     content=(
       #|411
     ),
@@ -235,9 +235,9 @@ test "parity/DejaVuSans.ttc: glyph metrics at 16ppem" {
 ///|
 test "parity/DejaVuSans.ttc: TTC multi-face" {
   let f0 = @freetype.from_bytes(load_dejavusans_ttc(), face_index=0)
-  inspect(f0.num_glyphs > 0L, content="true")
+  inspect(f0.num_glyphs() > 0L, content="true")
   let f1 = @freetype.from_bytes(load_dejavusans_ttc(), face_index=1)
-  inspect(f1.num_glyphs > 0L, content="true")
+  inspect(f1.num_glyphs() > 0L, content="true")
 }
 
 ///|
@@ -272,21 +272,21 @@ test "parity/DejaVuSans.ttc: hinted outline DEFAULT 16ppem" {
   guard r1 is Ok(_) else { return }
   let r2 = try? @freetype.load_glyph(f, 4U)
   guard r2 is Ok(_) else { return }
-  inspect(f.glyph.outline.n_points(), content="10")
+  inspect(f.glyph().outline().n_points(), content="10")
   inspect(
-    f.glyph.metrics.width,
+    f.glyph().metrics().width(),
     content=(
       #|102
     ),
   )
   inspect(
-    f.glyph.metrics.height,
+    f.glyph().metrics().height(),
     content=(
       #|747
     ),
   )
   inspect(
-    f.glyph.metrics.hori_advance,
+    f.glyph().metrics().hori_advance(),
     content=(
       #|411
     ),
@@ -300,7 +300,7 @@ test "parity/DejaVuSans.ttc: outline NO_HINTING 16ppem" {
   guard r1 is Ok(_) else { return }
   let r2 = try? @freetype.load_glyph(f, 4U, load_flags=@base.load_no_hinting)
   guard r2 is Ok(_) else { return }
-  inspect(f.glyph.metrics.hori_advance, content="411")
+  inspect(f.glyph().metrics().hori_advance(), content="411")
 }
 
 ///|
@@ -315,7 +315,7 @@ test "parity/DejaVuSans.ttc: outline FORCE_AUTOHINT 16ppem" {
   )
   guard r2 is Ok(_) else { return }
   inspect(
-    f.glyph.metrics.hori_advance,
+    f.glyph().metrics().hori_advance(),
     content=(
       #|411
     ),

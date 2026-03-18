@@ -101,23 +101,16 @@ pub let style_flag_italic : Int
 // Errors
 
 // Types and methods
-pub struct BitmapSize {
-  height : Int
-  width : Int
-  size : Int64
-  x_ppem : Int64
-  y_ppem : Int64
-}
+type BitmapSize
 pub fn BitmapSize::new(Int, Int, Int64, Int64, Int64) -> Self
 pub impl Eq for BitmapSize
 pub impl Show for BitmapSize
 
-pub struct CharMapRec {
-  encoding : Encoding
-  platform_id : UInt
-  encoding_id : UInt
-}
+type CharMapRec
+pub fn CharMapRec::encoding(Self) -> Encoding
+pub fn CharMapRec::encoding_id(Self) -> UInt
 pub fn CharMapRec::new(Encoding, UInt, UInt) -> Self
+pub fn CharMapRec::platform_id(Self) -> UInt
 pub impl Eq for CharMapRec
 pub impl Show for CharMapRec
 
@@ -149,31 +142,18 @@ pub fn Encoding::to_tag(Self) -> UInt
 pub impl Eq for Encoding
 pub impl Show for Encoding
 
-pub struct FaceRec {
-  num_faces : Int64
-  face_index : Int64
-  mut face_flags : Int64
-  mut style_flags : Int
-  mut num_glyphs : Int64
-  mut family_name : String
-  mut style_name : String
-  mut available_sizes : Array[BitmapSize]
-  mut charmaps : Array[CharMapRec]
-  mut active_charmap : Int
-  mut bbox : @types.BBox
-  mut units_per_em : UInt
-  mut ascender : Int
-  mut descender : Int
-  mut height : Int
-  mut max_advance_width : Int
-  mut max_advance_height : Int
-  mut underline_position : Int
-  mut underline_thickness : Int
-  mut glyph : GlyphSlot
-  mut size : SizeRec
-  mut var_coords : Array[Int]
-  mut driver_data : DriverData
-}
+type FaceRec
+pub fn FaceRec::active_charmap(Self) -> Int
+pub fn FaceRec::ascender(Self) -> Int
+pub fn FaceRec::available_sizes(Self) -> Array[BitmapSize]
+pub fn FaceRec::bbox(Self) -> @types.BBox
+pub fn FaceRec::charmaps(Self) -> Array[CharMapRec]
+pub fn FaceRec::descender(Self) -> Int
+pub fn FaceRec::driver_data(Self) -> DriverData
+pub fn FaceRec::face_flags(Self) -> Int64
+pub fn FaceRec::face_index(Self) -> Int64
+pub fn FaceRec::family_name(Self) -> String
+pub fn FaceRec::glyph(Self) -> GlyphSlot
 pub fn FaceRec::has_color(Self) -> Bool
 pub fn FaceRec::has_fixed_sizes(Self) -> Bool
 pub fn FaceRec::has_glyph_names(Self) -> Bool
@@ -181,11 +161,16 @@ pub fn FaceRec::has_horizontal(Self) -> Bool
 pub fn FaceRec::has_kerning(Self) -> Bool
 pub fn FaceRec::has_multiple_masters(Self) -> Bool
 pub fn FaceRec::has_vertical(Self) -> Bool
+pub fn FaceRec::height(Self) -> Int
 pub fn FaceRec::is_fixed_width(Self) -> Bool
 pub fn FaceRec::is_scalable(Self) -> Bool
 pub fn FaceRec::is_sfnt(Self) -> Bool
 pub fn FaceRec::is_variation(Self) -> Bool
+pub fn FaceRec::max_advance_height(Self) -> Int
+pub fn FaceRec::max_advance_width(Self) -> Int
 pub fn FaceRec::new(num_faces? : Int64, face_index? : Int64) -> Self
+pub fn FaceRec::num_faces(Self) -> Int64
+pub fn FaceRec::num_glyphs(Self) -> Int64
 pub fn FaceRec::set_active_charmap(Self, Int) -> Unit
 pub fn FaceRec::set_ascender(Self, Int) -> Unit
 pub fn FaceRec::set_available_sizes(Self, Array[BitmapSize]) -> Unit
@@ -204,6 +189,13 @@ pub fn FaceRec::set_underline_position(Self, Int) -> Unit
 pub fn FaceRec::set_underline_thickness(Self, Int) -> Unit
 pub fn FaceRec::set_units_per_em(Self, UInt) -> Unit
 pub fn FaceRec::set_var_coords(Self, Array[Int]) -> Unit
+pub fn FaceRec::size(Self) -> SizeRec
+pub fn FaceRec::style_flags(Self) -> Int
+pub fn FaceRec::style_name(Self) -> String
+pub fn FaceRec::underline_position(Self) -> Int
+pub fn FaceRec::underline_thickness(Self) -> Int
+pub fn FaceRec::units_per_em(Self) -> UInt
+pub fn FaceRec::var_coords(Self) -> Array[Int]
 pub impl Show for FaceRec
 
 pub(all) enum FontFormat {
@@ -224,15 +216,7 @@ pub(all) enum FontFormat {
 pub impl Eq for FontFormat
 pub impl Show for FontFormat
 
-pub struct GlyphLoader {
-  mut base_points : Array[@types.Vector]
-  mut base_tags : Array[Byte]
-  mut base_contours : Array[UInt]
-  mut current_points : Array[@types.Vector]
-  mut current_tags : Array[Byte]
-  mut current_contours : Array[UInt]
-  mut subglyphs : Array[SubGlyph]
-}
+type GlyphLoader
 pub fn GlyphLoader::add(Self) -> Unit
 pub fn GlyphLoader::add_point(Self, Int64, Int64, Byte) -> Unit
 pub fn GlyphLoader::base_n_contours(Self) -> Int
@@ -243,23 +227,21 @@ pub fn GlyphLoader::reset(Self) -> Unit
 pub fn GlyphLoader::to_outline(Self) -> @types.Outline
 pub impl Show for GlyphLoader
 
-pub struct GlyphSlot {
-  mut glyph_index : UInt
-  mut metrics : @types.GlyphMetrics
-  mut linear_hori_advance : @fixed.Fixed
-  mut linear_vert_advance : @fixed.Fixed
-  mut advance : @types.Vector
-  mut format : @types.GlyphFormat
-  mut bitmap : @types.Bitmap
-  mut bitmap_left : Int
-  mut bitmap_top : Int
-  mut outline : @types.Outline
-  mut lsb_delta : Int64
-  mut rsb_delta : Int64
-  mut num_subglyphs : UInt
-  mut subglyphs : Array[SubGlyph]
-}
+type GlyphSlot
+pub fn GlyphSlot::advance(Self) -> @types.Vector
+pub fn GlyphSlot::bitmap(Self) -> @types.Bitmap
+pub fn GlyphSlot::bitmap_left(Self) -> Int
+pub fn GlyphSlot::bitmap_top(Self) -> Int
+pub fn GlyphSlot::format(Self) -> @types.GlyphFormat
+pub fn GlyphSlot::glyph_index(Self) -> UInt
+pub fn GlyphSlot::linear_hori_advance(Self) -> @fixed.Fixed
+pub fn GlyphSlot::linear_vert_advance(Self) -> @fixed.Fixed
+pub fn GlyphSlot::lsb_delta(Self) -> Int64
+pub fn GlyphSlot::metrics(Self) -> @types.GlyphMetrics
 pub fn GlyphSlot::new() -> Self
+pub fn GlyphSlot::num_subglyphs(Self) -> UInt
+pub fn GlyphSlot::outline(Self) -> @types.Outline
+pub fn GlyphSlot::rsb_delta(Self) -> Int64
 pub fn GlyphSlot::set_advance(Self, @types.Vector) -> Unit
 pub fn GlyphSlot::set_bitmap(Self, @types.Bitmap) -> Unit
 pub fn GlyphSlot::set_bitmap_left(Self, Int) -> Unit
@@ -273,61 +255,50 @@ pub fn GlyphSlot::set_num_subglyphs(Self, UInt) -> Unit
 pub fn GlyphSlot::set_outline(Self, @types.Outline) -> Unit
 pub fn GlyphSlot::set_rsb_delta(Self, Int64) -> Unit
 pub fn GlyphSlot::set_subglyphs(Self, Array[SubGlyph]) -> Unit
+pub fn GlyphSlot::subglyphs(Self) -> Array[SubGlyph]
 pub impl Show for GlyphSlot
 
-pub struct GlyphSlotData {
-  metrics_width : Int64
-  metrics_height : Int64
-  metrics_hori_bearing_x : Int64
-  metrics_hori_bearing_y : Int64
-  metrics_hori_advance : Int64
-}
+type GlyphSlotData
+pub fn GlyphSlotData::metrics_height(Self) -> Int64
+pub fn GlyphSlotData::metrics_hori_advance(Self) -> Int64
+pub fn GlyphSlotData::metrics_hori_bearing_x(Self) -> Int64
+pub fn GlyphSlotData::metrics_hori_bearing_y(Self) -> Int64
+pub fn GlyphSlotData::metrics_width(Self) -> Int64
 pub fn GlyphSlotData::new(Int64, Int64, Int64, Int64, Int64) -> Self
 pub impl Show for GlyphSlotData
 
-pub struct OutlineFuncs {
-  move_to : (@types.Vector) -> Unit raise @error.FTError
-  line_to : (@types.Vector) -> Unit raise @error.FTError
-  conic_to : (@types.Vector, @types.Vector) -> Unit raise @error.FTError
-  cubic_to : (@types.Vector, @types.Vector, @types.Vector) -> Unit raise @error.FTError
-  shift : Int
-  delta : Int64
-}
+type OutlineFuncs
 pub fn OutlineFuncs::new(move_to~ : (@types.Vector) -> Unit raise @error.FTError, line_to~ : (@types.Vector) -> Unit raise @error.FTError, conic_to~ : (@types.Vector, @types.Vector) -> Unit raise @error.FTError, cubic_to~ : (@types.Vector, @types.Vector, @types.Vector) -> Unit raise @error.FTError, shift? : Int, delta? : Int64) -> Self
 
-pub struct SfntOps {
-  char_index : (UInt) -> UInt
-  load_glyph : (UInt, Int) -> (GlyphSlotData, @types.Outline, Bytes) raise @error.FTError
-  get_kerning : (UInt, UInt) -> Int
-  apply_hints : (@types.Outline, @fixed.Fixed) -> Bool
-  tt_hint : (@types.Outline, Bytes, @fixed.Fixed, @fixed.Fixed, UInt) -> Bool
-  num_glyphs : UInt
-  raw_data : Bytes
-}
+type SfntOps
+pub fn SfntOps::apply_hints(Self) -> (@types.Outline, @fixed.Fixed) -> Bool
+pub fn SfntOps::char_index(Self) -> (UInt) -> UInt
+pub fn SfntOps::get_kerning(Self) -> (UInt, UInt) -> Int
+pub fn SfntOps::load_glyph(Self) -> (UInt, Int) -> (GlyphSlotData, @types.Outline, Bytes) raise @error.FTError
 pub fn SfntOps::new(char_index~ : (UInt) -> UInt, load_glyph~ : (UInt, Int) -> (GlyphSlotData, @types.Outline, Bytes) raise @error.FTError, get_kerning~ : (UInt, UInt) -> Int, apply_hints~ : (@types.Outline, @fixed.Fixed) -> Bool, tt_hint~ : (@types.Outline, Bytes, @fixed.Fixed, @fixed.Fixed, UInt) -> Bool, num_glyphs~ : UInt, raw_data~ : Bytes) -> Self
+pub fn SfntOps::num_glyphs(Self) -> UInt
+pub fn SfntOps::raw_data(Self) -> Bytes
+pub fn SfntOps::tt_hint(Self) -> (@types.Outline, Bytes, @fixed.Fixed, @fixed.Fixed, UInt) -> Bool
 pub impl Show for SfntOps
 
-pub struct SizeRec {
-  mut metrics : @types.SizeMetrics
-}
+type SizeRec
+pub fn SizeRec::metrics(Self) -> @types.SizeMetrics
 pub fn SizeRec::new() -> Self
 pub fn SizeRec::set_metrics(Self, @types.SizeMetrics) -> Unit
 pub impl Show for SizeRec
 
-pub struct SubGlyph {
-  index : UInt
-  flags : UInt
-  arg1 : Int
-  arg2 : Int
-  transform : @fixed.Matrix
-}
+type SubGlyph
+pub fn SubGlyph::arg1(Self) -> Int
+pub fn SubGlyph::arg2(Self) -> Int
+pub fn SubGlyph::flags(Self) -> UInt
+pub fn SubGlyph::index(Self) -> UInt
 pub fn SubGlyph::new(UInt, UInt, Int, Int, @fixed.Matrix) -> Self
+pub fn SubGlyph::transform(Self) -> @fixed.Matrix
 pub impl Show for SubGlyph
 
-pub struct Type1Ops {
-  char_index : (UInt) -> UInt
-  load_glyph : (UInt, Int) -> (GlyphSlotData, @types.Outline) raise @error.FTError
-}
+type Type1Ops
+pub fn Type1Ops::char_index(Self) -> (UInt) -> UInt
+pub fn Type1Ops::load_glyph(Self) -> (UInt, Int) -> (GlyphSlotData, @types.Outline) raise @error.FTError
 pub fn Type1Ops::new(char_index~ : (UInt) -> UInt, load_glyph~ : (UInt, Int) -> (GlyphSlotData, @types.Outline) raise @error.FTError) -> Self
 pub impl Show for Type1Ops
 

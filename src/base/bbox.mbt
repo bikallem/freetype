@@ -7,8 +7,8 @@ pub fn outline_get_bbox(outline : @types.Outline) -> @types.BBox {
     return @types.BBox::empty()
   }
   // Initialize with first on-curve point
-  let mut x_min = outline.points[0].x
-  let mut y_min = outline.points[0].y
+  let mut x_min = outline.points()[0].x()
+  let mut y_min = outline.points()[0].y()
   let mut x_max = x_min
   let mut y_max = y_min
   fn update(x : Int64, y : Int64) -> Unit {
@@ -28,41 +28,41 @@ pub fn outline_get_bbox(outline : @types.Outline) -> @types.BBox {
 
   // Quick path: just check all on-curve points first
   for i in 1..<n_points {
-    match @types.CurveTag::from_byte(outline.tags[i]) {
-      On => update(outline.points[i].x, outline.points[i].y)
+    match @types.CurveTag::from_byte(outline.tags()[i]) {
+      On => update(outline.points()[i].x(), outline.points()[i].y())
       Conic | Cubic => ()
     }
   }
   // Now check off-curve points for potential extrema
   let n_contours = outline.n_contours()
   for c = 0, first = 0; c < n_contours; {
-    let last = outline.contours[c].reinterpret_as_int()
+    let last = outline.contours()[c].reinterpret_as_int()
     let mut i = first
     while i <= last {
-      match @types.CurveTag::from_byte(outline.tags[i]) {
+      match @types.CurveTag::from_byte(outline.tags()[i]) {
         On => ()
         Conic => {
           // Quadratic bezier: check if control point extends beyond bbox
-          let ctrl = outline.points[i]
+          let ctrl = outline.points()[i]
           // Quick reject: if control point is within current bbox, skip
-          if ctrl.x < x_min ||
-            ctrl.x > x_max ||
-            ctrl.y < y_min ||
-            ctrl.y > y_max {
+          if ctrl.x() < x_min ||
+            ctrl.x() > x_max ||
+            ctrl.y() < y_min ||
+            ctrl.y() > y_max {
             // Need to find the actual extrema of the quadratic bezier
             // For now, just include the control point as a conservative bound
             // This is slightly overestimating but always correct
-            update(ctrl.x, ctrl.y)
+            update(ctrl.x(), ctrl.y())
           }
         }
         Cubic => {
           // Cubic bezier: include control points as conservative bound
-          let ctrl = outline.points[i]
-          if ctrl.x < x_min ||
-            ctrl.x > x_max ||
-            ctrl.y < y_min ||
-            ctrl.y > y_max {
-            update(ctrl.x, ctrl.y)
+          let ctrl = outline.points()[i]
+          if ctrl.x() < x_min ||
+            ctrl.x() > x_max ||
+            ctrl.y() < y_min ||
+            ctrl.y() > y_max {
+            update(ctrl.x(), ctrl.y())
           }
         }
       }
@@ -82,23 +82,23 @@ pub fn outline_get_cbox(outline : @types.Outline) -> @types.BBox {
   if n_points == 0 {
     return @types.BBox::empty()
   }
-  let mut x_min = outline.points[0].x
-  let mut y_min = outline.points[0].y
+  let mut x_min = outline.points()[0].x()
+  let mut y_min = outline.points()[0].y()
   let mut x_max = x_min
   let mut y_max = y_min
   for i in 1..<n_points {
-    let p = outline.points[i]
-    if p.x < x_min {
-      x_min = p.x
+    let p = outline.points()[i]
+    if p.x() < x_min {
+      x_min = p.x()
     }
-    if p.x > x_max {
-      x_max = p.x
+    if p.x() > x_max {
+      x_max = p.x()
     }
-    if p.y < y_min {
-      y_min = p.y
+    if p.y() < y_min {
+      y_min = p.y()
     }
-    if p.y > y_max {
-      y_max = p.y
+    if p.y() > y_max {
+      y_max = p.y()
     }
   }
   @types.BBox::new(x_min, y_min, x_max, y_max)

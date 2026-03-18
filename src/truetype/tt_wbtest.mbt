@@ -1,6 +1,6 @@
 ///|
 test "InterpContext: stack push/pop" {
-  let ctx = @truetype.InterpContext::new()
+  let ctx = InterpContext::new()
   // PUSHB[0] 42
   ctx.execute(b"\xB0\x2A") // PUSHB[0] pushes 1 byte: 0x2A = 42
   inspect(ctx.sp, content="1")
@@ -9,7 +9,7 @@ test "InterpContext: stack push/pop" {
 
 ///|
 test "InterpContext: arithmetic ADD/SUB" {
-  let ctx = @truetype.InterpContext::new()
+  let ctx = InterpContext::new()
   // PUSHB[1] 10 20 ADD
   ctx.execute(b"\xB1\x0A\x14\x60") // PUSHB[1] pushes 2 bytes, then ADD
   inspect(ctx.sp, content="1")
@@ -18,7 +18,7 @@ test "InterpContext: arithmetic ADD/SUB" {
 
 ///|
 test "InterpContext: arithmetic SUB" {
-  let ctx = @truetype.InterpContext::new()
+  let ctx = InterpContext::new()
   // PUSHB[1] 30 10 SUB → 20
   ctx.execute(b"\xB1\x1E\x0A\x61")
   inspect(ctx.stack[0], content="20")
@@ -26,7 +26,7 @@ test "InterpContext: arithmetic SUB" {
 
 ///|
 test "InterpContext: comparison LT" {
-  let ctx = @truetype.InterpContext::new()
+  let ctx = InterpContext::new()
   // PUSHB[1] 5 10 LT → 1 (5 < 10)
   ctx.execute(b"\xB1\x05\x0A\x50")
   inspect(ctx.stack[0], content="1")
@@ -34,7 +34,7 @@ test "InterpContext: comparison LT" {
 
 ///|
 test "InterpContext: comparison GT" {
-  let ctx = @truetype.InterpContext::new()
+  let ctx = InterpContext::new()
   // PUSHB[1] 5 10 GT → 0 (5 > 10 is false)
   ctx.execute(b"\xB1\x05\x0A\x52")
   inspect(ctx.stack[0], content="0")
@@ -42,7 +42,7 @@ test "InterpContext: comparison GT" {
 
 ///|
 test "InterpContext: logical AND" {
-  let ctx = @truetype.InterpContext::new()
+  let ctx = InterpContext::new()
   // PUSHB[1] 1 1 AND → 1
   ctx.execute(b"\xB1\x01\x01\x5A")
   inspect(ctx.stack[0], content="1")
@@ -50,7 +50,7 @@ test "InterpContext: logical AND" {
 
 ///|
 test "InterpContext: logical NOT" {
-  let ctx = @truetype.InterpContext::new()
+  let ctx = InterpContext::new()
   // PUSHB[0] 0 NOT → 1
   ctx.execute(b"\xB0\x00\x5C")
   inspect(ctx.stack[0], content="1")
@@ -58,7 +58,7 @@ test "InterpContext: logical NOT" {
 
 ///|
 test "InterpContext: DUP" {
-  let ctx = @truetype.InterpContext::new()
+  let ctx = InterpContext::new()
   // PUSHB[0] 7 DUP → stack [7, 7]
   ctx.execute(b"\xB0\x07\x20")
   inspect(ctx.sp, content="2")
@@ -68,7 +68,7 @@ test "InterpContext: DUP" {
 
 ///|
 test "InterpContext: SWAP" {
-  let ctx = @truetype.InterpContext::new()
+  let ctx = InterpContext::new()
   // PUSHB[1] 1 2 SWAP → stack [2, 1]
   ctx.execute(b"\xB1\x01\x02\x23")
   inspect(ctx.stack[0], content="2")
@@ -77,7 +77,7 @@ test "InterpContext: SWAP" {
 
 ///|
 test "InterpContext: NPUSHB" {
-  let ctx = @truetype.InterpContext::new()
+  let ctx = InterpContext::new()
   // NPUSHB 3 10 20 30
   ctx.execute(b"\x40\x03\x0A\x14\x1E")
   inspect(ctx.sp, content="3")
@@ -88,7 +88,7 @@ test "InterpContext: NPUSHB" {
 
 ///|
 test "InterpContext: NPUSHW" {
-  let ctx = @truetype.InterpContext::new()
+  let ctx = InterpContext::new()
   // NPUSHW 1 0x01 0x00 → 256
   ctx.execute(b"\x41\x01\x01\x00")
   inspect(ctx.sp, content="1")
@@ -97,7 +97,7 @@ test "InterpContext: NPUSHW" {
 
 ///|
 test "InterpContext: NPUSHW negative" {
-  let ctx = @truetype.InterpContext::new()
+  let ctx = InterpContext::new()
   // NPUSHW 1 0xFF 0xFE → -2
   ctx.execute(b"\x41\x01\xFF\xFE")
   inspect(ctx.stack[0], content="-2")
@@ -105,7 +105,7 @@ test "InterpContext: NPUSHW negative" {
 
 ///|
 test "InterpContext: IF true branch" {
-  let ctx = @truetype.InterpContext::new()
+  let ctx = InterpContext::new()
   // PUSHB[0] 1 IF PUSHB[0] 42 EIF
   // condition=1 (true), should push 42
   ctx.execute(b"\xB0\x01\x58\xB0\x2A\x59")
@@ -115,7 +115,7 @@ test "InterpContext: IF true branch" {
 
 ///|
 test "InterpContext: IF false branch" {
-  let ctx = @truetype.InterpContext::new()
+  let ctx = InterpContext::new()
   // PUSHB[0] 0 IF PUSHB[0] 42 EIF
   // condition=0 (false), should skip PUSHB[0] 42
   ctx.execute(b"\xB0\x00\x58\xB0\x2A\x59")
@@ -124,7 +124,7 @@ test "InterpContext: IF false branch" {
 
 ///|
 test "InterpContext: IF/ELSE" {
-  let ctx = @truetype.InterpContext::new()
+  let ctx = InterpContext::new()
   // PUSHB[0] 0 IF PUSHB[0] 1 ELSE PUSHB[0] 2 EIF
   // false → take ELSE branch → push 2
   ctx.execute(b"\xB0\x00\x58\xB0\x01\x1B\xB0\x02\x59")
@@ -134,7 +134,7 @@ test "InterpContext: IF/ELSE" {
 
 ///|
 test "InterpContext: RS/WS (storage)" {
-  let ctx = @truetype.InterpContext::new()
+  let ctx = InterpContext::new()
   // PUSHB[1] 5 99 WS — write 99 to storage[5]
   // PUSHB[0] 5 RS — read storage[5]
   ctx.execute(b"\xB1\x05\x63\x42\xB0\x05\x43")
@@ -143,7 +143,7 @@ test "InterpContext: RS/WS (storage)" {
 
 ///|
 test "InterpContext: RCVT/WCVTP" {
-  let ctx = @truetype.InterpContext::new(cvt=[0L, 0L, 0L])
+  let ctx = InterpContext::new(cvt=[0L, 0L, 0L])
   // PUSHB[1] 1 128 WCVTP — write 128 to CVT[1]
   // PUSHB[0] 1 RCVT — read CVT[1]
   ctx.execute(b"\xB1\x01\x80\x45\xB0\x01\x44")
@@ -152,7 +152,7 @@ test "InterpContext: RCVT/WCVTP" {
 
 ///|
 test "InterpContext: FDEF/CALL" {
-  let ctx = @truetype.InterpContext::new()
+  let ctx = InterpContext::new()
   // FDEF 0: PUSHB[0] 77 ENDF
   // CALL 0
   // PUSHB[0] 0 → func id
@@ -166,7 +166,7 @@ test "InterpContext: FDEF/CALL" {
 
 ///|
 test "InterpContext: DEPTH" {
-  let ctx = @truetype.InterpContext::new()
+  let ctx = InterpContext::new()
   // PUSHB[1] 1 2 DEPTH → stack [1, 2, 2]
   ctx.execute(b"\xB1\x01\x02\x24")
   inspect(ctx.sp, content="3")
@@ -175,7 +175,7 @@ test "InterpContext: DEPTH" {
 
 ///|
 test "InterpContext: ABS/NEG" {
-  let ctx = @truetype.InterpContext::new()
+  let ctx = InterpContext::new()
   // NPUSHW 1 0xFF 0xCE (-50) ABS → 50
   ctx.execute(b"\x41\x01\xFF\xCE\x64")
   inspect(ctx.stack[0], content="50")
@@ -183,7 +183,7 @@ test "InterpContext: ABS/NEG" {
 
 ///|
 test "InterpContext: FLOOR/CEILING" {
-  let ctx = @truetype.InterpContext::new()
+  let ctx = InterpContext::new()
   // Push 100 (in 26.6 = 1.5625 pixels), FLOOR
   // 100 & ~63 = 64
   ctx.execute(b"\xB0\x64\x66")
@@ -200,7 +200,7 @@ test "loca: short format" {
      0x00, 0x30,
   ] // sentinel: offset 96 (48 * 2)
   let reader = @stream.ByteReader::new(data)
-  let offsets = @truetype.parse_loca(reader, 0U, 8U, 3U, 0)
+  let offsets = parse_loca(reader, 0U, 8U, 3U, 0)
   inspect(offsets.length(), content="4")
   inspect(offsets[0], content="0")
   inspect(offsets[1], content="32")
@@ -216,7 +216,7 @@ test "loca: long format" {
      0x00, 0x00, 0x01, 0x00, // offset 256
   ]
   let reader = @stream.ByteReader::new(data)
-  let offsets = @truetype.parse_loca(reader, 0U, 12U, 2U, 1)
+  let offsets = parse_loca(reader, 0U, 12U, 2U, 1)
   inspect(offsets.length(), content="3")
   inspect(offsets[0], content="0")
   inspect(offsets[1], content="80")
@@ -258,13 +258,13 @@ test "load_simple_glyph: triangle" {
   buf.push(b'\x64') // point 2: y += 100
   let data = Bytes::from_array(buf[:])
   let reader = @stream.ByteReader::new(data)
-  let (outline, _instr) = @truetype.load_simple_glyph(reader, 1)
+  let (outline, _instr) = load_simple_glyph(reader, 1)
   inspect(outline.n_points(), content="3")
   inspect(outline.n_contours(), content="1")
-  inspect(outline.points[0].x, content="0")
-  inspect(outline.points[0].y, content="0")
-  inspect(outline.points[1].x, content="100")
-  inspect(outline.points[1].y, content="0")
-  inspect(outline.points[2].x, content="150")
-  inspect(outline.points[2].y, content="100")
+  inspect(outline.points()[0].x(), content="0")
+  inspect(outline.points()[0].y(), content="0")
+  inspect(outline.points()[1].x(), content="100")
+  inspect(outline.points()[1].y(), content="0")
+  inspect(outline.points()[2].x(), content="150")
+  inspect(outline.points()[2].y(), content="100")
 }

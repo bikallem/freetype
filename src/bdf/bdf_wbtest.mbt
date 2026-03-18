@@ -1,6 +1,6 @@
 ///|
 test "BdfFont creation" {
-  let font = @bdf.BdfFont::new()
+  let font = BdfFont::new()
   inspect(font.font_name, content="")
   inspect(font.num_chars, content="0")
   inspect(font.point_size, content="0")
@@ -8,7 +8,7 @@ test "BdfFont creation" {
 
 ///|
 test "BdfGlyph creation" {
-  let glyph = @bdf.BdfGlyph::new()
+  let glyph = BdfGlyph::new()
   inspect(glyph.encoding, content="-1")
   inspect(glyph.bbx_width, content="0")
   inspect(glyph.name, content="")
@@ -18,7 +18,7 @@ test "BdfGlyph creation" {
 test "parse_bdf_header basic" {
   let bdf_text = "STARTFONT 2.1\nFONT -misc-fixed-medium-r-normal--13-120-75-75-C-70-iso8859-1\nSIZE 12 75 75\nFONTBOUNDINGBOX 6 13 0 -2\nCHARS 256\n"
   let data = @utf8.encode(bdf_text)
-  let font = @bdf.parse_bdf_header(data)
+  let font = parse_bdf_header(data)
   inspect(
     font.font_name,
     content="-misc-fixed-medium-r-normal--13-120-75-75-C-70-iso8859-1",
@@ -37,7 +37,7 @@ test "parse_bdf_header basic" {
 test "parse_bdf_header parses glyphs" {
   let bdf = "STARTFONT 2.1\nFONT test\nSIZE 8 75 75\nFONTBOUNDINGBOX 8 8 0 0\nCHARS 1\nSTARTCHAR A\nENCODING 65\nSWIDTH 500 0\nDWIDTH 8 0\nBBX 8 8 0 0\nBITMAP\n18\n24\n42\n7E\n42\n42\n42\n00\nENDCHAR\nENDFONT\n"
   let data = @utf8.encode(bdf)
-  let font = @bdf.parse_bdf_header(data)
+  let font = parse_bdf_header(data)
   inspect(font.glyphs.length(), content="1")
   inspect(font.glyphs[0].encoding, content="65")
   inspect(font.glyphs[0].bbx_width, content="8")
@@ -51,7 +51,7 @@ test "parse_bdf_header parses glyphs" {
 test "BdfFont::get_glyph" {
   let bdf = "STARTFONT 2.1\nFONT test\nSIZE 8 75 75\nFONTBOUNDINGBOX 8 8 0 0\nCHARS 2\nSTARTCHAR A\nENCODING 65\nSWIDTH 500 0\nDWIDTH 8 0\nBBX 8 8 0 0\nBITMAP\n18\n24\n42\n7E\n42\n42\n42\n00\nENDCHAR\nSTARTCHAR B\nENCODING 66\nSWIDTH 500 0\nDWIDTH 8 0\nBBX 8 8 0 0\nBITMAP\n7C\n42\n7C\n42\n42\n42\n7C\n00\nENDCHAR\nENDFONT\n"
   let data = @utf8.encode(bdf)
-  let font = @bdf.parse_bdf_header(data)
+  let font = parse_bdf_header(data)
   inspect(font.glyphs.length(), content="2")
   let g_a = font.get_glyph(65)
   inspect(g_a is Some(_), content="true")
@@ -66,7 +66,7 @@ test "BdfFont::get_glyph" {
 ///|
 test "parse_bdf_header missing STARTFONT" {
   let data = @utf8.encode("FONT test\nSIZE 12 75 75\n")
-  let result : Result[_, _] = Ok(@bdf.parse_bdf_header(data)) catch {
+  let result : Result[_, _] = Ok(parse_bdf_header(data)) catch {
     err => Err(err)
   }
   inspect(result is Err(_), content="true")

@@ -15,14 +15,7 @@ pub fn parse_int_from_string(String) -> Int
 // Errors
 
 // Types and methods
-pub struct ByteReader {
-  data : Bytes
-  size : Int
-  mut pos : Int
-  mut frame_start : Int
-  mut frame_size : Int
-  mut cursor : Int
-}
+type ByteReader
 pub fn ByteReader::enter_frame(Self, Int) -> Unit raise @error.FTError
 pub fn ByteReader::exit_frame(Self) -> Unit
 pub fn ByteReader::frame_remaining(Self) -> Int

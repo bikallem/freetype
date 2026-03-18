@@ -2,19 +2,19 @@
 /// 16.16 fixed-point number. Wraps Int64 to avoid overflow in intermediate
 /// computations (C FreeType relies on two's-complement wrapping of 32-bit
 /// `signed long`; we use 64-bit and mask/truncate where needed).
-pub struct Fixed {
+struct Fixed {
   val : Int64
 } derive(Eq, Compare, Show)
 
 ///|
 /// 26.6 fixed-point number (used for pixel coordinates).
-pub struct F26Dot6 {
+struct F26Dot6 {
   val : Int64
 } derive(Eq, Compare, Show)
 
 ///|
 /// 2.14 fixed-point number (used for unit vectors).
-pub struct F2Dot14 {
+struct F2Dot14 {
   val : Int
 } derive(Eq, Compare, Show)
 
@@ -51,6 +51,11 @@ pub fn Fixed::to_int(self : Fixed) -> Int {
 ///|
 /// Extract raw 16.16 value.
 pub fn Fixed::to_raw(self : Fixed) -> Int64 {
+  self.val
+}
+
+///|
+pub fn Fixed::val(self : Fixed) -> Int64 {
   self.val
 }
 
@@ -128,6 +133,11 @@ pub fn F26Dot6::to_raw(self : F26Dot6) -> Int64 {
 }
 
 ///|
+pub fn F26Dot6::val(self : F26Dot6) -> Int64 {
+  self.val
+}
+
+///|
 /// Round to nearest integer (26.6 → integer).
 pub fn F26Dot6::round(self : F26Dot6) -> F26Dot6 {
   let v = self.val
@@ -185,6 +195,11 @@ pub fn F2Dot14::one() -> F2Dot14 {
 
 ///|
 pub fn F2Dot14::to_raw(self : F2Dot14) -> Int {
+  self.val
+}
+
+///|
+pub fn F2Dot14::val(self : F2Dot14) -> Int {
   self.val
 }
 

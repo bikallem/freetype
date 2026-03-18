@@ -109,7 +109,7 @@ pub fn GlyphHints::new() -> GlyphHints {
 
 ///|
 /// Blue zone for Latin script auto-hinting.
-pub struct BlueZone {
+struct BlueZone {
   ref_pos : Int64 // reference position (overshoot position)
   shoot : Int64 // overshoot position
   fitted : Int64 // fitted position in 26.6
@@ -126,7 +126,7 @@ pub fn BlueZone::new(
 
 ///|
 /// Script-level metrics used during hinting.
-pub struct ScriptMetrics {
+struct ScriptMetrics {
   mut std_widths : Array[Int64] // standard stem widths
   mut blue_zones : Array[BlueZone] // blue zones (Latin script)
   mut scale : @fixed.Fixed // current scale factor
@@ -227,22 +227,22 @@ pub fn compute_segments(
   }
   let mut contour_start = 0
   for c in 0..<n_contours {
-    let contour_end = outline.contours[c].reinterpret_as_int()
+    let contour_end = outline.contours()[c].reinterpret_as_int()
     // Scan points in this contour for segments
     let mut seg_start = -1
     let mut seg_pos : Int64 = 0
     let mut seg_min : Int64 = 0x7FFFFFFFL
     let mut seg_max : Int64 = -0x7FFFFFFFL
     for i = contour_start; i <= contour_end; i = i + 1 {
-      let p = outline.points[i]
-      let tag = @types.curve_tag(outline.tags[i])
+      let p = outline.points()[i]
+      let tag = @types.curve_tag(outline.tags()[i])
       if tag != @types.curve_tag_on {
         continue i + 1
       }
       // Get coordinate along segment direction and perpendicular
       let (para, perp) = match direction {
-        Horizontal => (p.x, p.y)
-        Vertical => (p.y, p.x)
+        Horizontal => (p.x(), p.y())
+        Vertical => (p.y(), p.x())
       }
       if seg_start < 0 {
         // Start a new segment
@@ -324,8 +324,8 @@ pub fn compute_edges(
   }
   // Merge nearby segments into edges.
   // Threshold: half a pixel (32 in 26.6) converted back to font units via scale.
-  let edge_distance : Int64 = if scale.val > 0L {
-    @fixed.mul_div(32L, 0x10000L, scale.val)
+  let edge_distance : Int64 = if scale.val() > 0L {
+    @fixed.mul_div(32L, 0x10000L, scale.val())
   } else {
     32L // fallback if scale is zero
   }
@@ -385,14 +385,14 @@ pub fn fit_blue_zones(
 ) -> Unit {
   for _, edge in edges {
     let scaled_pos = @fixed.mul_fix(
-        scale,
-        @fixed.Fixed::from_raw(edge.position),
-      ).val
+      scale,
+      @fixed.Fixed::from_raw(edge.position),
+    ).val()
     for _, blue in blues {
       let ref_scaled = @fixed.mul_fix(
-          scale,
-          @fixed.Fixed::from_raw(blue.ref_pos),
-        ).val
+        scale,
+        @fixed.Fixed::from_raw(blue.ref_pos),
+      ).val()
       let tolerance = 32L // half pixel in 26.6
       let diff = if scaled_pos > ref_scaled {
         scaled_pos - ref_scaled
@@ -423,8 +423,8 @@ pub fn fit_edges(
     let e1 = edges[stem.edge1]
     let e2 = edges[stem.edge2]
     // Scale positions
-    let pos1 = @fixed.mul_fix(scale, @fixed.Fixed::from_raw(e1.position)).val
-    let pos2 = @fixed.mul_fix(scale, @fixed.Fixed::from_raw(e2.position)).val
+    let pos1 = @fixed.mul_fix(scale, @fixed.Fixed::from_raw(e1.position)).val()
+    let pos2 = @fixed.mul_fix(scale, @fixed.Fixed::from_raw(e2.position)).val()
     let width = pos2 - pos1
     // Round stem width to pixel (minimum 1 pixel = 64 in 26.6)
     let rounded_width = if width > 0L {
@@ -453,7 +453,7 @@ pub fn fit_edges(
   // Fit unlinked (non-stem) edges: round to nearest pixel
   for _, edge in edges {
     if edge.linked_edge < 0 && not(edge.blue_edge) {
-      let scaled = @fixed.mul_fix(scale, @fixed.Fixed::from_raw(edge.position)).val
+      let scaled = @fixed.mul_fix(scale, @fixed.Fixed::from_raw(edge.position)).val()
       edge.fitted_position = (scaled + 32L) & -64L
     }
   }
@@ -474,21 +474,21 @@ pub fn interpolate_points(
   if edges.length() == 0 {
     return
   }
-  for i in 0..<outline.points.length() {
+  for i in 0..<outline.points().length() {
     let coord = if is_horizontal {
-      outline.points[i].x
+      outline.points()[i].x()
     } else {
-      outline.points[i].y
+      outline.points()[i].y()
     }
-    let scaled = @fixed.mul_fix(scale, @fixed.Fixed::from_raw(coord)).val
+    let scaled = @fixed.mul_fix(scale, @fixed.Fixed::from_raw(coord)).val()
     // Find bracketing edges
     let mut before_idx = -1
     let mut after_idx = -1
     for j, edge in edges {
       let edge_scaled = @fixed.mul_fix(
-          scale,
-          @fixed.Fixed::from_raw(edge.position),
-        ).val
+        scale,
+        @fixed.Fixed::from_raw(edge.position),
+      ).val()
       if edge_scaled <= scaled {
         before_idx = j
       }
@@ -502,8 +502,8 @@ pub fn interpolate_points(
       // Interpolate between two edges
       let e1 = edges[before_idx]
       let e2 = edges[after_idx]
-      let org1 = @fixed.mul_fix(scale, @fixed.Fixed::from_raw(e1.position)).val
-      let org2 = @fixed.mul_fix(scale, @fixed.Fixed::from_raw(e2.position)).val
+      let org1 = @fixed.mul_fix(scale, @fixed.Fixed::from_raw(e1.position)).val()
+      let org2 = @fixed.mul_fix(scale, @fixed.Fixed::from_raw(e2.position)).val()
       let range = org2 - org1
       if range > 0L {
         let frac = (scaled - org1) * 64L / range
@@ -515,20 +515,20 @@ pub fn interpolate_points(
     } else if before_idx >= 0 {
       // Outside right: shift by last edge's delta
       let e = edges[before_idx]
-      let org = @fixed.mul_fix(scale, @fixed.Fixed::from_raw(e.position)).val
+      let org = @fixed.mul_fix(scale, @fixed.Fixed::from_raw(e.position)).val()
       scaled + (e.fitted_position - org)
     } else if after_idx >= 0 {
       // Outside left: shift by first edge's delta
       let e = edges[after_idx]
-      let org = @fixed.mul_fix(scale, @fixed.Fixed::from_raw(e.position)).val
+      let org = @fixed.mul_fix(scale, @fixed.Fixed::from_raw(e.position)).val()
       scaled + (e.fitted_position - org)
     } else {
       scaled
     }
     if is_horizontal {
-      outline.points[i].set_x(new_coord)
+      outline.points()[i].set_x(new_coord)
     } else {
-      outline.points[i].set_y(new_coord)
+      outline.points()[i].set_y(new_coord)
     }
   }
 }
@@ -544,7 +544,7 @@ pub fn auto_hint_outline(
   metrics : ScriptMetrics,
 ) -> Unit {
   let scale = metrics.scale
-  if scale.val == 0L {
+  if scale.val() == 0L {
     return
   }
   // Analyze vertical segments/edges (for horizontal fitting)

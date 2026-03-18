@@ -18,25 +18,20 @@ pub fn parse_type1_pfb(Bytes) -> Type1Font raise @error.FTError
 // Errors
 
 // Types and methods
-pub struct Type1Font {
-  mut font_name : String
-  mut units_per_em : Int
-  mut encoding : Array[String]
-  mut charstrings : Map[String, Bytes]
-  subrs : Array[Bytes]
-  blue_values : Array[Int]
-  other_blues : Array[Int]
-  std_hw : Int
-  std_vw : Int
-  default_width_x : Int64
-  nominal_width_x : Int64
-  mut len_iv : Int
-  paint_type : Int
-  font_matrix : Array[Double]
-  mut font_bbox : Array[Int]
-  unique_id : Int
-}
+type Type1Font
+pub fn Type1Font::blue_values(Self) -> Array[Int]
+pub fn Type1Font::charstrings(Self) -> Map[String, Bytes]
+pub fn Type1Font::encoding(Self) -> Array[String]
+pub fn Type1Font::font_bbox(Self) -> Array[Int]
+pub fn Type1Font::font_name(Self) -> String
+pub fn Type1Font::len_iv(Self) -> Int
 pub fn Type1Font::new() -> Self
+pub fn Type1Font::other_blues(Self) -> Array[Int]
+pub fn Type1Font::paint_type(Self) -> Int
+pub fn Type1Font::std_hw(Self) -> Int
+pub fn Type1Font::std_vw(Self) -> Int
+pub fn Type1Font::subrs(Self) -> Array[Bytes]
+pub fn Type1Font::units_per_em(Self) -> Int
 pub impl Show for Type1Font
 
 // Type aliases

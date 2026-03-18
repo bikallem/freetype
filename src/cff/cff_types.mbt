@@ -1,6 +1,6 @@
 ///|
 /// CFF INDEX structure: array of variable-length data items.
-pub struct CffIndex {
+struct CffIndex {
   count : UInt
   off_size : Int // 1, 2, 3, or 4 bytes per offset
   offsets : Array[UInt] // count+1 offsets
@@ -22,7 +22,7 @@ pub fn CffIndex::new(
 
 ///|
 /// CFF header.
-pub struct CffHeader {
+struct CffHeader {
   major : Int
   minor : Int
   hdr_size : Int
@@ -31,7 +31,7 @@ pub struct CffHeader {
 
 ///|
 /// CFF Top DICT values.
-pub struct CffTopDict {
+struct CffTopDict {
   mut charset_offset : UInt
   mut encoding_offset : UInt
   mut charstrings_offset : UInt
@@ -64,7 +64,7 @@ pub fn CffTopDict::new() -> CffTopDict {
 
 ///|
 /// CFF Private DICT values.
-pub struct CffPrivateDict {
+struct CffPrivateDict {
   mut default_width_x : Int64
   mut nominal_width_x : Int64
   mut subrs_offset : UInt // relative to start of Private DICT
@@ -89,7 +89,7 @@ pub fn CffPrivateDict::new() -> CffPrivateDict {
 
 ///|
 /// Parsed CFF font data.
-pub struct CffFont {
+struct CffFont {
   header : CffHeader
   name : String // font name from Name INDEX
   top_dict : CffTopDict
@@ -101,3 +101,105 @@ pub struct CffFont {
   cached_local_subrs : Array[Bytes]
   cached_global_subrs : Array[Bytes]
 } derive(Show)
+
+///|
+pub fn CffFont::private_dict(self : CffFont) -> CffPrivateDict {
+  self.private_dict
+}
+
+///|
+pub fn CffFont::top_dict(self : CffFont) -> CffTopDict {
+  self.top_dict
+}
+
+///|
+pub fn CffFont::charstrings(self : CffFont) -> CffIndex {
+  self.charstrings
+}
+
+///|
+pub fn CffFont::global_subrs(self : CffFont) -> CffIndex {
+  self.global_subrs
+}
+
+///|
+pub fn CffFont::local_subrs(self : CffFont) -> CffIndex? {
+  self.local_subrs
+}
+
+///|
+pub fn CffFont::num_glyphs(self : CffFont) -> UInt {
+  self.num_glyphs
+}
+
+///|
+pub fn CffFont::cached_local_subrs(self : CffFont) -> Array[Bytes] {
+  self.cached_local_subrs
+}
+
+///|
+pub fn CffFont::cached_global_subrs(self : CffFont) -> Array[Bytes] {
+  self.cached_global_subrs
+}
+
+///|
+pub fn CffFont::name(self : CffFont) -> String {
+  self.name
+}
+
+///|
+pub fn CffPrivateDict::blue_values(self : CffPrivateDict) -> Array[Int64] {
+  self.blue_values
+}
+
+///|
+pub fn CffPrivateDict::other_blues(self : CffPrivateDict) -> Array[Int64] {
+  self.other_blues
+}
+
+///|
+pub fn CffPrivateDict::default_width_x(self : CffPrivateDict) -> Int64 {
+  self.default_width_x
+}
+
+///|
+pub fn CffPrivateDict::nominal_width_x(self : CffPrivateDict) -> Int64 {
+  self.nominal_width_x
+}
+
+///|
+
+///|
+pub fn CffTopDict::charset_offset(self : CffTopDict) -> UInt {
+  self.charset_offset
+}
+
+///|
+pub fn CffTopDict::is_cid(self : CffTopDict) -> Bool {
+  self.is_cid
+}
+
+///|
+pub fn CffTopDict::private_size(self : CffTopDict) -> UInt {
+  self.private_size
+}
+
+///|
+pub fn CffTopDict::private_offset(self : CffTopDict) -> UInt {
+  self.private_offset
+}
+
+///|
+pub fn CffIndex::count(self : CffIndex) -> UInt {
+  self.count
+}
+
+///|
+pub fn CffPrivateDict::std_hw(self : CffPrivateDict) -> Int64 {
+  self.std_hw
+}
+
+///|
+pub fn CffPrivateDict::std_vw(self : CffPrivateDict) -> Int64 {
+  self.std_vw
+}

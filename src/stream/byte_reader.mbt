@@ -6,7 +6,7 @@
 /// 1. Direct reads: read_byte(), read_u16_be(), etc. — validate bounds per read.
 /// 2. Frame reads: enter_frame(size) pre-validates a region, then get_byte(),
 ///    get_u16_be(), etc. read from the frame cursor without per-read bounds checks.
-pub struct ByteReader {
+struct ByteReader {
   data : Bytes
   size : Int
   mut pos : Int

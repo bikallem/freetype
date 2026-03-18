@@ -1,6 +1,6 @@
 ///|
 test "Matrix::identity transform" {
-  let m = @fixed.Matrix::identity()
+  let m = Matrix::identity()
   let (rx, ry) = m.transform(0x30000L, 0x40000L)
   // Identity should return same values
   inspect(rx, content="196608")
@@ -10,8 +10,8 @@ test "Matrix::identity transform" {
 
 ///|
 test "Matrix::multiply with identity" {
-  let m = @fixed.Matrix::identity()
-  let id = @fixed.Matrix::identity()
+  let m = Matrix::identity()
+  let id = Matrix::identity()
   m.multiply(id)
   inspect(
     m,
@@ -21,7 +21,7 @@ test "Matrix::multiply with identity" {
 
 ///|
 test "Matrix::invert identity" {
-  let m = @fixed.Matrix::identity()
+  let m = Matrix::identity()
   m.invert()
   // Inverse of identity is identity
   inspect(m.xx.val, content="65536")
@@ -32,11 +32,11 @@ test "Matrix::invert identity" {
 
 ///|
 test "Matrix::invert singular" {
-  let m = @fixed.Matrix::new(
-    @fixed.Fixed::zero(),
-    @fixed.Fixed::zero(),
-    @fixed.Fixed::zero(),
-    @fixed.Fixed::zero(),
+  let m = Matrix::new(
+    Fixed::zero(),
+    Fixed::zero(),
+    Fixed::zero(),
+    Fixed::zero(),
   )
   let result = try? m.invert()
   inspect(result, content="Err(InvalidArgument)")

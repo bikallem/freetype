@@ -4,7 +4,7 @@
 
 ///|
 /// BDF glyph representation.
-pub struct BdfGlyph {
+struct BdfGlyph {
   mut encoding : Int // character encoding value
   mut bbx_width : Int // bounding box width
   mut bbx_height : Int // bounding box height
@@ -29,7 +29,7 @@ pub fn BdfGlyph::new() -> BdfGlyph {
 
 ///|
 /// BDF font representation.
-pub struct BdfFont {
+struct BdfFont {
   mut font_name : String
   mut point_size : Int
   mut x_resolution : Int
@@ -379,4 +379,54 @@ pub fn parse_bdf_header(data : Bytes) -> BdfFont raise @error.FTError {
     }
   }
   font
+}
+
+///|
+pub fn BdfFont::font_name(self : BdfFont) -> String {
+  self.font_name
+}
+
+///|
+pub fn BdfFont::num_chars(self : BdfFont) -> Int {
+  self.num_chars
+}
+
+///|
+pub fn BdfFont::point_size(self : BdfFont) -> Int {
+  self.point_size
+}
+
+///|
+pub fn BdfFont::glyphs(self : BdfFont) -> Array[BdfGlyph] {
+  self.glyphs
+}
+
+///|
+pub fn BdfFont::bbx_width(self : BdfFont) -> Int {
+  self.bbx_width
+}
+
+///|
+pub fn BdfFont::bbx_height(self : BdfFont) -> Int {
+  self.bbx_height
+}
+
+///|
+pub fn BdfFont::bbx_x_offset(self : BdfFont) -> Int {
+  self.bbx_x_offset
+}
+
+///|
+pub fn BdfFont::bbx_y_offset(self : BdfFont) -> Int {
+  self.bbx_y_offset
+}
+
+///|
+pub fn BdfFont::x_resolution(self : BdfFont) -> Int {
+  self.x_resolution
+}
+
+///|
+pub fn BdfFont::y_resolution(self : BdfFont) -> Int {
+  self.y_resolution
 }

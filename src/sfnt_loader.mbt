@@ -6,35 +6,35 @@ fn load_sfnt(
 ) -> @base.FaceRec raise @error.FTError {
   let (sfnt_data, face) = @sfnt.load_sfnt_face(data, face_index.to_int64())
   // Parse the best cmap subtable for charmap lookup
-  let cmap_lookup : @sfnt.CmapLookup? = match sfnt_data.cmap {
+  let cmap_lookup : @sfnt.CmapLookup? = match sfnt_data.cmap() {
     Some(ct) => {
-      let cmap_table_rec = sfnt_data.table_dir.find_table(@types.tag_cmap)
+      let cmap_table_rec = sfnt_data.table_dir().find_table(@types.tag_cmap)
       match cmap_table_rec {
-        Some(rec) => find_best_cmap(data, ct, rec.offset)
+        Some(rec) => find_best_cmap(data, ct, rec.offset())
         None => None
       }
     }
     None => None
   }
   // Initialize format-specific data
-  let has_glyf = sfnt_data.table_dir.find_table(@types.tag_glyf) is Some(_)
-  let has_cff = sfnt_data.table_dir.find_table(@types.tag_CFF) is Some(_)
+  let has_glyf = sfnt_data.table_dir().find_table(@types.tag_glyf) is Some(_)
+  let has_cff = sfnt_data.table_dir().find_table(@types.tag_CFF) is Some(_)
   let tt_data : @truetype.TtFaceData? = if has_glyf {
     Some(@truetype.init_tt_face(sfnt_data, face))
   } else {
     None
   }
   let cff_font : @cff.CffFont? = if has_cff {
-    match sfnt_data.table_dir.find_table(@types.tag_CFF) {
-      Some(rec) => Some(@cff.load_cff(data, rec.offset.reinterpret_as_int()))
+    match sfnt_data.table_dir().find_table(@types.tag_CFF) {
+      Some(rec) => Some(@cff.load_cff(data, rec.offset().reinterpret_as_int()))
       None => None
     }
   } else {
     None
   }
   // Build the closure-based driver ops
-  let kern_table = sfnt_data.kern
-  let hmtx = sfnt_data.hmtx
+  let kern_table = sfnt_data.kern()
+  let hmtx = sfnt_data.hmtx()
   // Per-face hint state (captured by closures below, avoids module-level mutable)
   let hint_h_hints : Ref[Array[@psaux.StemHint]] = Ref::new([])
   let hint_v_hints : Ref[Array[@psaux.StemHint]] = Ref::new([])
@@ -44,16 +44,16 @@ fn load_sfnt(
     @pshinter.PsGlobals::new(),
   )
   if cff_font is Some(cff) {
-    let pd = cff.private_dict
+    let pd = cff.private_dict()
     let defaults = @pshinter.PsGlobals::new()
     hint_globals.val = @pshinter.build_ps_globals(
-      pd.blue_values.map(fn(v) { v.to_int() }),
-      pd.other_blues.map(fn(v) { v.to_int() }),
-      pd.std_hw.to_int(),
-      pd.std_vw.to_int(),
-      defaults.blue_scale,
-      defaults.blue_shift.to_int(),
-      defaults.blue_fuzz.to_int(),
+      pd.blue_values().map(fn(v) { v.to_int() }),
+      pd.other_blues().map(fn(v) { v.to_int() }),
+      pd.std_hw().to_int(),
+      pd.std_vw().to_int(),
+      defaults.blue_scale(),
+      defaults.blue_shift().to_int(),
+      defaults.blue_fuzz().to_int(),
     )
   }
   let char_index_fn : (UInt) -> UInt = match cmap_lookup {
@@ -70,8 +70,8 @@ fn load_sfnt(
       hint_has_hints.val = false
       @truetype.load_tt_glyph(
         data,
-        tt.glyph_offsets,
-        tt.glyf_offset,
+        tt.glyph_offsets(),
+        tt.glyf_offset(),
         glyph_index,
       )
     } else if cff_font is Some(cff) {
@@ -93,10 +93,10 @@ fn load_sfnt(
     let (advance_width, _lsb) = hmtx.get_metrics(glyph_index)
     let bb = @base.outline_get_bbox(outline)
     let slot_data = @base.GlyphSlotData::new(
-      bb.x_max - bb.x_min,
-      bb.y_max - bb.y_min,
-      bb.x_min,
-      bb.y_max,
+      bb.x_max() - bb.x_min(),
+      bb.y_max() - bb.y_min(),
+      bb.x_min(),
+      bb.y_max(),
       advance_width.reinterpret_as_int().to_int64(),
     )
     (slot_data, outline, tt_instructions)
@@ -130,18 +130,21 @@ fn load_sfnt(
     if tt_data is Some(tt) && instructions.length() > 0 {
       // Create interpreter context
       let ctx = @truetype.InterpContext::new(
-        cvt=tt.cvt.copy(),
+        cvt=tt.cvt().copy(),
         storage_size=64,
         max_stack=256,
       )
       ctx.set_ppem(ppem.reinterpret_as_int())
       // Scale CVT values by y_scale (CVT stored in font units << 6, need 26.6 at current size)
-      for i in 0..<ctx.cvt.length() {
-        let font_units = ctx.cvt[i] >> 6
-        ctx.cvt[i] = @fixed.mul_fix(y_scale, @fixed.Fixed::from_raw(font_units)).val
+      for i in 0..<ctx.cvt().length() {
+        let font_units = ctx.cvt()[i] >> 6
+        ctx.cvt()[i] = @fixed.mul_fix(
+          y_scale,
+          @fixed.Fixed::from_raw(font_units),
+        ).val()
       }
       // Populate zone1 with scaled glyph points
-      let n_points = outline.points.length()
+      let n_points = outline.points().length()
       // Add phantom points (4 extra): origin, advance width, top, bottom
       let total_points = n_points + 4
       let zero_vec = @types.Vector::new(0L, 0L)
@@ -149,21 +152,21 @@ fn load_sfnt(
       ctx.set_zone1_cur(Array::make(total_points, @types.Vector::new(0L, 0L)))
       ctx.set_zone1_tags(Array::make(total_points, b'\x00'))
       ctx.set_zone1_touch(Array::make(total_points, b'\x00'))
-      ctx.set_zone1_points(ctx.zone1_cur)
+      ctx.set_zone1_points(ctx.zone1_cur())
       for i in 0..<n_points {
         // Scale from font units to 26.6 pixels
         let sx = @fixed.mul_fix(
-            x_scale,
-            @fixed.Fixed::from_raw(outline.points[i].x),
-          ).val
+          x_scale,
+          @fixed.Fixed::from_raw(outline.points()[i].x()),
+        ).val()
         let sy = @fixed.mul_fix(
-            y_scale,
-            @fixed.Fixed::from_raw(outline.points[i].y),
-          ).val
-        ctx.zone1_org[i] = @types.Vector::new(sx, sy)
-        ctx.zone1_cur[i] = @types.Vector::new(sx, sy)
-        ctx.zone1_tags[i] = if i < outline.tags.length() {
-          outline.tags[i]
+          y_scale,
+          @fixed.Fixed::from_raw(outline.points()[i].y()),
+        ).val()
+        ctx.zone1_org()[i] = @types.Vector::new(sx, sy)
+        ctx.zone1_cur()[i] = @types.Vector::new(sx, sy)
+        ctx.zone1_tags()[i] = if i < outline.tags().length() {
+          outline.tags()[i]
         } else {
           b'\x01'
         }
@@ -173,10 +176,10 @@ fn load_sfnt(
       ctx.set_zone0_org(Array::make(twilight_size, @types.Vector::new(0L, 0L)))
       ctx.set_zone0_cur(Array::make(twilight_size, @types.Vector::new(0L, 0L)))
       ctx.set_zone0_tags(Array::make(twilight_size, b'\x00'))
-      ctx.set_zone0_points(ctx.zone0_cur)
+      ctx.set_zone0_points(ctx.zone0_cur())
       // Run font program (defines functions)
-      if tt.fpgm.length() > 0 {
-        let fpgm_result = try? ctx.execute(tt.fpgm)
+      if tt.fpgm().length() > 0 {
+        let fpgm_result = try? ctx.execute(tt.fpgm())
         if fpgm_result is Err(_) {
           return false
         }
@@ -184,8 +187,8 @@ fn load_sfnt(
       // Reset graphics state for prep program
       ctx.set_gs(@truetype.GraphicsState::default())
       // Run CVT program (modifies CVT for current size)
-      if tt.prep.length() > 0 {
-        let prep_result = try? ctx.execute(tt.prep)
+      if tt.prep().length() > 0 {
+        let prep_result = try? ctx.execute(tt.prep())
         if prep_result is Err(_) {
           return false
         }
@@ -199,9 +202,9 @@ fn load_sfnt(
       }
       // Copy hinted points back to outline (already in 26.6)
       for i in 0..<n_points {
-        outline.points[i] = @types.Vector::new(
-          ctx.zone1_cur[i].x,
-          ctx.zone1_cur[i].y,
+        outline.points()[i] = @types.Vector::new(
+          ctx.zone1_cur()[i].x(),
+          ctx.zone1_cur()[i].y(),
         )
       }
       true
@@ -214,17 +217,17 @@ fn load_sfnt(
     None => fn(_left, _right) { 0 }
   }
   // Parse fvar if present (variable font support)
-  if sfnt_data.table_dir.find_table(@types.tag_fvar) is Some(fvar_rec) {
+  if sfnt_data.table_dir().find_table(@types.tag_fvar) is Some(fvar_rec) {
     let fvar_reader = @stream.ByteReader::new(data)
     let fvar_result = try? @truetype.parse_fvar(
       fvar_reader,
-      fvar_rec.offset,
-      fvar_rec.length,
+      fvar_rec.offset(),
+      fvar_rec.length(),
     )
-    if fvar_result is Ok(fvar) && fvar.axes.length() > 0 {
-      face.set_face_flags(face.face_flags | @base.face_flag_multiple_masters)
+    if fvar_result is Ok(fvar) && fvar.axes().length() > 0 {
+      face.set_face_flags(face.face_flags() | @base.face_flag_multiple_masters)
       // Initialize var_coords to default (all zeros = default instance)
-      face.set_var_coords(Array::make(fvar.axes.length(), 0))
+      face.set_var_coords(Array::make(fvar.axes().length(), 0))
     }
   }
   face.set_driver_data(
@@ -235,14 +238,14 @@ fn load_sfnt(
         get_kerning=kern_fn,
         apply_hints=apply_hints_fn,
         tt_hint=tt_hint_fn,
-        num_glyphs=sfnt_data.maxp.num_glyphs,
+        num_glyphs=sfnt_data.maxp().num_glyphs(),
         raw_data=data,
       ),
     ),
   )
   // Add synthetic charmap for CFF fonts (matches C FreeType behavior)
   if has_cff {
-    face.charmaps.push(@base.CharMapRec::new(@base.Encoding::Unicode, 7U, 0U))
+    face.charmaps().push(@base.CharMapRec::new(@base.Encoding::Unicode, 7U, 0U))
   }
   face
 }
@@ -267,12 +270,12 @@ fn find_best_cmap(
   ]
   for _, prio in priorities {
     let (plat, enc) = prio
-    for _, sub in ct.subtables {
-      if sub.platform_id == plat && sub.encoding_id == enc {
+    for _, sub in ct.subtables() {
+      if sub.platform_id() == plat && sub.encoding_id() == enc {
         let result = try? @sfnt.parse_cmap_subtable(
           reader,
           cmap_table_offset,
-          sub.offset,
+          sub.offset(),
         )
         if result is Ok(cl) {
           return Some(cl)
@@ -281,11 +284,11 @@ fn find_best_cmap(
     }
   }
   // Fallback: first parseable subtable
-  for _, sub in ct.subtables {
+  for _, sub in ct.subtables() {
     let result = try? @sfnt.parse_cmap_subtable(
       reader,
       cmap_table_offset,
-      sub.offset,
+      sub.offset(),
     )
     if result is Ok(cl) {
       return Some(cl)

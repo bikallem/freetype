@@ -1,6 +1,6 @@
 ///|
 /// Parsed 'maxp' (maximum profile) table.
-pub struct MaxpTable {
+struct MaxpTable {
   version : UInt // 0x00005000 for CFF, 0x00010000 for TrueType
   num_glyphs : UInt
   // TrueType-specific fields (version 1.0):
@@ -18,6 +18,51 @@ pub struct MaxpTable {
   max_component_elements : UInt
   max_component_depth : UInt
 } derive(Show)
+
+///|
+pub fn MaxpTable::num_glyphs(self : MaxpTable) -> UInt {
+  self.num_glyphs
+}
+
+///|
+pub fn MaxpTable::max_points(self : MaxpTable) -> UInt {
+  self.max_points
+}
+
+///|
+pub fn MaxpTable::max_contours(self : MaxpTable) -> UInt {
+  self.max_contours
+}
+
+///|
+pub fn MaxpTable::max_zones(self : MaxpTable) -> UInt {
+  self.max_zones
+}
+
+///|
+pub fn MaxpTable::max_twilight_points(self : MaxpTable) -> UInt {
+  self.max_twilight_points
+}
+
+///|
+pub fn MaxpTable::max_storage(self : MaxpTable) -> UInt {
+  self.max_storage
+}
+
+///|
+pub fn MaxpTable::max_function_defs(self : MaxpTable) -> UInt {
+  self.max_function_defs
+}
+
+///|
+pub fn MaxpTable::max_instruction_defs(self : MaxpTable) -> UInt {
+  self.max_instruction_defs
+}
+
+///|
+pub fn MaxpTable::max_stack_elements(self : MaxpTable) -> UInt {
+  self.max_stack_elements
+}
 
 ///|
 /// Parse the 'maxp' table.

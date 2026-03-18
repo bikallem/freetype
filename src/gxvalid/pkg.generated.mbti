@@ -14,10 +14,7 @@ pub fn validate_kern_apple(@stream.ByteReader, UInt, UInt) -> GxValidationResult
 // Errors
 
 // Types and methods
-pub struct GxValidationResult {
-  table_tag : UInt
-  issues : Array[String]
-}
+type GxValidationResult
 pub impl Eq for GxValidationResult
 pub impl Show for GxValidationResult
 

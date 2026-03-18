@@ -5,11 +5,7 @@ test "validate_feat valid table" {
   // Each feature entry: 12 bytes
   let data = b"\x00\x01\x00\x00\x00\x01\x00\x00\x00\x00\x00\x00\x00\x01\x00\x01\x00\x00\x00\x18\x00\x02\x00\x00"
   let reader = @stream.ByteReader::new(data)
-  let result = @gxvalid.validate_feat(
-    reader,
-    0U,
-    data.length().reinterpret_as_uint(),
-  )
+  let result = validate_feat(reader, 0U, data.length().reinterpret_as_uint())
   inspect(result.issues.length(), content="0")
 }
 
@@ -17,7 +13,7 @@ test "validate_feat valid table" {
 test "validate_feat table too short" {
   let data = b"\x00\x01\x00\x00"
   let reader = @stream.ByteReader::new(data)
-  let result = @gxvalid.validate_feat(reader, 0U, 4U)
+  let result = validate_feat(reader, 0U, 4U)
   inspect(result.issues.length() > 0, content="true")
 }
 
@@ -25,6 +21,6 @@ test "validate_feat table too short" {
 test "validate_kern_apple too short" {
   let data = b"\x00\x01\x00\x00"
   let reader = @stream.ByteReader::new(data)
-  let result = @gxvalid.validate_kern_apple(reader, 0U, 4U)
+  let result = validate_kern_apple(reader, 0U, 4U)
   inspect(result.issues.length() > 0, content="true")
 }

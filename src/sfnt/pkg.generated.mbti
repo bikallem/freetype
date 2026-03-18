@@ -4,7 +4,6 @@ package "bikallem/freetype/sfnt"
 import {
   "bikallem/freetype/base",
   "bikallem/freetype/error",
-  "bikallem/freetype/fixed",
   "bikallem/freetype/stream",
 }
 
@@ -58,46 +57,26 @@ pub fn parse_ttc_header(@stream.ByteReader) -> TtcHeader raise @error.FTError
 // Errors
 
 // Types and methods
-pub struct CmapFormat0 {
-  glyph_ids : FixedArray[Byte]
-}
+type CmapFormat0
 pub fn CmapFormat0::char_index(Self, UInt) -> UInt
 pub fn CmapFormat0::new(glyph_ids~ : FixedArray[Byte]) -> Self
 pub impl Show for CmapFormat0
 
-pub struct CmapFormat12 {
-  groups : Array[CmapFormat12Group]
-}
+type CmapFormat12
 pub fn CmapFormat12::char_index(Self, UInt) -> UInt
 pub fn CmapFormat12::new(groups~ : Array[CmapFormat12Group]) -> Self
 pub impl Show for CmapFormat12
 
-pub struct CmapFormat12Group {
-  start_char_code : UInt
-  end_char_code : UInt
-  start_glyph_id : UInt
-}
+type CmapFormat12Group
 pub fn CmapFormat12Group::new(start_char_code~ : UInt, end_char_code~ : UInt, start_glyph_id~ : UInt) -> Self
 pub impl Eq for CmapFormat12Group
 pub impl Show for CmapFormat12Group
 
-pub struct CmapFormat4 {
-  seg_count : Int
-  end_codes : Array[UInt]
-  start_codes : Array[UInt]
-  id_deltas : Array[Int]
-  id_range_offsets : Array[UInt]
-  glyph_ids : Array[UInt]
-  id_range_offset_start : Int
-}
+type CmapFormat4
 pub fn CmapFormat4::char_index(Self, UInt) -> UInt
 pub impl Show for CmapFormat4
 
-pub struct CmapFormat6 {
-  first_code : UInt
-  entry_count : UInt
-  glyph_ids : Array[UInt]
-}
+type CmapFormat6
 pub fn CmapFormat6::char_index(Self, UInt) -> UInt
 pub fn CmapFormat6::new(first_code~ : UInt, entry_count~ : UInt, glyph_ids~ : Array[UInt]) -> Self
 pub impl Show for CmapFormat6
@@ -110,213 +89,110 @@ pub(all) enum CmapLookup {
 }
 pub fn CmapLookup::char_index(Self, UInt) -> UInt
 
-pub struct CmapSubtable {
-  platform_id : UInt
-  encoding_id : UInt
-  offset : UInt
-}
+type CmapSubtable
+pub fn CmapSubtable::encoding_id(Self) -> UInt
+pub fn CmapSubtable::offset(Self) -> UInt
+pub fn CmapSubtable::platform_id(Self) -> UInt
 pub impl Eq for CmapSubtable
 pub impl Show for CmapSubtable
 
-pub struct CmapTable {
-  version : UInt
-  subtables : Array[CmapSubtable]
-}
+type CmapTable
+pub fn CmapTable::subtables(Self) -> Array[CmapSubtable]
 pub impl Show for CmapTable
 
-pub struct HeadTable {
-  major_version : UInt
-  minor_version : UInt
-  font_revision : @fixed.Fixed
-  checksum_adjust : UInt
-  magic_number : UInt
-  flags : UInt
-  units_per_em : UInt
-  created : Int64
-  modified : Int64
-  x_min : Int
-  y_min : Int
-  x_max : Int
-  y_max : Int
-  mac_style : UInt
-  lowest_rec_ppem : UInt
-  font_direction_hint : Int
-  index_to_loc_format : Int
-  glyph_data_format : Int
-}
+type HeadTable
+pub fn HeadTable::flags(Self) -> UInt
+pub fn HeadTable::index_to_loc_format(Self) -> Int
+pub fn HeadTable::mac_style(Self) -> UInt
+pub fn HeadTable::units_per_em(Self) -> UInt
+pub fn HeadTable::x_max(Self) -> Int
+pub fn HeadTable::x_min(Self) -> Int
+pub fn HeadTable::y_max(Self) -> Int
+pub fn HeadTable::y_min(Self) -> Int
 pub impl Show for HeadTable
 
-pub struct HheaTable {
-  major_version : UInt
-  minor_version : UInt
-  ascender : Int
-  descender : Int
-  line_gap : Int
-  advance_width_max : UInt
-  min_left_side_bearing : Int
-  min_right_side_bearing : Int
-  x_max_extent : Int
-  caret_slope_rise : Int
-  caret_slope_run : Int
-  caret_offset : Int
-  metric_data_format : Int
-  number_of_h_metrics : UInt
-}
+type HheaTable
 pub impl Show for HheaTable
 
-pub struct HmtxTable {
-  metrics : Array[LongHorMetric]
-  left_side_bearings : Array[Int]
-}
+type HmtxTable
 pub fn HmtxTable::get_metrics(Self, UInt) -> (UInt, Int)
 pub fn HmtxTable::new(metrics~ : Array[LongHorMetric], left_side_bearings~ : Array[Int]) -> Self
 pub impl Show for HmtxTable
 
-pub struct KernPair {
-  left : UInt
-  right : UInt
-  value : Int
-}
+type KernPair
 pub fn KernPair::new(left~ : UInt, right~ : UInt, value~ : Int) -> Self
 pub impl Eq for KernPair
 pub impl Show for KernPair
 
-pub struct KernTable {
-  pairs : Array[KernPair]
-}
+type KernTable
 pub fn KernTable::get_kerning(Self, UInt, UInt) -> Int
 pub fn KernTable::new(pairs~ : Array[KernPair]) -> Self
 pub impl Show for KernTable
 
-pub struct LongHorMetric {
-  advance_width : UInt
-  lsb : Int
-}
+type LongHorMetric
 pub fn LongHorMetric::new(advance_width~ : UInt, lsb~ : Int) -> Self
 pub impl Eq for LongHorMetric
 pub impl Show for LongHorMetric
 
-pub struct MaxpTable {
-  version : UInt
-  num_glyphs : UInt
-  max_points : UInt
-  max_contours : UInt
-  max_composite_points : UInt
-  max_composite_contours : UInt
-  max_zones : UInt
-  max_twilight_points : UInt
-  max_storage : UInt
-  max_function_defs : UInt
-  max_instruction_defs : UInt
-  max_stack_elements : UInt
-  max_size_of_instructions : UInt
-  max_component_elements : UInt
-  max_component_depth : UInt
-}
+type MaxpTable
+pub fn MaxpTable::max_contours(Self) -> UInt
+pub fn MaxpTable::max_function_defs(Self) -> UInt
+pub fn MaxpTable::max_instruction_defs(Self) -> UInt
+pub fn MaxpTable::max_points(Self) -> UInt
+pub fn MaxpTable::max_stack_elements(Self) -> UInt
+pub fn MaxpTable::max_storage(Self) -> UInt
+pub fn MaxpTable::max_twilight_points(Self) -> UInt
+pub fn MaxpTable::max_zones(Self) -> UInt
+pub fn MaxpTable::num_glyphs(Self) -> UInt
 pub impl Show for MaxpTable
 
-pub struct NameRecord {
-  platform_id : UInt
-  encoding_id : UInt
-  language_id : UInt
-  name_id : UInt
-  length : UInt
-  offset : UInt
-}
+type NameRecord
 pub fn NameRecord::new(platform_id~ : UInt, encoding_id~ : UInt, language_id~ : UInt, name_id~ : UInt, length~ : UInt, offset~ : UInt) -> Self
 pub impl Show for NameRecord
 
-pub struct NameTable {
-  format : UInt
-  count : UInt
-  string_offset : UInt
-  records : Array[NameRecord]
-  string_data : Bytes
-}
+type NameTable
 pub fn NameTable::get_name(Self, UInt) -> String?
 pub fn NameTable::new(format~ : UInt, count~ : UInt, string_offset~ : UInt, records~ : Array[NameRecord], string_data~ : Bytes) -> Self
 pub impl Show for NameTable
 
-pub struct Os2Table {
-  version : UInt
-  x_avg_char_width : Int
-  us_weight_class : UInt
-  us_width_class : UInt
-  fs_type : UInt
-  y_subscript_x_size : Int
-  y_subscript_y_size : Int
-  y_subscript_x_offset : Int
-  y_subscript_y_offset : Int
-  y_superscript_x_size : Int
-  y_superscript_y_size : Int
-  y_superscript_x_offset : Int
-  y_superscript_y_offset : Int
-  y_strikeout_size : Int
-  y_strikeout_position : Int
-  s_family_class : Int
-  fs_selection : UInt
-  us_first_char_index : UInt
-  us_last_char_index : UInt
-  s_typo_ascender : Int
-  s_typo_descender : Int
-  s_typo_line_gap : Int
-  us_win_ascent : UInt
-  us_win_descent : UInt
-}
+type Os2Table
 pub impl Show for Os2Table
 
-pub struct PostTable {
-  format : UInt
-  italic_angle : @fixed.Fixed
-  underline_position : Int
-  underline_thickness : Int
-  is_fixed_pitch : UInt
-  glyph_names : Array[String]
-}
+type PostTable
 pub impl Show for PostTable
 
-pub struct SfntData {
-  table_dir : TableDirectory
-  head : HeadTable
-  hhea : HheaTable
-  maxp : MaxpTable
-  hmtx : HmtxTable
-  name : NameTable?
-  os2 : Os2Table?
-  post : PostTable?
-  cmap : CmapTable?
-  kern : KernTable?
-  raw_data : Bytes
-}
+type SfntData
+pub fn SfntData::cmap(Self) -> CmapTable?
+pub fn SfntData::head(Self) -> HeadTable
+pub fn SfntData::hhea(Self) -> HheaTable
+pub fn SfntData::hmtx(Self) -> HmtxTable
+pub fn SfntData::kern(Self) -> KernTable?
+pub fn SfntData::maxp(Self) -> MaxpTable
+pub fn SfntData::name(Self) -> NameTable?
+pub fn SfntData::os2(Self) -> Os2Table?
+pub fn SfntData::post(Self) -> PostTable?
+pub fn SfntData::raw_data(Self) -> Bytes
+pub fn SfntData::table_dir(Self) -> TableDirectory
 pub impl Show for SfntData
 
-pub struct TableDirectory {
-  sfnt_version : UInt
-  num_tables : UInt
-  search_range : UInt
-  entry_selector : UInt
-  range_shift : UInt
-  tables : Array[TableRecord]
-}
+type TableDirectory
 pub fn TableDirectory::find_table(Self, UInt) -> TableRecord?
 pub fn TableDirectory::new(sfnt_version~ : UInt, num_tables~ : UInt, search_range~ : UInt, entry_selector~ : UInt, range_shift~ : UInt, tables~ : Array[TableRecord]) -> Self
+pub fn TableDirectory::num_tables(Self) -> UInt
+pub fn TableDirectory::sfnt_version(Self) -> UInt
+pub fn TableDirectory::tables(Self) -> Array[TableRecord]
 pub impl Show for TableDirectory
 
-pub struct TableRecord {
-  tag : UInt
-  checksum : UInt
-  offset : UInt
-  length : UInt
-}
+type TableRecord
+pub fn TableRecord::checksum(Self) -> UInt
+pub fn TableRecord::length(Self) -> UInt
 pub fn TableRecord::new(tag~ : UInt, checksum~ : UInt, offset~ : UInt, length~ : UInt) -> Self
+pub fn TableRecord::offset(Self) -> UInt
+pub fn TableRecord::tag(Self) -> UInt
 pub impl Eq for TableRecord
 pub impl Show for TableRecord
 
-pub struct TtcHeader {
-  version : UInt
-  num_fonts : UInt
-  offsets : Array[UInt]
-}
+type TtcHeader
 pub impl Show for TtcHeader
 
 // Type aliases

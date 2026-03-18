@@ -23,35 +23,23 @@ pub fn interpolate_points(@types.Outline, Array[FittedStem], Array[FittedStem], 
 // Errors
 
 // Types and methods
-pub struct BlueZone {
-  position : Int64
-  overshoot : Int64
-  is_bottom : Bool
-}
+type BlueZone
 pub impl Eq for BlueZone
 pub impl Show for BlueZone
 
-pub struct FittedStem {
-  org_pos : Int64
-  org_width : Int64
-  cur_pos : Int64
-  cur_width : Int64
-}
+type FittedStem
 pub impl Eq for FittedStem
 pub impl Show for FittedStem
 
-pub struct PsGlobals {
-  blue_values : Array[BlueZone]
-  other_blues : Array[BlueZone]
-  blue_scale : @fixed.Fixed
-  blue_shift : Int64
-  blue_fuzz : Int64
-  std_hw : Int64
-  std_vw : Int64
-  snap_widths_h : Array[Int64]
-  snap_widths_v : Array[Int64]
-}
+type PsGlobals
+pub fn PsGlobals::blue_fuzz(Self) -> Int64
+pub fn PsGlobals::blue_scale(Self) -> @fixed.Fixed
+pub fn PsGlobals::blue_shift(Self) -> Int64
+pub fn PsGlobals::blue_values(Self) -> Array[BlueZone]
 pub fn PsGlobals::new() -> Self
+pub fn PsGlobals::other_blues(Self) -> Array[BlueZone]
+pub fn PsGlobals::std_hw(Self) -> Int64
+pub fn PsGlobals::std_vw(Self) -> Int64
 pub impl Show for PsGlobals
 
 // Type aliases

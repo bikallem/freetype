@@ -1,6 +1,6 @@
 ///|
 /// 2D vector with position values (font units, 16.16, or 26.6 depending on context).
-pub struct Vector {
+struct Vector {
   mut x : Int64
   mut y : Int64
 } derive(Eq, Show, ToJson)
@@ -27,8 +27,18 @@ pub fn Vector::set(self : Vector, x : Int64, y : Int64) -> Unit {
 }
 
 ///|
+pub fn Vector::x(self : Vector) -> Int64 {
+  self.x
+}
+
+///|
+pub fn Vector::y(self : Vector) -> Int64 {
+  self.y
+}
+
+///|
 /// Bounding box.
-pub struct BBox {
+struct BBox {
   x_min : Int64
   y_min : Int64
   x_max : Int64
@@ -51,8 +61,28 @@ pub fn BBox::empty() -> BBox {
 }
 
 ///|
+pub fn BBox::x_min(self : BBox) -> Int64 {
+  self.x_min
+}
+
+///|
+pub fn BBox::y_min(self : BBox) -> Int64 {
+  self.y_min
+}
+
+///|
+pub fn BBox::x_max(self : BBox) -> Int64 {
+  self.x_max
+}
+
+///|
+pub fn BBox::y_max(self : BBox) -> Int64 {
+  self.y_max
+}
+
+///|
 /// Glyph metrics (in font units or 26.6).
-pub struct GlyphMetrics {
+struct GlyphMetrics {
   mut width : Int64
   mut height : Int64
   mut hori_bearing_x : Int64
@@ -118,8 +148,48 @@ pub fn GlyphMetrics::set_vert_advance(self : GlyphMetrics, v : Int64) -> Unit {
 }
 
 ///|
+pub fn GlyphMetrics::width(self : GlyphMetrics) -> Int64 {
+  self.width
+}
+
+///|
+pub fn GlyphMetrics::height(self : GlyphMetrics) -> Int64 {
+  self.height
+}
+
+///|
+pub fn GlyphMetrics::hori_bearing_x(self : GlyphMetrics) -> Int64 {
+  self.hori_bearing_x
+}
+
+///|
+pub fn GlyphMetrics::hori_bearing_y(self : GlyphMetrics) -> Int64 {
+  self.hori_bearing_y
+}
+
+///|
+pub fn GlyphMetrics::hori_advance(self : GlyphMetrics) -> Int64 {
+  self.hori_advance
+}
+
+///|
+pub fn GlyphMetrics::vert_bearing_x(self : GlyphMetrics) -> Int64 {
+  self.vert_bearing_x
+}
+
+///|
+pub fn GlyphMetrics::vert_bearing_y(self : GlyphMetrics) -> Int64 {
+  self.vert_bearing_y
+}
+
+///|
+pub fn GlyphMetrics::vert_advance(self : GlyphMetrics) -> Int64 {
+  self.vert_advance
+}
+
+///|
 /// Size metrics (in 26.6).
-pub struct SizeMetrics {
+struct SizeMetrics {
   mut x_ppem : UInt
   mut y_ppem : UInt
   mut x_scale : @fixed.Fixed
@@ -182,4 +252,44 @@ pub fn SizeMetrics::set_height(self : SizeMetrics, v : Int64) -> Unit {
 ///|
 pub fn SizeMetrics::set_max_advance(self : SizeMetrics, v : Int64) -> Unit {
   self.max_advance = v
+}
+
+///|
+pub fn SizeMetrics::x_ppem(self : SizeMetrics) -> UInt {
+  self.x_ppem
+}
+
+///|
+pub fn SizeMetrics::y_ppem(self : SizeMetrics) -> UInt {
+  self.y_ppem
+}
+
+///|
+pub fn SizeMetrics::x_scale(self : SizeMetrics) -> @fixed.Fixed {
+  self.x_scale
+}
+
+///|
+pub fn SizeMetrics::y_scale(self : SizeMetrics) -> @fixed.Fixed {
+  self.y_scale
+}
+
+///|
+pub fn SizeMetrics::ascender(self : SizeMetrics) -> Int64 {
+  self.ascender
+}
+
+///|
+pub fn SizeMetrics::descender(self : SizeMetrics) -> Int64 {
+  self.descender
+}
+
+///|
+pub fn SizeMetrics::height(self : SizeMetrics) -> Int64 {
+  self.height
+}
+
+///|
+pub fn SizeMetrics::max_advance(self : SizeMetrics) -> Int64 {
+  self.max_advance
 }

@@ -25,28 +25,28 @@ test "parity/SourceCodePro-Regular.otf: loads" {
 ///|
 test "parity/SourceCodePro-Regular.otf: metadata" {
   let f = @freetype.from_bytes(load_sourcecodepro_regular_otf())
-  inspect(f.family_name, content="Source Code Pro")
-  inspect(f.num_glyphs, content="1568")
-  inspect(f.units_per_em, content="1000")
-  inspect(f.ascender, content="984")
-  inspect(f.descender, content="-273")
-  inspect(f.height, content="1257")
+  inspect(f.family_name(), content="Source Code Pro")
+  inspect(f.num_glyphs(), content="1568")
+  inspect(f.units_per_em(), content="1000")
+  inspect(f.ascender(), content="984")
+  inspect(f.descender(), content="-273")
+  inspect(f.height(), content="1257")
   inspect(
-    f.underline_position,
+    f.underline_position(),
     content=(
       #|-50
     ),
   )
-  inspect(f.underline_thickness, content="50")
+  inspect(f.underline_thickness(), content="50")
 }
 
 ///|
 test "parity/SourceCodePro-Regular.otf: bbox" {
   let f = @freetype.from_bytes(load_sourcecodepro_regular_otf())
-  inspect(f.bbox.x_min, content="-193")
-  inspect(f.bbox.y_min, content="-454")
-  inspect(f.bbox.x_max, content="793")
-  inspect(f.bbox.y_max, content="1060")
+  inspect(f.bbox().x_min(), content="-193")
+  inspect(f.bbox().y_min(), content="-454")
+  inspect(f.bbox().x_max(), content="793")
+  inspect(f.bbox().y_max(), content="1060")
 }
 
 ///|
@@ -61,30 +61,30 @@ test "parity/SourceCodePro-Regular.otf: flags" {
 ///|
 test "parity/SourceCodePro-Regular.otf: charmaps" {
   let f = @freetype.from_bytes(load_sourcecodepro_regular_otf())
-  inspect(f.charmaps.length(), content="6")
-  if f.charmaps.length() > 0 {
-    inspect(f.charmaps[0].platform_id, content="0")
-    inspect(f.charmaps[0].encoding_id, content="3")
+  inspect(f.charmaps().length(), content="6")
+  if f.charmaps().length() > 0 {
+    inspect(f.charmaps()[0].platform_id(), content="0")
+    inspect(f.charmaps()[0].encoding_id(), content="3")
   }
-  if f.charmaps.length() > 1 {
-    inspect(f.charmaps[1].platform_id, content="0")
-    inspect(f.charmaps[1].encoding_id, content="4")
+  if f.charmaps().length() > 1 {
+    inspect(f.charmaps()[1].platform_id(), content="0")
+    inspect(f.charmaps()[1].encoding_id(), content="4")
   }
-  if f.charmaps.length() > 2 {
-    inspect(f.charmaps[2].platform_id, content="1")
-    inspect(f.charmaps[2].encoding_id, content="0")
+  if f.charmaps().length() > 2 {
+    inspect(f.charmaps()[2].platform_id(), content="1")
+    inspect(f.charmaps()[2].encoding_id(), content="0")
   }
-  if f.charmaps.length() > 3 {
-    inspect(f.charmaps[3].platform_id, content="3")
-    inspect(f.charmaps[3].encoding_id, content="1")
+  if f.charmaps().length() > 3 {
+    inspect(f.charmaps()[3].platform_id(), content="3")
+    inspect(f.charmaps()[3].encoding_id(), content="1")
   }
-  if f.charmaps.length() > 4 {
-    inspect(f.charmaps[4].platform_id, content="3")
-    inspect(f.charmaps[4].encoding_id, content="10")
+  if f.charmaps().length() > 4 {
+    inspect(f.charmaps()[4].platform_id(), content="3")
+    inspect(f.charmaps()[4].encoding_id(), content="10")
   }
-  if f.charmaps.length() > 5 {
-    inspect(f.charmaps[5].platform_id, content="7")
-    inspect(f.charmaps[5].encoding_id, content="0")
+  if f.charmaps().length() > 5 {
+    inspect(f.charmaps()[5].platform_id(), content="7")
+    inspect(f.charmaps()[5].encoding_id(), content="0")
   }
 }
 
@@ -149,29 +149,29 @@ test "parity/SourceCodePro-Regular.otf: glyph 918 outline NO_SCALE" {
   let r = try? @freetype.load_glyph(f, 918U, load_flags=@base.load_no_scale)
   guard r is Ok(_) else { return }
   inspect(
-    f.glyph.outline.n_points(),
+    f.glyph().outline().n_points(),
     content=(
       #|19
     ),
   )
-  inspect(f.glyph.outline.n_contours(), content="2")
-  inspect(f.glyph.outline.points[0].x, content="272")
-  inspect(f.glyph.outline.points[0].y, content="232")
-  inspect(f.glyph.outline.points[1].x, content="328")
-  inspect(f.glyph.outline.points[1].y, content="232")
-  inspect(f.glyph.outline.points[2].x, content="338")
-  inspect(f.glyph.outline.points[2].y, content="576")
-  inspect(f.glyph.outline.points[3].x, content="340")
-  inspect(f.glyph.outline.points[3].y, content="670")
-  inspect(f.glyph.outline.points[4].x, content="260")
-  inspect(f.glyph.outline.points[4].y, content="670")
-  inspect(f.glyph.outline.points[5].x, content="262")
-  inspect(f.glyph.outline.points[5].y, content="576")
-  inspect(f.glyph.outline.points[6].x, content="300")
-  inspect(f.glyph.outline.points[6].y, content="-12")
-  inspect(f.glyph.outline.points[7].x, content="340")
-  inspect(f.glyph.outline.points[7].y, content="-12")
-  inspect(f.glyph.metrics.hori_advance, content="600")
+  inspect(f.glyph().outline().n_contours(), content="2")
+  inspect(f.glyph().outline().points()[0].x(), content="272")
+  inspect(f.glyph().outline().points()[0].y(), content="232")
+  inspect(f.glyph().outline().points()[1].x(), content="328")
+  inspect(f.glyph().outline().points()[1].y(), content="232")
+  inspect(f.glyph().outline().points()[2].x(), content="338")
+  inspect(f.glyph().outline().points()[2].y(), content="576")
+  inspect(f.glyph().outline().points()[3].x(), content="340")
+  inspect(f.glyph().outline().points()[3].y(), content="670")
+  inspect(f.glyph().outline().points()[4].x(), content="260")
+  inspect(f.glyph().outline().points()[4].y(), content="670")
+  inspect(f.glyph().outline().points()[5].x(), content="262")
+  inspect(f.glyph().outline().points()[5].y(), content="576")
+  inspect(f.glyph().outline().points()[6].x(), content="300")
+  inspect(f.glyph().outline().points()[6].y(), content="-12")
+  inspect(f.glyph().outline().points()[7].x(), content="340")
+  inspect(f.glyph().outline().points()[7].y(), content="-12")
+  inspect(f.glyph().metrics().hori_advance(), content="600")
 }
 
 ///|
@@ -179,25 +179,25 @@ test "parity/SourceCodePro-Regular.otf: glyph 923 outline NO_SCALE" {
   let f = @freetype.from_bytes(load_sourcecodepro_regular_otf())
   let r = try? @freetype.load_glyph(f, 923U, load_flags=@base.load_no_scale)
   guard r is Ok(_) else { return }
-  inspect(f.glyph.outline.n_points(), content="12")
-  inspect(f.glyph.outline.n_contours(), content="2")
-  inspect(f.glyph.outline.points[0].x, content="157")
-  inspect(f.glyph.outline.points[0].y, content="352")
-  inspect(f.glyph.outline.points[1].x, content="213")
-  inspect(f.glyph.outline.points[1].y, content="352")
-  inspect(f.glyph.outline.points[2].x, content="238")
-  inspect(f.glyph.outline.points[2].y, content="577")
-  inspect(f.glyph.outline.points[3].x, content="240")
-  inspect(f.glyph.outline.points[3].y, content="687")
-  inspect(f.glyph.outline.points[4].x, content="130")
-  inspect(f.glyph.outline.points[4].y, content="687")
-  inspect(f.glyph.outline.points[5].x, content="132")
-  inspect(f.glyph.outline.points[5].y, content="577")
-  inspect(f.glyph.outline.points[6].x, content="387")
-  inspect(f.glyph.outline.points[6].y, content="352")
-  inspect(f.glyph.outline.points[7].x, content="443")
-  inspect(f.glyph.outline.points[7].y, content="352")
-  inspect(f.glyph.metrics.hori_advance, content="600")
+  inspect(f.glyph().outline().n_points(), content="12")
+  inspect(f.glyph().outline().n_contours(), content="2")
+  inspect(f.glyph().outline().points()[0].x(), content="157")
+  inspect(f.glyph().outline().points()[0].y(), content="352")
+  inspect(f.glyph().outline().points()[1].x(), content="213")
+  inspect(f.glyph().outline().points()[1].y(), content="352")
+  inspect(f.glyph().outline().points()[2].x(), content="238")
+  inspect(f.glyph().outline().points()[2].y(), content="577")
+  inspect(f.glyph().outline().points()[3].x(), content="240")
+  inspect(f.glyph().outline().points()[3].y(), content="687")
+  inspect(f.glyph().outline().points()[4].x(), content="130")
+  inspect(f.glyph().outline().points()[4].y(), content="687")
+  inspect(f.glyph().outline().points()[5].x(), content="132")
+  inspect(f.glyph().outline().points()[5].y(), content="577")
+  inspect(f.glyph().outline().points()[6].x(), content="387")
+  inspect(f.glyph().outline().points()[6].y(), content="352")
+  inspect(f.glyph().outline().points()[7].x(), content="443")
+  inspect(f.glyph().outline().points()[7].y(), content="352")
+  inspect(f.glyph().metrics().hori_advance(), content="600")
 }
 
 ///|
@@ -205,25 +205,25 @@ test "parity/SourceCodePro-Regular.otf: glyph 1000 outline NO_SCALE" {
   let f = @freetype.from_bytes(load_sourcecodepro_regular_otf())
   let r = try? @freetype.load_glyph(f, 1000U, load_flags=@base.load_no_scale)
   guard r is Ok(_) else { return }
-  inspect(f.glyph.outline.n_points(), content="32")
-  inspect(f.glyph.outline.n_contours(), content="2")
-  inspect(f.glyph.outline.points[0].x, content="228")
-  inspect(f.glyph.outline.points[0].y, content="261")
-  inspect(f.glyph.outline.points[1].x, content="246")
-  inspect(f.glyph.outline.points[1].y, content="409")
-  inspect(f.glyph.outline.points[2].x, content="378")
-  inspect(f.glyph.outline.points[2].y, content="409")
-  inspect(f.glyph.outline.points[3].x, content="360")
-  inspect(f.glyph.outline.points[3].y, content="261")
-  inspect(f.glyph.outline.points[4].x, content="142")
-  inspect(f.glyph.outline.points[4].y, content="0")
-  inspect(f.glyph.outline.points[5].x, content="196")
-  inspect(f.glyph.outline.points[5].y, content="0")
-  inspect(f.glyph.outline.points[6].x, content="221")
-  inspect(f.glyph.outline.points[6].y, content="204")
-  inspect(f.glyph.outline.points[7].x, content="353")
-  inspect(f.glyph.outline.points[7].y, content="204")
-  inspect(f.glyph.metrics.hori_advance, content="600")
+  inspect(f.glyph().outline().n_points(), content="32")
+  inspect(f.glyph().outline().n_contours(), content="2")
+  inspect(f.glyph().outline().points()[0].x(), content="228")
+  inspect(f.glyph().outline().points()[0].y(), content="261")
+  inspect(f.glyph().outline().points()[1].x(), content="246")
+  inspect(f.glyph().outline().points()[1].y(), content="409")
+  inspect(f.glyph().outline().points()[2].x(), content="378")
+  inspect(f.glyph().outline().points()[2].y(), content="409")
+  inspect(f.glyph().outline().points()[3].x(), content="360")
+  inspect(f.glyph().outline().points()[3].y(), content="261")
+  inspect(f.glyph().outline().points()[4].x(), content="142")
+  inspect(f.glyph().outline().points()[4].y(), content="0")
+  inspect(f.glyph().outline().points()[5].x(), content="196")
+  inspect(f.glyph().outline().points()[5].y(), content="0")
+  inspect(f.glyph().outline().points()[6].x(), content="221")
+  inspect(f.glyph().outline().points()[6].y(), content="204")
+  inspect(f.glyph().outline().points()[7].x(), content="353")
+  inspect(f.glyph().outline().points()[7].y(), content="204")
+  inspect(f.glyph().metrics().hori_advance(), content="600")
 }
 
 ///|
@@ -234,7 +234,7 @@ test "parity/SourceCodePro-Regular.otf: glyph metrics at 16ppem" {
   let r2 = try? @freetype.load_glyph(f, 918U)
   guard r2 is Ok(_) else { return }
   inspect(
-    f.glyph.metrics.hori_advance,
+    f.glyph().metrics().hori_advance(),
     content=(
       #|614
     ),
@@ -249,25 +249,25 @@ test "parity/SourceCodePro-Regular.otf: hinted outline DEFAULT 16ppem" {
   let r2 = try? @freetype.load_glyph(f, 918U)
   guard r2 is Ok(_) else { return }
   inspect(
-    f.glyph.outline.n_points(),
+    f.glyph().outline().n_points(),
     content=(
       #|19
     ),
   )
   inspect(
-    f.glyph.metrics.width,
+    f.glyph().metrics().width(),
     content=(
       #|150
     ),
   )
   inspect(
-    f.glyph.metrics.height,
+    f.glyph().metrics().height(),
     content=(
       #|698
     ),
   )
   inspect(
-    f.glyph.metrics.hori_advance,
+    f.glyph().metrics().hori_advance(),
     content=(
       #|614
     ),
@@ -281,7 +281,7 @@ test "parity/SourceCodePro-Regular.otf: outline NO_HINTING 16ppem" {
   guard r1 is Ok(_) else { return }
   let r2 = try? @freetype.load_glyph(f, 918U, load_flags=@base.load_no_hinting)
   guard r2 is Ok(_) else { return }
-  inspect(f.glyph.metrics.hori_advance, content="614")
+  inspect(f.glyph().metrics().hori_advance(), content="614")
 }
 
 ///|
@@ -296,7 +296,7 @@ test "parity/SourceCodePro-Regular.otf: outline FORCE_AUTOHINT 16ppem" {
   )
   guard r2 is Ok(_) else { return }
   inspect(
-    f.glyph.metrics.hori_advance,
+    f.glyph().metrics().hori_advance(),
     content=(
       #|614
     ),

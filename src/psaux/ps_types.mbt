@@ -1,7 +1,7 @@
 ///|
 /// PostScript charstring interpreter context.
 /// Shared between Type 1 and Type 2 (CFF) charstring processing.
-pub struct PsInterp {
+struct PsInterp {
   // Operand stack
   mut stack : Array[Int64]
   // Path state
@@ -26,14 +26,24 @@ pub struct PsInterp {
 
 ///|
 /// A stem hint (horizontal or vertical).
-pub struct StemHint {
+struct StemHint {
   position : Int64 // start position (font units)
   width : Int64 // stem width (font units)
 } derive(Eq, Show)
 
 ///|
+pub fn StemHint::position(self : StemHint) -> Int64 {
+  self.position
+}
+
+///|
+pub fn StemHint::width(self : StemHint) -> Int64 {
+  self.width
+}
+
+///|
 /// Call stack frame for subroutine returns.
-pub struct CallFrame {
+struct CallFrame {
   code : Bytes
   ip : Int
 } derive(Show)

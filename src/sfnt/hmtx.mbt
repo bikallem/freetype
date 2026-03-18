@@ -1,6 +1,6 @@
 ///|
 /// Horizontal metrics for a single glyph.
-pub struct LongHorMetric {
+struct LongHorMetric {
   advance_width : UInt
   lsb : Int // left side bearing
 } derive(Eq, Show)
@@ -12,7 +12,7 @@ pub fn LongHorMetric::new(advance_width~ : UInt, lsb~ : Int) -> LongHorMetric {
 
 ///|
 /// Parsed 'hmtx' (horizontal metrics) table.
-pub struct HmtxTable {
+struct HmtxTable {
   metrics : Array[LongHorMetric] // number_of_h_metrics entries
   left_side_bearings : Array[Int] // remaining glyphs (num_glyphs - number_of_h_metrics)
 } derive(Show)

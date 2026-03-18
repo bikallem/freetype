@@ -1,6 +1,6 @@
 ///|
 /// Cmap subtable header.
-pub struct CmapSubtable {
+struct CmapSubtable {
   platform_id : UInt
   encoding_id : UInt
   offset : UInt // offset from beginning of cmap table
@@ -8,7 +8,7 @@ pub struct CmapSubtable {
 
 ///|
 /// Parsed cmap table header.
-pub struct CmapTable {
+struct CmapTable {
   version : UInt
   subtables : Array[CmapSubtable]
 } derive(Show)
@@ -86,7 +86,7 @@ pub fn parse_cmap_subtable(
 // ---------------------------------------------------------------------------
 
 ///|
-pub struct CmapFormat0 {
+struct CmapFormat0 {
   glyph_ids : FixedArray[Byte] // 256 entries
 } derive(Show)
 
@@ -124,7 +124,7 @@ pub fn CmapFormat0::char_index(self : CmapFormat0, charcode : UInt) -> UInt {
 // ---------------------------------------------------------------------------
 
 ///|
-pub struct CmapFormat4 {
+struct CmapFormat4 {
   seg_count : Int
   end_codes : Array[UInt]
   start_codes : Array[UInt]
@@ -239,7 +239,7 @@ pub fn CmapFormat4::char_index(self : CmapFormat4, charcode : UInt) -> UInt {
 // ---------------------------------------------------------------------------
 
 ///|
-pub struct CmapFormat6 {
+struct CmapFormat6 {
   first_code : UInt
   entry_count : UInt
   glyph_ids : Array[UInt]
@@ -291,7 +291,7 @@ pub fn CmapFormat6::char_index(self : CmapFormat6, charcode : UInt) -> UInt {
 // ---------------------------------------------------------------------------
 
 ///|
-pub struct CmapFormat12Group {
+struct CmapFormat12Group {
   start_char_code : UInt
   end_char_code : UInt
   start_glyph_id : UInt
@@ -307,7 +307,7 @@ pub fn CmapFormat12Group::new(
 }
 
 ///|
-pub struct CmapFormat12 {
+struct CmapFormat12 {
   groups : Array[CmapFormat12Group]
 } derive(Show)
 
@@ -353,4 +353,24 @@ pub fn CmapFormat12::char_index(self : CmapFormat12, charcode : UInt) -> UInt {
   } nobreak {
     0U
   }
+}
+
+///|
+pub fn CmapTable::subtables(self : CmapTable) -> Array[CmapSubtable] {
+  self.subtables
+}
+
+///|
+pub fn CmapSubtable::platform_id(self : CmapSubtable) -> UInt {
+  self.platform_id
+}
+
+///|
+pub fn CmapSubtable::encoding_id(self : CmapSubtable) -> UInt {
+  self.encoding_id
+}
+
+///|
+pub fn CmapSubtable::offset(self : CmapSubtable) -> UInt {
+  self.offset
 }

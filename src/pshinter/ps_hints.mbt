@@ -1,6 +1,6 @@
 ///|
 /// Blue zone for PostScript hinting.
-pub struct BlueZone {
+struct BlueZone {
   position : Int64 // reference position (font units)
   overshoot : Int64 // overshoot position
   is_bottom : Bool // true for bottom zones (descender, baseline)
@@ -8,7 +8,7 @@ pub struct BlueZone {
 
 ///|
 /// Global hinting data for a PostScript font.
-pub struct PsGlobals {
+struct PsGlobals {
   blue_values : Array[BlueZone]
   other_blues : Array[BlueZone]
   blue_scale : @fixed.Fixed
@@ -37,7 +37,7 @@ pub fn PsGlobals::new() -> PsGlobals {
 
 ///|
 /// A fitted stem: original and pixel-aligned positions.
-pub struct FittedStem {
+struct FittedStem {
   org_pos : Int64 // original position (font units)
   org_width : Int64 // original width (font units)
   cur_pos : Int64 // fitted position (26.6 pixels)
@@ -53,8 +53,8 @@ pub fn align_stem(
   scale : @fixed.Fixed,
 ) -> (Int64, Int64) {
   // Scale to 26.6 pixels
-  let pos_px = @fixed.mul_fix(scale, @fixed.Fixed::from_raw(position)).val
-  let width_px = @fixed.mul_fix(scale, @fixed.Fixed::from_raw(width)).val
+  let pos_px = @fixed.mul_fix(scale, @fixed.Fixed::from_raw(position)).val()
+  let width_px = @fixed.mul_fix(scale, @fixed.Fixed::from_raw(width)).val()
   // Round stem width to nearest pixel (minimum 1 pixel = 64 in 26.6)
   let rounded_width = if width_px > 0L {
     let w = (width_px + 32L) & -64L // round to pixel
@@ -80,16 +80,16 @@ pub fn apply_blue_zone(
   scale : @fixed.Fixed,
   blue_shift : Int64,
 ) -> Int64? {
-  let pos_scaled = @fixed.mul_fix(scale, @fixed.Fixed::from_raw(position)).val
+  let pos_scaled = @fixed.mul_fix(scale, @fixed.Fixed::from_raw(position)).val()
   for _, zone in zones {
     let ref_scaled = @fixed.mul_fix(
-        scale,
-        @fixed.Fixed::from_raw(zone.position),
-      ).val
+      scale,
+      @fixed.Fixed::from_raw(zone.position),
+    ).val()
     let over_scaled = @fixed.mul_fix(
-        scale,
-        @fixed.Fixed::from_raw(zone.overshoot),
-      ).val
+      scale,
+      @fixed.Fixed::from_raw(zone.overshoot),
+    ).val()
     let zone_lo = if ref_scaled < over_scaled {
       ref_scaled
     } else {
@@ -180,11 +180,11 @@ pub fn fit_stems(
     []
   }
   for _, stem in stems {
-    let org_pos = stem.position
-    let org_width = stem.width
+    let org_pos = stem.position()
+    let org_width = stem.width()
     // Scale position and width to 26.6 pixels
-    let pos_px = @fixed.mul_fix(scale, @fixed.Fixed::from_raw(org_pos)).val
-    let width_px = @fixed.mul_fix(scale, @fixed.Fixed::from_raw(org_width)).val
+    let pos_px = @fixed.mul_fix(scale, @fixed.Fixed::from_raw(org_pos)).val()
+    let width_px = @fixed.mul_fix(scale, @fixed.Fixed::from_raw(org_width)).val()
     // Round width: snap to nearest pixel, minimum 1px (64 in 26.6)
     let abs_width = if width_px < 0L { -width_px } else { width_px }
     let rounded_width = if abs_width > 0L {
@@ -233,16 +233,16 @@ pub fn interpolate_points(
   v_stems : Array[FittedStem],
   scale : @fixed.Fixed,
 ) -> Unit {
-  for i, _pt in outline.points {
+  for i, _pt in outline.points() {
     // Interpolate X using vertical stems (vertical stems control X positions)
     if v_stems.length() > 0 {
-      let org_x = outline.points[i].x
-      outline.points[i].set_x(interpolate_coord(org_x, v_stems, scale))
+      let org_x = outline.points()[i].x()
+      outline.points()[i].set_x(interpolate_coord(org_x, v_stems, scale))
     }
     // Interpolate Y using horizontal stems (horizontal stems control Y positions)
     if h_stems.length() > 0 {
-      let org_y = outline.points[i].y
-      outline.points[i].set_y(interpolate_coord(org_y, h_stems, scale))
+      let org_y = outline.points()[i].y()
+      outline.points()[i].set_y(interpolate_coord(org_y, h_stems, scale))
     }
   }
 }
@@ -300,17 +300,19 @@ fn interpolate_coord(
   if found_below {
     // Point is above all stem edges: shift by the nearest stem's delta
     let delta = below_cur -
-      @fixed.mul_fix(scale, @fixed.Fixed::from_raw(below_org)).val
-    return @fixed.mul_fix(scale, @fixed.Fixed::from_raw(org_coord)).val + delta
+      @fixed.mul_fix(scale, @fixed.Fixed::from_raw(below_org)).val()
+    return @fixed.mul_fix(scale, @fixed.Fixed::from_raw(org_coord)).val() +
+      delta
   }
   if found_above {
     // Point is below all stem edges: shift by the nearest stem's delta
     let delta = above_cur -
-      @fixed.mul_fix(scale, @fixed.Fixed::from_raw(above_org)).val
-    return @fixed.mul_fix(scale, @fixed.Fixed::from_raw(org_coord)).val + delta
+      @fixed.mul_fix(scale, @fixed.Fixed::from_raw(above_org)).val()
+    return @fixed.mul_fix(scale, @fixed.Fixed::from_raw(org_coord)).val() +
+      delta
   }
   // No stems at all: just scale
-  @fixed.mul_fix(scale, @fixed.Fixed::from_raw(org_coord)).val
+  @fixed.mul_fix(scale, @fixed.Fixed::from_raw(org_coord)).val()
 }
 
 ///|
@@ -329,4 +331,39 @@ pub fn hint_outline(
   let v_fitted = fit_stems(v_hints, globals, scale, false)
   // Interpolate all outline points based on fitted stems
   interpolate_points(outline, h_fitted, v_fitted, scale)
+}
+
+///|
+pub fn PsGlobals::blue_values(self : PsGlobals) -> Array[BlueZone] {
+  self.blue_values
+}
+
+///|
+pub fn PsGlobals::other_blues(self : PsGlobals) -> Array[BlueZone] {
+  self.other_blues
+}
+
+///|
+pub fn PsGlobals::blue_scale(self : PsGlobals) -> @fixed.Fixed {
+  self.blue_scale
+}
+
+///|
+pub fn PsGlobals::blue_shift(self : PsGlobals) -> Int64 {
+  self.blue_shift
+}
+
+///|
+pub fn PsGlobals::blue_fuzz(self : PsGlobals) -> Int64 {
+  self.blue_fuzz
+}
+
+///|
+pub fn PsGlobals::std_hw(self : PsGlobals) -> Int64 {
+  self.std_hw
+}
+
+///|
+pub fn PsGlobals::std_vw(self : PsGlobals) -> Int64 {
+  self.std_vw
 }

@@ -1,6 +1,6 @@
 ///|
 /// TrueType bytecode interpreter execution context.
-pub struct InterpContext {
+struct InterpContext {
   // Operand stack
   mut stack : Array[Int64]
   mut sp : Int // stack pointer (index of next push position)
@@ -35,7 +35,7 @@ pub struct InterpContext {
 
 ///|
 /// Graphics state for the TrueType interpreter.
-pub struct GraphicsState {
+struct GraphicsState {
   mut rp0 : Int
   mut rp1 : Int
   mut rp2 : Int
@@ -93,7 +93,7 @@ pub fn GraphicsState::default() -> GraphicsState {
 
 ///|
 /// Function definition (from FDEF instruction).
-pub struct FuncDef {
+struct FuncDef {
   start : Int // start offset in code
   end_ : Int // end offset (ENDF position)
 } derive(Show)
@@ -244,7 +244,7 @@ fn InterpContext::get_zone_point(
 ) -> (Int64, Int64) {
   let points = if zone == 0 { self.zone0_cur } else { self.zone1_cur }
   if idx >= 0 && idx < points.length() {
-    (points[idx].x, points[idx].y)
+    (points[idx].x(), points[idx].y())
   } else {
     (0L, 0L)
   }
@@ -275,7 +275,7 @@ fn InterpContext::get_zone_org(
 ) -> (Int64, Int64) {
   let points = if zone == 0 { self.zone0_org } else { self.zone1_org }
   if idx >= 0 && idx < points.length() {
-    (points[idx].x, points[idx].y)
+    (points[idx].x(), points[idx].y())
   } else {
     (0L, 0L)
   }
@@ -310,10 +310,10 @@ fn InterpContext::move_point(
   let points = if zone == 0 { self.zone0_cur } else { self.zone1_cur }
   if idx >= 0 && idx < points.length() {
     points[idx].set_x(
-      points[idx].x + ((distance * self.gs.freedom_vector_x) >> 14),
+      points[idx].x() + ((distance * self.gs.freedom_vector_x) >> 14),
     )
     points[idx].set_y(
-      points[idx].y + ((distance * self.gs.freedom_vector_y) >> 14),
+      points[idx].y() + ((distance * self.gs.freedom_vector_y) >> 14),
     )
     // Mark point as touched
     let touch = if zone == 0 { self.zone0_tags } else { self.zone1_touch }
@@ -1300,22 +1300,22 @@ fn InterpContext::op_iup(self : InterpContext, flag : Int) -> Unit {
     if flag == 1 {
       // Interpolate x
       let org1_x = if t1 < self.zone1_org.length() {
-        self.zone1_org[t1].x
+        self.zone1_org[t1].x()
       } else {
         0L
       }
-      let cur1_x = self.zone1_cur[t1].x
+      let cur1_x = self.zone1_cur[t1].x()
       let org2_x = if t2 < self.zone1_org.length() {
-        self.zone1_org[t2].x
+        self.zone1_org[t2].x()
       } else {
         0L
       }
-      let cur2_x = self.zone1_cur[t2].x
+      let cur2_x = self.zone1_cur[t2].x()
       for i in range_start..<range_end {
         if i < self.zone1_touch.length() &&
           (self.zone1_touch[i].to_int() & touch_mask) == 0 {
           let org_x = if i < self.zone1_org.length() {
-            self.zone1_org[i].x
+            self.zone1_org[i].x()
           } else {
             0L
           }
@@ -1327,22 +1327,22 @@ fn InterpContext::op_iup(self : InterpContext, flag : Int) -> Unit {
     } else {
       // Interpolate y
       let org1_y = if t1 < self.zone1_org.length() {
-        self.zone1_org[t1].y
+        self.zone1_org[t1].y()
       } else {
         0L
       }
-      let cur1_y = self.zone1_cur[t1].y
+      let cur1_y = self.zone1_cur[t1].y()
       let org2_y = if t2 < self.zone1_org.length() {
-        self.zone1_org[t2].y
+        self.zone1_org[t2].y()
       } else {
         0L
       }
-      let cur2_y = self.zone1_cur[t2].y
+      let cur2_y = self.zone1_cur[t2].y()
       for i in range_start..<range_end {
         if i < self.zone1_touch.length() &&
           (self.zone1_touch[i].to_int() & touch_mask) == 0 {
           let org_y = if i < self.zone1_org.length() {
-            self.zone1_org[i].y
+            self.zone1_org[i].y()
           } else {
             0L
           }
@@ -1768,3 +1768,61 @@ fn InterpContext::op_fliprgoff(self : InterpContext) -> Unit {
     }
   }
 }
+
+///|
+pub fn InterpContext::cvt(self : InterpContext) -> Array[Int64] {
+  self.cvt
+}
+
+///|
+pub fn InterpContext::zone0_org(self : InterpContext) -> Array[@types.Vector] {
+  self.zone0_org
+}
+
+///|
+pub fn InterpContext::zone0_cur(self : InterpContext) -> Array[@types.Vector] {
+  self.zone0_cur
+}
+
+///|
+pub fn InterpContext::zone0_tags(self : InterpContext) -> Array[Byte] {
+  self.zone0_tags
+}
+
+///|
+pub fn InterpContext::zone0_points(
+  self : InterpContext,
+) -> Array[@types.Vector] {
+  self.zone0_points
+}
+
+///|
+pub fn InterpContext::zone1_org(self : InterpContext) -> Array[@types.Vector] {
+  self.zone1_org
+}
+
+///|
+pub fn InterpContext::zone1_cur(self : InterpContext) -> Array[@types.Vector] {
+  self.zone1_cur
+}
+
+///|
+pub fn InterpContext::zone1_points(
+  self : InterpContext,
+) -> Array[@types.Vector] {
+  self.zone1_points
+}
+
+///|
+pub fn InterpContext::zone1_tags(self : InterpContext) -> Array[Byte] {
+  self.zone1_tags
+}
+
+///|
+pub fn InterpContext::zone1_touch(self : InterpContext) -> Array[Byte] {
+  self.zone1_touch
+}
+
+///|
+
+///|

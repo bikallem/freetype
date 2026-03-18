@@ -199,27 +199,31 @@ pub let tag_wOFF : UInt
 // Errors
 
 // Types and methods
-pub struct BBox {
-  x_min : Int64
-  y_min : Int64
-  x_max : Int64
-  y_max : Int64
-}
+type BBox
 pub fn BBox::empty() -> Self
 pub fn BBox::new(Int64, Int64, Int64, Int64) -> Self
+pub fn BBox::x_max(Self) -> Int64
+pub fn BBox::x_min(Self) -> Int64
+pub fn BBox::y_max(Self) -> Int64
+pub fn BBox::y_min(Self) -> Int64
 pub impl Eq for BBox
 pub impl Show for BBox
 pub impl ToJson for BBox
 
-pub struct Bitmap {
-  mut rows : UInt
-  mut width : UInt
-  mut pitch : Int
-  mut buffer : Bytes
-  mut num_grays : UInt
-  mut pixel_mode : PixelMode
-}
+type Bitmap
+pub fn Bitmap::buffer(Self) -> Bytes
 pub fn Bitmap::new() -> Self
+pub fn Bitmap::num_grays(Self) -> UInt
+pub fn Bitmap::pitch(Self) -> Int
+pub fn Bitmap::pixel_mode(Self) -> PixelMode
+pub fn Bitmap::rows(Self) -> UInt
+pub fn Bitmap::set_buffer(Self, Bytes) -> Unit
+pub fn Bitmap::set_num_grays(Self, UInt) -> Unit
+pub fn Bitmap::set_pitch(Self, Int) -> Unit
+pub fn Bitmap::set_pixel_mode(Self, PixelMode) -> Unit
+pub fn Bitmap::set_rows(Self, UInt) -> Unit
+pub fn Bitmap::set_width(Self, UInt) -> Unit
+pub fn Bitmap::width(Self) -> UInt
 pub impl Eq for Bitmap
 pub impl Show for Bitmap
 
@@ -243,16 +247,11 @@ pub(all) enum GlyphFormat {
 pub impl Eq for GlyphFormat
 pub impl Show for GlyphFormat
 
-pub struct GlyphMetrics {
-  mut width : Int64
-  mut height : Int64
-  mut hori_bearing_x : Int64
-  mut hori_bearing_y : Int64
-  mut hori_advance : Int64
-  mut vert_bearing_x : Int64
-  mut vert_bearing_y : Int64
-  mut vert_advance : Int64
-}
+type GlyphMetrics
+pub fn GlyphMetrics::height(Self) -> Int64
+pub fn GlyphMetrics::hori_advance(Self) -> Int64
+pub fn GlyphMetrics::hori_bearing_x(Self) -> Int64
+pub fn GlyphMetrics::hori_bearing_y(Self) -> Int64
 pub fn GlyphMetrics::new() -> Self
 pub fn GlyphMetrics::set_height(Self, Int64) -> Unit
 pub fn GlyphMetrics::set_hori_advance(Self, Int64) -> Unit
@@ -262,21 +261,27 @@ pub fn GlyphMetrics::set_vert_advance(Self, Int64) -> Unit
 pub fn GlyphMetrics::set_vert_bearing_x(Self, Int64) -> Unit
 pub fn GlyphMetrics::set_vert_bearing_y(Self, Int64) -> Unit
 pub fn GlyphMetrics::set_width(Self, Int64) -> Unit
+pub fn GlyphMetrics::vert_advance(Self) -> Int64
+pub fn GlyphMetrics::vert_bearing_x(Self) -> Int64
+pub fn GlyphMetrics::vert_bearing_y(Self) -> Int64
+pub fn GlyphMetrics::width(Self) -> Int64
 pub impl Eq for GlyphMetrics
 pub impl Show for GlyphMetrics
 pub impl ToJson for GlyphMetrics
 
-pub struct Outline {
-  mut points : Array[Vector]
-  mut tags : Array[Byte]
-  mut contours : Array[UInt]
-  mut flags : Int
-}
+type Outline
+pub fn Outline::contours(Self) -> Array[UInt]
 pub fn Outline::create(Array[Vector], Array[Byte], Array[UInt], flags? : Int) -> Self
+pub fn Outline::flags(Self) -> Int
 pub fn Outline::n_contours(Self) -> Int
 pub fn Outline::n_points(Self) -> Int
 pub fn Outline::new() -> Self
+pub fn Outline::points(Self) -> Array[Vector]
+pub fn Outline::set_contours(Self, Array[UInt]) -> Unit
 pub fn Outline::set_flags(Self, Int) -> Unit
+pub fn Outline::set_points(Self, Array[Vector]) -> Unit
+pub fn Outline::set_tags(Self, Array[Byte]) -> Unit
+pub fn Outline::tags(Self) -> Array[Byte]
 pub impl Eq for Outline
 pub impl Show for Outline
 
@@ -293,16 +298,11 @@ pub(all) enum PixelMode {
 pub impl Eq for PixelMode
 pub impl Show for PixelMode
 
-pub struct SizeMetrics {
-  mut x_ppem : UInt
-  mut y_ppem : UInt
-  mut x_scale : @fixed.Fixed
-  mut y_scale : @fixed.Fixed
-  mut ascender : Int64
-  mut descender : Int64
-  mut height : Int64
-  mut max_advance : Int64
-}
+type SizeMetrics
+pub fn SizeMetrics::ascender(Self) -> Int64
+pub fn SizeMetrics::descender(Self) -> Int64
+pub fn SizeMetrics::height(Self) -> Int64
+pub fn SizeMetrics::max_advance(Self) -> Int64
 pub fn SizeMetrics::new(x_ppem? : UInt, y_ppem? : UInt, x_scale? : @fixed.Fixed, y_scale? : @fixed.Fixed, ascender? : Int64, descender? : Int64, height? : Int64, max_advance? : Int64) -> Self
 pub fn SizeMetrics::set_ascender(Self, Int64) -> Unit
 pub fn SizeMetrics::set_descender(Self, Int64) -> Unit
@@ -312,17 +312,20 @@ pub fn SizeMetrics::set_x_ppem(Self, UInt) -> Unit
 pub fn SizeMetrics::set_x_scale(Self, @fixed.Fixed) -> Unit
 pub fn SizeMetrics::set_y_ppem(Self, UInt) -> Unit
 pub fn SizeMetrics::set_y_scale(Self, @fixed.Fixed) -> Unit
+pub fn SizeMetrics::x_ppem(Self) -> UInt
+pub fn SizeMetrics::x_scale(Self) -> @fixed.Fixed
+pub fn SizeMetrics::y_ppem(Self) -> UInt
+pub fn SizeMetrics::y_scale(Self) -> @fixed.Fixed
 pub impl Eq for SizeMetrics
 pub impl Show for SizeMetrics
 
-pub struct Vector {
-  mut x : Int64
-  mut y : Int64
-}
+type Vector
 pub fn Vector::new(Int64, Int64) -> Self
 pub fn Vector::set(Self, Int64, Int64) -> Unit
 pub fn Vector::set_x(Self, Int64) -> Unit
 pub fn Vector::set_y(Self, Int64) -> Unit
+pub fn Vector::x(Self) -> Int64
+pub fn Vector::y(Self) -> Int64
 pub impl Eq for Vector
 pub impl Show for Vector
 pub impl ToJson for Vector

@@ -40,7 +40,7 @@ let pcf_byte_mask : UInt = 1U << 2
 
 ///|
 /// An entry in the PCF table of contents.
-pub struct PcfTableEntry {
+struct PcfTableEntry {
   table_type : UInt // one of the PCF_* constants
   format : UInt // format flags (byte order, etc.)
   size : UInt // table size in bytes
@@ -49,7 +49,7 @@ pub struct PcfTableEntry {
 
 ///|
 /// A PCF property (key-value pair from the properties table).
-pub struct PcfProperty {
+struct PcfProperty {
   name : String
   is_string : Bool
   string_value : String
@@ -58,7 +58,7 @@ pub struct PcfProperty {
 
 ///|
 /// PCF per-glyph metrics.
-pub struct PcfMetric {
+struct PcfMetric {
   left_bearing : Int
   right_bearing : Int
   width : Int
@@ -68,7 +68,7 @@ pub struct PcfMetric {
 
 ///|
 /// PCF encoding entry: maps character code to glyph index.
-pub struct PcfEncodings {
+struct PcfEncodings {
   min_char_or_byte2 : Int
   max_char_or_byte2 : Int
   min_byte1 : Int
@@ -79,7 +79,7 @@ pub struct PcfEncodings {
 
 ///|
 /// PCF font representation.
-pub struct PcfFont {
+struct PcfFont {
   mut tables : Array[PcfTableEntry]
   mut font_name : String
   mut num_glyphs : Int

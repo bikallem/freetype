@@ -4,7 +4,7 @@
 
 ///|
 /// Type 1 font representation.
-pub struct Type1Font {
+struct Type1Font {
   mut font_name : String
   mut units_per_em : Int // default 1000 for Type 1
   mut encoding : Array[String] // glyph name per encoding slot (256 entries)
@@ -646,3 +646,69 @@ pub fn load_type1_glyph(
   )
   outline
 }
+
+///|
+pub fn Type1Font::font_name(self : Type1Font) -> String {
+  self.font_name
+}
+
+///|
+pub fn Type1Font::font_bbox(self : Type1Font) -> Array[Int] {
+  self.font_bbox
+}
+
+///|
+
+///|
+pub fn Type1Font::charstrings(self : Type1Font) -> Map[String, Bytes] {
+  self.charstrings
+}
+
+///|
+pub fn Type1Font::encoding(self : Type1Font) -> Array[String] {
+  self.encoding
+}
+
+///|
+pub fn Type1Font::subrs(self : Type1Font) -> Array[Bytes] {
+  self.subrs
+}
+
+///|
+pub fn Type1Font::units_per_em(self : Type1Font) -> Int {
+  self.units_per_em
+}
+
+///|
+pub fn Type1Font::len_iv(self : Type1Font) -> Int {
+  self.len_iv
+}
+
+///|
+pub fn Type1Font::paint_type(self : Type1Font) -> Int {
+  self.paint_type
+}
+
+///|
+pub fn Type1Font::std_hw(self : Type1Font) -> Int {
+  self.std_hw
+}
+
+///|
+pub fn Type1Font::std_vw(self : Type1Font) -> Int {
+  self.std_vw
+}
+
+///|
+pub fn Type1Font::blue_values(self : Type1Font) -> Array[Int] {
+  self.blue_values
+}
+
+///|
+pub fn Type1Font::other_blues(self : Type1Font) -> Array[Int] {
+  self.other_blues
+}
+
+///|
+
+///|

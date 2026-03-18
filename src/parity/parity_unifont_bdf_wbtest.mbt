@@ -23,12 +23,12 @@ test "parity/unifont.bdf: loads" {
 test "parity/unifont.bdf: metadata" {
   let f = @freetype.from_bytes(load_unifont_bdf())
   inspect(
-    f.family_name,
+    f.family_name(),
     content=(
       #|-gnu-Unifont-Medium-R-Normal-Sans-16-160-75-75-c-80-iso10646-1
     ),
   )
-  inspect(f.num_glyphs, content="57087")
+  inspect(f.num_glyphs(), content="57087")
 }
 
 ///|
@@ -44,14 +44,14 @@ test "parity/unifont.bdf: flags" {
 test "parity/unifont.bdf: charmaps" {
   let f = @freetype.from_bytes(load_unifont_bdf())
   inspect(
-    f.charmaps.length(),
+    f.charmaps().length(),
     content=(
       #|0
     ),
   )
-  if f.charmaps.length() > 0 {
-    inspect(f.charmaps[0].platform_id, content="3")
-    inspect(f.charmaps[0].encoding_id, content="1")
+  if f.charmaps().length() > 0 {
+    inspect(f.charmaps()[0].platform_id(), content="3")
+    inspect(f.charmaps()[0].encoding_id(), content="1")
   }
 }
 

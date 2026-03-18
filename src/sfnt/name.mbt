@@ -1,6 +1,6 @@
 ///|
 /// A single name record from the 'name' table.
-pub struct NameRecord {
+struct NameRecord {
   platform_id : UInt
   encoding_id : UInt
   language_id : UInt
@@ -23,7 +23,7 @@ pub fn NameRecord::new(
 
 ///|
 /// Parsed 'name' table.
-pub struct NameTable {
+struct NameTable {
   format : UInt
   count : UInt
   string_offset : UInt // offset from start of table to string storage

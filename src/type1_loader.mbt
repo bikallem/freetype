@@ -3,31 +3,33 @@
 fn load_type1_pfb(data : Bytes) -> @base.FaceRec raise @error.FTError {
   let font = @type1.parse_type1_pfb(data)
   let face = @base.FaceRec::new()
-  face.set_family_name(font.font_name)
+  face.set_family_name(font.font_name())
   face.set_face_flags(
     @base.face_flag_scalable |
     @base.face_flag_horizontal |
     @base.face_flag_glyph_names,
   )
-  face.set_num_glyphs(font.charstrings.length().to_int64())
-  face.set_units_per_em(font.units_per_em.reinterpret_as_uint())
-  if font.font_bbox.length() == 4 {
+  face.set_num_glyphs(font.charstrings().length().to_int64())
+  face.set_units_per_em(font.units_per_em().reinterpret_as_uint())
+  if font.font_bbox().length() == 4 {
     face.set_bbox(
       @types.BBox::new(
-        font.font_bbox[0].to_int64(),
-        font.font_bbox[1].to_int64(),
-        font.font_bbox[2].to_int64(),
-        font.font_bbox[3].to_int64(),
+        font.font_bbox()[0].to_int64(),
+        font.font_bbox()[1].to_int64(),
+        font.font_bbox()[2].to_int64(),
+        font.font_bbox()[3].to_int64(),
       ),
     )
   }
   // Build charmap from encoding
-  face.charmaps.push(@base.CharMapRec::new(@base.Encoding::AdobeCustom, 7U, 2U))
-  if face.charmaps.length() > 0 {
+  face
+  .charmaps()
+  .push(@base.CharMapRec::new(@base.Encoding::AdobeCustom, 7U, 2U))
+  if face.charmaps().length() > 0 {
     face.set_active_charmap(0)
   }
   // Build glyph name list for index lookup
-  let glyph_names : Array[String] = font.charstrings.keys().collect()
+  let glyph_names : Array[String] = font.charstrings().keys().collect()
   // Build O(1) name-to-index map
   let name_to_index : Map[String, UInt] = {}
   for i, name in glyph_names {
@@ -38,7 +40,7 @@ fn load_type1_pfb(data : Bytes) -> @base.FaceRec raise @error.FTError {
     if charcode >= 256U {
       return 0U
     }
-    let glyph_name = font.encoding[charcode.reinterpret_as_int()]
+    let glyph_name = font.encoding()[charcode.reinterpret_as_int()]
     if glyph_name == ".notdef" {
       return 0U
     }
@@ -59,10 +61,10 @@ fn load_type1_pfb(data : Bytes) -> @base.FaceRec raise @error.FTError {
     let outline = @type1.load_type1_glyph(font, name)
     let bb = @base.outline_get_bbox(outline)
     let slot_data = @base.GlyphSlotData::new(
-      bb.x_max - bb.x_min,
-      bb.y_max - bb.y_min,
-      bb.x_min,
-      bb.y_max,
+      bb.x_max() - bb.x_min(),
+      bb.y_max() - bb.y_min(),
+      bb.x_min(),
+      bb.y_max(),
       0L,
     )
     (slot_data, outline)

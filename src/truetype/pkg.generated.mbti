@@ -54,91 +54,29 @@ pub let we_have_instructions : UInt
 // Errors
 
 // Types and methods
-pub struct AvarSegment {
-  from_coord : Int
-  to_coord : Int
-}
+type AvarSegment
 pub impl Show for AvarSegment
 
-pub struct AvarTable {
-  axis_maps : Array[Array[AvarSegment]]
-}
+type AvarTable
 pub impl Show for AvarTable
 
-pub struct CompositeComponent {
-  flags : UInt
-  glyph_index : UInt
-  arg1 : Int
-  arg2 : Int
-  xx : @fixed.Fixed
-  xy : @fixed.Fixed
-  yx : @fixed.Fixed
-  yy : @fixed.Fixed
-}
+type CompositeComponent
 pub impl Show for CompositeComponent
 
-pub struct FuncDef {
-  start : Int
-  end_ : Int
-}
+type FuncDef
 pub impl Show for FuncDef
 
-pub struct FvarTable {
-  axes : Array[VarAxis]
-  instances : Array[NamedInstance]
-}
+type FvarTable
+pub fn FvarTable::axes(Self) -> Array[VarAxis]
+pub fn FvarTable::instances(Self) -> Array[NamedInstance]
 pub impl Show for FvarTable
 
-pub struct GraphicsState {
-  mut rp0 : Int
-  mut rp1 : Int
-  mut rp2 : Int
-  mut freedom_vector_x : Int64
-  mut freedom_vector_y : Int64
-  mut projection_vector_x : Int64
-  mut projection_vector_y : Int64
-  mut dual_projection_x : Int64
-  mut dual_projection_y : Int64
-  mut round_state : Int
-  mut minimum_distance : Int64
-  mut control_value_cut_in : Int64
-  mut single_width_cut_in : Int64
-  mut single_width_value : Int64
-  mut auto_flip : Bool
-  delta_base : Int
-  delta_shift : Int
-  instruct_control : Int
-  scan_control : Bool
-  scan_type : Int
-  mut zp0 : Int
-  mut zp1 : Int
-  mut zp2 : Int
-}
+type GraphicsState
 pub fn GraphicsState::default() -> Self
 pub impl Show for GraphicsState
 
-pub struct InterpContext {
-  mut stack : Array[Int64]
-  mut sp : Int
-  mut code : Bytes
-  mut ip : Int
-  mut cvt : Array[Int64]
-  mut storage : Array[Int64]
-  mut gs : GraphicsState
-  mut func_defs : Map[Int, FuncDef]
-  mut loop_count : Int
-  mut zone0_org : Array[@types.Vector]
-  mut zone0_cur : Array[@types.Vector]
-  mut zone0_tags : Array[Byte]
-  mut zone0_points : Array[@types.Vector]
-  mut zone1_org : Array[@types.Vector]
-  mut zone1_cur : Array[@types.Vector]
-  mut zone1_points : Array[@types.Vector]
-  mut zone1_tags : Array[Byte]
-  mut zone1_touch : Array[Byte]
-  mut ppem : Int
-  mut error : Bool
-}
+type InterpContext
+pub fn InterpContext::cvt(Self) -> Array[Int64]
 pub fn InterpContext::execute(Self, Bytes) -> Unit raise @error.FTError
 pub fn InterpContext::new(cvt? : Array[Int64], storage_size? : Int, max_stack? : Int) -> Self
 pub fn InterpContext::set_gs(Self, GraphicsState) -> Unit
@@ -152,32 +90,36 @@ pub fn InterpContext::set_zone1_org(Self, Array[@types.Vector]) -> Unit
 pub fn InterpContext::set_zone1_points(Self, Array[@types.Vector]) -> Unit
 pub fn InterpContext::set_zone1_tags(Self, Array[Byte]) -> Unit
 pub fn InterpContext::set_zone1_touch(Self, Array[Byte]) -> Unit
+pub fn InterpContext::zone0_cur(Self) -> Array[@types.Vector]
+pub fn InterpContext::zone0_org(Self) -> Array[@types.Vector]
+pub fn InterpContext::zone0_points(Self) -> Array[@types.Vector]
+pub fn InterpContext::zone0_tags(Self) -> Array[Byte]
+pub fn InterpContext::zone1_cur(Self) -> Array[@types.Vector]
+pub fn InterpContext::zone1_org(Self) -> Array[@types.Vector]
+pub fn InterpContext::zone1_points(Self) -> Array[@types.Vector]
+pub fn InterpContext::zone1_tags(Self) -> Array[Byte]
+pub fn InterpContext::zone1_touch(Self) -> Array[Byte]
 pub impl Show for InterpContext
 
-pub struct NamedInstance {
-  name_id : UInt
-  coordinates : Array[@fixed.Fixed]
-}
+type NamedInstance
 pub impl Show for NamedInstance
 
-pub struct TtFaceData {
-  sfnt : @sfnt.SfntData
-  glyph_offsets : Array[UInt]
-  glyf_offset : UInt
-  glyf_length : UInt
-  fpgm : Bytes
-  prep : Bytes
-  cvt : Array[Int64]
-}
+type TtFaceData
+pub fn TtFaceData::cvt(Self) -> Array[Int64]
+pub fn TtFaceData::fpgm(Self) -> Bytes
+pub fn TtFaceData::glyf_length(Self) -> UInt
+pub fn TtFaceData::glyf_offset(Self) -> UInt
+pub fn TtFaceData::glyph_offsets(Self) -> Array[UInt]
+pub fn TtFaceData::prep(Self) -> Bytes
+pub fn TtFaceData::sfnt(Self) -> @sfnt.SfntData
 pub impl Show for TtFaceData
 
-pub struct VarAxis {
-  tag : UInt
-  min_value : @fixed.Fixed
-  default_value : @fixed.Fixed
-  max_value : @fixed.Fixed
-  name_id : UInt
-}
+type VarAxis
+pub fn VarAxis::default_value(Self) -> @fixed.Fixed
+pub fn VarAxis::max_value(Self) -> @fixed.Fixed
+pub fn VarAxis::min_value(Self) -> @fixed.Fixed
+pub fn VarAxis::name_id(Self) -> UInt
+pub fn VarAxis::tag(Self) -> UInt
 pub impl Show for VarAxis
 
 // Type aliases

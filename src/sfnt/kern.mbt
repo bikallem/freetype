@@ -1,6 +1,6 @@
 ///|
 /// A single kerning pair.
-pub struct KernPair {
+struct KernPair {
   left : UInt // left glyph index
   right : UInt // right glyph index
   value : Int // kerning value in FUnits
@@ -13,7 +13,7 @@ pub fn KernPair::new(left~ : UInt, right~ : UInt, value~ : Int) -> KernPair {
 
 ///|
 /// Parsed kern table (format 0 subtables only).
-pub struct KernTable {
+struct KernTable {
   pairs : Array[KernPair]
 } derive(Show)
 

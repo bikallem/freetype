@@ -1,6 +1,6 @@
 ///|
 /// Cache entry combining a key with a value and access time for LRU eviction.
-pub struct CacheEntry[V] {
+struct CacheEntry[V] {
   key : UInt64
   value : V
   mut access_time : Int
@@ -8,7 +8,7 @@ pub struct CacheEntry[V] {
 
 ///|
 /// Cached glyph data: outline, metrics, and advance width.
-pub struct CachedGlyph {
+struct CachedGlyph {
   outline : @types.Outline
   metrics : @types.GlyphMetrics
   advance_width : Int64
@@ -25,7 +25,7 @@ pub fn CachedGlyph::new(
 
 ///|
 /// LRU glyph cache mapping (face_id, glyph_index) -> CachedGlyph.
-pub struct GlyphCache {
+struct GlyphCache {
   entries : Map[UInt64, CacheEntry[CachedGlyph]]
   max_entries : Int
   mut current_time : Int
@@ -33,7 +33,7 @@ pub struct GlyphCache {
 
 ///|
 /// Character map cache mapping (face_id, charcode) -> glyph_index.
-pub struct CmapCache {
+struct CmapCache {
   entries : Map[UInt64, UInt]
   max_entries : Int
 } derive(Show)

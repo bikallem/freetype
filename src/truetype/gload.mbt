@@ -115,7 +115,7 @@ pub fn load_simple_glyph(
 
 ///|
 /// A composite glyph component parsed from 'glyf'.
-pub struct CompositeComponent {
+struct CompositeComponent {
   flags : UInt
   glyph_index : UInt
   arg1 : Int // x offset or point index
@@ -236,9 +236,9 @@ pub fn load_tt_glyph(
         (comp.flags & we_have_an_x_and_y_scale) != 0U ||
         (comp.flags & we_have_a_two_by_two) != 0U
       // Add points to loader
-      for j, point in sub_outline.points {
-        let mut px = point.x
-        let mut py = point.y
+      for j, point in sub_outline.points() {
+        let mut px = point.x()
+        let mut py = point.y()
         if has_transform {
           let matrix = @fixed.Matrix::new(comp.xx, comp.xy, comp.yx, comp.yy)
           let (rx, ry) = matrix.transform(px, py)
@@ -250,10 +250,10 @@ pub fn load_tt_glyph(
           px += comp.arg1.to_int64()
           py += comp.arg2.to_int64()
         }
-        loader.add_point(px, py, sub_outline.tags[j])
+        loader.add_point(px, py, sub_outline.tags()[j])
       }
       // Add contour end points
-      for _ in sub_outline.contours {
+      for _ in sub_outline.contours() {
         loader.end_contour()
       }
       loader.add()

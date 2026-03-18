@@ -1,6 +1,6 @@
 ///|
 /// SFNT face data — all parsed tables for an SFNT-based font.
-pub struct SfntData {
+struct SfntData {
   table_dir : TableDirectory
   head : HeadTable
   hhea : HheaTable
@@ -14,6 +14,61 @@ pub struct SfntData {
   // Raw table data access for driver-specific tables
   raw_data : Bytes
 } derive(Show)
+
+///|
+pub fn SfntData::table_dir(self : SfntData) -> TableDirectory {
+  self.table_dir
+}
+
+///|
+pub fn SfntData::head(self : SfntData) -> HeadTable {
+  self.head
+}
+
+///|
+pub fn SfntData::hhea(self : SfntData) -> HheaTable {
+  self.hhea
+}
+
+///|
+pub fn SfntData::maxp(self : SfntData) -> MaxpTable {
+  self.maxp
+}
+
+///|
+pub fn SfntData::hmtx(self : SfntData) -> HmtxTable {
+  self.hmtx
+}
+
+///|
+pub fn SfntData::name(self : SfntData) -> NameTable? {
+  self.name
+}
+
+///|
+pub fn SfntData::os2(self : SfntData) -> Os2Table? {
+  self.os2
+}
+
+///|
+pub fn SfntData::post(self : SfntData) -> PostTable? {
+  self.post
+}
+
+///|
+pub fn SfntData::cmap(self : SfntData) -> CmapTable? {
+  self.cmap
+}
+
+///|
+pub fn SfntData::kern(self : SfntData) -> KernTable? {
+  self.kern
+}
+
+///|
+pub fn SfntData::raw_data(self : SfntData) -> Bytes {
+  self.raw_data
+}
 
 ///|
 /// Load an SFNT face from in-memory font data.
@@ -137,20 +192,20 @@ pub fn load_sfnt_face(
   if table_dir.find_table(@types.tag_glyf) is Some(_) ||
     table_dir.find_table(@types.tag_CFF) is Some(_) ||
     table_dir.find_table(@types.tag_CFF2) is Some(_) {
-    face.set_face_flags(face.face_flags | @base.face_flag_scalable)
+    face.set_face_flags(face.face_flags() | @base.face_flag_scalable)
   }
   if kern is Some(_) {
-    face.set_face_flags(face.face_flags | @base.face_flag_kerning)
+    face.set_face_flags(face.face_flags() | @base.face_flag_kerning)
   }
   if post is Some(p) && p.format == 0x00020000U {
-    face.set_face_flags(face.face_flags | @base.face_flag_glyph_names)
+    face.set_face_flags(face.face_flags() | @base.face_flag_glyph_names)
   }
   // Style flags from head.mac_style
   if (head.mac_style & 1U) != 0U {
-    face.set_style_flags(face.style_flags | @base.style_flag_bold)
+    face.set_style_flags(face.style_flags() | @base.style_flag_bold)
   }
   if (head.mac_style & 2U) != 0U {
-    face.set_style_flags(face.style_flags | @base.style_flag_italic)
+    face.set_style_flags(face.style_flags() | @base.style_flag_italic)
   }
   // Underline
   if post is Some(p) {
@@ -172,11 +227,11 @@ pub fn load_sfnt_face(
   if cmap_table is Some(ct) {
     for _, sub in ct.subtables {
       let encoding = select_encoding(sub.platform_id, sub.encoding_id)
-      face.charmaps.push(
-        @base.CharMapRec::new(encoding, sub.platform_id, sub.encoding_id),
-      )
+      face
+      .charmaps()
+      .push(@base.CharMapRec::new(encoding, sub.platform_id, sub.encoding_id))
     }
-    if face.charmaps.length() > 0 {
+    if face.charmaps().length() > 0 {
       face.set_active_charmap(0)
     }
   }

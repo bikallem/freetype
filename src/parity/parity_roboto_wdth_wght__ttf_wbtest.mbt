@@ -26,28 +26,28 @@ test "parity/Roboto[wdth,wght].ttf: loads" {
 ///|
 test "parity/Roboto[wdth,wght].ttf: metadata" {
   let f = @freetype.from_bytes(load_roboto_wdth_wght__ttf())
-  inspect(f.family_name, content="Roboto")
-  inspect(f.num_glyphs, content="1326")
-  inspect(f.units_per_em, content="2048")
-  inspect(f.ascender, content="1900")
-  inspect(f.descender, content="-500")
-  inspect(f.height, content="2400")
+  inspect(f.family_name(), content="Roboto")
+  inspect(f.num_glyphs(), content="1326")
+  inspect(f.units_per_em(), content="2048")
+  inspect(f.ascender(), content="1900")
+  inspect(f.descender(), content="-500")
+  inspect(f.height(), content="2400")
   inspect(
-    f.underline_position,
+    f.underline_position(),
     content=(
       #|-150
     ),
   )
-  inspect(f.underline_thickness, content="100")
+  inspect(f.underline_thickness(), content="100")
 }
 
 ///|
 test "parity/Roboto[wdth,wght].ttf: bbox" {
   let f = @freetype.from_bytes(load_roboto_wdth_wght__ttf())
-  inspect(f.bbox.x_min, content="-1510")
-  inspect(f.bbox.y_min, content="-555")
-  inspect(f.bbox.x_max, content="2353")
-  inspect(f.bbox.y_max, content="2163")
+  inspect(f.bbox().x_min(), content="-1510")
+  inspect(f.bbox().y_min(), content="-555")
+  inspect(f.bbox().x_max(), content="2353")
+  inspect(f.bbox().y_max(), content="2163")
 }
 
 ///|
@@ -62,14 +62,14 @@ test "parity/Roboto[wdth,wght].ttf: flags" {
 ///|
 test "parity/Roboto[wdth,wght].ttf: charmaps" {
   let f = @freetype.from_bytes(load_roboto_wdth_wght__ttf())
-  inspect(f.charmaps.length(), content="2")
-  if f.charmaps.length() > 0 {
-    inspect(f.charmaps[0].platform_id, content="0")
-    inspect(f.charmaps[0].encoding_id, content="3")
+  inspect(f.charmaps().length(), content="2")
+  if f.charmaps().length() > 0 {
+    inspect(f.charmaps()[0].platform_id(), content="0")
+    inspect(f.charmaps()[0].encoding_id(), content="3")
   }
-  if f.charmaps.length() > 1 {
-    inspect(f.charmaps[1].platform_id, content="3")
-    inspect(f.charmaps[1].encoding_id, content="1")
+  if f.charmaps().length() > 1 {
+    inspect(f.charmaps()[1].platform_id(), content="3")
+    inspect(f.charmaps()[1].encoding_id(), content="1")
   }
 }
 
@@ -133,25 +133,25 @@ test "parity/Roboto[wdth,wght].ttf: glyph 5 outline NO_SCALE" {
   let f = @freetype.from_bytes(load_roboto_wdth_wght__ttf())
   let r = try? @freetype.load_glyph(f, 5U, load_flags=@base.load_no_scale)
   guard r is Ok(_) else { return }
-  inspect(f.glyph.outline.n_points(), content="16")
-  inspect(f.glyph.outline.n_contours(), content="2")
-  inspect(f.glyph.outline.points[0].x, content="361")
-  inspect(f.glyph.outline.points[0].y, content="1456")
-  inspect(f.glyph.outline.points[1].x, content="348")
-  inspect(f.glyph.outline.points[1].y, content="411")
-  inspect(f.glyph.outline.points[2].x, content="181")
-  inspect(f.glyph.outline.points[2].y, content="411")
-  inspect(f.glyph.outline.points[3].x, content="167")
-  inspect(f.glyph.outline.points[3].y, content="1456")
-  inspect(f.glyph.outline.points[4].x, content="161")
-  inspect(f.glyph.outline.points[4].y, content="93")
-  inspect(f.glyph.outline.points[5].x, content="161")
-  inspect(f.glyph.outline.points[5].y, content="138")
-  inspect(f.glyph.outline.points[6].x, content="216")
-  inspect(f.glyph.outline.points[6].y, content="200")
-  inspect(f.glyph.outline.points[7].x, content="270")
-  inspect(f.glyph.outline.points[7].y, content="200")
-  inspect(f.glyph.metrics.hori_advance, content="528")
+  inspect(f.glyph().outline().n_points(), content="16")
+  inspect(f.glyph().outline().n_contours(), content="2")
+  inspect(f.glyph().outline().points()[0].x(), content="361")
+  inspect(f.glyph().outline().points()[0].y(), content="1456")
+  inspect(f.glyph().outline().points()[1].x(), content="348")
+  inspect(f.glyph().outline().points()[1].y(), content="411")
+  inspect(f.glyph().outline().points()[2].x(), content="181")
+  inspect(f.glyph().outline().points()[2].y(), content="411")
+  inspect(f.glyph().outline().points()[3].x(), content="167")
+  inspect(f.glyph().outline().points()[3].y(), content="1456")
+  inspect(f.glyph().outline().points()[4].x(), content="161")
+  inspect(f.glyph().outline().points()[4].y(), content="93")
+  inspect(f.glyph().outline().points()[5].x(), content="161")
+  inspect(f.glyph().outline().points()[5].y(), content="138")
+  inspect(f.glyph().outline().points()[6].x(), content="216")
+  inspect(f.glyph().outline().points()[6].y(), content="200")
+  inspect(f.glyph().outline().points()[7].x(), content="270")
+  inspect(f.glyph().outline().points()[7].y(), content="200")
+  inspect(f.glyph().metrics().hori_advance(), content="528")
 }
 
 ///|
@@ -159,25 +159,25 @@ test "parity/Roboto[wdth,wght].ttf: glyph 6 outline NO_SCALE" {
   let f = @freetype.from_bytes(load_roboto_wdth_wght__ttf())
   let r = try? @freetype.load_glyph(f, 6U, load_flags=@base.load_no_scale)
   guard r is Ok(_) else { return }
-  inspect(f.glyph.outline.n_points(), content="12")
-  inspect(f.glyph.outline.n_contours(), content="2")
-  inspect(f.glyph.outline.points[0].x, content="278")
-  inspect(f.glyph.outline.points[0].y, content="1536")
-  inspect(f.glyph.outline.points[1].x, content="278")
-  inspect(f.glyph.outline.points[1].y, content="1400")
-  inspect(f.glyph.outline.points[2].x, content="248")
-  inspect(f.glyph.outline.points[2].y, content="1043")
-  inspect(f.glyph.outline.points[3].x, content="137")
-  inspect(f.glyph.outline.points[3].y, content="1043")
-  inspect(f.glyph.outline.points[4].x, content="137")
-  inspect(f.glyph.outline.points[4].y, content="1391")
-  inspect(f.glyph.outline.points[5].x, content="137")
-  inspect(f.glyph.outline.points[5].y, content="1536")
-  inspect(f.glyph.outline.points[6].x, content="548")
-  inspect(f.glyph.outline.points[6].y, content="1536")
-  inspect(f.glyph.outline.points[7].x, content="548")
-  inspect(f.glyph.outline.points[7].y, content="1400")
-  inspect(f.glyph.metrics.hori_advance, content="656")
+  inspect(f.glyph().outline().n_points(), content="12")
+  inspect(f.glyph().outline().n_contours(), content="2")
+  inspect(f.glyph().outline().points()[0].x(), content="278")
+  inspect(f.glyph().outline().points()[0].y(), content="1536")
+  inspect(f.glyph().outline().points()[1].x(), content="278")
+  inspect(f.glyph().outline().points()[1].y(), content="1400")
+  inspect(f.glyph().outline().points()[2].x(), content="248")
+  inspect(f.glyph().outline().points()[2].y(), content="1043")
+  inspect(f.glyph().outline().points()[3].x(), content="137")
+  inspect(f.glyph().outline().points()[3].y(), content="1043")
+  inspect(f.glyph().outline().points()[4].x(), content="137")
+  inspect(f.glyph().outline().points()[4].y(), content="1391")
+  inspect(f.glyph().outline().points()[5].x(), content="137")
+  inspect(f.glyph().outline().points()[5].y(), content="1536")
+  inspect(f.glyph().outline().points()[6].x(), content="548")
+  inspect(f.glyph().outline().points()[6].y(), content="1536")
+  inspect(f.glyph().outline().points()[7].x(), content="548")
+  inspect(f.glyph().outline().points()[7].y(), content="1400")
+  inspect(f.glyph().metrics().hori_advance(), content="656")
 }
 
 ///|
@@ -185,25 +185,25 @@ test "parity/Roboto[wdth,wght].ttf: glyph 7 outline NO_SCALE" {
   let f = @freetype.from_bytes(load_roboto_wdth_wght__ttf())
   let r = try? @freetype.load_glyph(f, 7U, load_flags=@base.load_no_scale)
   guard r is Ok(_) else { return }
-  inspect(f.glyph.outline.n_points(), content="16")
-  inspect(f.glyph.outline.n_contours(), content="4")
-  inspect(f.glyph.outline.points[0].x, content="279")
-  inspect(f.glyph.outline.points[0].y, content="0")
-  inspect(f.glyph.outline.points[1].x, content="562")
-  inspect(f.glyph.outline.points[1].y, content="1456")
-  inspect(f.glyph.outline.points[2].x, content="706")
-  inspect(f.glyph.outline.points[2].y, content="1456")
-  inspect(f.glyph.outline.points[3].x, content="422")
-  inspect(f.glyph.outline.points[3].y, content="0")
-  inspect(f.glyph.outline.points[4].x, content="686")
-  inspect(f.glyph.outline.points[4].y, content="0")
-  inspect(f.glyph.outline.points[5].x, content="970")
-  inspect(f.glyph.outline.points[5].y, content="1456")
-  inspect(f.glyph.outline.points[6].x, content="1113")
-  inspect(f.glyph.outline.points[6].y, content="1456")
-  inspect(f.glyph.outline.points[7].x, content="829")
-  inspect(f.glyph.outline.points[7].y, content="0")
-  inspect(f.glyph.metrics.hori_advance, content="1261")
+  inspect(f.glyph().outline().n_points(), content="16")
+  inspect(f.glyph().outline().n_contours(), content="4")
+  inspect(f.glyph().outline().points()[0].x(), content="279")
+  inspect(f.glyph().outline().points()[0].y(), content="0")
+  inspect(f.glyph().outline().points()[1].x(), content="562")
+  inspect(f.glyph().outline().points()[1].y(), content="1456")
+  inspect(f.glyph().outline().points()[2].x(), content="706")
+  inspect(f.glyph().outline().points()[2].y(), content="1456")
+  inspect(f.glyph().outline().points()[3].x(), content="422")
+  inspect(f.glyph().outline().points()[3].y(), content="0")
+  inspect(f.glyph().outline().points()[4].x(), content="686")
+  inspect(f.glyph().outline().points()[4].y(), content="0")
+  inspect(f.glyph().outline().points()[5].x(), content="970")
+  inspect(f.glyph().outline().points()[5].y(), content="1456")
+  inspect(f.glyph().outline().points()[6].x(), content="1113")
+  inspect(f.glyph().outline().points()[6].y(), content="1456")
+  inspect(f.glyph().outline().points()[7].x(), content="829")
+  inspect(f.glyph().outline().points()[7].y(), content="0")
+  inspect(f.glyph().metrics().hori_advance(), content="1261")
 }
 
 ///|
@@ -214,7 +214,7 @@ test "parity/Roboto[wdth,wght].ttf: glyph metrics at 16ppem" {
   let r2 = try? @freetype.load_glyph(f, 5U)
   guard r2 is Ok(_) else { return }
   inspect(
-    f.glyph.metrics.hori_advance,
+    f.glyph().metrics().hori_advance(),
     content=(
       #|264
     ),
@@ -228,21 +228,21 @@ test "parity/Roboto[wdth,wght].ttf: hinted outline DEFAULT 16ppem" {
   guard r1 is Ok(_) else { return }
   let r2 = try? @freetype.load_glyph(f, 5U)
   guard r2 is Ok(_) else { return }
-  inspect(f.glyph.outline.n_points(), content="16")
+  inspect(f.glyph().outline().n_points(), content="16")
   inspect(
-    f.glyph.metrics.width,
+    f.glyph().metrics().width(),
     content=(
       #|110
     ),
   )
   inspect(
-    f.glyph.metrics.height,
+    f.glyph().metrics().height(),
     content=(
       #|734
     ),
   )
   inspect(
-    f.glyph.metrics.hori_advance,
+    f.glyph().metrics().hori_advance(),
     content=(
       #|264
     ),
@@ -256,7 +256,7 @@ test "parity/Roboto[wdth,wght].ttf: outline NO_HINTING 16ppem" {
   guard r1 is Ok(_) else { return }
   let r2 = try? @freetype.load_glyph(f, 5U, load_flags=@base.load_no_hinting)
   guard r2 is Ok(_) else { return }
-  inspect(f.glyph.metrics.hori_advance, content="264")
+  inspect(f.glyph().metrics().hori_advance(), content="264")
 }
 
 ///|
@@ -271,7 +271,7 @@ test "parity/Roboto[wdth,wght].ttf: outline FORCE_AUTOHINT 16ppem" {
   )
   guard r2 is Ok(_) else { return }
   inspect(
-    f.glyph.metrics.hori_advance,
+    f.glyph().metrics().hori_advance(),
     content=(
       #|264
     ),
