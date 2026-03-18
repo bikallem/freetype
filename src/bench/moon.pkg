@@ -1,7 +1,8 @@
 import {
+  "bikallem/freetype",
   "bikallem/freetype/base",
-  "bikallem/freetype/types",
   "bikallem/freetype/fixed",
+  "moonbitlang/x/fs" @fs,
 }
 
 options(

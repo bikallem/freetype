@@ -71,5 +71,5 @@ $(FONT_DIR)/.downloaded:
 	@touch $@
 
 # ── Bench ──────────────────────────────────────────────────────────
-bench: build
-	moon run src/bench
+bench:
+	@python3 bench/report.py
