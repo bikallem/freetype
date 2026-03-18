@@ -8,7 +8,7 @@ fn load_sfnt(
   // Parse the best cmap subtable for charmap lookup
   let cmap_lookup : @sfnt.CmapLookup? = match sfnt_data.cmap() {
     Some(ct) => {
-      let cmap_table_rec = sfnt_data.table_dir().find_table(@types.tag_cmap)
+      let cmap_table_rec = sfnt_data.table_dir().find_table(@types.TAG_CMAP)
       match cmap_table_rec {
         Some(rec) => find_best_cmap(data, ct, rec.offset())
         None => None
@@ -17,15 +17,15 @@ fn load_sfnt(
     None => None
   }
   // Initialize format-specific data
-  let has_glyf = sfnt_data.table_dir().find_table(@types.tag_glyf) is Some(_)
-  let has_cff = sfnt_data.table_dir().find_table(@types.tag_CFF) is Some(_)
+  let has_glyf = sfnt_data.table_dir().find_table(@types.TAG_GLYF) is Some(_)
+  let has_cff = sfnt_data.table_dir().find_table(@types.TAG_CFF) is Some(_)
   let tt_data : @truetype.TtFaceData? = if has_glyf {
     Some(@truetype.init_tt_face(sfnt_data, face))
   } else {
     None
   }
   let cff_font : @cff.CffFont? = if has_cff {
-    match sfnt_data.table_dir().find_table(@types.tag_CFF) {
+    match sfnt_data.table_dir().find_table(@types.TAG_CFF) {
       Some(rec) => Some(@cff.load_cff(data, rec.offset().reinterpret_as_int()))
       None => None
     }
@@ -65,7 +65,7 @@ fn load_sfnt(
     @types.Outline,
     Bytes,
   ) raise @error.FTError = fn(glyph_index, load_flags) raise @error.FTError {
-    let no_hinting = (load_flags & @base.load_no_hinting) != 0
+    let no_hinting = (load_flags & @base.LOAD_NO_HINTING) != 0
     let (outline, tt_instructions) = if tt_data is Some(tt) {
       hint_has_hints.val = false
       @truetype.load_tt_glyph(
@@ -217,7 +217,7 @@ fn load_sfnt(
     None => fn(_left, _right) { 0 }
   }
   // Parse fvar if present (variable font support)
-  if sfnt_data.table_dir().find_table(@types.tag_fvar) is Some(fvar_rec) {
+  if sfnt_data.table_dir().find_table(@types.TAG_FVAR) is Some(fvar_rec) {
     let fvar_reader = @stream.ByteReader::new(data)
     let fvar_result = try? @truetype.parse_fvar(
       fvar_reader,
@@ -225,7 +225,7 @@ fn load_sfnt(
       fvar_rec.length(),
     )
     if fvar_result is Ok(fvar) && fvar.axes().length() > 0 {
-      face.set_face_flags(face.face_flags() | @base.face_flag_multiple_masters)
+      face.set_face_flags(face.face_flags() | @base.FACE_FLAG_MULTIPLE_MASTERS)
       // Initialize var_coords to default (all zeros = default instance)
       face.set_var_coords(Array::make(fvar.axes().length(), 0))
     }

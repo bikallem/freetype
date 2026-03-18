@@ -29,7 +29,7 @@ pub fn load_glyph(
     Empty => raise @error.FTError::InvalidFaceHandle
   }
   // If NO_SCALE, return font units directly
-  let no_scale = (load_flags & @base.load_no_scale) != 0
+  let no_scale = (load_flags & @base.LOAD_NO_SCALE) != 0
   face.glyph().set_glyph_index(glyph_index)
   face.glyph().set_format(@types.GlyphFormat::Outline)
   face.glyph().set_outline(outline)
@@ -97,7 +97,7 @@ pub fn load_glyph(
         ).val(),
       )
       // Apply hinting or plain scaling to outline points
-      let no_hinting = (load_flags & @base.load_no_hinting) != 0
+      let no_hinting = (load_flags & @base.LOAD_NO_HINTING) != 0
       let did_hint = if not(no_hinting) {
         match face.driver_data() {
           SfntDriver(ops) =>
@@ -136,8 +136,8 @@ pub fn load_glyph(
           )
         }
         // Check if auto-hinting should be applied
-        let force_autohint = (load_flags & @base.load_force_autohint) != 0
-        let has_native_hints = (face.face_flags() & @base.face_flag_hinter) !=
+        let force_autohint = (load_flags & @base.LOAD_FORCE_AUTOHINT) != 0
+        let has_native_hints = (face.face_flags() & @base.FACE_FLAG_HINTER) !=
           0L
         let should_autohint = force_autohint || not(has_native_hints)
         if should_autohint && not(no_hinting) {
@@ -246,14 +246,14 @@ pub fn set_var_design_coordinates(
   // Re-parse table directory to find fvar
   reader.seek(0)
   let table_dir = @sfnt.parse_table_directory(reader)
-  let fvar_rec = match table_dir.find_table(@types.tag_fvar) {
+  let fvar_rec = match table_dir.find_table(@types.TAG_FVAR) {
     Some(r) => r
     None => raise @error.FTError::InvalidArgument
   }
   let fvar = @truetype.parse_fvar(reader, fvar_rec.offset(), fvar_rec.length())
   // Parse avar if present
   let avar : @truetype.AvarTable? = match
-    table_dir.find_table(@types.tag_avar) {
+    table_dir.find_table(@types.TAG_AVAR) {
     Some(r) =>
       Some(
         @truetype.parse_avar(

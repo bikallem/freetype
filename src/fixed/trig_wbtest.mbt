@@ -8,7 +8,7 @@ test "vector_unit: 0 degrees = (1, 0)" {
 
 ///|
 test "vector_unit: 90 degrees" {
-  let (c, s) = vector_unit(angle_pi2)
+  let (c, s) = vector_unit(ANGLE_PI2)
   // cos(90) ≈ 0, sin(90) ≈ 1.0
   // CORDIC has small errors, check within tolerance
   let cos_val = c.val
@@ -20,7 +20,7 @@ test "vector_unit: 90 degrees" {
 
 ///|
 test "vector_unit: 180 degrees" {
-  let (c, s) = vector_unit(angle_pi)
+  let (c, s) = vector_unit(ANGLE_PI)
   // cos(180) ≈ -1.0 = -0x10000, sin(180) ≈ 0
   inspect(c.val >= -65538L && c.val <= -65534L, content="true")
   inspect(s.val >= -2L && s.val <= 2L, content="true")
@@ -28,8 +28,8 @@ test "vector_unit: 180 degrees" {
 
 ///|
 test "cos and sin: 45 degrees" {
-  let c = cos(angle_pi4)
-  let s = sin(angle_pi4)
+  let c = cos(ANGLE_PI4)
+  let s = sin(ANGLE_PI4)
   // cos(45) = sin(45) = sqrt(2)/2 ≈ 0.7071 in 16.16 ≈ 46341
   inspect(c.val >= 46300L && c.val <= 46400L, content="true")
   inspect(s.val >= 46300L && s.val <= 46400L, content="true")
@@ -39,9 +39,9 @@ test "cos and sin: 45 degrees" {
 test "atan2: basic quadrants" {
   // atan2(1, 0) = 0 degrees
   inspect(atan2(1L, 0L), content="0")
-  // atan2(0, 1) = 90 degrees = angle_pi2
+  // atan2(0, 1) = 90 degrees = ANGLE_PI2
   let a = atan2(0L, 1L)
-  inspect(a >= angle_pi2 - 16L && a <= angle_pi2 + 16L, content="true")
+  inspect(a >= ANGLE_PI2 - 16L && a <= ANGLE_PI2 + 16L, content="true")
   // atan2(0, 0) = 0
   inspect(atan2(0L, 0L), content="0")
 }
@@ -66,7 +66,7 @@ test "vector_rotate: 0 angle is identity" {
 
 ///|
 test "angle_diff" {
-  inspect(angle_diff(0L, angle_pi2), content="5898240")
-  // angle_pi2 = 90<<16 = 5898240
-  inspect(angle_diff(angle_pi, -angle_pi), content="0")
+  inspect(angle_diff(0L, ANGLE_PI2), content="5898240")
+  // ANGLE_PI2 = 90<<16 = 5898240
+  inspect(angle_diff(ANGLE_PI, -ANGLE_PI), content="0")
 }

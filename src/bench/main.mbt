@@ -19,7 +19,7 @@ fn main {
   if gid > 0U && face.is_scalable() {
     for _ in 0..<1000 {
       ignore(
-        try? @freetype.load_glyph(face, gid, load_flags=@base.load_no_scale),
+        try? @freetype.load_glyph(face, gid, load_flags=@base.LOAD_NO_SCALE),
       )
     }
     ignore(try? @freetype.set_pixel_sizes(face, 0U, 16U))

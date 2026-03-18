@@ -5,9 +5,9 @@ fn load_type1_pfb(data : Bytes) -> @base.FaceRec raise @error.FTError {
   let face = @base.FaceRec::new()
   face.set_family_name(font.font_name())
   face.set_face_flags(
-    @base.face_flag_scalable |
-    @base.face_flag_horizontal |
-    @base.face_flag_glyph_names,
+    @base.FACE_FLAG_SCALABLE |
+    @base.FACE_FLAG_HORIZONTAL |
+    @base.FACE_FLAG_GLYPH_NAMES,
   )
   face.set_num_glyphs(font.charstrings().length().to_int64())
   face.set_units_per_em(font.units_per_em().reinterpret_as_uint())

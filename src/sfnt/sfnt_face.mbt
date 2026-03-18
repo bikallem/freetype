@@ -84,7 +84,7 @@ pub fn load_sfnt_face(
       (data[1].to_uint() << 16) |
       (data[2].to_uint() << 8) |
       data[3].to_uint()
-    if tag == @types.tag_ttcf {
+    if tag == @types.TAG_TTCF {
       let ttc = parse_ttc_header(reader)
       let idx = face_index.to_int()
       if idx < 0 || idx >= ttc.offsets.length() {
@@ -101,39 +101,39 @@ pub fn load_sfnt_face(
   reader.seek(start_offset)
   let table_dir = parse_table_directory(reader)
   // Parse required tables
-  let head_rec = table_dir.find_table(@types.tag_head)
+  let head_rec = table_dir.find_table(@types.TAG_HEAD)
   let head = match head_rec {
     Some(r) => parse_head(reader, r.offset, r.length)
     None =>
       // Try 'bhed' (used by some Apple fonts)
-      match table_dir.find_table(@types.tag_bhed) {
+      match table_dir.find_table(@types.TAG_BHED) {
         Some(r) => parse_head(reader, r.offset, r.length)
         None => raise @error.FTError::InvalidTable
       }
   }
-  let hhea = match table_dir.find_table(@types.tag_hhea) {
+  let hhea = match table_dir.find_table(@types.TAG_HHEA) {
     Some(r) => parse_hhea(reader, r.offset, r.length)
     None => raise @error.FTError::HorizHeaderMissing
   }
-  let maxp = match table_dir.find_table(@types.tag_maxp) {
+  let maxp = match table_dir.find_table(@types.TAG_MAXP) {
     Some(r) => parse_maxp(reader, r.offset, r.length)
     None => raise @error.FTError::InvalidTable
   }
-  let hmtx = match table_dir.find_table(@types.tag_hmtx) {
+  let hmtx = match table_dir.find_table(@types.TAG_HMTX) {
     Some(r) =>
       parse_hmtx(reader, r.offset, hhea.number_of_h_metrics, maxp.num_glyphs)
     None => raise @error.FTError::HmtxTableMissing
   }
   // Optional tables
-  let name_table = match table_dir.find_table(@types.tag_name) {
+  let name_table = match table_dir.find_table(@types.TAG_NAME) {
     Some(r) => Some(parse_name(reader, r.offset, r.length))
     None => None
   }
-  let os2 = match table_dir.find_table(@types.tag_OS2) {
+  let os2 = match table_dir.find_table(@types.TAG_OS2) {
     Some(r) => Some(parse_os2(reader, r.offset, r.length))
     None => None
   }
-  let post = match table_dir.find_table(@types.tag_post) {
+  let post = match table_dir.find_table(@types.TAG_POST_LC) {
     Some(r) =>
       Some(
         parse_post(
@@ -146,11 +146,11 @@ pub fn load_sfnt_face(
       )
     None => None
   }
-  let cmap_table = match table_dir.find_table(@types.tag_cmap) {
+  let cmap_table = match table_dir.find_table(@types.TAG_CMAP) {
     Some(r) => Some(parse_cmap_header(reader, r.offset))
     None => None
   }
-  let kern = match table_dir.find_table(@types.tag_kern) {
+  let kern = match table_dir.find_table(@types.TAG_KERN) {
     Some(r) => Some(parse_kern(reader, r.offset, r.length))
     None => None
   }
@@ -160,7 +160,7 @@ pub fn load_sfnt_face(
       (data[1].to_uint() << 16) |
       (data[2].to_uint() << 8) |
       data[3].to_uint()
-    if tag == @types.tag_ttcf {
+    if tag == @types.TAG_TTCF {
       let r2 = @stream.ByteReader::new(data)
       r2.seek(8)
       r2.read_u32_be().reinterpret_as_int().to_int64()
@@ -187,25 +187,25 @@ pub fn load_sfnt_face(
     ),
   )
   // Set face flags
-  face.set_face_flags(@base.face_flag_sfnt | @base.face_flag_horizontal)
+  face.set_face_flags(@base.FACE_FLAG_SFNT | @base.FACE_FLAG_HORIZONTAL)
   // Scalable if has outlines (glyf or CFF table)
-  if table_dir.find_table(@types.tag_glyf) is Some(_) ||
-    table_dir.find_table(@types.tag_CFF) is Some(_) ||
-    table_dir.find_table(@types.tag_CFF2) is Some(_) {
-    face.set_face_flags(face.face_flags() | @base.face_flag_scalable)
+  if table_dir.find_table(@types.TAG_GLYF) is Some(_) ||
+    table_dir.find_table(@types.TAG_CFF) is Some(_) ||
+    table_dir.find_table(@types.TAG_CFF2) is Some(_) {
+    face.set_face_flags(face.face_flags() | @base.FACE_FLAG_SCALABLE)
   }
   if kern is Some(_) {
-    face.set_face_flags(face.face_flags() | @base.face_flag_kerning)
+    face.set_face_flags(face.face_flags() | @base.FACE_FLAG_KERNING)
   }
   if post is Some(p) && p.format == 0x00020000U {
-    face.set_face_flags(face.face_flags() | @base.face_flag_glyph_names)
+    face.set_face_flags(face.face_flags() | @base.FACE_FLAG_GLYPH_NAMES)
   }
   // Style flags from head.mac_style
   if (head.mac_style & 1U) != 0U {
-    face.set_style_flags(face.style_flags() | @base.style_flag_bold)
+    face.set_style_flags(face.style_flags() | @base.STYLE_FLAG_BOLD)
   }
   if (head.mac_style & 2U) != 0U {
-    face.set_style_flags(face.style_flags() | @base.style_flag_italic)
+    face.set_style_flags(face.style_flags() | @base.STYLE_FLAG_ITALIC)
   }
   // Underline
   if post is Some(p) {
@@ -214,11 +214,11 @@ pub fn load_sfnt_face(
   }
   // Names
   if name_table is Some(nt) {
-    match nt.get_name(name_id_font_family) {
+    match nt.get_name(NAME_ID_FONT_FAMILY) {
       Some(n) => face.set_family_name(n)
       None => ()
     }
-    match nt.get_name(name_id_font_subfamily) {
+    match nt.get_name(NAME_ID_FONT_SUBFAMILY) {
       Some(n) => face.set_style_name(n)
       None => ()
     }

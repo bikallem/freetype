@@ -2,119 +2,119 @@
 // Face flag constants (FT_FACE_FLAG_*)
 
 ///|
-pub let face_flag_scalable : Int64 = 1L << 0
+pub const FACE_FLAG_SCALABLE : Int64 = 1L
 
 ///|
-pub let face_flag_fixed_sizes : Int64 = 1L << 1
+pub const FACE_FLAG_FIXED_SIZES : Int64 = 2L
 
 ///|
-pub let face_flag_fixed_width : Int64 = 1L << 2
+pub const FACE_FLAG_FIXED_WIDTH : Int64 = 4L
 
 ///|
-pub let face_flag_sfnt : Int64 = 1L << 3
+pub const FACE_FLAG_SFNT : Int64 = 8L
 
 ///|
-pub let face_flag_horizontal : Int64 = 1L << 4
+pub const FACE_FLAG_HORIZONTAL : Int64 = 16L
 
 ///|
-pub let face_flag_vertical : Int64 = 1L << 5
+pub const FACE_FLAG_VERTICAL : Int64 = 32L
 
 ///|
-pub let face_flag_kerning : Int64 = 1L << 6
+pub const FACE_FLAG_KERNING : Int64 = 64L
 
 ///|
-pub let face_flag_multiple_masters : Int64 = 1L << 8
+pub const FACE_FLAG_MULTIPLE_MASTERS : Int64 = 256L
 
 ///|
-pub let face_flag_glyph_names : Int64 = 1L << 9
+pub const FACE_FLAG_GLYPH_NAMES : Int64 = 512L
 
 ///|
-pub let face_flag_hinter : Int64 = 1L << 11
+pub const FACE_FLAG_HINTER : Int64 = 2048L
 
 ///|
 // CID-keyed flag removed — standalone CID fonts not supported (CID-in-CFF works via CFF driver)
 
 ///|
-pub let face_flag_tricky : Int64 = 1L << 13
+pub const FACE_FLAG_TRICKY : Int64 = 8192L
 
 ///|
-pub let face_flag_color : Int64 = 1L << 14
+pub const FACE_FLAG_COLOR : Int64 = 16384L
 
 ///|
-pub let face_flag_variation : Int64 = 1L << 15
+pub const FACE_FLAG_VARIATION : Int64 = 32768L
 
 ///|
-pub let face_flag_svg : Int64 = 1L << 16
+pub const FACE_FLAG_SVG : Int64 = 65536L
 
 ///|
-pub let face_flag_sbix : Int64 = 1L << 17
+pub const FACE_FLAG_SBIX : Int64 = 131072L
 
 ///|
-pub let face_flag_sbix_overlay : Int64 = 1L << 18
+pub const FACE_FLAG_SBIX_OVERLAY : Int64 = 262144L
 
 // Style flag constants (FT_STYLE_FLAG_*)
 
 ///|
-pub let style_flag_italic : Int = 1 << 0
+pub const STYLE_FLAG_ITALIC : Int = 1
 
 ///|
-pub let style_flag_bold : Int = 1 << 1
+pub const STYLE_FLAG_BOLD : Int = 2
 
 // Load flag constants (FT_LOAD_*)
 
 ///|
-pub let load_default : Int = 0
+pub const LOAD_DEFAULT : Int = 0
 
 ///|
-pub let load_no_scale : Int = 1 << 0
+pub const LOAD_NO_SCALE : Int = 1
 
 ///|
-pub let load_no_hinting : Int = 1 << 1
+pub const LOAD_NO_HINTING : Int = 2
 
 ///|
-pub let load_render : Int = 1 << 2
+pub const LOAD_RENDER : Int = 4
 
 ///|
-pub let load_no_bitmap : Int = 1 << 3
+pub const LOAD_NO_BITMAP : Int = 8
 
 ///|
-pub let load_vertical_layout : Int = 1 << 4
+pub const LOAD_VERTICAL_LAYOUT : Int = 16
 
 ///|
-pub let load_force_autohint : Int = 1 << 5
+pub const LOAD_FORCE_AUTOHINT : Int = 32
 
 ///|
-pub let load_pedantic : Int = 1 << 7
+pub const LOAD_PEDANTIC : Int = 128
 
 ///|
-pub let load_advance_only : Int = 1 << 8
+pub const LOAD_ADVANCE_ONLY : Int = 256
 
 ///|
-pub let load_no_recurse : Int = 1 << 10
+pub const LOAD_NO_RECURSE : Int = 1024
 
 ///|
-pub let load_ignore_transform : Int = 1 << 11
+pub const LOAD_IGNORE_TRANSFORM : Int = 2048
 
 ///|
-pub let load_monochrome : Int = 1 << 12
+pub const LOAD_MONOCHROME : Int = 4096
 
 ///|
-pub let load_linear_design : Int = 1 << 13
+pub const LOAD_LINEAR_DESIGN : Int = 8192
 
 ///|
-pub let load_sbits_only : Int = 1 << 14
+pub const LOAD_SBITS_ONLY : Int = 16384
 
 ///|
-pub let load_no_autohint : Int = 1 << 15
+pub const LOAD_NO_AUTOHINT : Int = 32768
 
 ///|
-pub let load_color : Int = 1 << 20
+pub const LOAD_COLOR : Int = 1048576
 
 ///|
-pub let load_compute_metrics : Int = 1 << 21
+pub const LOAD_COMPUTE_METRICS : Int = 2097152
 
 ///|
-pub let load_bitmap_metrics_only : Int = 1 << 22
+pub const LOAD_BITMAP_METRICS_ONLY : Int = 4194304
 
 ///|
-pub let load_no_svg : Int = 1 << 24
+pub const LOAD_NO_SVG : Int = 16777216

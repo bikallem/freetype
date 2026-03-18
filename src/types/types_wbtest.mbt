@@ -2,15 +2,15 @@
 test "make_tag" {
   // 'head' = 0x68656164
   let t = make_tag(b'h', b'e', b'a', b'd')
-  inspect(t == tag_head, content="true")
+  inspect(t == TAG_HEAD, content="true")
 }
 
 ///|
 test "tag constants" {
   // Verify a few key tags
-  inspect(tag_cmap, content="1668112752") // 0x636D6170
-  inspect(tag_glyf, content="1735162214") // 0x676C7966
-  inspect(tag_wOFF, content="2001684038") // 0x774F4646
+  inspect(TAG_CMAP, content="1668112752") // 0x636D6170
+  inspect(TAG_GLYF, content="1735162214") // 0x676C7966
+  inspect(TAG_WOFF, content="2001684038") // 0x774F4646
 }
 
 ///|
@@ -35,7 +35,7 @@ test "Outline::new" {
 
 ///|
 test "curve_tag extraction" {
-  inspect(curve_tag(curve_tag_on), content="b'\\x01'")
-  inspect(curve_tag(curve_tag_cubic), content="b'\\x02'")
-  inspect(curve_tag(curve_tag_on | curve_tag_touch_x), content="b'\\x01'")
+  inspect(curve_tag(CURVE_TAG_ON), content="b'\\x01'")
+  inspect(curve_tag(CURVE_TAG_CUBIC), content="b'\\x02'")
+  inspect(curve_tag(CURVE_TAG_ON | CURVE_TAG_TOUCH_X), content="b'\\x01'")
 }

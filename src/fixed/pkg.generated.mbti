@@ -6,15 +6,15 @@ import {
 }
 
 // Values
-pub let angle_2pi : Int64
+pub const ANGLE_2PI : Int64 = 23592960
+
+pub const ANGLE_PI : Int64 = 11796480
+
+pub const ANGLE_PI2 : Int64 = 5898240
+
+pub const ANGLE_PI4 : Int64 = 2949120
 
 pub fn angle_diff(Int64, Int64) -> Int64
-
-pub let angle_pi : Int64
-
-pub let angle_pi2 : Int64
-
-pub let angle_pi4 : Int64
 
 pub fn atan2(Int64, Int64) -> Int64
 

@@ -19,7 +19,7 @@ pub fn from_bytes(
       let face = @base.FaceRec::new()
       face.set_family_name(font.font_name())
       face.set_face_flags(
-        @base.face_flag_fixed_sizes | @base.face_flag_horizontal,
+        @base.FACE_FLAG_FIXED_SIZES | @base.FACE_FLAG_HORIZONTAL,
       )
       face.set_num_glyphs((font.num_chars() + 1).to_int64())
       face
@@ -27,7 +27,7 @@ pub fn from_bytes(
     Pcf => {
       let face = @base.FaceRec::new()
       face.set_face_flags(
-        @base.face_flag_fixed_sizes | @base.face_flag_horizontal,
+        @base.FACE_FLAG_FIXED_SIZES | @base.FACE_FLAG_HORIZONTAL,
       )
       face
     }

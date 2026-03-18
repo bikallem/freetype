@@ -15,7 +15,7 @@ pub fn decompress_woff(data : Bytes) -> Bytes raise @error.FTError {
   let reader = @stream.ByteReader::new(data)
   // Parse WOFF header (44 bytes)
   let signature = reader.read_u32_be()
-  if signature != @types.tag_wOFF {
+  if signature != @types.TAG_WOFF {
     raise @error.FTError::InvalidFileFormat
   }
   let flavor = reader.read_u32_be()

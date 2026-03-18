@@ -75,34 +75,34 @@ pub fn Outline::set_contours(self : Outline, contours : Array[UInt]) -> Unit {
 // Outline flag constants
 
 ///|
-pub let outline_none : Int = 0x0
+pub const OUTLINE_NONE : Int = 0x0
 
 ///|
-pub let outline_owner : Int = 0x1
+pub const OUTLINE_OWNER : Int = 0x1
 
 ///|
-pub let outline_even_odd_fill : Int = 0x2
+pub const OUTLINE_EVEN_ODD_FILL : Int = 0x2
 
 ///|
-pub let outline_reverse_fill : Int = 0x4
+pub const OUTLINE_REVERSE_FILL : Int = 0x4
 
 ///|
-pub let outline_ignore_dropouts : Int = 0x8
+pub const OUTLINE_IGNORE_DROPOUTS : Int = 0x8
 
 ///|
-pub let outline_smart_dropouts : Int = 0x10
+pub const OUTLINE_SMART_DROPOUTS : Int = 0x10
 
 ///|
-pub let outline_include_stubs : Int = 0x20
+pub const OUTLINE_INCLUDE_STUBS : Int = 0x20
 
 ///|
-pub let outline_overlap : Int = 0x40
+pub const OUTLINE_OVERLAP : Int = 0x40
 
 ///|
-pub let outline_high_precision : Int = 0x100
+pub const OUTLINE_HIGH_PRECISION : Int = 0x100
 
 ///|
-pub let outline_single_pass : Int = 0x200
+pub const OUTLINE_SINGLE_PASS : Int = 0x200
 
 // Curve tag enum — preferred over raw Byte constants
 
@@ -134,26 +134,26 @@ pub fn curve_tag(flag : Byte) -> Byte {
 
 ///|
 /// On-curve point. (legacy — prefer CurveTag::On)
-pub let curve_tag_on : Byte = 0x01
+pub const CURVE_TAG_ON : Byte = 0x01
 
 ///|
 /// Off-curve conic (quadratic) control point. (legacy — prefer CurveTag::Conic)
-pub let curve_tag_conic : Byte = 0x00
+pub const CURVE_TAG_CONIC : Byte = 0x00
 
 ///|
 /// Off-curve cubic control point. (legacy — prefer CurveTag::Cubic)
-pub let curve_tag_cubic : Byte = 0x02
+pub const CURVE_TAG_CUBIC : Byte = 0x02
 
 ///|
-pub let curve_tag_has_scanmode : Byte = 0x04
+pub const CURVE_TAG_HAS_SCANMODE : Byte = 0x04
 
 ///|
 /// TrueType hinter: x-touched.
-pub let curve_tag_touch_x : Byte = 0x08
+pub const CURVE_TAG_TOUCH_X : Byte = 0x08
 
 ///|
 /// TrueType hinter: y-touched.
-pub let curve_tag_touch_y : Byte = 0x10
+pub const CURVE_TAG_TOUCH_Y : Byte = 0x10
 
 ///|
-pub let curve_tag_touch_both : Byte = 0x18
+pub const CURVE_TAG_TOUCH_BOTH : Byte = 0x18

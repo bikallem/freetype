@@ -104,9 +104,9 @@ pub fn load_simple_glyph(
     let on_curve = (flag & 0x01) != b'\x00'
     tags.push(
       if on_curve {
-        @types.curve_tag_on
+        @types.CURVE_TAG_ON
       } else {
-        @types.curve_tag_conic
+        @types.CURVE_TAG_CONIC
       },
     )
   }
@@ -143,8 +143,8 @@ pub fn load_composite_glyph(
     let flags = reader.read_u16_be()
     let glyph_index = reader.read_u16_be()
     // Read arguments
-    let (arg1, arg2) = if (flags & arg_1_and_2_are_words) != 0U {
-      if (flags & args_are_xy_values) != 0U {
+    let (arg1, arg2) = if (flags & ARG_1_AND_2_ARE_WORDS) != 0U {
+      if (flags & ARGS_ARE_XY_VALUES) != 0U {
         (reader.read_i16_be(), reader.read_i16_be())
       } else {
         (
@@ -152,7 +152,7 @@ pub fn load_composite_glyph(
           reader.read_u16_be().reinterpret_as_int(),
         )
       }
-    } else if (flags & args_are_xy_values) != 0U {
+    } else if (flags & ARGS_ARE_XY_VALUES) != 0U {
       // 2 signed bytes
       let a1 = reader.read_byte().to_int()
       let a1_signed = if a1 >= 128 { a1 - 256 } else { a1 }
@@ -168,22 +168,22 @@ pub fn load_composite_glyph(
     let mut xy = @fixed.Fixed::zero()
     let mut yx = @fixed.Fixed::zero()
     let mut yy = @fixed.Fixed::one()
-    if (flags & we_have_a_scale) != 0U {
+    if (flags & WE_HAVE_A_SCALE) != 0U {
       // Single scale factor (F2Dot14)
       let scale = @fixed.F2Dot14::from_raw(reader.read_i16_be())
       xx = scale.to_fixed()
       yy = scale.to_fixed()
-    } else if (flags & we_have_an_x_and_y_scale) != 0U {
+    } else if (flags & WE_HAVE_AN_X_AND_Y_SCALE) != 0U {
       xx = @fixed.F2Dot14::from_raw(reader.read_i16_be()).to_fixed()
       yy = @fixed.F2Dot14::from_raw(reader.read_i16_be()).to_fixed()
-    } else if (flags & we_have_a_two_by_two) != 0U {
+    } else if (flags & WE_HAVE_A_TWO_BY_TWO) != 0U {
       xx = @fixed.F2Dot14::from_raw(reader.read_i16_be()).to_fixed()
       yx = @fixed.F2Dot14::from_raw(reader.read_i16_be()).to_fixed()
       xy = @fixed.F2Dot14::from_raw(reader.read_i16_be()).to_fixed()
       yy = @fixed.F2Dot14::from_raw(reader.read_i16_be()).to_fixed()
     }
     components.push({ flags, glyph_index, arg1, arg2, xx, xy, yx, yy })
-    has_more = (flags & more_components) != 0U
+    has_more = (flags & MORE_COMPONENTS) != 0U
   }
   components
 }
@@ -232,9 +232,9 @@ pub fn load_tt_glyph(
         depth=depth + 1,
       )
       // Apply transformation if needed
-      let has_transform = (comp.flags & we_have_a_scale) != 0U ||
-        (comp.flags & we_have_an_x_and_y_scale) != 0U ||
-        (comp.flags & we_have_a_two_by_two) != 0U
+      let has_transform = (comp.flags & WE_HAVE_A_SCALE) != 0U ||
+        (comp.flags & WE_HAVE_AN_X_AND_Y_SCALE) != 0U ||
+        (comp.flags & WE_HAVE_A_TWO_BY_TWO) != 0U
       // Add points to loader
       for j, point in sub_outline.points() {
         let mut px = point.x()
@@ -246,7 +246,7 @@ pub fn load_tt_glyph(
           py = ry
         }
         // Apply offset (args are xy values)
-        if (comp.flags & args_are_xy_values) != 0U {
+        if (comp.flags & ARGS_ARE_XY_VALUES) != 0U {
           px += comp.arg1.to_int64()
           py += comp.arg2.to_int64()
         }

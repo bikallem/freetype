@@ -4,7 +4,7 @@
 
 ///|
 /// Bit flag set when a glyph name contains a variant suffix (e.g. ".alt").
-pub let variant_bit : UInt = 0x80000000U
+pub const VARIANT_BIT : UInt = 0x80000000U
 
 ///|
 /// Convert a PostScript glyph name to a Unicode value.
@@ -31,7 +31,7 @@ pub fn unicode_value(name : String) -> UInt {
       match parse_uppercase_hex(hex_part) {
         Some(v) => {
           let result = v
-          return if has_variant { result | variant_bit } else { result }
+          return if has_variant { result | VARIANT_BIT } else { result }
         }
         None => ()
       }
@@ -47,7 +47,7 @@ pub fn unicode_value(name : String) -> UInt {
       match parse_uppercase_hex(hex_part) {
         Some(v) => {
           let result = v
-          return if has_variant { result | variant_bit } else { result }
+          return if has_variant { result | VARIANT_BIT } else { result }
         }
         None => ()
       }
@@ -56,7 +56,7 @@ pub fn unicode_value(name : String) -> UInt {
   // Path 3: Adobe Glyph List lookup
   let code = adobe_glyph_index(base_name)
   if code != 0U {
-    return if has_variant { code | variant_bit } else { code }
+    return if has_variant { code | VARIANT_BIT } else { code }
   }
   0U
 }

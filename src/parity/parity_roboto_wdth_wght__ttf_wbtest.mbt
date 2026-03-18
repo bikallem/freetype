@@ -131,7 +131,7 @@ test "parity/Roboto[wdth,wght].ttf: charmap entries" {
 ///|
 test "parity/Roboto[wdth,wght].ttf: glyph 5 outline NO_SCALE" {
   let f = @freetype.from_bytes(load_roboto_wdth_wght__ttf())
-  let r = try? @freetype.load_glyph(f, 5U, load_flags=@base.load_no_scale)
+  let r = try? @freetype.load_glyph(f, 5U, load_flags=@base.LOAD_NO_SCALE)
   guard r is Ok(_) else { return }
   inspect(f.glyph().outline().n_points(), content="16")
   inspect(f.glyph().outline().n_contours(), content="2")
@@ -157,7 +157,7 @@ test "parity/Roboto[wdth,wght].ttf: glyph 5 outline NO_SCALE" {
 ///|
 test "parity/Roboto[wdth,wght].ttf: glyph 6 outline NO_SCALE" {
   let f = @freetype.from_bytes(load_roboto_wdth_wght__ttf())
-  let r = try? @freetype.load_glyph(f, 6U, load_flags=@base.load_no_scale)
+  let r = try? @freetype.load_glyph(f, 6U, load_flags=@base.LOAD_NO_SCALE)
   guard r is Ok(_) else { return }
   inspect(f.glyph().outline().n_points(), content="12")
   inspect(f.glyph().outline().n_contours(), content="2")
@@ -183,7 +183,7 @@ test "parity/Roboto[wdth,wght].ttf: glyph 6 outline NO_SCALE" {
 ///|
 test "parity/Roboto[wdth,wght].ttf: glyph 7 outline NO_SCALE" {
   let f = @freetype.from_bytes(load_roboto_wdth_wght__ttf())
-  let r = try? @freetype.load_glyph(f, 7U, load_flags=@base.load_no_scale)
+  let r = try? @freetype.load_glyph(f, 7U, load_flags=@base.LOAD_NO_SCALE)
   guard r is Ok(_) else { return }
   inspect(f.glyph().outline().n_points(), content="16")
   inspect(f.glyph().outline().n_contours(), content="4")
@@ -254,7 +254,7 @@ test "parity/Roboto[wdth,wght].ttf: outline NO_HINTING 16ppem" {
   let f = @freetype.from_bytes(load_roboto_wdth_wght__ttf())
   let r1 = try? @freetype.set_pixel_sizes(f, 0U, 16U)
   guard r1 is Ok(_) else { return }
-  let r2 = try? @freetype.load_glyph(f, 5U, load_flags=@base.load_no_hinting)
+  let r2 = try? @freetype.load_glyph(f, 5U, load_flags=@base.LOAD_NO_HINTING)
   guard r2 is Ok(_) else { return }
   inspect(f.glyph().metrics().hori_advance(), content="264")
 }
@@ -267,7 +267,7 @@ test "parity/Roboto[wdth,wght].ttf: outline FORCE_AUTOHINT 16ppem" {
   let r2 = try? @freetype.load_glyph(
     f,
     5U,
-    load_flags=@base.load_force_autohint,
+    load_flags=@base.LOAD_FORCE_AUTOHINT,
   )
   guard r2 is Ok(_) else { return }
   inspect(

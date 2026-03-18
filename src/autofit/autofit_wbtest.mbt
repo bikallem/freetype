@@ -37,7 +37,10 @@ test "compute_segments on square" {
       @types.Vector::new(0L, 100L),
     ],
     [
-      @types.curve_tag_on, @types.curve_tag_on, @types.curve_tag_on, @types.curve_tag_on,
+      @types.CURVE_TAG_ON,
+      @types.CURVE_TAG_ON,
+      @types.CURVE_TAG_ON,
+      @types.CURVE_TAG_ON,
     ],
     [3U],
   )

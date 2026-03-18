@@ -17,7 +17,7 @@ pub fn validate_feat(
   reader.seek(offset.reinterpret_as_int())
   if length.reinterpret_as_int() < 12 {
     issues.push("feat table too short")
-    return { table_tag: @types.tag_feat, issues }
+    return { table_tag: @types.TAG_FEAT, issues }
   }
   let version = reader.read_u32_be()
   if version != 0x00010000U {
@@ -33,7 +33,7 @@ pub fn validate_feat(
       "feat: table length \{length} too short for \{feature_name_count} entries",
     )
   }
-  { table_tag: @types.tag_feat, issues }
+  { table_tag: @types.TAG_FEAT, issues }
 }
 
 ///|
@@ -50,5 +50,5 @@ pub fn validate_kern_apple(
   if length.reinterpret_as_int() < 8 {
     issues.push("Apple kern table too short")
   }
-  { table_tag: @types.tag_kern, issues }
+  { table_tag: @types.TAG_KERN, issues }
 }

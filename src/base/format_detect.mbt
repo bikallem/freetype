@@ -33,11 +33,11 @@ pub fn detect_format(data : Bytes) -> FontFormat {
   // Match on 4-byte tag for well-known signatures
   match tag {
     0x00010000U => TrueType // TrueType version 1.0
-    t if t == @types.tag_true => TrueType // 'true' (Apple)
-    t if t == @types.tag_OTTO => CffOpenType // 'OTTO'
-    t if t == @types.tag_ttcf => TrueTypeCollection // 'ttcf'
-    t if t == @types.tag_wOFF => Woff1 // 'wOFF'
-    t if t == @types.tag_wOF2 => Woff2 // 'wOF2'
+    t if t == @types.TAG_TRUE => TrueType // 'true' (Apple)
+    t if t == @types.TAG_OTTO => CffOpenType // 'OTTO'
+    t if t == @types.TAG_TTCF => TrueTypeCollection // 'ttcf'
+    t if t == @types.TAG_WOFF => Woff1 // 'wOFF'
+    t if t == @types.TAG_WOF2 => Woff2 // 'wOF2'
     0x53544152U => Bdf // 'STAR' (STARTFONT)
     0x01666370U => Pcf // '\x01fcp'
     0x50465230U => Pfr // 'PFR0'

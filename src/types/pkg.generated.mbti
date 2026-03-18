@@ -6,195 +6,195 @@ import {
 }
 
 // Values
+pub const CURVE_TAG_CONIC : Byte = 0x00
+
+pub const CURVE_TAG_CUBIC : Byte = 0x02
+
+pub const CURVE_TAG_HAS_SCANMODE : Byte = 0x04
+
+pub const CURVE_TAG_ON : Byte = 0x01
+
+pub const CURVE_TAG_TOUCH_BOTH : Byte = 0x18
+
+pub const CURVE_TAG_TOUCH_X : Byte = 0x08
+
+pub const CURVE_TAG_TOUCH_Y : Byte = 0x10
+
+pub const OUTLINE_EVEN_ODD_FILL : Int = 0x2
+
+pub const OUTLINE_HIGH_PRECISION : Int = 0x100
+
+pub const OUTLINE_IGNORE_DROPOUTS : Int = 0x8
+
+pub const OUTLINE_INCLUDE_STUBS : Int = 0x20
+
+pub const OUTLINE_NONE : Int = 0x0
+
+pub const OUTLINE_OVERLAP : Int = 0x40
+
+pub const OUTLINE_OWNER : Int = 0x1
+
+pub const OUTLINE_REVERSE_FILL : Int = 0x4
+
+pub const OUTLINE_SINGLE_PASS : Int = 0x200
+
+pub const OUTLINE_SMART_DROPOUTS : Int = 0x10
+
+pub const TAG_AVAR : UInt = 0x61766172
+
+pub const TAG_BASE : UInt = 0x42415345
+
+pub const TAG_BDAT : UInt = 0x62646174
+
+pub const TAG_BDF : UInt = 0x42444620
+
+pub const TAG_BHED : UInt = 0x62686564
+
+pub const TAG_BLOC : UInt = 0x626C6F63
+
+pub const TAG_BSLN : UInt = 0x62736C6E
+
+pub const TAG_CBDT : UInt = 0x43424454
+
+pub const TAG_CBLC : UInt = 0x43424C43
+
+pub const TAG_CFF : UInt = 0x43464620
+
+pub const TAG_CFF2 : UInt = 0x43464632
+
+pub const TAG_CID : UInt = 0x43494420
+
+pub const TAG_CMAP : UInt = 0x636D6170
+
+pub const TAG_COLR : UInt = 0x434F4C52
+
+pub const TAG_CPAL : UInt = 0x4350414C
+
+pub const TAG_CVAR : UInt = 0x63766172
+
+pub const TAG_CVT : UInt = 0x63767420
+
+pub const TAG_DSIG : UInt = 0x44534947
+
+pub const TAG_EBDT : UInt = 0x45424454
+
+pub const TAG_EBLC : UInt = 0x45424C43
+
+pub const TAG_EBSC : UInt = 0x45425343
+
+pub const TAG_FEAT : UInt = 0x66656174
+
+pub const TAG_FOND : UInt = 0x464F4E44
+
+pub const TAG_FPGM : UInt = 0x6670676D
+
+pub const TAG_FVAR : UInt = 0x66766172
+
+pub const TAG_GASP : UInt = 0x67617370
+
+pub const TAG_GDEF : UInt = 0x47444546
+
+pub const TAG_GLYF : UInt = 0x676C7966
+
+pub const TAG_GPOS : UInt = 0x47504F53
+
+pub const TAG_GSUB : UInt = 0x47535542
+
+pub const TAG_GVAR : UInt = 0x67766172
+
+pub const TAG_HDMX : UInt = 0x68646D78
+
+pub const TAG_HEAD : UInt = 0x68656164
+
+pub const TAG_HHEA : UInt = 0x68686561
+
+pub const TAG_HMTX : UInt = 0x686D7478
+
+pub const TAG_HVAR : UInt = 0x48564152
+
+pub const TAG_JSTF : UInt = 0x4A535446
+
+pub const TAG_JUST : UInt = 0x6A757374
+
+pub const TAG_KERN : UInt = 0x6B65726E
+
+pub const TAG_LCAR : UInt = 0x6C636172
+
+pub const TAG_LOCA : UInt = 0x6C6F6361
+
+pub const TAG_LTSH : UInt = 0x4C545348
+
+pub const TAG_LWFN : UInt = 0x4C57464E
+
+pub const TAG_MATH : UInt = 0x4D415448
+
+pub const TAG_MAXP : UInt = 0x6D617870
+
+pub const TAG_META : UInt = 0x4D455441
+
+pub const TAG_MMFX : UInt = 0x4D4D4658
+
+pub const TAG_MMSD : UInt = 0x4D4D5344
+
+pub const TAG_MORT : UInt = 0x6D6F7274
+
+pub const TAG_MORX : UInt = 0x6D6F7278
+
+pub const TAG_MVAR : UInt = 0x4D564152
+
+pub const TAG_NAME : UInt = 0x6E616D65
+
+pub const TAG_OPBD : UInt = 0x6F706264
+
+pub const TAG_OS2 : UInt = 0x4F532F32
+
+pub const TAG_OTTO : UInt = 0x4F54544F
+
+pub const TAG_PCLT : UInt = 0x50434C54
+
+pub const TAG_POST : UInt = 0x504F5354
+
+pub const TAG_POST_LC : UInt = 0x706F7374
+
+pub const TAG_PREP : UInt = 0x70726570
+
+pub const TAG_PROP : UInt = 0x70726F70
+
+pub const TAG_SBIX : UInt = 0x73626978
+
+pub const TAG_SFNT : UInt = 0x73666E74
+
+pub const TAG_SING : UInt = 0x53494E47
+
+pub const TAG_SVG : UInt = 0x53564720
+
+pub const TAG_TRAK : UInt = 0x7472616B
+
+pub const TAG_TRUE : UInt = 0x74727565
+
+pub const TAG_TTC : UInt = 0x74746320
+
+pub const TAG_TTCF : UInt = 0x74746366
+
+pub const TAG_TYP1 : UInt = 0x54595031
+
+pub const TAG_TYP1_LC : UInt = 0x74797031
+
+pub const TAG_VDMX : UInt = 0x56444D58
+
+pub const TAG_VHEA : UInt = 0x76686561
+
+pub const TAG_VMTX : UInt = 0x766D7478
+
+pub const TAG_VVAR : UInt = 0x56564152
+
+pub const TAG_WOF2 : UInt = 0x774F4632
+
+pub const TAG_WOFF : UInt = 0x774F4646
+
 pub fn curve_tag(Byte) -> Byte
 
-pub let curve_tag_conic : Byte
-
-pub let curve_tag_cubic : Byte
-
-pub let curve_tag_has_scanmode : Byte
-
-pub let curve_tag_on : Byte
-
-pub let curve_tag_touch_both : Byte
-
-pub let curve_tag_touch_x : Byte
-
-pub let curve_tag_touch_y : Byte
-
 pub fn make_tag(Byte, Byte, Byte, Byte) -> UInt
-
-pub let outline_even_odd_fill : Int
-
-pub let outline_high_precision : Int
-
-pub let outline_ignore_dropouts : Int
-
-pub let outline_include_stubs : Int
-
-pub let outline_none : Int
-
-pub let outline_overlap : Int
-
-pub let outline_owner : Int
-
-pub let outline_reverse_fill : Int
-
-pub let outline_single_pass : Int
-
-pub let outline_smart_dropouts : Int
-
-pub let tag_BASE : UInt
-
-pub let tag_BDF : UInt
-
-pub let tag_CBDT : UInt
-
-pub let tag_CBLC : UInt
-
-pub let tag_CFF : UInt
-
-pub let tag_CFF2 : UInt
-
-pub let tag_CID : UInt
-
-pub let tag_COLR : UInt
-
-pub let tag_CPAL : UInt
-
-pub let tag_DSIG : UInt
-
-pub let tag_EBDT : UInt
-
-pub let tag_EBLC : UInt
-
-pub let tag_EBSC : UInt
-
-pub let tag_FOND : UInt
-
-pub let tag_GDEF : UInt
-
-pub let tag_GPOS : UInt
-
-pub let tag_GSUB : UInt
-
-pub let tag_HVAR : UInt
-
-pub let tag_JSTF : UInt
-
-pub let tag_LTSH : UInt
-
-pub let tag_LWFN : UInt
-
-pub let tag_MATH : UInt
-
-pub let tag_META : UInt
-
-pub let tag_MMFX : UInt
-
-pub let tag_MMSD : UInt
-
-pub let tag_MVAR : UInt
-
-pub let tag_OS2 : UInt
-
-pub let tag_OTTO : UInt
-
-pub let tag_PCLT : UInt
-
-pub let tag_POST : UInt
-
-pub let tag_SING : UInt
-
-pub let tag_SVG : UInt
-
-pub let tag_TYP1 : UInt
-
-pub let tag_VDMX : UInt
-
-pub let tag_VVAR : UInt
-
-pub let tag_avar : UInt
-
-pub let tag_bdat : UInt
-
-pub let tag_bhed : UInt
-
-pub let tag_bloc : UInt
-
-pub let tag_bsln : UInt
-
-pub let tag_cmap : UInt
-
-pub let tag_cvar : UInt
-
-pub let tag_cvt : UInt
-
-pub let tag_feat : UInt
-
-pub let tag_fpgm : UInt
-
-pub let tag_fvar : UInt
-
-pub let tag_gasp : UInt
-
-pub let tag_glyf : UInt
-
-pub let tag_gvar : UInt
-
-pub let tag_hdmx : UInt
-
-pub let tag_head : UInt
-
-pub let tag_hhea : UInt
-
-pub let tag_hmtx : UInt
-
-pub let tag_just : UInt
-
-pub let tag_kern : UInt
-
-pub let tag_lcar : UInt
-
-pub let tag_loca : UInt
-
-pub let tag_maxp : UInt
-
-pub let tag_mort : UInt
-
-pub let tag_morx : UInt
-
-pub let tag_name : UInt
-
-pub let tag_opbd : UInt
-
-pub let tag_post : UInt
-
-pub let tag_prep : UInt
-
-pub let tag_prop : UInt
-
-pub let tag_sbix : UInt
-
-pub let tag_sfnt : UInt
-
-pub let tag_trak : UInt
-
-pub let tag_true : UInt
-
-pub let tag_ttc : UInt
-
-pub let tag_ttcf : UInt
-
-pub let tag_typ1 : UInt
-
-pub let tag_vhea : UInt
-
-pub let tag_vmtx : UInt
-
-pub let tag_wOF2 : UInt
-
-pub let tag_wOFF : UInt
 
 // Errors
 

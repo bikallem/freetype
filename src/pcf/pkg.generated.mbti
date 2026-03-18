@@ -7,29 +7,29 @@ import {
 }
 
 // Values
+pub const PCF_ACCELERATORS : UInt = 2
+
+pub const PCF_BDF_ACCELERATORS : UInt = 256
+
+pub const PCF_BDF_ENCODINGS : UInt = 32
+
+pub const PCF_BITMAPS : UInt = 8
+
+pub const PCF_GLYPH_NAMES : UInt = 128
+
+pub const PCF_INK_METRICS : UInt = 16
+
+pub const PCF_METRICS : UInt = 4
+
+pub const PCF_PROPERTIES : UInt = 1
+
+pub const PCF_SIGNATURE : UInt = 0x70636601
+
+pub const PCF_SWIDTHS : UInt = 64
+
 pub fn parse_pcf_font(Bytes) -> PcfFont raise @error.FTError
 
 pub fn parse_pcf_header(@stream.ByteReader) -> Array[PcfTableEntry] raise @error.FTError
-
-pub let pcf_accelerators : UInt
-
-pub let pcf_bdf_accelerators : UInt
-
-pub let pcf_bdf_encodings : UInt
-
-pub let pcf_bitmaps : UInt
-
-pub let pcf_glyph_names : UInt
-
-pub let pcf_ink_metrics : UInt
-
-pub let pcf_metrics : UInt
-
-pub let pcf_properties : UInt
-
-pub let pcf_signature : UInt
-
-pub let pcf_swidths : UInt
 
 // Errors
 

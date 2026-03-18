@@ -427,7 +427,7 @@ test "parity/NimbusSans-Regular.pfb: charmap entries" {
 ///|
 test "parity/NimbusSans-Regular.pfb: glyph 274 outline NO_SCALE" {
   let f = @freetype.from_bytes(load_nimbussans_regular_pfb())
-  let r = try? @freetype.load_glyph(f, 274U, load_flags=@base.load_no_scale)
+  let r = try? @freetype.load_glyph(f, 274U, load_flags=@base.LOAD_NO_SCALE)
   guard r is Ok(_) else { return }
   inspect(f.glyph().outline().n_points(), content="10")
   inspect(f.glyph().outline().n_contours(), content="2")
@@ -453,7 +453,7 @@ test "parity/NimbusSans-Regular.pfb: glyph 274 outline NO_SCALE" {
 ///|
 test "parity/NimbusSans-Regular.pfb: glyph 298 outline NO_SCALE" {
   let f = @freetype.from_bytes(load_nimbussans_regular_pfb())
-  let r = try? @freetype.load_glyph(f, 298U, load_flags=@base.load_no_scale)
+  let r = try? @freetype.load_glyph(f, 298U, load_flags=@base.LOAD_NO_SCALE)
   guard r is Ok(_) else { return }
   inspect(f.glyph().outline().n_points(), content="12")
   inspect(f.glyph().outline().n_contours(), content="2")
@@ -479,7 +479,7 @@ test "parity/NimbusSans-Regular.pfb: glyph 298 outline NO_SCALE" {
 ///|
 test "parity/NimbusSans-Regular.pfb: glyph 300 outline NO_SCALE" {
   let f = @freetype.from_bytes(load_nimbussans_regular_pfb())
-  let r = try? @freetype.load_glyph(f, 300U, load_flags=@base.load_no_scale)
+  let r = try? @freetype.load_glyph(f, 300U, load_flags=@base.LOAD_NO_SCALE)
   guard r is Ok(_) else { return }
   inspect(f.glyph().outline().n_points(), content="32")
   inspect(f.glyph().outline().n_contours(), content="2")
@@ -530,7 +530,7 @@ test "parity/NimbusSans-Regular.pfb: outline NO_HINTING 16ppem" {
   let f = @freetype.from_bytes(load_nimbussans_regular_pfb())
   let r1 = try? @freetype.set_pixel_sizes(f, 0U, 16U)
   guard r1 is Ok(_) else { return }
-  let r2 = try? @freetype.load_glyph(f, 274U, load_flags=@base.load_no_hinting)
+  let r2 = try? @freetype.load_glyph(f, 274U, load_flags=@base.LOAD_NO_HINTING)
   guard r2 is Ok(_) else { return }
   inspect(f.glyph().metrics().hori_advance(), content="285")
 }
@@ -543,7 +543,7 @@ test "parity/NimbusSans-Regular.pfb: outline FORCE_AUTOHINT 16ppem" {
   let r2 = try? @freetype.load_glyph(
     f,
     274U,
-    load_flags=@base.load_force_autohint,
+    load_flags=@base.LOAD_FORCE_AUTOHINT,
   )
   guard r2 is Ok(_) else { return }
   inspect(f.glyph().metrics().hori_advance(), content="256")

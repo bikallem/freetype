@@ -90,7 +90,7 @@ fn PsInterp::move_to(self : PsInterp, x : Int64, y : Int64) -> Unit {
   self.current_x = x
   self.current_y = y
   self.points.push(@types.Vector::new(x, y))
-  self.tags.push(@types.curve_tag_on)
+  self.tags.push(@types.CURVE_TAG_ON)
   self.path_started = true
 }
 
@@ -99,7 +99,7 @@ fn PsInterp::line_to(self : PsInterp, x : Int64, y : Int64) -> Unit {
   self.current_x = x
   self.current_y = y
   self.points.push(@types.Vector::new(x, y))
-  self.tags.push(@types.curve_tag_on)
+  self.tags.push(@types.CURVE_TAG_ON)
 }
 
 ///|
@@ -113,11 +113,11 @@ fn PsInterp::curve_to(
   y3 : Int64,
 ) -> Unit {
   self.points.push(@types.Vector::new(x1, y1))
-  self.tags.push(@types.curve_tag_cubic)
+  self.tags.push(@types.CURVE_TAG_CUBIC)
   self.points.push(@types.Vector::new(x2, y2))
-  self.tags.push(@types.curve_tag_cubic)
+  self.tags.push(@types.CURVE_TAG_CUBIC)
   self.points.push(@types.Vector::new(x3, y3))
-  self.tags.push(@types.curve_tag_on)
+  self.tags.push(@types.CURVE_TAG_ON)
   self.current_x = x3
   self.current_y = y3
 }

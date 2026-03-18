@@ -2,6 +2,8 @@
 package "bikallem/freetype/psnames"
 
 // Values
+pub const VARIANT_BIT : UInt = 0x80000000
+
 pub fn adobe_glyph_index(String) -> UInt
 
 pub fn expert_encoding_sid(UInt) -> Int
@@ -13,8 +15,6 @@ pub fn standard_encoding_sid(UInt) -> Int
 pub fn standard_string(UInt) -> String?
 
 pub fn unicode_value(String) -> UInt
-
-pub let variant_bit : UInt
 
 // Errors
 

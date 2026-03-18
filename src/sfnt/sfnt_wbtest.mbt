@@ -28,7 +28,7 @@ test "parse_table_directory: minimal SFNT" {
   inspect(dir.sfnt_version, content="65536") // 0x00010000
   inspect(dir.num_tables, content="1")
   inspect(dir.tables.length(), content="1")
-  inspect(dir.tables[0].tag == @types.tag_head, content="true")
+  inspect(dir.tables[0].tag == @types.TAG_HEAD, content="true")
   inspect(dir.tables[0].offset, content="28")
   inspect(dir.tables[0].length, content="54")
 }
@@ -43,22 +43,22 @@ test "TableDirectory::find_table" {
     range_shift=0U,
     tables=[
       TableRecord::new(
-        tag=@types.tag_head,
+        tag=@types.TAG_HEAD,
         checksum=0U,
         offset=100U,
         length=54U,
       ),
       TableRecord::new(
-        tag=@types.tag_hhea,
+        tag=@types.TAG_HHEA,
         checksum=0U,
         offset=200U,
         length=36U,
       ),
     ],
   )
-  inspect(dir.find_table(@types.tag_head) is Some(_), content="true")
-  inspect(dir.find_table(@types.tag_hhea) is Some(_), content="true")
-  inspect(dir.find_table(@types.tag_glyf) is Some(_), content="false")
+  inspect(dir.find_table(@types.TAG_HEAD) is Some(_), content="true")
+  inspect(dir.find_table(@types.TAG_HHEA) is Some(_), content="true")
+  inspect(dir.find_table(@types.TAG_GLYF) is Some(_), content="false")
 }
 
 ///|
@@ -156,7 +156,7 @@ test "decode_utf16_be" {
         platform_id=3U,
         encoding_id=1U,
         language_id=0x0409U,
-        name_id=name_id_font_family,
+        name_id=NAME_ID_FONT_FAMILY,
         length=4U,
         offset=0U,
       ),
@@ -164,7 +164,7 @@ test "decode_utf16_be" {
     string_data=data,
   )
   inspect(
-    name_table.get_name(name_id_font_family),
+    name_table.get_name(NAME_ID_FONT_FAMILY),
     content=(
       #|Some("AB")
     ),

@@ -141,7 +141,7 @@ pub fn parse_ttc_header(
   reader : @stream.ByteReader,
 ) -> TtcHeader raise @error.FTError {
   let tag = reader.read_u32_be()
-  if tag != @types.tag_ttcf {
+  if tag != @types.TAG_TTCF {
     raise @error.FTError::InvalidFileFormat
   }
   let version = reader.read_u32_be()

@@ -52,7 +52,7 @@ pub fn outline_reverse(outline : @types.Outline) -> Unit {
     continue c + 1, last + 1
   }
   // Flip fill direction flag
-  outline.set_flags(outline.flags() ^ @types.outline_reverse_fill)
+  outline.set_flags(outline.flags() ^ @types.OUTLINE_REVERSE_FILL)
 }
 
 ///|

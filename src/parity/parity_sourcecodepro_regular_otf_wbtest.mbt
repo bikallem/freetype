@@ -146,7 +146,7 @@ test "parity/SourceCodePro-Regular.otf: charmap entries" {
 ///|
 test "parity/SourceCodePro-Regular.otf: glyph 918 outline NO_SCALE" {
   let f = @freetype.from_bytes(load_sourcecodepro_regular_otf())
-  let r = try? @freetype.load_glyph(f, 918U, load_flags=@base.load_no_scale)
+  let r = try? @freetype.load_glyph(f, 918U, load_flags=@base.LOAD_NO_SCALE)
   guard r is Ok(_) else { return }
   inspect(
     f.glyph().outline().n_points(),
@@ -177,7 +177,7 @@ test "parity/SourceCodePro-Regular.otf: glyph 918 outline NO_SCALE" {
 ///|
 test "parity/SourceCodePro-Regular.otf: glyph 923 outline NO_SCALE" {
   let f = @freetype.from_bytes(load_sourcecodepro_regular_otf())
-  let r = try? @freetype.load_glyph(f, 923U, load_flags=@base.load_no_scale)
+  let r = try? @freetype.load_glyph(f, 923U, load_flags=@base.LOAD_NO_SCALE)
   guard r is Ok(_) else { return }
   inspect(f.glyph().outline().n_points(), content="12")
   inspect(f.glyph().outline().n_contours(), content="2")
@@ -203,7 +203,7 @@ test "parity/SourceCodePro-Regular.otf: glyph 923 outline NO_SCALE" {
 ///|
 test "parity/SourceCodePro-Regular.otf: glyph 1000 outline NO_SCALE" {
   let f = @freetype.from_bytes(load_sourcecodepro_regular_otf())
-  let r = try? @freetype.load_glyph(f, 1000U, load_flags=@base.load_no_scale)
+  let r = try? @freetype.load_glyph(f, 1000U, load_flags=@base.LOAD_NO_SCALE)
   guard r is Ok(_) else { return }
   inspect(f.glyph().outline().n_points(), content="32")
   inspect(f.glyph().outline().n_contours(), content="2")
@@ -279,7 +279,7 @@ test "parity/SourceCodePro-Regular.otf: outline NO_HINTING 16ppem" {
   let f = @freetype.from_bytes(load_sourcecodepro_regular_otf())
   let r1 = try? @freetype.set_pixel_sizes(f, 0U, 16U)
   guard r1 is Ok(_) else { return }
-  let r2 = try? @freetype.load_glyph(f, 918U, load_flags=@base.load_no_hinting)
+  let r2 = try? @freetype.load_glyph(f, 918U, load_flags=@base.LOAD_NO_HINTING)
   guard r2 is Ok(_) else { return }
   inspect(f.glyph().metrics().hori_advance(), content="614")
 }
@@ -292,7 +292,7 @@ test "parity/SourceCodePro-Regular.otf: outline FORCE_AUTOHINT 16ppem" {
   let r2 = try? @freetype.load_glyph(
     f,
     918U,
-    load_flags=@base.load_force_autohint,
+    load_flags=@base.LOAD_FORCE_AUTOHINT,
   )
   guard r2 is Ok(_) else { return }
   inspect(

@@ -11,11 +11,27 @@ import {
 }
 
 // Values
+pub const ARGS_ARE_XY_VALUES : UInt = 0x0002
+
+pub const ARG_1_AND_2_ARE_WORDS : UInt = 0x0001
+
+pub const MORE_COMPONENTS : UInt = 0x0020
+
+pub const OVERLAP_COMPOUND : UInt = 0x0400
+
+pub const ROUND_XY_TO_GRID : UInt = 0x0004
+
+pub const USE_MY_METRICS : UInt = 0x0200
+
+pub const WE_HAVE_AN_X_AND_Y_SCALE : UInt = 0x0040
+
+pub const WE_HAVE_A_SCALE : UInt = 0x0008
+
+pub const WE_HAVE_A_TWO_BY_TWO : UInt = 0x0080
+
+pub const WE_HAVE_INSTRUCTIONS : UInt = 0x0100
+
 pub fn apply_avar(Int, Array[AvarSegment]) -> Int
-
-pub let arg_1_and_2_are_words : UInt
-
-pub let args_are_xy_values : UInt
 
 pub fn init_tt_face(@sfnt.SfntData, @base.FaceRec) -> TtFaceData raise @error.FTError
 
@@ -25,31 +41,15 @@ pub fn load_simple_glyph(@stream.ByteReader, Int) -> (@types.Outline, Bytes) rai
 
 pub fn load_tt_glyph(Bytes, Array[UInt], UInt, UInt, depth? : Int) -> (@types.Outline, Bytes) raise @error.FTError
 
-pub let more_components : UInt
-
 pub fn normalize_axis(@fixed.Fixed, VarAxis) -> Int
 
 pub fn normalize_coordinates(Array[VarAxis], Array[@fixed.Fixed], AvarTable?) -> Array[Int]
-
-pub let overlap_compound : UInt
 
 pub fn parse_avar(@stream.ByteReader, UInt, UInt, Int) -> AvarTable raise @error.FTError
 
 pub fn parse_fvar(@stream.ByteReader, UInt, UInt) -> FvarTable raise @error.FTError
 
 pub fn parse_loca(@stream.ByteReader, UInt, UInt, UInt, Int) -> Array[UInt] raise @error.FTError
-
-pub let round_xy_to_grid : UInt
-
-pub let use_my_metrics : UInt
-
-pub let we_have_a_scale : UInt
-
-pub let we_have_a_two_by_two : UInt
-
-pub let we_have_an_x_and_y_scale : UInt
-
-pub let we_have_instructions : UInt
 
 // Errors
 

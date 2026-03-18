@@ -44,31 +44,31 @@ pub fn NameTable::new(
 
 ///|
 // Name IDs
-pub let name_id_copyright : UInt = 0U
+pub const NAME_ID_COPYRIGHT : UInt = 0U
 
 ///|
-pub let name_id_font_family : UInt = 1U
+pub const NAME_ID_FONT_FAMILY : UInt = 1U
 
 ///|
-pub let name_id_font_subfamily : UInt = 2U
+pub const NAME_ID_FONT_SUBFAMILY : UInt = 2U
 
 ///|
-pub let name_id_unique_id : UInt = 3U
+pub const NAME_ID_UNIQUE_ID : UInt = 3U
 
 ///|
-pub let name_id_full_name : UInt = 4U
+pub const NAME_ID_FULL_NAME : UInt = 4U
 
 ///|
-pub let name_id_version_string : UInt = 5U
+pub const NAME_ID_VERSION_STRING : UInt = 5U
 
 ///|
-pub let name_id_ps_name : UInt = 6U
+pub const NAME_ID_PS_NAME : UInt = 6U
 
 ///|
-pub let name_id_preferred_family : UInt = 16U
+pub const NAME_ID_PREFERRED_FAMILY : UInt = 16U
 
 ///|
-pub let name_id_preferred_subfamily : UInt = 17U
+pub const NAME_ID_PREFERRED_SUBFAMILY : UInt = 17U
 
 ///|
 /// Parse the 'name' table.

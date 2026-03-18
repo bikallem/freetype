@@ -8,77 +8,81 @@ import {
 }
 
 // Values
+pub const FACE_FLAG_COLOR : Int64 = 16384
+
+pub const FACE_FLAG_FIXED_SIZES : Int64 = 2
+
+pub const FACE_FLAG_FIXED_WIDTH : Int64 = 4
+
+pub const FACE_FLAG_GLYPH_NAMES : Int64 = 512
+
+pub const FACE_FLAG_HINTER : Int64 = 2048
+
+pub const FACE_FLAG_HORIZONTAL : Int64 = 16
+
+pub const FACE_FLAG_KERNING : Int64 = 64
+
+pub const FACE_FLAG_MULTIPLE_MASTERS : Int64 = 256
+
+pub const FACE_FLAG_SBIX : Int64 = 131072
+
+pub const FACE_FLAG_SBIX_OVERLAY : Int64 = 262144
+
+pub const FACE_FLAG_SCALABLE : Int64 = 1
+
+pub const FACE_FLAG_SFNT : Int64 = 8
+
+pub const FACE_FLAG_SVG : Int64 = 65536
+
+pub const FACE_FLAG_TRICKY : Int64 = 8192
+
+pub const FACE_FLAG_VARIATION : Int64 = 32768
+
+pub const FACE_FLAG_VERTICAL : Int64 = 32
+
+pub const LOAD_ADVANCE_ONLY : Int = 256
+
+pub const LOAD_BITMAP_METRICS_ONLY : Int = 4194304
+
+pub const LOAD_COLOR : Int = 1048576
+
+pub const LOAD_COMPUTE_METRICS : Int = 2097152
+
+pub const LOAD_DEFAULT : Int = 0
+
+pub const LOAD_FORCE_AUTOHINT : Int = 32
+
+pub const LOAD_IGNORE_TRANSFORM : Int = 2048
+
+pub const LOAD_LINEAR_DESIGN : Int = 8192
+
+pub const LOAD_MONOCHROME : Int = 4096
+
+pub const LOAD_NO_AUTOHINT : Int = 32768
+
+pub const LOAD_NO_BITMAP : Int = 8
+
+pub const LOAD_NO_HINTING : Int = 2
+
+pub const LOAD_NO_RECURSE : Int = 1024
+
+pub const LOAD_NO_SCALE : Int = 1
+
+pub const LOAD_NO_SVG : Int = 16777216
+
+pub const LOAD_PEDANTIC : Int = 128
+
+pub const LOAD_RENDER : Int = 4
+
+pub const LOAD_SBITS_ONLY : Int = 16384
+
+pub const LOAD_VERTICAL_LAYOUT : Int = 16
+
+pub const STYLE_FLAG_BOLD : Int = 2
+
+pub const STYLE_FLAG_ITALIC : Int = 1
+
 pub fn detect_format(Bytes) -> FontFormat
-
-pub let face_flag_color : Int64
-
-pub let face_flag_fixed_sizes : Int64
-
-pub let face_flag_fixed_width : Int64
-
-pub let face_flag_glyph_names : Int64
-
-pub let face_flag_hinter : Int64
-
-pub let face_flag_horizontal : Int64
-
-pub let face_flag_kerning : Int64
-
-pub let face_flag_multiple_masters : Int64
-
-pub let face_flag_sbix : Int64
-
-pub let face_flag_sbix_overlay : Int64
-
-pub let face_flag_scalable : Int64
-
-pub let face_flag_sfnt : Int64
-
-pub let face_flag_svg : Int64
-
-pub let face_flag_tricky : Int64
-
-pub let face_flag_variation : Int64
-
-pub let face_flag_vertical : Int64
-
-pub let load_advance_only : Int
-
-pub let load_bitmap_metrics_only : Int
-
-pub let load_color : Int
-
-pub let load_compute_metrics : Int
-
-pub let load_default : Int
-
-pub let load_force_autohint : Int
-
-pub let load_ignore_transform : Int
-
-pub let load_linear_design : Int
-
-pub let load_monochrome : Int
-
-pub let load_no_autohint : Int
-
-pub let load_no_bitmap : Int
-
-pub let load_no_hinting : Int
-
-pub let load_no_recurse : Int
-
-pub let load_no_scale : Int
-
-pub let load_no_svg : Int
-
-pub let load_pedantic : Int
-
-pub let load_render : Int
-
-pub let load_sbits_only : Int
-
-pub let load_vertical_layout : Int
 
 pub fn outline_decompose(@types.Outline, OutlineFuncs) -> Unit raise @error.FTError
 
@@ -93,10 +97,6 @@ pub fn outline_reverse(@types.Outline) -> Unit
 pub fn outline_transform(@types.Outline, @fixed.Matrix) -> Unit
 
 pub fn outline_translate(@types.Outline, Int64, Int64) -> Unit
-
-pub let style_flag_bold : Int
-
-pub let style_flag_italic : Int
 
 // Errors
 

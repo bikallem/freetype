@@ -236,7 +236,7 @@ pub fn compute_segments(
     for i = contour_start; i <= contour_end; i = i + 1 {
       let p = outline.points()[i]
       let tag = @types.curve_tag(outline.tags()[i])
-      if tag != @types.curve_tag_on {
+      if tag != @types.CURVE_TAG_ON {
         continue i + 1
       }
       // Get coordinate along segment direction and perpendicular

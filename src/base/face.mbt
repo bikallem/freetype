@@ -292,57 +292,57 @@ pub fn FaceRec::new(
 
 ///|
 pub fn FaceRec::is_scalable(self : FaceRec) -> Bool {
-  (self.face_flags & face_flag_scalable) != 0L
+  (self.face_flags & FACE_FLAG_SCALABLE) != 0L
 }
 
 ///|
 pub fn FaceRec::has_fixed_sizes(self : FaceRec) -> Bool {
-  (self.face_flags & face_flag_fixed_sizes) != 0L
+  (self.face_flags & FACE_FLAG_FIXED_SIZES) != 0L
 }
 
 ///|
 pub fn FaceRec::is_fixed_width(self : FaceRec) -> Bool {
-  (self.face_flags & face_flag_fixed_width) != 0L
+  (self.face_flags & FACE_FLAG_FIXED_WIDTH) != 0L
 }
 
 ///|
 pub fn FaceRec::is_sfnt(self : FaceRec) -> Bool {
-  (self.face_flags & face_flag_sfnt) != 0L
+  (self.face_flags & FACE_FLAG_SFNT) != 0L
 }
 
 ///|
 pub fn FaceRec::has_horizontal(self : FaceRec) -> Bool {
-  (self.face_flags & face_flag_horizontal) != 0L
+  (self.face_flags & FACE_FLAG_HORIZONTAL) != 0L
 }
 
 ///|
 pub fn FaceRec::has_vertical(self : FaceRec) -> Bool {
-  (self.face_flags & face_flag_vertical) != 0L
+  (self.face_flags & FACE_FLAG_VERTICAL) != 0L
 }
 
 ///|
 pub fn FaceRec::has_kerning(self : FaceRec) -> Bool {
-  (self.face_flags & face_flag_kerning) != 0L
+  (self.face_flags & FACE_FLAG_KERNING) != 0L
 }
 
 ///|
 pub fn FaceRec::has_multiple_masters(self : FaceRec) -> Bool {
-  (self.face_flags & face_flag_multiple_masters) != 0L
+  (self.face_flags & FACE_FLAG_MULTIPLE_MASTERS) != 0L
 }
 
 ///|
 pub fn FaceRec::has_glyph_names(self : FaceRec) -> Bool {
-  (self.face_flags & face_flag_glyph_names) != 0L
+  (self.face_flags & FACE_FLAG_GLYPH_NAMES) != 0L
 }
 
 ///|
 pub fn FaceRec::has_color(self : FaceRec) -> Bool {
-  (self.face_flags & face_flag_color) != 0L
+  (self.face_flags & FACE_FLAG_COLOR) != 0L
 }
 
 ///|
 pub fn FaceRec::is_variation(self : FaceRec) -> Bool {
-  (self.face_flags & face_flag_variation) != 0L
+  (self.face_flags & FACE_FLAG_VARIATION) != 0L
 }
 
 // --- FaceRec setters (for external packages) ---

@@ -4,39 +4,39 @@
 
 ///|
 /// PCF table type constants.
-pub let pcf_properties : UInt = 1U << 0
+pub const PCF_PROPERTIES : UInt = 1U
 
 ///|
-pub let pcf_accelerators : UInt = 1U << 1
+pub const PCF_ACCELERATORS : UInt = 2U
 
 ///|
-pub let pcf_metrics : UInt = 1U << 2
+pub const PCF_METRICS : UInt = 4U
 
 ///|
-pub let pcf_bitmaps : UInt = 1U << 3
+pub const PCF_BITMAPS : UInt = 8U
 
 ///|
-pub let pcf_ink_metrics : UInt = 1U << 4
+pub const PCF_INK_METRICS : UInt = 16U
 
 ///|
-pub let pcf_bdf_encodings : UInt = 1U << 5
+pub const PCF_BDF_ENCODINGS : UInt = 32U
 
 ///|
-pub let pcf_swidths : UInt = 1U << 6
+pub const PCF_SWIDTHS : UInt = 64U
 
 ///|
-pub let pcf_glyph_names : UInt = 1U << 7
+pub const PCF_GLYPH_NAMES : UInt = 128U
 
 ///|
-pub let pcf_bdf_accelerators : UInt = 1U << 8
+pub const PCF_BDF_ACCELERATORS : UInt = 256U
 
 ///|
 /// PCF file signature: "\x01fcp" (little-endian "pcf\x01").
-pub let pcf_signature : UInt = 0x70636601U
+pub const PCF_SIGNATURE : UInt = 0x70636601U
 
 ///|
 /// PCF format flag: byte order bit (bit 2). If set, data is MSB-first.
-let pcf_byte_mask : UInt = 1U << 2
+const PCF_BYTE_MASK : UInt = 4U
 
 ///|
 /// An entry in the PCF table of contents.
@@ -157,7 +157,7 @@ fn pcf_read_i32(
   reader : @stream.ByteReader,
   format : UInt,
 ) -> Int raise @error.FTError {
-  if (format & pcf_byte_mask) != 0U {
+  if (format & PCF_BYTE_MASK) != 0U {
     reader.read_i32_be()
   } else {
     let v = reader.read_u32_le()
@@ -171,7 +171,7 @@ fn pcf_read_i16(
   reader : @stream.ByteReader,
   format : UInt,
 ) -> Int raise @error.FTError {
-  if (format & pcf_byte_mask) != 0U {
+  if (format & PCF_BYTE_MASK) != 0U {
     reader.read_i16_be()
   } else {
     let v = reader.read_u16_le()
@@ -187,7 +187,7 @@ pub fn parse_pcf_header(
   reader : @stream.ByteReader,
 ) -> Array[PcfTableEntry] raise @error.FTError {
   let sig = reader.read_u32_le()
-  if sig != pcf_signature {
+  if sig != PCF_SIGNATURE {
     raise @error.FTError::InvalidFileFormat
   }
   let table_count = reader.read_u32_le()
@@ -409,7 +409,7 @@ pub fn parse_pcf_font(data : Bytes) -> PcfFont raise @error.FTError {
   let font = PcfFont::new()
   font.tables = tables
   // Parse properties
-  match find_table(tables, pcf_properties) {
+  match find_table(tables, PCF_PROPERTIES) {
     Some(entry) => {
       font.properties = parse_properties(reader, entry)
       // Extract FONT property as font_name
@@ -423,7 +423,7 @@ pub fn parse_pcf_font(data : Bytes) -> PcfFont raise @error.FTError {
     None => ()
   }
   // Parse metrics
-  match find_table(tables, pcf_metrics) {
+  match find_table(tables, PCF_METRICS) {
     Some(entry) => {
       font.metrics = parse_metrics(reader, entry)
       font.num_glyphs = font.metrics.length()
@@ -431,12 +431,12 @@ pub fn parse_pcf_font(data : Bytes) -> PcfFont raise @error.FTError {
     None => ()
   }
   // Parse encodings
-  match find_table(tables, pcf_bdf_encodings) {
+  match find_table(tables, PCF_BDF_ENCODINGS) {
     Some(entry) => font.encodings = Some(parse_encodings(reader, entry))
     None => ()
   }
   // Parse bitmaps
-  match find_table(tables, pcf_bitmaps) {
+  match find_table(tables, PCF_BITMAPS) {
     Some(entry) => {
       let (offsets, bdata) = parse_bitmaps(reader, entry)
       font.bitmap_offsets = offsets

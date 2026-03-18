@@ -8,27 +8,27 @@ import {
 }
 
 // Values
+pub const NAME_ID_COPYRIGHT : UInt = 0
+
+pub const NAME_ID_FONT_FAMILY : UInt = 1
+
+pub const NAME_ID_FONT_SUBFAMILY : UInt = 2
+
+pub const NAME_ID_FULL_NAME : UInt = 4
+
+pub const NAME_ID_PREFERRED_FAMILY : UInt = 16
+
+pub const NAME_ID_PREFERRED_SUBFAMILY : UInt = 17
+
+pub const NAME_ID_PS_NAME : UInt = 6
+
+pub const NAME_ID_UNIQUE_ID : UInt = 3
+
+pub const NAME_ID_VERSION_STRING : UInt = 5
+
 pub fn decompress_woff(Bytes) -> Bytes raise @error.FTError
 
 pub fn load_sfnt_face(Bytes, Int64) -> (SfntData, @base.FaceRec) raise @error.FTError
-
-pub let name_id_copyright : UInt
-
-pub let name_id_font_family : UInt
-
-pub let name_id_font_subfamily : UInt
-
-pub let name_id_full_name : UInt
-
-pub let name_id_preferred_family : UInt
-
-pub let name_id_preferred_subfamily : UInt
-
-pub let name_id_ps_name : UInt
-
-pub let name_id_unique_id : UInt
-
-pub let name_id_version_string : UInt
 
 pub fn parse_cmap_header(@stream.ByteReader, UInt) -> CmapTable raise @error.FTError
 

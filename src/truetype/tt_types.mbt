@@ -15,34 +15,34 @@ struct TtFaceData {
 
 ///|
 /// Composite glyph component flags (from TrueType spec).
-pub let arg_1_and_2_are_words : UInt = 0x0001U
+pub const ARG_1_AND_2_ARE_WORDS : UInt = 0x0001U
 
 ///|
-pub let args_are_xy_values : UInt = 0x0002U
+pub const ARGS_ARE_XY_VALUES : UInt = 0x0002U
 
 ///|
-pub let round_xy_to_grid : UInt = 0x0004U
+pub const ROUND_XY_TO_GRID : UInt = 0x0004U
 
 ///|
-pub let we_have_a_scale : UInt = 0x0008U
+pub const WE_HAVE_A_SCALE : UInt = 0x0008U
 
 ///|
-pub let more_components : UInt = 0x0020U
+pub const MORE_COMPONENTS : UInt = 0x0020U
 
 ///|
-pub let we_have_an_x_and_y_scale : UInt = 0x0040U
+pub const WE_HAVE_AN_X_AND_Y_SCALE : UInt = 0x0040U
 
 ///|
-pub let we_have_a_two_by_two : UInt = 0x0080U
+pub const WE_HAVE_A_TWO_BY_TWO : UInt = 0x0080U
 
 ///|
-pub let we_have_instructions : UInt = 0x0100U
+pub const WE_HAVE_INSTRUCTIONS : UInt = 0x0100U
 
 ///|
-pub let use_my_metrics : UInt = 0x0200U
+pub const USE_MY_METRICS : UInt = 0x0200U
 
 ///|
-pub let overlap_compound : UInt = 0x0400U
+pub const OVERLAP_COMPOUND : UInt = 0x0400U
 
 ///|
 pub fn TtFaceData::sfnt(self : TtFaceData) -> @sfnt.SfntData {
