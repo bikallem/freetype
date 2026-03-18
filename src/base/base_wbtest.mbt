@@ -1,16 +1,13 @@
 ///|
 test "Encoding roundtrip" {
-  inspect(@base.Encoding::from_tag(0x756E6963U), content="Unicode")
-  inspect(
-    @base.Encoding::from_tag(@base.Encoding::Unicode.to_tag()),
-    content="Unicode",
-  )
-  inspect(@base.Encoding::from_tag(0xDEADBEEFU), content="None")
+  inspect(Encoding::from_tag(0x756E6963U), content="Unicode")
+  inspect(Encoding::from_tag(Encoding::Unicode.to_tag()), content="Unicode")
+  inspect(Encoding::from_tag(0xDEADBEEFU), content="None")
 }
 
 ///|
 test "FaceRec::new defaults" {
-  let face = @base.FaceRec::new()
+  let face = FaceRec::new()
   inspect(face.num_faces, content="1")
   inspect(face.face_index, content="0")
   inspect(face.num_glyphs, content="0")
@@ -20,8 +17,8 @@ test "FaceRec::new defaults" {
 
 ///|
 test "FaceRec flag helpers" {
-  let face = @base.FaceRec::new()
-  face.set_face_flags(@base.face_flag_scalable | @base.face_flag_kerning)
+  let face = FaceRec::new()
+  face.set_face_flags(face_flag_scalable | face_flag_kerning)
   inspect(face.is_scalable(), content="true")
   inspect(face.has_kerning(), content="true")
   inspect(face.is_fixed_width(), content="false")
@@ -30,7 +27,7 @@ test "FaceRec flag helpers" {
 
 ///|
 test "GlyphSlot::new" {
-  let slot = @base.GlyphSlot::new()
+  let slot = GlyphSlot::new()
   inspect(slot.glyph_index, content="0")
   inspect(slot.format, content="None")
 }
@@ -38,66 +35,66 @@ test "GlyphSlot::new" {
 ///|
 test "detect_format: TrueType" {
   let data : Bytes = [0x00, 0x01, 0x00, 0x00]
-  inspect(@base.detect_format(data), content="TrueType")
+  inspect(detect_format(data), content="TrueType")
 }
 
 ///|
 test "detect_format: OTTO" {
   let data : Bytes = [b'O', b'T', b'T', b'O']
-  inspect(@base.detect_format(data), content="CffOpenType")
+  inspect(detect_format(data), content="CffOpenType")
 }
 
 ///|
 test "detect_format: ttcf" {
   let data : Bytes = [b't', b't', b'c', b'f']
-  inspect(@base.detect_format(data), content="TrueTypeCollection")
+  inspect(detect_format(data), content="TrueTypeCollection")
 }
 
 ///|
 test "detect_format: wOFF" {
   let data : Bytes = [b'w', b'O', b'F', b'F']
-  inspect(@base.detect_format(data), content="Woff1")
+  inspect(detect_format(data), content="Woff1")
 }
 
 ///|
 test "detect_format: PFB" {
   let data : Bytes = [0x80, 0x01, 0x00, 0x00]
-  inspect(@base.detect_format(data), content="Type1Pfb")
+  inspect(detect_format(data), content="Type1Pfb")
 }
 
 ///|
 test "detect_format: BDF" {
   let data : Bytes = [b'S', b'T', b'A', b'R']
-  inspect(@base.detect_format(data), content="Bdf")
+  inspect(detect_format(data), content="Bdf")
 }
 
 ///|
 test "detect_format: PCF" {
   let data : Bytes = [0x01, 0x66, 0x63, 0x70]
-  inspect(@base.detect_format(data), content="Pcf")
+  inspect(detect_format(data), content="Pcf")
 }
 
 ///|
 test "detect_format: MZ (Windows FNT)" {
   let data : Bytes = [b'M', b'Z', 0x00, 0x00]
-  inspect(@base.detect_format(data), content="WindowsFnt")
+  inspect(detect_format(data), content="WindowsFnt")
 }
 
 ///|
 test "detect_format: unknown" {
   let data : Bytes = [0xFF, 0xFF, 0xFF, 0xFF]
-  inspect(@base.detect_format(data), content="Unknown")
+  inspect(detect_format(data), content="Unknown")
 }
 
 ///|
 test "detect_format: too short" {
   let data : Bytes = [0x00, 0x01]
-  inspect(@base.detect_format(data), content="Unknown")
+  inspect(detect_format(data), content="Unknown")
 }
 
 ///|
 test "GlyphLoader: add_point and end_contour" {
-  let loader = @base.GlyphLoader::new()
+  let loader = GlyphLoader::new()
   loader.add_point(100L, 200L, @types.curve_tag_on)
   loader.add_point(300L, 400L, @types.curve_tag_on)
   loader.add_point(500L, 100L, @types.curve_tag_on)
@@ -108,7 +105,7 @@ test "GlyphLoader: add_point and end_contour" {
 
 ///|
 test "GlyphLoader: add merges current into base" {
-  let loader = @base.GlyphLoader::new()
+  let loader = GlyphLoader::new()
   // First sub-glyph
   loader.add_point(10L, 20L, @types.curve_tag_on)
   loader.add_point(30L, 40L, @types.curve_tag_on)
@@ -135,7 +132,7 @@ test "GlyphLoader: add merges current into base" {
 
 ///|
 test "GlyphLoader: reset" {
-  let loader = @base.GlyphLoader::new()
+  let loader = GlyphLoader::new()
   loader.add_point(10L, 20L, @types.curve_tag_on)
   loader.end_contour()
   loader.add()
@@ -152,7 +149,7 @@ test "outline_translate" {
   outline.tags.push(@types.curve_tag_on)
   outline.tags.push(@types.curve_tag_on)
   outline.contours.push(1U)
-  @base.outline_translate(outline, 100L, -10L)
+  outline_translate(outline, 100L, -10L)
   inspect(outline.points[0].x, content="110")
   inspect(outline.points[0].y, content="10")
   inspect(outline.points[1].x, content="130")
@@ -165,7 +162,7 @@ test "outline_transform with identity" {
   outline.points.push(@types.Vector::new(100L, 200L))
   outline.tags.push(@types.curve_tag_on)
   outline.contours.push(0U)
-  @base.outline_transform(outline, @fixed.Matrix::identity())
+  outline_transform(outline, @fixed.Matrix::identity())
   // Should be unchanged (within fixed-point precision)
   inspect(outline.points[0].x, content="100")
   inspect(outline.points[0].y, content="200")
@@ -181,7 +178,7 @@ test "outline_reverse: triangle" {
   outline.tags.push(@types.curve_tag_on)
   outline.tags.push(@types.curve_tag_on)
   outline.contours.push(2U)
-  @base.outline_reverse(outline)
+  outline_reverse(outline)
   // Points should be reversed: (50,100), (100,0), (0,0)
   inspect(outline.points[0].x, content="50")
   inspect(outline.points[0].y, content="100")
@@ -200,7 +197,7 @@ test "outline_get_orientation: clockwise triangle" {
   outline.tags.push(@types.curve_tag_on)
   outline.tags.push(@types.curve_tag_on)
   outline.contours.push(2U)
-  let orient = @base.outline_get_orientation(outline)
+  let orient = outline_get_orientation(outline)
   // Orientation depends on coordinate system convention
   inspect(orient != 0, content="true")
 }
@@ -215,7 +212,7 @@ test "outline_get_bbox: simple" {
   outline.tags.push(@types.curve_tag_on)
   outline.tags.push(@types.curve_tag_on)
   outline.contours.push(2U)
-  let bb = @base.outline_get_bbox(outline)
+  let bb = outline_get_bbox(outline)
   inspect(bb.x_min, content="-10")
   inspect(bb.y_min, content="-20")
   inspect(bb.x_max, content="100")
@@ -232,7 +229,7 @@ test "outline_get_cbox: includes off-curve" {
   outline.tags.push(@types.curve_tag_conic)
   outline.tags.push(@types.curve_tag_on)
   outline.contours.push(2U)
-  let cb = @base.outline_get_cbox(outline)
+  let cb = outline_get_cbox(outline)
   inspect(cb.x_max, content="500")
   inspect(cb.y_max, content="500")
 }
@@ -248,7 +245,7 @@ test "outline_decompose: simple triangle" {
   outline.tags.push(@types.curve_tag_on)
   outline.contours.push(2U)
   let log : Array[String] = []
-  let funcs = @base.OutlineFuncs::new(
+  let funcs = OutlineFuncs::new(
     move_to=fn(p) { log.push("M(\{p.x},\{p.y})") },
     line_to=fn(p) { log.push("L(\{p.x},\{p.y})") },
     conic_to=fn(c, p) { log.push("Q(\{c.x},\{c.y},\{p.x},\{p.y})") },
@@ -256,7 +253,7 @@ test "outline_decompose: simple triangle" {
       log.push("C(\{c1.x},\{c1.y},\{c2.x},\{c2.y},\{p.x},\{p.y})")
     },
   )
-  @base.outline_decompose(outline, funcs)
+  outline_decompose(outline, funcs)
   inspect(log[0], content="M(0,0)")
   inspect(log[1], content="L(100,0)")
   inspect(log[2], content="L(50,100)")

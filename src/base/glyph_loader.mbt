@@ -2,7 +2,7 @@
 /// GlyphLoader: accumulates outline data during glyph loading.
 /// Used especially for composite glyphs where sub-glyphs are loaded
 /// one at a time and their outlines merged. Port of ftgloadr.c.
-pub struct GlyphLoader {
+struct GlyphLoader {
   // Base outline: accumulated result so far
   mut base_points : Array[@types.Vector]
   mut base_tags : Array[Byte]

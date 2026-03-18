@@ -21,7 +21,7 @@ pub(all) enum SegmentDir {
 
 ///|
 /// A segment is a run of consecutive points along one direction.
-pub struct Segment {
+struct Segment {
   position : Int64 // position along the perpendicular axis
   min_coord : Int64 // minimum extent along the parallel axis
   max_coord : Int64 // maximum extent along the parallel axis
@@ -54,7 +54,7 @@ pub fn Segment::new(
 
 ///|
 /// An edge is formed by merging nearby segments.
-pub struct Edge {
+struct Edge {
   position : Int64 // original position in font units
   mut fitted_position : Int64 // fitted position in 26.6 pixels
   mut linked_edge : Int // index of linked edge (-1 if none)
@@ -77,14 +77,14 @@ pub fn Edge::new(position : Int64) -> Edge {
 
 ///|
 /// A stem is a pair of edges forming a vertical or horizontal stem.
-pub struct Stem {
+struct Stem {
   edge1 : Int // index of first edge
   edge2 : Int // index of second edge
 } derive(Eq, Show)
 
 ///|
 /// Hints along one axis.
-pub struct AxisHints {
+struct AxisHints {
   segments : Array[Segment]
   edges : Array[Edge]
   stems : Array[Stem]
@@ -97,7 +97,7 @@ pub fn AxisHints::new() -> AxisHints {
 
 ///|
 /// Per-glyph hinting data.
-pub struct GlyphHints {
+struct GlyphHints {
   x_axis : AxisHints
   y_axis : AxisHints
 } derive(Eq, Show)
