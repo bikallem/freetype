@@ -60,12 +60,13 @@ fn load_sfnt(
     Some(cl) => fn(charcode) { cl.char_index(charcode) }
     None => fn(_charcode) { 0U }
   }
-  let load_glyph_fn : (UInt, Int) -> (@base.GlyphSlotData, @types.Outline) raise @error.FTError = fn(
-    glyph_index,
-    load_flags,
-  ) raise @error.FTError {
+  let load_glyph_fn : (UInt, Int) -> (
+    @base.GlyphSlotData,
+    @types.Outline,
+    Bytes,
+  ) raise @error.FTError = fn(glyph_index, load_flags) raise @error.FTError {
     let no_hinting = (load_flags & @base.load_no_hinting) != 0
-    let outline = if tt_data is Some(tt) {
+    let (outline, tt_instructions) = if tt_data is Some(tt) {
       hint_has_hints.val = false
       @truetype.load_tt_glyph(
         data,
@@ -83,10 +84,10 @@ fn load_sfnt(
         hint_v_hints.val = hv
         hint_has_hints.val = hh.length() > 0 || hv.length() > 0
       }
-      o
+      (o, b"")
     } else {
       hint_has_hints.val = false
-      @types.Outline::new()
+      (@types.Outline::new(), b"")
     }
     // Compute metrics from outline bbox + hmtx
     let (advance_width, _lsb) = hmtx.get_metrics(glyph_index)
@@ -98,7 +99,7 @@ fn load_sfnt(
       metrics_hori_bearing_y: bb.y_max,
       metrics_hori_advance: advance_width.reinterpret_as_int().to_int64(),
     }
-    (slot_data, outline)
+    (slot_data, outline, tt_instructions)
   }
   let apply_hints_fn : (@types.Outline, @fixed.Fixed) -> Bool = fn(
     outline,
@@ -118,15 +119,129 @@ fn load_sfnt(
       false
     }
   }
+  // TrueType bytecode hinting closure — captures tt_data (cvt, fpgm, prep)
+  let tt_hint_fn : (@types.Outline, Bytes, @fixed.Fixed, @fixed.Fixed, UInt) -> Bool = fn(
+    outline,
+    instructions,
+    x_scale,
+    y_scale,
+    ppem,
+  ) {
+    if tt_data is Some(tt) && instructions.length() > 0 {
+      // Create interpreter context
+      let ctx = @truetype.InterpContext::new(
+        cvt=tt.cvt.copy(),
+        storage_size=64,
+        max_stack=256,
+      )
+      ctx.ppem = ppem.reinterpret_as_int()
+      // Scale CVT values by y_scale (CVT stored in font units << 6, need 26.6 at current size)
+      // CVT was loaded as font_units << 6. We need to apply scale.
+      // scale is 16.16. CVT value is font_unit << 6 = font_unit in 26.6
+      // Scaled value = mul_fix(scale, Fixed::from_raw(font_unit)) in 26.6
+      // But CVT is already shifted to 26.6 in tt_face.mbt, so we need:
+      // scaled_cvt = mul_fix(y_scale, Fixed::from_raw(cvt_val >> 6)) which gives 26.6
+      // Actually: cvt_val is (font_unit << 6), i.e. font_unit in 26.6
+      // We want: (font_unit * ppem / upe) in 26.6 = mul_fix(y_scale, font_unit_16_16)
+      // font_unit as 16.16 = font_unit << 16
+      // cvt_val << 10 = font_unit << 16
+      // So: scaled = mul_fix(y_scale, Fixed::from_raw(cvt_val << 10))
+      // Simpler: just scale each CVT entry
+      for i in 0..<ctx.cvt.length() {
+        // cvt[i] is font_units << 6 (26.6 in font units)
+        // Convert to actual font units (>> 6), then scale with mul_fix
+        let font_units = ctx.cvt[i] >> 6
+        ctx.cvt[i] = @fixed.mul_fix(y_scale, @fixed.Fixed::from_raw(font_units)).val
+      }
+      // Populate zone1 with scaled glyph points
+      let n_points = outline.points.length()
+      // Add phantom points (4 extra): origin, advance width, top, bottom
+      let total_points = n_points + 4
+      ctx.zone1_org = Array::make(total_points, { x: 0L, y: 0L })
+      ctx.zone1_cur = Array::make(total_points, { x: 0L, y: 0L })
+      ctx.zone1_tags = Array::make(total_points, b'\x00')
+      ctx.zone1_touch = Array::make(total_points, b'\x00')
+      ctx.zone1_points = ctx.zone1_cur
+      for i in 0..<n_points {
+        // Scale from font units to 26.6 pixels
+        let sx = @fixed.mul_fix(
+            x_scale,
+            @fixed.Fixed::from_raw(outline.points[i].x),
+          ).val
+        let sy = @fixed.mul_fix(
+            y_scale,
+            @fixed.Fixed::from_raw(outline.points[i].y),
+          ).val
+        ctx.zone1_org[i] = { x: sx, y: sy }
+        ctx.zone1_cur[i] = { x: sx, y: sy }
+        ctx.zone1_tags[i] = if i < outline.tags.length() {
+          outline.tags[i]
+        } else {
+          b'\x01'
+        }
+      }
+      // Initialize twilight zone with some capacity
+      let twilight_size = 16
+      ctx.zone0_org = Array::make(twilight_size, { x: 0L, y: 0L })
+      ctx.zone0_cur = Array::make(twilight_size, { x: 0L, y: 0L })
+      ctx.zone0_tags = Array::make(twilight_size, b'\x00')
+      ctx.zone0_points = ctx.zone0_cur
+      // Run font program (defines functions)
+      if tt.fpgm.length() > 0 {
+        let fpgm_result = try? ctx.execute(tt.fpgm)
+        if fpgm_result is Err(_) {
+          return false
+        }
+      }
+      // Reset graphics state for prep program
+      ctx.gs = @truetype.GraphicsState::default()
+      // Run CVT program (modifies CVT for current size)
+      if tt.prep.length() > 0 {
+        let prep_result = try? ctx.execute(tt.prep)
+        if prep_result is Err(_) {
+          return false
+        }
+      }
+      // Reset graphics state for glyph program
+      ctx.gs = @truetype.GraphicsState::default()
+      // Run glyph instructions
+      let glyph_result = try? ctx.execute(instructions)
+      if glyph_result is Err(_) {
+        return false
+      }
+      // Copy hinted points back to outline (already in 26.6)
+      for i in 0..<n_points {
+        outline.points[i] = { x: ctx.zone1_cur[i].x, y: ctx.zone1_cur[i].y }
+      }
+      true
+    } else {
+      false
+    }
+  }
   let kern_fn : (UInt, UInt) -> Int = match kern_table {
     Some(k) => fn(left, right) { k.get_kerning(left, right) }
     None => fn(_left, _right) { 0 }
+  }
+  // Parse fvar if present (variable font support)
+  if sfnt_data.table_dir.find_table(@types.tag_fvar) is Some(fvar_rec) {
+    let fvar_reader = @stream.ByteReader::new(data)
+    let fvar_result = try? @truetype.parse_fvar(
+      fvar_reader,
+      fvar_rec.offset,
+      fvar_rec.length,
+    )
+    if fvar_result is Ok(fvar) && fvar.axes.length() > 0 {
+      face.face_flags = face.face_flags | @base.face_flag_multiple_masters
+      // Initialize var_coords to default (all zeros = default instance)
+      face.var_coords = Array::make(fvar.axes.length(), 0)
+    }
   }
   face.driver_data = @base.DriverData::SfntDriver({
     char_index: char_index_fn,
     load_glyph: load_glyph_fn,
     get_kerning: kern_fn,
     apply_hints: apply_hints_fn,
+    tt_hint: tt_hint_fn,
     num_glyphs: sfnt_data.maxp.num_glyphs,
     raw_data: data,
   })

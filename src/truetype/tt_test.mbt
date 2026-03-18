@@ -258,7 +258,7 @@ test "load_simple_glyph: triangle" {
   buf.push(b'\x64') // point 2: y += 100
   let data = Bytes::from_array(buf[:])
   let reader = @stream.ByteReader::new(data)
-  let outline = @truetype.load_simple_glyph(reader, 1)
+  let (outline, _instr) = @truetype.load_simple_glyph(reader, 1)
   inspect(outline.n_points(), content="3")
   inspect(outline.n_contours(), content="1")
   inspect(outline.points[0].x, content="0")

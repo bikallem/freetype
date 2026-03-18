@@ -49,6 +49,9 @@ pub(all) struct FaceRec {
   mut glyph : GlyphSlot
   mut size : SizeRec
 
+  // --- Font variations ---
+  mut var_coords : Array[Int] // normalized variation coordinates (empty = default instance)
+
   // --- Format-specific data ---
   // The font driver stores its own data here. In C this was TT_FaceRec,
   // CFF_FontRec, etc. We use a trait object approach.
@@ -152,9 +155,10 @@ pub impl Show for DriverData with output(self, logger) {
 /// SFNT driver operations — closures that capture the parsed font data.
 pub(all) struct SfntOps {
   char_index : (UInt) -> UInt // charcode → glyph index
-  load_glyph : (UInt, Int) -> (GlyphSlotData, @types.Outline) raise @error.FTError // (glyph_index, load_flags) → slot data
+  load_glyph : (UInt, Int) -> (GlyphSlotData, @types.Outline, Bytes) raise @error.FTError // (glyph_index, load_flags) → (slot data, outline, tt instructions)
   get_kerning : (UInt, UInt) -> Int // (left, right) → kern value
-  apply_hints : (@types.Outline, @fixed.Fixed) -> Bool // (outline, y_scale) → true if hints were applied
+  apply_hints : (@types.Outline, @fixed.Fixed) -> Bool // (outline, y_scale) → true if PS hints were applied
+  tt_hint : (@types.Outline, Bytes, @fixed.Fixed, @fixed.Fixed, UInt) -> Bool // (outline, instructions, x_scale, y_scale, ppem) → true if TT hints were applied
   num_glyphs : UInt
   raw_data : Bytes // font file bytes (for re-parsing if needed)
 }
@@ -215,6 +219,7 @@ pub fn FaceRec::new(
     max_advance_height: 0,
     underline_position: 0,
     underline_thickness: 0,
+    var_coords: [],
     glyph: GlyphSlot::new(),
     size: SizeRec::new(),
     driver_data: DriverData::Empty,

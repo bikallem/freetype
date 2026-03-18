@@ -11,4 +11,5 @@ import {
   "bikallem/freetype/bdf",
   "bikallem/freetype/pshinter",
   "bikallem/freetype/psaux",
+  "bikallem/freetype/autofit",
 }

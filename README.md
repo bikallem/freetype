@@ -27,9 +27,12 @@ CID-keyed fonts inside CFF/OpenType are supported through the CFF driver.
 - Glyph outline loading (TrueType simple/composite, CFF charstrings)
 - Pixel size scaling with proper 16.16 fixed-point math
 - Kerning pair lookup
-- TrueType bytecode interpreter (~40 opcodes: stack, arithmetic, comparison, logic, flow control, push, storage, CVT)
+- TrueType bytecode hinting (~160 opcodes: point movement, zones, projection vectors, rounding, deltas)
+- PostScript hinting (stem fitting, blue zone alignment, point interpolation)
+- Auto-hinter (script-aware segment/edge/stem detection, pixel grid fitting)
 - PostScript Type 2 charstring interpreter (path operators, hints, subroutines, flex)
 - PostScript Type 1 charstring interpreter (hsbw, closepath, callothersubr/Flex, seac)
+- Font variations API (`set_var_design_coordinates`, fvar/avar parsing, axis normalization)
 - WOFF1 decompression (zlib via `bikallem/compress`)
 - Format auto-detection from file header bytes
 
@@ -46,10 +49,7 @@ The following FreeType subsystems are **excluded** from this port:
 | **FT_Library global state** | Eliminated — API is stateless, no initialization needed |
 | **Memory allocator** (`FT_ALLOC`/`FT_FREE`/`FT_Memory`) | Eliminated — GC handles memory |
 | **FT_Generic** (user data hooks) | Omitted — users wrap `Face` in their own struct |
-| **TrueType hinting (full)** | Bytecode interpreter has ~40 of ~200 opcodes; point movement instructions (SHP, MIRP, etc.) not yet implemented |
-| **PostScript hinting (full)** | Stem alignment and blue zone snapping implemented; full algorithm incomplete |
-| **Auto-hinter (full)** | Segment/edge detection infrastructure present; full Latin/CJK fitting not complete |
-| **Font variations (full)** | `fvar`/`gvar`/`avar` table structures defined; delta interpolation not implemented |
+| **Font variations (gvar)** | `fvar`/`avar` parsed, axis normalization works; `gvar` delta interpolation not yet implemented |
 
 ## API
 

@@ -14,9 +14,9 @@
 pub fn load_simple_glyph(
   reader : @stream.ByteReader,
   num_contours : Int,
-) -> @types.Outline raise @error.FTError {
+) -> (@types.Outline, Bytes) raise @error.FTError {
   if num_contours <= 0 {
-    return @types.Outline::new()
+    return (@types.Outline::new(), b"")
   }
   // Read bbox (4 × i16), skip — we compute it from points
   let _x_min = reader.read_i16_be()
@@ -33,9 +33,13 @@ pub fn load_simple_glyph(
   } else {
     0
   }
-  // Read and skip instructions
+  // Read instructions
   let instruction_length = reader.read_u16_be().reinterpret_as_int()
-  reader.skip(instruction_length)
+  let instructions = if instruction_length > 0 {
+    reader.read_bytes(instruction_length)
+  } else {
+    b""
+  }
   // Read flags (compressed with repeat)
   let flags : Array[Byte] = []
   let mut i = 0
@@ -106,7 +110,7 @@ pub fn load_simple_glyph(
       },
     )
   }
-  { points, tags, contours, flags: 0 }
+  ({ points, tags, contours, flags: 0 }, instructions)
 }
 
 ///|
@@ -195,18 +199,18 @@ pub fn load_tt_glyph(
   glyf_offset : UInt,
   glyph_index : UInt,
   depth? : Int = 0,
-) -> @types.Outline raise @error.FTError {
+) -> (@types.Outline, Bytes) raise @error.FTError {
   if depth > 32 {
     raise @error.FTError::InvalidComposite // prevent infinite recursion
   }
   let idx = glyph_index.reinterpret_as_int()
   if idx >= glyph_offsets.length() - 1 {
-    return @types.Outline::new() // .notdef or out of range
+    return (@types.Outline::new(), b"") // .notdef or out of range
   }
   let glyph_start = glyf_offset + glyph_offsets[idx]
   let glyph_end = glyf_offset + glyph_offsets[idx + 1]
   if glyph_start == glyph_end {
-    return @types.Outline::new() // empty glyph (e.g., space)
+    return (@types.Outline::new(), b"") // empty glyph (e.g., space)
   }
   let reader = @stream.ByteReader::new(data)
   reader.seek(glyph_start.reinterpret_as_int())
@@ -220,7 +224,7 @@ pub fn load_tt_glyph(
     let loader = @base.GlyphLoader::new()
     for _, comp in components {
       // Recursively load component glyph
-      let sub_outline = load_tt_glyph(
+      let (sub_outline, _sub_instr) = load_tt_glyph(
         data,
         glyph_offsets,
         glyf_offset,
@@ -259,6 +263,7 @@ pub fn load_tt_glyph(
       }
       loader.add()
     }
-    loader.to_outline()
+    // Composite glyphs: no per-glyph instructions returned
+    (loader.to_outline(), b"")
   }
 }

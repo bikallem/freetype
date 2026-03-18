@@ -27,6 +27,8 @@ pub(all) struct InterpContext {
   mut zone1_points : Array[@types.Vector] // alias for backwards compat
   mut zone1_tags : Array[Byte]
   mut zone1_touch : Array[Byte] // touch flags per point (bit 0 = x touched, bit 1 = y touched)
+  // Current pixels per em
+  mut ppem : Int
   // Error state
   mut error : Bool
 } derive(Show)
@@ -121,6 +123,7 @@ pub fn InterpContext::new(
     zone1_points: [],
     zone1_tags: [],
     zone1_touch: [],
+    ppem: 0,
     error: false,
   }
 }
@@ -495,8 +498,8 @@ fn InterpContext::exec_opcode(self : InterpContext, opcode : Int) -> Unit {
     0x48 => self.op_scfs() // SCFS - set coordinate from stack
     0x49 => self.op_md(0) // MD[0] - measure distance (current)
     0x4A => self.op_md(1) // MD[1] - measure distance (original)
-    0x4B => self.push(64L) // MPPEM (stub: return 64 = 1 pixel ppem)
-    0x4C => self.push(64L) // MPS (stub)
+    0x4B => self.push(self.ppem.to_int64()) // MPPEM - measure pixels per em
+    0x4C => self.push(self.ppem.to_int64()) // MPS - measure point size (same as ppem for our purposes)
     // --- Point movement opcodes ---
     0x2E => self.op_mdap(0) // MDAP[0]
     0x2F => self.op_mdap(1) // MDAP[1]
@@ -1608,8 +1611,8 @@ fn InterpContext::op_deltap(self : InterpContext, selector : Int) -> Unit {
     let point_idx = self.pop().to_int()
     let ppem_offset = (arg >> 4) & 0x0F
     let ppem = ppem_base + ppem_offset
-    // Check if current ppem matches (stub: assume ppem=64 from MPPEM)
-    if ppem == 64 {
+    // Check if current ppem matches
+    if ppem == self.ppem {
       let magnitude = arg & 0x0F
       // magnitude 0-7: -(8-magnitude) steps, 8-15: +(magnitude-7) steps
       let step = if magnitude < 8 { -(8 - magnitude) } else { magnitude - 7 }
@@ -1629,7 +1632,7 @@ fn InterpContext::op_deltac(self : InterpContext, selector : Int) -> Unit {
     let cvt_idx = self.pop().to_int()
     let ppem_offset = (arg >> 4) & 0x0F
     let ppem = ppem_base + ppem_offset
-    if ppem == 64 {
+    if ppem == self.ppem {
       let magnitude = arg & 0x0F
       let step = if magnitude < 8 { -(8 - magnitude) } else { magnitude - 7 }
       let delta = step.to_int64() << 6 >> self.gs.delta_shift
