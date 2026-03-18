@@ -295,7 +295,7 @@ fn exec_type1_op2(
   ip : Int,
   op : Int,
   state : Type1State,
-) -> Int raise @error.FTError {
+) -> Int {
   ignore(code)
   match op {
     0 =>

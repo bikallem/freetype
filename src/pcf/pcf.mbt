@@ -283,7 +283,7 @@ fn read_cstring(data : Bytes, offset : Int) -> String {
   let buf = StringBuilder::new()
   let mut i = offset
   while i < len && data[i] != b'\x00' {
-    buf.write_char(Char::from_int(data[i].to_int()))
+    buf.write_char(Int::unsafe_to_char(data[i].to_int()))
     i += 1
   }
   buf.to_string()

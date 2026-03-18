@@ -160,7 +160,7 @@ pub fn parse_type1_pfb(data : Bytes) -> Type1Font raise @error.FTError {
 ///|
 /// Parse a PFA (ASCII) Type 1 font.
 /// The entire file is ASCII; the eexec section is hex-encoded.
-fn parse_type1_pfa(data : Bytes) -> Type1Font raise @error.FTError {
+fn parse_type1_pfa(data : Bytes) -> Type1Font {
   let font = Type1Font::new()
   // The whole file is ASCII
   font.font_name = extract_font_name(data)
