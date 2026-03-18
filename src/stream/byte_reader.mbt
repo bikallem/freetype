@@ -94,21 +94,20 @@ pub fn ByteReader::read_byte(self : ByteReader) -> Byte raise @error.FTError {
   if self.pos >= self.size {
     raise @error.FTError::InvalidStreamRead
   }
-  let v = self.data[self.pos]
+  let v = self.data.unsafe_get(self.pos)
   self.pos += 1
   v
 }
 
 ///|
-/// Read 2 bytes big-endian as UInt.
+/// Read 2 bytes big-endian as UInt (bounds-checked, then unchecked read).
 pub fn ByteReader::read_u16_be(self : ByteReader) -> UInt raise @error.FTError {
   if self.pos + 2 > self.size {
     raise @error.FTError::InvalidStreamRead
   }
-  let b0 = self.data[self.pos]
-  let b1 = self.data[self.pos + 1]
+  let v = self.data.unsafe_read_uint16_be(self.pos).to_uint()
   self.pos += 2
-  (b0.to_uint() << 8) | b1.to_uint()
+  v
 }
 
 ///|
@@ -117,21 +116,26 @@ pub fn ByteReader::read_u16_le(self : ByteReader) -> UInt raise @error.FTError {
   if self.pos + 2 > self.size {
     raise @error.FTError::InvalidStreamRead
   }
-  let b0 = self.data[self.pos]
-  let b1 = self.data[self.pos + 1]
+  let v = self.data.unsafe_read_uint16_le(self.pos).to_uint()
   self.pos += 2
-  b0.to_uint() | (b1.to_uint() << 8)
+  v
 }
 
 ///|
 /// Read 2 bytes big-endian as signed Int (sign-extended from 16 bits).
 pub fn ByteReader::read_i16_be(self : ByteReader) -> Int raise @error.FTError {
-  let v = self.read_u16_be()
-  let raw = v.reinterpret_as_int()
-  if raw >= 0x8000 {
-    raw - 0x10000
+  if self.pos + 2 > self.size {
+    raise @error.FTError::InvalidStreamRead
+  }
+  let v = self.data
+    .unsafe_read_uint16_be(self.pos)
+    .to_uint()
+    .reinterpret_as_int()
+  self.pos += 2
+  if v >= 0x8000 {
+    v - 0x10000
   } else {
-    raw
+    v
   }
 }
 
@@ -141,9 +145,9 @@ pub fn ByteReader::read_u24_be(self : ByteReader) -> UInt raise @error.FTError {
   if self.pos + 3 > self.size {
     raise @error.FTError::InvalidStreamRead
   }
-  let b0 = self.data[self.pos]
-  let b1 = self.data[self.pos + 1]
-  let b2 = self.data[self.pos + 2]
+  let b0 = self.data.unsafe_get(self.pos)
+  let b1 = self.data.unsafe_get(self.pos + 1)
+  let b2 = self.data.unsafe_get(self.pos + 2)
   self.pos += 3
   (b0.to_uint() << 16) | (b1.to_uint() << 8) | b2.to_uint()
 }
@@ -154,15 +158,9 @@ pub fn ByteReader::read_u32_be(self : ByteReader) -> UInt raise @error.FTError {
   if self.pos + 4 > self.size {
     raise @error.FTError::InvalidStreamRead
   }
-  let b0 = self.data[self.pos]
-  let b1 = self.data[self.pos + 1]
-  let b2 = self.data[self.pos + 2]
-  let b3 = self.data[self.pos + 3]
+  let v = self.data.unsafe_read_uint32_be(self.pos)
   self.pos += 4
-  (b0.to_uint() << 24) |
-  (b1.to_uint() << 16) |
-  (b2.to_uint() << 8) |
-  b3.to_uint()
+  v
 }
 
 ///|
@@ -171,15 +169,9 @@ pub fn ByteReader::read_u32_le(self : ByteReader) -> UInt raise @error.FTError {
   if self.pos + 4 > self.size {
     raise @error.FTError::InvalidStreamRead
   }
-  let b0 = self.data[self.pos]
-  let b1 = self.data[self.pos + 1]
-  let b2 = self.data[self.pos + 2]
-  let b3 = self.data[self.pos + 3]
+  let v = self.data.unsafe_read_uint32_le(self.pos)
   self.pos += 4
-  b0.to_uint() |
-  (b1.to_uint() << 8) |
-  (b2.to_uint() << 16) |
-  (b3.to_uint() << 24)
+  v
 }
 
 ///|
@@ -242,35 +234,37 @@ pub fn ByteReader::frame_remaining(self : ByteReader) -> Int {
 }
 
 ///|
-/// Read a byte from the frame cursor (no bounds check).
+/// Read a byte from the frame cursor (no bounds check — frame pre-validated).
 pub fn ByteReader::get_byte(self : ByteReader) -> Byte {
-  let v = self.data[self.cursor]
+  let v = self.data.unsafe_get(self.cursor)
   self.cursor += 1
   v
 }
 
 ///|
-/// Read 2 bytes big-endian from frame cursor.
+/// Read 2 bytes big-endian from frame cursor (unchecked).
 pub fn ByteReader::get_u16_be(self : ByteReader) -> UInt {
-  let b0 = self.data[self.cursor]
-  let b1 = self.data[self.cursor + 1]
+  let v = self.data.unsafe_read_uint16_be(self.cursor).to_uint()
   self.cursor += 2
-  (b0.to_uint() << 8) | b1.to_uint()
+  v
 }
 
 ///|
-/// Read 2 bytes little-endian from frame cursor.
+/// Read 2 bytes little-endian from frame cursor (unchecked).
 pub fn ByteReader::get_u16_le(self : ByteReader) -> UInt {
-  let b0 = self.data[self.cursor]
-  let b1 = self.data[self.cursor + 1]
+  let v = self.data.unsafe_read_uint16_le(self.cursor).to_uint()
   self.cursor += 2
-  b0.to_uint() | (b1.to_uint() << 8)
+  v
 }
 
 ///|
-/// Read 2 bytes big-endian signed from frame cursor.
+/// Read 2 bytes big-endian signed from frame cursor (unchecked).
 pub fn ByteReader::get_i16_be(self : ByteReader) -> Int {
-  let v = self.get_u16_be().reinterpret_as_int()
+  let v = self.data
+    .unsafe_read_uint16_be(self.cursor)
+    .to_uint()
+    .reinterpret_as_int()
+  self.cursor += 2
   if v >= 0x8000 {
     v - 0x10000
   } else {
@@ -279,51 +273,39 @@ pub fn ByteReader::get_i16_be(self : ByteReader) -> Int {
 }
 
 ///|
-/// Read 3 bytes big-endian from frame cursor.
+/// Read 3 bytes big-endian from frame cursor (unchecked).
 pub fn ByteReader::get_u24_be(self : ByteReader) -> UInt {
-  let b0 = self.data[self.cursor]
-  let b1 = self.data[self.cursor + 1]
-  let b2 = self.data[self.cursor + 2]
+  let b0 = self.data.unsafe_get(self.cursor)
+  let b1 = self.data.unsafe_get(self.cursor + 1)
+  let b2 = self.data.unsafe_get(self.cursor + 2)
   self.cursor += 3
   (b0.to_uint() << 16) | (b1.to_uint() << 8) | b2.to_uint()
 }
 
 ///|
-/// Read 4 bytes big-endian from frame cursor.
+/// Read 4 bytes big-endian from frame cursor (unchecked).
 pub fn ByteReader::get_u32_be(self : ByteReader) -> UInt {
-  let b0 = self.data[self.cursor]
-  let b1 = self.data[self.cursor + 1]
-  let b2 = self.data[self.cursor + 2]
-  let b3 = self.data[self.cursor + 3]
+  let v = self.data.unsafe_read_uint32_be(self.cursor)
   self.cursor += 4
-  (b0.to_uint() << 24) |
-  (b1.to_uint() << 16) |
-  (b2.to_uint() << 8) |
-  b3.to_uint()
+  v
 }
 
 ///|
-/// Read 4 bytes little-endian from frame cursor.
+/// Read 4 bytes little-endian from frame cursor (unchecked).
 pub fn ByteReader::get_u32_le(self : ByteReader) -> UInt {
-  let b0 = self.data[self.cursor]
-  let b1 = self.data[self.cursor + 1]
-  let b2 = self.data[self.cursor + 2]
-  let b3 = self.data[self.cursor + 3]
+  let v = self.data.unsafe_read_uint32_le(self.cursor)
   self.cursor += 4
-  b0.to_uint() |
-  (b1.to_uint() << 8) |
-  (b2.to_uint() << 16) |
-  (b3.to_uint() << 24)
+  v
 }
 
 ///|
-/// Read 4 bytes big-endian signed from frame cursor.
+/// Read 4 bytes big-endian signed from frame cursor (unchecked).
 pub fn ByteReader::get_i32_be(self : ByteReader) -> Int {
   self.get_u32_be().reinterpret_as_int()
 }
 
 ///|
-/// Read 8 bytes big-endian as Int64 from frame cursor.
+/// Read 8 bytes big-endian as Int64 from frame cursor (unchecked).
 pub fn ByteReader::get_i64_be(self : ByteReader) -> Int64 {
   let hi = self.get_u32_be().to_int64()
   let lo = self.get_u32_be().to_int64()
