@@ -48,7 +48,7 @@ pub fn GlyphLoader::add_point(
   y : Int64,
   tag : Byte,
 ) -> Unit {
-  self.current_points.push({ x, y })
+  self.current_points.push(@types.Vector::new(x, y))
   self.current_tags.push(tag)
 }
 
@@ -85,12 +85,11 @@ pub fn GlyphLoader::add(self : GlyphLoader) -> Unit {
 ///|
 /// Build an Outline from the accumulated base data.
 pub fn GlyphLoader::to_outline(self : GlyphLoader) -> @types.Outline {
-  {
-    points: self.base_points.copy(),
-    tags: self.base_tags.copy(),
-    contours: self.base_contours.copy(),
-    flags: 0,
-  }
+  @types.Outline::create(
+    self.base_points.copy(),
+    self.base_tags.copy(),
+    self.base_contours.copy(),
+  )
 }
 
 ///|

@@ -29,19 +29,18 @@ test "detect_script Default" {
 ///|
 test "compute_segments on square" {
   // A simple square: (0,0) -> (100,0) -> (100,100) -> (0,100)
-  let outline : @types.Outline = {
-    points: [
-      { x: 0L, y: 0L },
-      { x: 100L, y: 0L },
-      { x: 100L, y: 100L },
-      { x: 0L, y: 100L },
+  let outline = @types.Outline::create(
+    [
+      @types.Vector::new(0L, 0L),
+      @types.Vector::new(100L, 0L),
+      @types.Vector::new(100L, 100L),
+      @types.Vector::new(0L, 100L),
     ],
-    tags: [
+    [
       @types.curve_tag_on, @types.curve_tag_on, @types.curve_tag_on, @types.curve_tag_on,
     ],
-    contours: [3U],
-    flags: 0,
-  }
+    [3U],
+  )
   // Horizontal segments: runs with constant y (perpendicular)
   let h_segs = @autofit.compute_segments(
     outline,

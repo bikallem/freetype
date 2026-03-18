@@ -101,21 +101,23 @@ pub let style_flag_italic : Int
 // Errors
 
 // Types and methods
-pub(all) struct BitmapSize {
+pub struct BitmapSize {
   height : Int
   width : Int
   size : Int64
   x_ppem : Int64
   y_ppem : Int64
 }
+pub fn BitmapSize::new(Int, Int, Int64, Int64, Int64) -> Self
 pub impl Eq for BitmapSize
 pub impl Show for BitmapSize
 
-pub(all) struct CharMapRec {
+pub struct CharMapRec {
   encoding : Encoding
   platform_id : UInt
   encoding_id : UInt
 }
+pub fn CharMapRec::new(Encoding, UInt, UInt) -> Self
 pub impl Eq for CharMapRec
 pub impl Show for CharMapRec
 
@@ -147,7 +149,7 @@ pub fn Encoding::to_tag(Self) -> UInt
 pub impl Eq for Encoding
 pub impl Show for Encoding
 
-pub(all) struct FaceRec {
+pub struct FaceRec {
   num_faces : Int64
   face_index : Int64
   mut face_flags : Int64
@@ -184,6 +186,24 @@ pub fn FaceRec::is_scalable(Self) -> Bool
 pub fn FaceRec::is_sfnt(Self) -> Bool
 pub fn FaceRec::is_variation(Self) -> Bool
 pub fn FaceRec::new(num_faces? : Int64, face_index? : Int64) -> Self
+pub fn FaceRec::set_active_charmap(Self, Int) -> Unit
+pub fn FaceRec::set_ascender(Self, Int) -> Unit
+pub fn FaceRec::set_available_sizes(Self, Array[BitmapSize]) -> Unit
+pub fn FaceRec::set_bbox(Self, @types.BBox) -> Unit
+pub fn FaceRec::set_descender(Self, Int) -> Unit
+pub fn FaceRec::set_driver_data(Self, DriverData) -> Unit
+pub fn FaceRec::set_face_flags(Self, Int64) -> Unit
+pub fn FaceRec::set_family_name(Self, String) -> Unit
+pub fn FaceRec::set_height(Self, Int) -> Unit
+pub fn FaceRec::set_max_advance_height(Self, Int) -> Unit
+pub fn FaceRec::set_max_advance_width(Self, Int) -> Unit
+pub fn FaceRec::set_num_glyphs(Self, Int64) -> Unit
+pub fn FaceRec::set_style_flags(Self, Int) -> Unit
+pub fn FaceRec::set_style_name(Self, String) -> Unit
+pub fn FaceRec::set_underline_position(Self, Int) -> Unit
+pub fn FaceRec::set_underline_thickness(Self, Int) -> Unit
+pub fn FaceRec::set_units_per_em(Self, UInt) -> Unit
+pub fn FaceRec::set_var_coords(Self, Array[Int]) -> Unit
 pub impl Show for FaceRec
 
 pub(all) enum FontFormat {
@@ -223,7 +243,7 @@ pub fn GlyphLoader::reset(Self) -> Unit
 pub fn GlyphLoader::to_outline(Self) -> @types.Outline
 pub impl Show for GlyphLoader
 
-pub(all) struct GlyphSlot {
+pub struct GlyphSlot {
   mut glyph_index : UInt
   mut metrics : @types.GlyphMetrics
   mut linear_hori_advance : @fixed.Fixed
@@ -240,18 +260,32 @@ pub(all) struct GlyphSlot {
   mut subglyphs : Array[SubGlyph]
 }
 pub fn GlyphSlot::new() -> Self
+pub fn GlyphSlot::set_advance(Self, @types.Vector) -> Unit
+pub fn GlyphSlot::set_bitmap(Self, @types.Bitmap) -> Unit
+pub fn GlyphSlot::set_bitmap_left(Self, Int) -> Unit
+pub fn GlyphSlot::set_bitmap_top(Self, Int) -> Unit
+pub fn GlyphSlot::set_format(Self, @types.GlyphFormat) -> Unit
+pub fn GlyphSlot::set_glyph_index(Self, UInt) -> Unit
+pub fn GlyphSlot::set_linear_hori_advance(Self, @fixed.Fixed) -> Unit
+pub fn GlyphSlot::set_linear_vert_advance(Self, @fixed.Fixed) -> Unit
+pub fn GlyphSlot::set_lsb_delta(Self, Int64) -> Unit
+pub fn GlyphSlot::set_num_subglyphs(Self, UInt) -> Unit
+pub fn GlyphSlot::set_outline(Self, @types.Outline) -> Unit
+pub fn GlyphSlot::set_rsb_delta(Self, Int64) -> Unit
+pub fn GlyphSlot::set_subglyphs(Self, Array[SubGlyph]) -> Unit
 pub impl Show for GlyphSlot
 
-pub(all) struct GlyphSlotData {
+pub struct GlyphSlotData {
   metrics_width : Int64
   metrics_height : Int64
   metrics_hori_bearing_x : Int64
   metrics_hori_bearing_y : Int64
   metrics_hori_advance : Int64
 }
+pub fn GlyphSlotData::new(Int64, Int64, Int64, Int64, Int64) -> Self
 pub impl Show for GlyphSlotData
 
-pub(all) struct OutlineFuncs {
+pub struct OutlineFuncs {
   move_to : (@types.Vector) -> Unit raise @error.FTError
   line_to : (@types.Vector) -> Unit raise @error.FTError
   conic_to : (@types.Vector, @types.Vector) -> Unit raise @error.FTError
@@ -259,8 +293,9 @@ pub(all) struct OutlineFuncs {
   shift : Int
   delta : Int64
 }
+pub fn OutlineFuncs::new(move_to~ : (@types.Vector) -> Unit raise @error.FTError, line_to~ : (@types.Vector) -> Unit raise @error.FTError, conic_to~ : (@types.Vector, @types.Vector) -> Unit raise @error.FTError, cubic_to~ : (@types.Vector, @types.Vector, @types.Vector) -> Unit raise @error.FTError, shift? : Int, delta? : Int64) -> Self
 
-pub(all) struct SfntOps {
+pub struct SfntOps {
   char_index : (UInt) -> UInt
   load_glyph : (UInt, Int) -> (GlyphSlotData, @types.Outline, Bytes) raise @error.FTError
   get_kerning : (UInt, UInt) -> Int
@@ -269,27 +304,31 @@ pub(all) struct SfntOps {
   num_glyphs : UInt
   raw_data : Bytes
 }
+pub fn SfntOps::new(char_index~ : (UInt) -> UInt, load_glyph~ : (UInt, Int) -> (GlyphSlotData, @types.Outline, Bytes) raise @error.FTError, get_kerning~ : (UInt, UInt) -> Int, apply_hints~ : (@types.Outline, @fixed.Fixed) -> Bool, tt_hint~ : (@types.Outline, Bytes, @fixed.Fixed, @fixed.Fixed, UInt) -> Bool, num_glyphs~ : UInt, raw_data~ : Bytes) -> Self
 pub impl Show for SfntOps
 
-pub(all) struct SizeRec {
+pub struct SizeRec {
   mut metrics : @types.SizeMetrics
 }
 pub fn SizeRec::new() -> Self
+pub fn SizeRec::set_metrics(Self, @types.SizeMetrics) -> Unit
 pub impl Show for SizeRec
 
-pub(all) struct SubGlyph {
+pub struct SubGlyph {
   index : UInt
   flags : UInt
   arg1 : Int
   arg2 : Int
   transform : @fixed.Matrix
 }
+pub fn SubGlyph::new(UInt, UInt, Int, Int, @fixed.Matrix) -> Self
 pub impl Show for SubGlyph
 
-pub(all) struct Type1Ops {
+pub struct Type1Ops {
   char_index : (UInt) -> UInt
   load_glyph : (UInt, Int) -> (GlyphSlotData, @types.Outline) raise @error.FTError
 }
+pub fn Type1Ops::new(char_index~ : (UInt) -> UInt, load_glyph~ : (UInt, Int) -> (GlyphSlotData, @types.Outline) raise @error.FTError) -> Self
 pub impl Show for Type1Ops
 
 // Type aliases

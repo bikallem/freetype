@@ -109,15 +109,24 @@ pub fn GlyphHints::new() -> GlyphHints {
 
 ///|
 /// Blue zone for Latin script auto-hinting.
-pub(all) struct BlueZone {
+pub struct BlueZone {
   ref_pos : Int64 // reference position (overshoot position)
   shoot : Int64 // overshoot position
   fitted : Int64 // fitted position in 26.6
 } derive(Eq, Show)
 
 ///|
+pub fn BlueZone::new(
+  ref_pos : Int64,
+  shoot : Int64,
+  fitted : Int64,
+) -> BlueZone {
+  { ref_pos, shoot, fitted }
+}
+
+///|
 /// Script-level metrics used during hinting.
-pub(all) struct ScriptMetrics {
+pub struct ScriptMetrics {
   mut std_widths : Array[Int64] // standard stem widths
   mut blue_zones : Array[BlueZone] // blue zones (Latin script)
   mut scale : @fixed.Fixed // current scale factor
@@ -126,6 +135,11 @@ pub(all) struct ScriptMetrics {
 ///|
 pub fn ScriptMetrics::new() -> ScriptMetrics {
   { std_widths: [], blue_zones: [], scale: @fixed.Fixed::from_int(0) }
+}
+
+///|
+pub fn ScriptMetrics::set_scale(self : ScriptMetrics, v : @fixed.Fixed) -> Unit {
+  self.scale = v
 }
 
 ///|
@@ -512,9 +526,9 @@ pub fn interpolate_points(
       scaled
     }
     if is_horizontal {
-      outline.points[i].x = new_coord
+      outline.points[i].set_x(new_coord)
     } else {
-      outline.points[i].y = new_coord
+      outline.points[i].set_y(new_coord)
     }
   }
 }

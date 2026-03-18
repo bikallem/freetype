@@ -58,7 +58,7 @@ pub fn init_tt_face(
   }
   // Set hinter flag if font has programs
   if fpgm.length() > 0 || prep.length() > 0 {
-    face.face_flags = face.face_flags | @base.face_flag_hinter
+    face.set_face_flags(face.face_flags | @base.face_flag_hinter)
   }
   { sfnt, glyph_offsets, glyf_offset, glyf_length, fpgm, prep, cvt }
 }

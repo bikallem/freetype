@@ -237,12 +237,12 @@ pub fn interpolate_points(
     // Interpolate X using vertical stems (vertical stems control X positions)
     if v_stems.length() > 0 {
       let org_x = outline.points[i].x
-      outline.points[i].x = interpolate_coord(org_x, v_stems, scale)
+      outline.points[i].set_x(interpolate_coord(org_x, v_stems, scale))
     }
     // Interpolate Y using horizontal stems (horizontal stems control Y positions)
     if h_stems.length() > 0 {
       let org_y = outline.points[i].y
-      outline.points[i].y = interpolate_coord(org_y, h_stems, scale)
+      outline.points[i].set_y(interpolate_coord(org_y, h_stems, scale))
     }
   }
 }

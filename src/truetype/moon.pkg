@@ -6,3 +6,5 @@ import {
   "bikallem/freetype/base",
   "bikallem/freetype/sfnt",
 }
+
+warnings = "-15"

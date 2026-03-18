@@ -2,3 +2,5 @@ import {
   "bikallem/freetype/fixed",
   "bikallem/freetype/types",
 }
+
+warnings = "-15"

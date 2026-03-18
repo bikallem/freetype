@@ -1,12 +1,18 @@
 ///|
 /// 2×2 matrix with 16.16 fixed-point entries.
 /// Used for glyph transformations (scaling, rotation, skewing).
-pub(all) struct Matrix {
+pub struct Matrix {
   mut xx : Fixed
   mut xy : Fixed
   mut yx : Fixed
   mut yy : Fixed
 } derive(Eq, Show)
+
+///|
+/// Create a matrix with the given entries.
+pub fn Matrix::new(xx : Fixed, xy : Fixed, yx : Fixed, yy : Fixed) -> Matrix {
+  { xx, xy, yx, yy }
+}
 
 ///|
 /// Identity matrix.

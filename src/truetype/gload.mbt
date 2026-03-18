@@ -98,7 +98,7 @@ pub fn load_simple_glyph(
   let points : Array[@types.Vector] = Array::new(capacity=n_points)
   let tags : Array[Byte] = Array::new(capacity=n_points)
   for i, flag in flags {
-    points.push({ x: x_coords[i], y: y_coords[i] })
+    points.push(@types.Vector::new(x_coords[i], y_coords[i]))
     // Convert TT flags to FreeType tags:
     // Bit 0 of TT flag = on-curve (1) or off-curve (0)
     let on_curve = (flag & 0x01) != b'\x00'
@@ -110,7 +110,7 @@ pub fn load_simple_glyph(
       },
     )
   }
-  ({ points, tags, contours, flags: 0 }, instructions)
+  (@types.Outline::create(points, tags, contours), instructions)
 }
 
 ///|
@@ -240,12 +240,7 @@ pub fn load_tt_glyph(
         let mut px = point.x
         let mut py = point.y
         if has_transform {
-          let matrix : @fixed.Matrix = {
-            xx: comp.xx,
-            xy: comp.xy,
-            yx: comp.yx,
-            yy: comp.yy,
-          }
+          let matrix = @fixed.Matrix::new(comp.xx, comp.xy, comp.yx, comp.yy)
           let (rx, ry) = matrix.transform(px, py)
           px = rx
           py = ry

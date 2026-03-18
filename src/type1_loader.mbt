@@ -3,28 +3,28 @@
 fn load_type1_pfb(data : Bytes) -> @base.FaceRec raise @error.FTError {
   let font = @type1.parse_type1_pfb(data)
   let face = @base.FaceRec::new()
-  face.family_name = font.font_name
-  face.face_flags = @base.face_flag_scalable |
+  face.set_family_name(font.font_name)
+  face.set_face_flags(
+    @base.face_flag_scalable |
     @base.face_flag_horizontal |
-    @base.face_flag_glyph_names
-  face.num_glyphs = font.charstrings.length().to_int64()
-  face.units_per_em = font.units_per_em.reinterpret_as_uint()
+    @base.face_flag_glyph_names,
+  )
+  face.set_num_glyphs(font.charstrings.length().to_int64())
+  face.set_units_per_em(font.units_per_em.reinterpret_as_uint())
   if font.font_bbox.length() == 4 {
-    face.bbox = {
-      x_min: font.font_bbox[0].to_int64(),
-      y_min: font.font_bbox[1].to_int64(),
-      x_max: font.font_bbox[2].to_int64(),
-      y_max: font.font_bbox[3].to_int64(),
-    }
+    face.set_bbox(
+      @types.BBox::new(
+        font.font_bbox[0].to_int64(),
+        font.font_bbox[1].to_int64(),
+        font.font_bbox[2].to_int64(),
+        font.font_bbox[3].to_int64(),
+      ),
+    )
   }
   // Build charmap from encoding
-  face.charmaps.push({
-    encoding: @base.Encoding::AdobeCustom,
-    platform_id: 7U,
-    encoding_id: 2U,
-  })
+  face.charmaps.push(@base.CharMapRec::new(@base.Encoding::AdobeCustom, 7U, 2U))
   if face.charmaps.length() > 0 {
-    face.active_charmap = 0
+    face.set_active_charmap(0)
   }
   // Build glyph name list for index lookup
   let glyph_names : Array[String] = font.charstrings.keys().collect()
@@ -58,18 +58,19 @@ fn load_type1_pfb(data : Bytes) -> @base.FaceRec raise @error.FTError {
     let name = glyph_names[idx]
     let outline = @type1.load_type1_glyph(font, name)
     let bb = @base.outline_get_bbox(outline)
-    let slot_data : @base.GlyphSlotData = {
-      metrics_width: bb.x_max - bb.x_min,
-      metrics_height: bb.y_max - bb.y_min,
-      metrics_hori_bearing_x: bb.x_min,
-      metrics_hori_bearing_y: bb.y_max,
-      metrics_hori_advance: 0L,
-    }
+    let slot_data = @base.GlyphSlotData::new(
+      bb.x_max - bb.x_min,
+      bb.y_max - bb.y_min,
+      bb.x_min,
+      bb.y_max,
+      0L,
+    )
     (slot_data, outline)
   }
-  face.driver_data = @base.DriverData::Type1Ops({
-    char_index: char_index_fn,
-    load_glyph: load_glyph_fn,
-  })
+  face.set_driver_data(
+    @base.DriverData::Type1Ops(
+      @base.Type1Ops::new(char_index=char_index_fn, load_glyph=load_glyph_fn),
+    ),
+  )
   face
 }

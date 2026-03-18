@@ -92,13 +92,13 @@ fn load_sfnt(
     // Compute metrics from outline bbox + hmtx
     let (advance_width, _lsb) = hmtx.get_metrics(glyph_index)
     let bb = @base.outline_get_bbox(outline)
-    let slot_data : @base.GlyphSlotData = {
-      metrics_width: bb.x_max - bb.x_min,
-      metrics_height: bb.y_max - bb.y_min,
-      metrics_hori_bearing_x: bb.x_min,
-      metrics_hori_bearing_y: bb.y_max,
-      metrics_hori_advance: advance_width.reinterpret_as_int().to_int64(),
-    }
+    let slot_data = @base.GlyphSlotData::new(
+      bb.x_max - bb.x_min,
+      bb.y_max - bb.y_min,
+      bb.x_min,
+      bb.y_max,
+      advance_width.reinterpret_as_int().to_int64(),
+    )
     (slot_data, outline, tt_instructions)
   }
   let apply_hints_fn : (@types.Outline, @fixed.Fixed) -> Bool = fn(
@@ -134,22 +134,9 @@ fn load_sfnt(
         storage_size=64,
         max_stack=256,
       )
-      ctx.ppem = ppem.reinterpret_as_int()
+      ctx.set_ppem(ppem.reinterpret_as_int())
       // Scale CVT values by y_scale (CVT stored in font units << 6, need 26.6 at current size)
-      // CVT was loaded as font_units << 6. We need to apply scale.
-      // scale is 16.16. CVT value is font_unit << 6 = font_unit in 26.6
-      // Scaled value = mul_fix(scale, Fixed::from_raw(font_unit)) in 26.6
-      // But CVT is already shifted to 26.6 in tt_face.mbt, so we need:
-      // scaled_cvt = mul_fix(y_scale, Fixed::from_raw(cvt_val >> 6)) which gives 26.6
-      // Actually: cvt_val is (font_unit << 6), i.e. font_unit in 26.6
-      // We want: (font_unit * ppem / upe) in 26.6 = mul_fix(y_scale, font_unit_16_16)
-      // font_unit as 16.16 = font_unit << 16
-      // cvt_val << 10 = font_unit << 16
-      // So: scaled = mul_fix(y_scale, Fixed::from_raw(cvt_val << 10))
-      // Simpler: just scale each CVT entry
       for i in 0..<ctx.cvt.length() {
-        // cvt[i] is font_units << 6 (26.6 in font units)
-        // Convert to actual font units (>> 6), then scale with mul_fix
         let font_units = ctx.cvt[i] >> 6
         ctx.cvt[i] = @fixed.mul_fix(y_scale, @fixed.Fixed::from_raw(font_units)).val
       }
@@ -157,11 +144,12 @@ fn load_sfnt(
       let n_points = outline.points.length()
       // Add phantom points (4 extra): origin, advance width, top, bottom
       let total_points = n_points + 4
-      ctx.zone1_org = Array::make(total_points, { x: 0L, y: 0L })
-      ctx.zone1_cur = Array::make(total_points, { x: 0L, y: 0L })
-      ctx.zone1_tags = Array::make(total_points, b'\x00')
-      ctx.zone1_touch = Array::make(total_points, b'\x00')
-      ctx.zone1_points = ctx.zone1_cur
+      let zero_vec = @types.Vector::new(0L, 0L)
+      ctx.set_zone1_org(Array::make(total_points, zero_vec))
+      ctx.set_zone1_cur(Array::make(total_points, @types.Vector::new(0L, 0L)))
+      ctx.set_zone1_tags(Array::make(total_points, b'\x00'))
+      ctx.set_zone1_touch(Array::make(total_points, b'\x00'))
+      ctx.set_zone1_points(ctx.zone1_cur)
       for i in 0..<n_points {
         // Scale from font units to 26.6 pixels
         let sx = @fixed.mul_fix(
@@ -172,8 +160,8 @@ fn load_sfnt(
             y_scale,
             @fixed.Fixed::from_raw(outline.points[i].y),
           ).val
-        ctx.zone1_org[i] = { x: sx, y: sy }
-        ctx.zone1_cur[i] = { x: sx, y: sy }
+        ctx.zone1_org[i] = @types.Vector::new(sx, sy)
+        ctx.zone1_cur[i] = @types.Vector::new(sx, sy)
         ctx.zone1_tags[i] = if i < outline.tags.length() {
           outline.tags[i]
         } else {
@@ -182,10 +170,10 @@ fn load_sfnt(
       }
       // Initialize twilight zone with some capacity
       let twilight_size = 16
-      ctx.zone0_org = Array::make(twilight_size, { x: 0L, y: 0L })
-      ctx.zone0_cur = Array::make(twilight_size, { x: 0L, y: 0L })
-      ctx.zone0_tags = Array::make(twilight_size, b'\x00')
-      ctx.zone0_points = ctx.zone0_cur
+      ctx.set_zone0_org(Array::make(twilight_size, @types.Vector::new(0L, 0L)))
+      ctx.set_zone0_cur(Array::make(twilight_size, @types.Vector::new(0L, 0L)))
+      ctx.set_zone0_tags(Array::make(twilight_size, b'\x00'))
+      ctx.set_zone0_points(ctx.zone0_cur)
       // Run font program (defines functions)
       if tt.fpgm.length() > 0 {
         let fpgm_result = try? ctx.execute(tt.fpgm)
@@ -194,7 +182,7 @@ fn load_sfnt(
         }
       }
       // Reset graphics state for prep program
-      ctx.gs = @truetype.GraphicsState::default()
+      ctx.set_gs(@truetype.GraphicsState::default())
       // Run CVT program (modifies CVT for current size)
       if tt.prep.length() > 0 {
         let prep_result = try? ctx.execute(tt.prep)
@@ -203,7 +191,7 @@ fn load_sfnt(
         }
       }
       // Reset graphics state for glyph program
-      ctx.gs = @truetype.GraphicsState::default()
+      ctx.set_gs(@truetype.GraphicsState::default())
       // Run glyph instructions
       let glyph_result = try? ctx.execute(instructions)
       if glyph_result is Err(_) {
@@ -211,7 +199,10 @@ fn load_sfnt(
       }
       // Copy hinted points back to outline (already in 26.6)
       for i in 0..<n_points {
-        outline.points[i] = { x: ctx.zone1_cur[i].x, y: ctx.zone1_cur[i].y }
+        outline.points[i] = @types.Vector::new(
+          ctx.zone1_cur[i].x,
+          ctx.zone1_cur[i].y,
+        )
       }
       true
     } else {
@@ -231,27 +222,27 @@ fn load_sfnt(
       fvar_rec.length,
     )
     if fvar_result is Ok(fvar) && fvar.axes.length() > 0 {
-      face.face_flags = face.face_flags | @base.face_flag_multiple_masters
+      face.set_face_flags(face.face_flags | @base.face_flag_multiple_masters)
       // Initialize var_coords to default (all zeros = default instance)
-      face.var_coords = Array::make(fvar.axes.length(), 0)
+      face.set_var_coords(Array::make(fvar.axes.length(), 0))
     }
   }
-  face.driver_data = @base.DriverData::SfntDriver({
-    char_index: char_index_fn,
-    load_glyph: load_glyph_fn,
-    get_kerning: kern_fn,
-    apply_hints: apply_hints_fn,
-    tt_hint: tt_hint_fn,
-    num_glyphs: sfnt_data.maxp.num_glyphs,
-    raw_data: data,
-  })
+  face.set_driver_data(
+    @base.DriverData::SfntDriver(
+      @base.SfntOps::new(
+        char_index=char_index_fn,
+        load_glyph=load_glyph_fn,
+        get_kerning=kern_fn,
+        apply_hints=apply_hints_fn,
+        tt_hint=tt_hint_fn,
+        num_glyphs=sfnt_data.maxp.num_glyphs,
+        raw_data=data,
+      ),
+    ),
+  )
   // Add synthetic charmap for CFF fonts (matches C FreeType behavior)
   if has_cff {
-    face.charmaps.push({
-      encoding: @base.Encoding::Unicode,
-      platform_id: 7U,
-      encoding_id: 0U,
-    })
+    face.charmaps.push(@base.CharMapRec::new(@base.Encoding::Unicode, 7U, 0U))
   }
   face
 }

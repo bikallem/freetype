@@ -35,11 +35,12 @@ pub fn AxisHints::new() -> Self
 pub impl Eq for AxisHints
 pub impl Show for AxisHints
 
-pub(all) struct BlueZone {
+pub struct BlueZone {
   ref_pos : Int64
   shoot : Int64
   fitted : Int64
 }
+pub fn BlueZone::new(Int64, Int64, Int64) -> Self
 pub impl Eq for BlueZone
 pub impl Show for BlueZone
 
@@ -72,12 +73,13 @@ pub(all) enum Script {
 pub impl Eq for Script
 pub impl Show for Script
 
-pub(all) struct ScriptMetrics {
+pub struct ScriptMetrics {
   mut std_widths : Array[Int64]
   mut blue_zones : Array[BlueZone]
   mut scale : @fixed.Fixed
 }
 pub fn ScriptMetrics::new() -> Self
+pub fn ScriptMetrics::set_scale(Self, @fixed.Fixed) -> Unit
 pub impl Eq for ScriptMetrics
 pub impl Show for ScriptMetrics
 

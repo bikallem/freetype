@@ -1,6 +1,6 @@
 ///|
 /// Bitmap strike size descriptor.
-pub(all) struct BitmapSize {
+pub struct BitmapSize {
   height : Int // vertical pixel distance between baselines
   width : Int // average glyph width in pixels
   size : Int64 // nominal size in 26.6 fractional points
@@ -9,9 +9,20 @@ pub(all) struct BitmapSize {
 } derive(Eq, Show)
 
 ///|
+pub fn BitmapSize::new(
+  height : Int,
+  width : Int,
+  size : Int64,
+  x_ppem : Int64,
+  y_ppem : Int64,
+) -> BitmapSize {
+  { height, width, size, x_ppem, y_ppem }
+}
+
+///|
 /// Core face record containing font metadata and state.
 /// Replaces C's FT_FaceRec. Mutable because glyph loading mutates state.
-pub(all) struct FaceRec {
+pub struct FaceRec {
   // --- Identification ---
   num_faces : Int64 // number of faces in the font file
   face_index : Int64 // index of this face in the file
@@ -60,30 +71,24 @@ pub(all) struct FaceRec {
 
 ///|
 /// Size object: holds size-specific metrics.
-pub(all) struct SizeRec {
+pub struct SizeRec {
   mut metrics : @types.SizeMetrics
 } derive(Show)
 
 ///|
 pub fn SizeRec::new() -> SizeRec {
-  {
-    metrics: {
-      x_ppem: 0U,
-      y_ppem: 0U,
-      x_scale: @fixed.Fixed::zero(),
-      y_scale: @fixed.Fixed::zero(),
-      ascender: 0L,
-      descender: 0L,
-      height: 0L,
-      max_advance: 0L,
-    },
-  }
+  { metrics: @types.SizeMetrics::new() }
+}
+
+///|
+pub fn SizeRec::set_metrics(self : SizeRec, v : @types.SizeMetrics) -> Unit {
+  self.metrics = v
 }
 
 ///|
 /// Glyph slot: holds the result of loading a single glyph.
 /// Reused across glyph loads (mutable).
-pub(all) struct GlyphSlot {
+pub struct GlyphSlot {
   mut glyph_index : UInt
   mut metrics : @types.GlyphMetrics
   mut linear_hori_advance : @fixed.Fixed // 16.16 unhinted
@@ -107,7 +112,7 @@ pub fn GlyphSlot::new() -> GlyphSlot {
     metrics: @types.GlyphMetrics::new(),
     linear_hori_advance: @fixed.Fixed::zero(),
     linear_vert_advance: @fixed.Fixed::zero(),
-    advance: { x: 0L, y: 0L },
+    advance: @types.Vector::new(0L, 0L),
     format: @types.GlyphFormat::None,
     bitmap: @types.Bitmap::new(),
     bitmap_left: 0,
@@ -122,13 +127,24 @@ pub fn GlyphSlot::new() -> GlyphSlot {
 
 ///|
 /// Sub-glyph record for composite glyphs.
-pub(all) struct SubGlyph {
+pub struct SubGlyph {
   index : UInt // glyph index of component
   flags : UInt // composite flags
   arg1 : Int // first argument (offset or point index)
   arg2 : Int // second argument
   transform : @fixed.Matrix // 2x2 transformation matrix
 } derive(Show)
+
+///|
+pub fn SubGlyph::new(
+  index : UInt,
+  flags : UInt,
+  arg1 : Int,
+  arg2 : Int,
+  transform : @fixed.Matrix,
+) -> SubGlyph {
+  { index, flags, arg1, arg2, transform }
+}
 
 ///|
 /// Opaque driver-specific data. Each font format stores parsed data here.
@@ -153,7 +169,7 @@ pub impl Show for DriverData with output(self, logger) {
 
 ///|
 /// SFNT driver operations — closures that capture the parsed font data.
-pub(all) struct SfntOps {
+pub struct SfntOps {
   char_index : (UInt) -> UInt // charcode → glyph index
   load_glyph : (UInt, Int) -> (GlyphSlotData, @types.Outline, Bytes) raise @error.FTError // (glyph_index, load_flags) → (slot data, outline, tt instructions)
   get_kerning : (UInt, UInt) -> Int // (left, right) → kern value
@@ -161,6 +177,27 @@ pub(all) struct SfntOps {
   tt_hint : (@types.Outline, Bytes, @fixed.Fixed, @fixed.Fixed, UInt) -> Bool // (outline, instructions, x_scale, y_scale, ppem) → true if TT hints were applied
   num_glyphs : UInt
   raw_data : Bytes // font file bytes (for re-parsing if needed)
+}
+
+///|
+pub fn SfntOps::new(
+  char_index~ : (UInt) -> UInt,
+  load_glyph~ : (UInt, Int) -> (GlyphSlotData, @types.Outline, Bytes) raise @error.FTError,
+  get_kerning~ : (UInt, UInt) -> Int,
+  apply_hints~ : (@types.Outline, @fixed.Fixed) -> Bool,
+  tt_hint~ : (@types.Outline, Bytes, @fixed.Fixed, @fixed.Fixed, UInt) -> Bool,
+  num_glyphs~ : UInt,
+  raw_data~ : Bytes,
+) -> SfntOps {
+  {
+    char_index,
+    load_glyph,
+    get_kerning,
+    apply_hints,
+    tt_hint,
+    num_glyphs,
+    raw_data,
+  }
 }
 
 ///|
@@ -172,7 +209,7 @@ pub impl Show for SfntOps with output(self, logger) {
 
 ///|
 /// Data returned from glyph loading (before being stored in GlyphSlot).
-pub(all) struct GlyphSlotData {
+pub struct GlyphSlotData {
   metrics_width : Int64
   metrics_height : Int64
   metrics_hori_bearing_x : Int64
@@ -181,10 +218,35 @@ pub(all) struct GlyphSlotData {
 } derive(Show)
 
 ///|
+pub fn GlyphSlotData::new(
+  metrics_width : Int64,
+  metrics_height : Int64,
+  metrics_hori_bearing_x : Int64,
+  metrics_hori_bearing_y : Int64,
+  metrics_hori_advance : Int64,
+) -> GlyphSlotData {
+  {
+    metrics_width,
+    metrics_height,
+    metrics_hori_bearing_x,
+    metrics_hori_bearing_y,
+    metrics_hori_advance,
+  }
+}
+
+///|
 /// Type 1 driver operations.
-pub(all) struct Type1Ops {
+pub struct Type1Ops {
   char_index : (UInt) -> UInt
   load_glyph : (UInt, Int) -> (GlyphSlotData, @types.Outline) raise @error.FTError
+}
+
+///|
+pub fn Type1Ops::new(
+  char_index~ : (UInt) -> UInt,
+  load_glyph~ : (UInt, Int) -> (GlyphSlotData, @types.Outline) raise @error.FTError,
+) -> Type1Ops {
+  { char_index, load_glyph }
 }
 
 ///|
@@ -281,4 +343,172 @@ pub fn FaceRec::has_color(self : FaceRec) -> Bool {
 ///|
 pub fn FaceRec::is_variation(self : FaceRec) -> Bool {
   (self.face_flags & face_flag_variation) != 0L
+}
+
+// --- FaceRec setters (for external packages) ---
+
+///|
+pub fn FaceRec::set_face_flags(self : FaceRec, v : Int64) -> Unit {
+  self.face_flags = v
+}
+
+///|
+pub fn FaceRec::set_style_flags(self : FaceRec, v : Int) -> Unit {
+  self.style_flags = v
+}
+
+///|
+pub fn FaceRec::set_num_glyphs(self : FaceRec, v : Int64) -> Unit {
+  self.num_glyphs = v
+}
+
+///|
+pub fn FaceRec::set_family_name(self : FaceRec, v : String) -> Unit {
+  self.family_name = v
+}
+
+///|
+pub fn FaceRec::set_style_name(self : FaceRec, v : String) -> Unit {
+  self.style_name = v
+}
+
+///|
+pub fn FaceRec::set_available_sizes(
+  self : FaceRec,
+  v : Array[BitmapSize],
+) -> Unit {
+  self.available_sizes = v
+}
+
+///|
+pub fn FaceRec::set_bbox(self : FaceRec, v : @types.BBox) -> Unit {
+  self.bbox = v
+}
+
+///|
+pub fn FaceRec::set_units_per_em(self : FaceRec, v : UInt) -> Unit {
+  self.units_per_em = v
+}
+
+///|
+pub fn FaceRec::set_ascender(self : FaceRec, v : Int) -> Unit {
+  self.ascender = v
+}
+
+///|
+pub fn FaceRec::set_descender(self : FaceRec, v : Int) -> Unit {
+  self.descender = v
+}
+
+///|
+pub fn FaceRec::set_height(self : FaceRec, v : Int) -> Unit {
+  self.height = v
+}
+
+///|
+pub fn FaceRec::set_max_advance_width(self : FaceRec, v : Int) -> Unit {
+  self.max_advance_width = v
+}
+
+///|
+pub fn FaceRec::set_max_advance_height(self : FaceRec, v : Int) -> Unit {
+  self.max_advance_height = v
+}
+
+///|
+pub fn FaceRec::set_underline_position(self : FaceRec, v : Int) -> Unit {
+  self.underline_position = v
+}
+
+///|
+pub fn FaceRec::set_underline_thickness(self : FaceRec, v : Int) -> Unit {
+  self.underline_thickness = v
+}
+
+///|
+pub fn FaceRec::set_active_charmap(self : FaceRec, v : Int) -> Unit {
+  self.active_charmap = v
+}
+
+///|
+pub fn FaceRec::set_driver_data(self : FaceRec, v : DriverData) -> Unit {
+  self.driver_data = v
+}
+
+///|
+pub fn FaceRec::set_var_coords(self : FaceRec, v : Array[Int]) -> Unit {
+  self.var_coords = v
+}
+
+// --- GlyphSlot setters (for external packages) ---
+
+///|
+pub fn GlyphSlot::set_glyph_index(self : GlyphSlot, v : UInt) -> Unit {
+  self.glyph_index = v
+}
+
+///|
+pub fn GlyphSlot::set_format(self : GlyphSlot, v : @types.GlyphFormat) -> Unit {
+  self.format = v
+}
+
+///|
+pub fn GlyphSlot::set_outline(self : GlyphSlot, v : @types.Outline) -> Unit {
+  self.outline = v
+}
+
+///|
+pub fn GlyphSlot::set_bitmap(self : GlyphSlot, v : @types.Bitmap) -> Unit {
+  self.bitmap = v
+}
+
+///|
+pub fn GlyphSlot::set_bitmap_left(self : GlyphSlot, v : Int) -> Unit {
+  self.bitmap_left = v
+}
+
+///|
+pub fn GlyphSlot::set_bitmap_top(self : GlyphSlot, v : Int) -> Unit {
+  self.bitmap_top = v
+}
+
+///|
+pub fn GlyphSlot::set_advance(self : GlyphSlot, v : @types.Vector) -> Unit {
+  self.advance = v
+}
+
+///|
+pub fn GlyphSlot::set_linear_hori_advance(
+  self : GlyphSlot,
+  v : @fixed.Fixed,
+) -> Unit {
+  self.linear_hori_advance = v
+}
+
+///|
+pub fn GlyphSlot::set_linear_vert_advance(
+  self : GlyphSlot,
+  v : @fixed.Fixed,
+) -> Unit {
+  self.linear_vert_advance = v
+}
+
+///|
+pub fn GlyphSlot::set_lsb_delta(self : GlyphSlot, v : Int64) -> Unit {
+  self.lsb_delta = v
+}
+
+///|
+pub fn GlyphSlot::set_rsb_delta(self : GlyphSlot, v : Int64) -> Unit {
+  self.rsb_delta = v
+}
+
+///|
+pub fn GlyphSlot::set_num_subglyphs(self : GlyphSlot, v : UInt) -> Unit {
+  self.num_subglyphs = v
+}
+
+///|
+pub fn GlyphSlot::set_subglyphs(self : GlyphSlot, v : Array[SubGlyph]) -> Unit {
+  self.subglyphs = v
 }

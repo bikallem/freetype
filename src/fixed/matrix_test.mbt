@@ -32,12 +32,12 @@ test "Matrix::invert identity" {
 
 ///|
 test "Matrix::invert singular" {
-  let m : @fixed.Matrix = {
-    xx: @fixed.Fixed::zero(),
-    xy: @fixed.Fixed::zero(),
-    yx: @fixed.Fixed::zero(),
-    yy: @fixed.Fixed::zero(),
-  }
+  let m = @fixed.Matrix::new(
+    @fixed.Fixed::zero(),
+    @fixed.Fixed::zero(),
+    @fixed.Fixed::zero(),
+    @fixed.Fixed::zero(),
+  )
   let result = try? m.invert()
   inspect(result, content="Err(InvalidArgument)")
 }

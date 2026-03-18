@@ -7,8 +7,8 @@ pub fn outline_translate(
   dy : Int64,
 ) -> Unit {
   for i in 0..<outline.points.length() {
-    outline.points[i].x += dx
-    outline.points[i].y += dy
+    outline.points[i].set_x(outline.points[i].x + dx)
+    outline.points[i].set_y(outline.points[i].y + dy)
   }
 }
 
@@ -22,8 +22,8 @@ pub fn outline_transform(
   for i in 0..<outline.points.length() {
     let p = outline.points[i]
     let (rx, ry) = matrix.transform(p.x, p.y)
-    outline.points[i].x = rx
-    outline.points[i].y = ry
+    outline.points[i].set_x(rx)
+    outline.points[i].set_y(ry)
   }
 }
 
@@ -52,19 +52,31 @@ pub fn outline_reverse(outline : @types.Outline) -> Unit {
     continue c + 1, last + 1
   }
   // Flip fill direction flag
-  outline.flags = outline.flags ^ @types.outline_reverse_fill
+  outline.set_flags(outline.flags ^ @types.outline_reverse_fill)
 }
 
 ///|
 /// Callback interface for outline decomposition.
 /// MoonBit version of FT_Outline_Funcs.
-pub(all) struct OutlineFuncs {
+pub struct OutlineFuncs {
   move_to : (@types.Vector) -> Unit raise @error.FTError
   line_to : (@types.Vector) -> Unit raise @error.FTError
   conic_to : (@types.Vector, @types.Vector) -> Unit raise @error.FTError
   cubic_to : (@types.Vector, @types.Vector, @types.Vector) -> Unit raise @error.FTError
   shift : Int
   delta : Int64
+}
+
+///|
+pub fn OutlineFuncs::new(
+  move_to~ : (@types.Vector) -> Unit raise @error.FTError,
+  line_to~ : (@types.Vector) -> Unit raise @error.FTError,
+  conic_to~ : (@types.Vector, @types.Vector) -> Unit raise @error.FTError,
+  cubic_to~ : (@types.Vector, @types.Vector, @types.Vector) -> Unit raise @error.FTError,
+  shift? : Int = 0,
+  delta? : Int64 = 0L,
+) -> OutlineFuncs {
+  { move_to, line_to, conic_to, cubic_to, shift, delta }
 }
 
 ///|
@@ -81,7 +93,7 @@ pub fn outline_decompose(
   let shift = funcs.shift
   let delta = funcs.delta
   fn apply(v : @types.Vector) -> @types.Vector {
-    { x: (v.x << shift) - delta, y: (v.y << shift) - delta }
+    @types.Vector::new((v.x << shift) - delta, (v.y << shift) - delta)
   }
 
   for c = 0, first = 0; c < n_contours; {
@@ -99,10 +111,7 @@ pub fn outline_decompose(
         // Both off-curve: start at virtual on-curve midpoint
         let p0 = outline.points[first]
         let p1 = outline.points[last]
-        let mid : @types.Vector = {
-          x: (p0.x + p1.x) / 2L,
-          y: (p0.y + p1.y) / 2L,
-        }
+        let mid = @types.Vector::new((p0.x + p1.x) / 2L, (p0.y + p1.y) / 2L)
         (funcs.move_to)(apply(mid))
         // Process from first point
         let mut i = first
@@ -121,10 +130,10 @@ pub fn outline_decompose(
                 }
                 Conic | Cubic => {
                   // Two consecutive off-curve: insert virtual on-curve midpoint
-                  let virt : @types.Vector = {
-                    x: (pt.x + next_pt.x) / 2L,
-                    y: (pt.y + next_pt.y) / 2L,
-                  }
+                  let virt = @types.Vector::new(
+                    (pt.x + next_pt.x) / 2L,
+                    (pt.y + next_pt.y) / 2L,
+                  )
                   (funcs.conic_to)(pt, virt)
                 }
               }
@@ -163,10 +172,10 @@ pub fn outline_decompose(
               i = next_i
             }
             Conic | Cubic => {
-              let virt : @types.Vector = {
-                x: (pt.x + next_pt.x) / 2L,
-                y: (pt.y + next_pt.y) / 2L,
-              }
+              let virt = @types.Vector::new(
+                (pt.x + next_pt.x) / 2L,
+                (pt.y + next_pt.y) / 2L,
+              )
               (funcs.conic_to)(pt, virt)
             }
           }

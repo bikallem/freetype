@@ -117,52 +117,54 @@ pub fn load_sfnt_face(
   }
   // Build FaceRec
   let face = @base.FaceRec::new(num_faces~, face_index~)
-  face.num_glyphs = maxp.num_glyphs.reinterpret_as_int().to_int64()
-  face.units_per_em = head.units_per_em
-  face.ascender = hhea.ascender
-  face.descender = hhea.descender
-  face.height = hhea.ascender - hhea.descender + hhea.line_gap
-  face.max_advance_width = hhea.advance_width_max.reinterpret_as_int()
-  face.bbox = {
-    x_min: head.x_min.to_int64(),
-    y_min: head.y_min.to_int64(),
-    x_max: head.x_max.to_int64(),
-    y_max: head.y_max.to_int64(),
-  }
+  face.set_num_glyphs(maxp.num_glyphs.reinterpret_as_int().to_int64())
+  face.set_units_per_em(head.units_per_em)
+  face.set_ascender(hhea.ascender)
+  face.set_descender(hhea.descender)
+  face.set_height(hhea.ascender - hhea.descender + hhea.line_gap)
+  face.set_max_advance_width(hhea.advance_width_max.reinterpret_as_int())
+  face.set_bbox(
+    @types.BBox::new(
+      head.x_min.to_int64(),
+      head.y_min.to_int64(),
+      head.x_max.to_int64(),
+      head.y_max.to_int64(),
+    ),
+  )
   // Set face flags
-  face.face_flags = @base.face_flag_sfnt | @base.face_flag_horizontal
+  face.set_face_flags(@base.face_flag_sfnt | @base.face_flag_horizontal)
   // Scalable if has outlines (glyf or CFF table)
   if table_dir.find_table(@types.tag_glyf) is Some(_) ||
     table_dir.find_table(@types.tag_CFF) is Some(_) ||
     table_dir.find_table(@types.tag_CFF2) is Some(_) {
-    face.face_flags = face.face_flags | @base.face_flag_scalable
+    face.set_face_flags(face.face_flags | @base.face_flag_scalable)
   }
   if kern is Some(_) {
-    face.face_flags = face.face_flags | @base.face_flag_kerning
+    face.set_face_flags(face.face_flags | @base.face_flag_kerning)
   }
   if post is Some(p) && p.format == 0x00020000U {
-    face.face_flags = face.face_flags | @base.face_flag_glyph_names
+    face.set_face_flags(face.face_flags | @base.face_flag_glyph_names)
   }
   // Style flags from head.mac_style
   if (head.mac_style & 1U) != 0U {
-    face.style_flags = face.style_flags | @base.style_flag_bold
+    face.set_style_flags(face.style_flags | @base.style_flag_bold)
   }
   if (head.mac_style & 2U) != 0U {
-    face.style_flags = face.style_flags | @base.style_flag_italic
+    face.set_style_flags(face.style_flags | @base.style_flag_italic)
   }
   // Underline
   if post is Some(p) {
-    face.underline_position = p.underline_position
-    face.underline_thickness = p.underline_thickness
+    face.set_underline_position(p.underline_position)
+    face.set_underline_thickness(p.underline_thickness)
   }
   // Names
   if name_table is Some(nt) {
     match nt.get_name(name_id_font_family) {
-      Some(n) => face.family_name = n
+      Some(n) => face.set_family_name(n)
       None => ()
     }
     match nt.get_name(name_id_font_subfamily) {
-      Some(n) => face.style_name = n
+      Some(n) => face.set_style_name(n)
       None => ()
     }
   }
@@ -170,14 +172,12 @@ pub fn load_sfnt_face(
   if cmap_table is Some(ct) {
     for _, sub in ct.subtables {
       let encoding = select_encoding(sub.platform_id, sub.encoding_id)
-      face.charmaps.push({
-        encoding,
-        platform_id: sub.platform_id,
-        encoding_id: sub.encoding_id,
-      })
+      face.charmaps.push(
+        @base.CharMapRec::new(encoding, sub.platform_id, sub.encoding_id),
+      )
     }
     if face.charmaps.length() > 0 {
-      face.active_charmap = 0
+      face.set_active_charmap(0)
     }
   }
   let sfnt_data : SfntData = {

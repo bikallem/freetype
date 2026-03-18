@@ -21,7 +21,7 @@ test "FaceRec::new defaults" {
 ///|
 test "FaceRec flag helpers" {
   let face = @base.FaceRec::new()
-  face.face_flags = @base.face_flag_scalable | @base.face_flag_kerning
+  face.set_face_flags(@base.face_flag_scalable | @base.face_flag_kerning)
   inspect(face.is_scalable(), content="true")
   inspect(face.has_kerning(), content="true")
   inspect(face.is_fixed_width(), content="false")
@@ -147,8 +147,8 @@ test "GlyphLoader: reset" {
 ///|
 test "outline_translate" {
   let outline = @types.Outline::new()
-  outline.points.push({ x: 10L, y: 20L })
-  outline.points.push({ x: 30L, y: 40L })
+  outline.points.push(@types.Vector::new(10L, 20L))
+  outline.points.push(@types.Vector::new(30L, 40L))
   outline.tags.push(@types.curve_tag_on)
   outline.tags.push(@types.curve_tag_on)
   outline.contours.push(1U)
@@ -162,7 +162,7 @@ test "outline_translate" {
 ///|
 test "outline_transform with identity" {
   let outline = @types.Outline::new()
-  outline.points.push({ x: 100L, y: 200L })
+  outline.points.push(@types.Vector::new(100L, 200L))
   outline.tags.push(@types.curve_tag_on)
   outline.contours.push(0U)
   @base.outline_transform(outline, @fixed.Matrix::identity())
@@ -174,9 +174,9 @@ test "outline_transform with identity" {
 ///|
 test "outline_reverse: triangle" {
   let outline = @types.Outline::new()
-  outline.points.push({ x: 0L, y: 0L })
-  outline.points.push({ x: 100L, y: 0L })
-  outline.points.push({ x: 50L, y: 100L })
+  outline.points.push(@types.Vector::new(0L, 0L))
+  outline.points.push(@types.Vector::new(100L, 0L))
+  outline.points.push(@types.Vector::new(50L, 100L))
   outline.tags.push(@types.curve_tag_on)
   outline.tags.push(@types.curve_tag_on)
   outline.tags.push(@types.curve_tag_on)
@@ -193,9 +193,9 @@ test "outline_reverse: triangle" {
 test "outline_get_orientation: clockwise triangle" {
   let outline = @types.Outline::new()
   // Clockwise triangle (positive signed area)
-  outline.points.push({ x: 0L, y: 0L })
-  outline.points.push({ x: 100L, y: 0L })
-  outline.points.push({ x: 50L, y: 100L })
+  outline.points.push(@types.Vector::new(0L, 0L))
+  outline.points.push(@types.Vector::new(100L, 0L))
+  outline.points.push(@types.Vector::new(50L, 100L))
   outline.tags.push(@types.curve_tag_on)
   outline.tags.push(@types.curve_tag_on)
   outline.tags.push(@types.curve_tag_on)
@@ -208,9 +208,9 @@ test "outline_get_orientation: clockwise triangle" {
 ///|
 test "outline_get_bbox: simple" {
   let outline = @types.Outline::new()
-  outline.points.push({ x: -10L, y: 5L })
-  outline.points.push({ x: 100L, y: -20L })
-  outline.points.push({ x: 50L, y: 200L })
+  outline.points.push(@types.Vector::new(-10L, 5L))
+  outline.points.push(@types.Vector::new(100L, -20L))
+  outline.points.push(@types.Vector::new(50L, 200L))
   outline.tags.push(@types.curve_tag_on)
   outline.tags.push(@types.curve_tag_on)
   outline.tags.push(@types.curve_tag_on)
@@ -225,9 +225,9 @@ test "outline_get_bbox: simple" {
 ///|
 test "outline_get_cbox: includes off-curve" {
   let outline = @types.Outline::new()
-  outline.points.push({ x: 0L, y: 0L })
-  outline.points.push({ x: 500L, y: 500L }) // off-curve control
-  outline.points.push({ x: 100L, y: 0L })
+  outline.points.push(@types.Vector::new(0L, 0L))
+  outline.points.push(@types.Vector::new(500L, 500L)) // off-curve control
+  outline.points.push(@types.Vector::new(100L, 0L))
   outline.tags.push(@types.curve_tag_on)
   outline.tags.push(@types.curve_tag_conic)
   outline.tags.push(@types.curve_tag_on)
@@ -240,24 +240,22 @@ test "outline_get_cbox: includes off-curve" {
 ///|
 test "outline_decompose: simple triangle" {
   let outline = @types.Outline::new()
-  outline.points.push({ x: 0L, y: 0L })
-  outline.points.push({ x: 100L, y: 0L })
-  outline.points.push({ x: 50L, y: 100L })
+  outline.points.push(@types.Vector::new(0L, 0L))
+  outline.points.push(@types.Vector::new(100L, 0L))
+  outline.points.push(@types.Vector::new(50L, 100L))
   outline.tags.push(@types.curve_tag_on)
   outline.tags.push(@types.curve_tag_on)
   outline.tags.push(@types.curve_tag_on)
   outline.contours.push(2U)
   let log : Array[String] = []
-  let funcs : @base.OutlineFuncs = {
-    move_to: fn(p) { log.push("M(\{p.x},\{p.y})") },
-    line_to: fn(p) { log.push("L(\{p.x},\{p.y})") },
-    conic_to: fn(c, p) { log.push("Q(\{c.x},\{c.y},\{p.x},\{p.y})") },
-    cubic_to: fn(c1, c2, p) {
+  let funcs = @base.OutlineFuncs::new(
+    move_to=fn(p) { log.push("M(\{p.x},\{p.y})") },
+    line_to=fn(p) { log.push("L(\{p.x},\{p.y})") },
+    conic_to=fn(c, p) { log.push("Q(\{c.x},\{c.y},\{p.x},\{p.y})") },
+    cubic_to=fn(c1, c2, p) {
       log.push("C(\{c1.x},\{c1.y},\{c2.x},\{c2.y},\{p.x},\{p.y})")
     },
-    shift: 0,
-    delta: 0L,
-  }
+  )
   @base.outline_decompose(outline, funcs)
   inspect(log[0], content="M(0,0)")
   inspect(log[1], content="L(100,0)")

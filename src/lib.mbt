@@ -17,14 +17,18 @@ pub fn from_bytes(
     Bdf => {
       let font = @bdf.parse_bdf_header(data)
       let face = @base.FaceRec::new()
-      face.family_name = font.font_name
-      face.face_flags = @base.face_flag_fixed_sizes | @base.face_flag_horizontal
-      face.num_glyphs = (font.num_chars + 1).to_int64()
+      face.set_family_name(font.font_name)
+      face.set_face_flags(
+        @base.face_flag_fixed_sizes | @base.face_flag_horizontal,
+      )
+      face.set_num_glyphs((font.num_chars + 1).to_int64())
       face
     }
     Pcf => {
       let face = @base.FaceRec::new()
-      face.face_flags = @base.face_flag_fixed_sizes | @base.face_flag_horizontal
+      face.set_face_flags(
+        @base.face_flag_fixed_sizes | @base.face_flag_horizontal,
+      )
       face
     }
     Woff2 => raise @error.FTError::UnimplementedFeature

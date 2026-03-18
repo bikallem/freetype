@@ -1,6 +1,6 @@
 ///|
 /// Outline representation: a set of contours made of points.
-pub(all) struct Outline {
+pub struct Outline {
   mut points : Array[Vector] // coordinates
   mut tags : Array[Byte] // point flags (on-curve, conic, cubic)
   mut contours : Array[UInt] // end-point index for each contour
@@ -10,6 +10,21 @@ pub(all) struct Outline {
 ///|
 pub fn Outline::new() -> Outline {
   { points: [], tags: [], contours: [], flags: 0 }
+}
+
+///|
+pub fn Outline::create(
+  points : Array[Vector],
+  tags : Array[Byte],
+  contours : Array[UInt],
+  flags? : Int = 0,
+) -> Outline {
+  { points, tags, contours, flags }
+}
+
+///|
+pub fn Outline::set_flags(self : Outline, flags : Int) -> Unit {
+  self.flags = flags
 }
 
 ///|

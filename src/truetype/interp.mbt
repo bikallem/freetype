@@ -1,6 +1,6 @@
 ///|
 /// TrueType bytecode interpreter execution context.
-pub(all) struct InterpContext {
+pub struct InterpContext {
   // Operand stack
   mut stack : Array[Int64]
   mut sp : Int // stack pointer (index of next push position)
@@ -128,6 +128,90 @@ pub fn InterpContext::new(
   }
 }
 
+// --- InterpContext setters (for external packages) ---
+
+///|
+pub fn InterpContext::set_ppem(self : InterpContext, v : Int) -> Unit {
+  self.ppem = v
+}
+
+///|
+pub fn InterpContext::set_gs(self : InterpContext, v : GraphicsState) -> Unit {
+  self.gs = v
+}
+
+///|
+pub fn InterpContext::set_zone0_org(
+  self : InterpContext,
+  v : Array[@types.Vector],
+) -> Unit {
+  self.zone0_org = v
+}
+
+///|
+pub fn InterpContext::set_zone0_cur(
+  self : InterpContext,
+  v : Array[@types.Vector],
+) -> Unit {
+  self.zone0_cur = v
+}
+
+///|
+pub fn InterpContext::set_zone0_tags(
+  self : InterpContext,
+  v : Array[Byte],
+) -> Unit {
+  self.zone0_tags = v
+}
+
+///|
+pub fn InterpContext::set_zone0_points(
+  self : InterpContext,
+  v : Array[@types.Vector],
+) -> Unit {
+  self.zone0_points = v
+}
+
+///|
+pub fn InterpContext::set_zone1_org(
+  self : InterpContext,
+  v : Array[@types.Vector],
+) -> Unit {
+  self.zone1_org = v
+}
+
+///|
+pub fn InterpContext::set_zone1_cur(
+  self : InterpContext,
+  v : Array[@types.Vector],
+) -> Unit {
+  self.zone1_cur = v
+}
+
+///|
+pub fn InterpContext::set_zone1_tags(
+  self : InterpContext,
+  v : Array[Byte],
+) -> Unit {
+  self.zone1_tags = v
+}
+
+///|
+pub fn InterpContext::set_zone1_touch(
+  self : InterpContext,
+  v : Array[Byte],
+) -> Unit {
+  self.zone1_touch = v
+}
+
+///|
+pub fn InterpContext::set_zone1_points(
+  self : InterpContext,
+  v : Array[@types.Vector],
+) -> Unit {
+  self.zone1_points = v
+}
+
 ///|
 fn InterpContext::push(self : InterpContext, val : Int64) -> Unit {
   if self.sp < self.stack.length() {
@@ -177,8 +261,8 @@ fn InterpContext::set_zone_point(
 ) -> Unit {
   let points = if zone == 0 { self.zone0_cur } else { self.zone1_cur }
   if idx >= 0 && idx < points.length() {
-    points[idx].x = x
-    points[idx].y = y
+    points[idx].set_x(x)
+    points[idx].set_y(y)
   }
 }
 
@@ -225,10 +309,12 @@ fn InterpContext::move_point(
 ) -> Unit {
   let points = if zone == 0 { self.zone0_cur } else { self.zone1_cur }
   if idx >= 0 && idx < points.length() {
-    points[idx].x = points[idx].x +
-      ((distance * self.gs.freedom_vector_x) >> 14)
-    points[idx].y = points[idx].y +
-      ((distance * self.gs.freedom_vector_y) >> 14)
+    points[idx].set_x(
+      points[idx].x + ((distance * self.gs.freedom_vector_x) >> 14),
+    )
+    points[idx].set_y(
+      points[idx].y + ((distance * self.gs.freedom_vector_y) >> 14),
+    )
     // Mark point as touched
     let touch = if zone == 0 { self.zone0_tags } else { self.zone1_touch }
     if idx < touch.length() {
@@ -1233,8 +1319,8 @@ fn InterpContext::op_iup(self : InterpContext, flag : Int) -> Unit {
           } else {
             0L
           }
-          self.zone1_cur[i].x = interp_value(
-            org_x, org1_x, org2_x, cur1_x, cur2_x,
+          self.zone1_cur[i].set_x(
+            interp_value(org_x, org1_x, org2_x, cur1_x, cur2_x),
           )
         }
       }
@@ -1260,8 +1346,8 @@ fn InterpContext::op_iup(self : InterpContext, flag : Int) -> Unit {
           } else {
             0L
           }
-          self.zone1_cur[i].y = interp_value(
-            org_y, org1_y, org2_y, cur1_y, cur2_y,
+          self.zone1_cur[i].set_y(
+            interp_value(org_y, org1_y, org2_y, cur1_y, cur2_y),
           )
         }
       }

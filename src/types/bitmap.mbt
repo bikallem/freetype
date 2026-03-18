@@ -1,6 +1,6 @@
 ///|
 /// Bitmap image.
-pub(all) struct Bitmap {
+pub struct Bitmap {
   mut rows : UInt
   mut width : UInt
   mut pitch : Int // positive = top-down, negative = bottom-up

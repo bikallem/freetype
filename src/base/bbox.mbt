@@ -70,7 +70,7 @@ pub fn outline_get_bbox(outline : @types.Outline) -> @types.BBox {
     }
     continue c + 1, last + 1
   }
-  { x_min, y_min, x_max, y_max }
+  @types.BBox::new(x_min, y_min, x_max, y_max)
 }
 
 ///|
@@ -101,5 +101,5 @@ pub fn outline_get_cbox(outline : @types.Outline) -> @types.BBox {
       y_max = p.y
     }
   }
-  { x_min, y_min, x_max, y_max }
+  @types.BBox::new(x_min, y_min, x_max, y_max)
 }
