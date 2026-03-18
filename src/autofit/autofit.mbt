@@ -109,7 +109,7 @@ pub fn GlyphHints::new() -> GlyphHints {
 
 ///|
 /// Blue zone for Latin script auto-hinting.
-pub struct BlueZone {
+pub(all) struct BlueZone {
   ref_pos : Int64 // reference position (overshoot position)
   shoot : Int64 // overshoot position
   fitted : Int64 // fitted position in 26.6

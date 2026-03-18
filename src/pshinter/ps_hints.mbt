@@ -36,20 +36,6 @@ pub fn PsGlobals::new() -> PsGlobals {
 }
 
 ///|
-/// Hint map entry: maps a stem edge to a fitted pixel position.
-pub struct HintMapEntry {
-  org_pos : Int64 // original position (font units)
-  cur_pos : Int64 // fitted position (26.6 pixels)
-} derive(Eq, Show)
-
-///|
-/// A stem hint table: original stems from charstring plus fitted results.
-pub struct StemHintTable {
-  stems : Array[@psaux.StemHint] // from charstring interpreter
-  fitted : Array[FittedStem] // after fitting
-} derive(Show)
-
-///|
 /// A fitted stem: original and pixel-aligned positions.
 pub struct FittedStem {
   org_pos : Int64 // original position (font units)

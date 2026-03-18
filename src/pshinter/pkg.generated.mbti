@@ -40,13 +40,6 @@ pub struct FittedStem {
 pub impl Eq for FittedStem
 pub impl Show for FittedStem
 
-pub struct HintMapEntry {
-  org_pos : Int64
-  cur_pos : Int64
-}
-pub impl Eq for HintMapEntry
-pub impl Show for HintMapEntry
-
 pub struct PsGlobals {
   blue_values : Array[BlueZone]
   other_blues : Array[BlueZone]
@@ -60,12 +53,6 @@ pub struct PsGlobals {
 }
 pub fn PsGlobals::new() -> Self
 pub impl Show for PsGlobals
-
-pub struct StemHintTable {
-  stems : Array[@psaux.StemHint]
-  fitted : Array[FittedStem]
-}
-pub impl Show for StemHintTable
 
 // Type aliases
 

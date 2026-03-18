@@ -28,20 +28,12 @@ pub fn BdfGlyph::new() -> BdfGlyph {
 }
 
 ///|
-/// BDF font property.
-pub struct BdfProperty {
-  name : String
-  value : String
-} derive(Eq, Show)
-
-///|
 /// BDF font representation.
 pub struct BdfFont {
   mut font_name : String
   mut point_size : Int
   mut x_resolution : Int
   mut y_resolution : Int
-  properties : Array[BdfProperty]
   glyphs : Array[BdfGlyph]
   mut num_chars : Int
   mut bbx_width : Int // global bounding box
@@ -57,7 +49,6 @@ pub fn BdfFont::new() -> BdfFont {
     point_size: 0,
     x_resolution: 0,
     y_resolution: 0,
-    properties: [],
     glyphs: [],
     num_chars: 0,
     bbx_width: 0,

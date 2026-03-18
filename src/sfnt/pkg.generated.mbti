@@ -319,31 +319,6 @@ pub struct TtcHeader {
 }
 pub impl Show for TtcHeader
 
-pub struct WoffHeader {
-  signature : UInt
-  flavor : UInt
-  length : UInt
-  num_tables : UInt
-  total_sfnt_size : UInt
-  major_version : UInt
-  minor_version : UInt
-  meta_offset : UInt
-  meta_length : UInt
-  meta_orig_length : UInt
-  priv_offset : UInt
-  priv_length : UInt
-}
-pub impl Show for WoffHeader
-
-pub struct WoffTableEntry {
-  tag : UInt
-  offset : UInt
-  comp_length : UInt
-  orig_length : UInt
-  orig_checksum : UInt
-}
-pub impl Show for WoffTableEntry
-
 // Type aliases
 
 // Traits

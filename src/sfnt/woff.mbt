@@ -1,29 +1,12 @@
 ///|
-/// WOFF1 header.
-pub struct WoffHeader {
-  signature : UInt // 'wOFF'
-  flavor : UInt // The "sfnt version" of the original font
-  length : UInt // Total size of WOFF file
-  num_tables : UInt
-  total_sfnt_size : UInt // Total decompressed size
-  major_version : UInt
-  minor_version : UInt
-  meta_offset : UInt
-  meta_length : UInt
-  meta_orig_length : UInt
-  priv_offset : UInt
-  priv_length : UInt
-} derive(Show)
-
-///|
-/// WOFF1 table directory entry.
-pub struct WoffTableEntry {
+/// WOFF1 table directory entry (used during decompression).
+priv struct WoffTableEntry {
   tag : UInt
   offset : UInt
-  comp_length : UInt // compressed length in WOFF file
-  orig_length : UInt // original uncompressed length
+  comp_length : UInt
+  orig_length : UInt
   orig_checksum : UInt
-} derive(Show)
+}
 
 ///|
 /// Parse a WOFF1 file and return the decompressed SFNT data.

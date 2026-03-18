@@ -101,7 +101,7 @@ pub let style_flag_italic : Int
 // Errors
 
 // Types and methods
-pub struct BitmapSize {
+pub(all) struct BitmapSize {
   height : Int
   width : Int
   size : Int64
@@ -277,7 +277,7 @@ pub(all) struct SizeRec {
 pub fn SizeRec::new() -> Self
 pub impl Show for SizeRec
 
-pub struct SubGlyph {
+pub(all) struct SubGlyph {
   index : UInt
   flags : UInt
   arg1 : Int

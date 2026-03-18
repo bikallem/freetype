@@ -16,7 +16,6 @@ pub struct BdfFont {
   mut point_size : Int
   mut x_resolution : Int
   mut y_resolution : Int
-  properties : Array[BdfProperty]
   glyphs : Array[BdfGlyph]
   mut num_chars : Int
   mut bbx_width : Int
@@ -39,13 +38,6 @@ pub struct BdfGlyph {
 }
 pub fn BdfGlyph::new() -> Self
 pub impl Show for BdfGlyph
-
-pub struct BdfProperty {
-  name : String
-  value : String
-}
-pub impl Eq for BdfProperty
-pub impl Show for BdfProperty
 
 // Type aliases
 

@@ -35,7 +35,7 @@ pub fn AxisHints::new() -> Self
 pub impl Eq for AxisHints
 pub impl Show for AxisHints
 
-pub struct BlueZone {
+pub(all) struct BlueZone {
   ref_pos : Int64
   shoot : Int64
   fitted : Int64
