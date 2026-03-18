@@ -119,8 +119,8 @@ pub fn outline_decompose(
                   (funcs.conic_to)(pt, next_pt)
                   i += 1 // skip the on-curve point we just consumed
                 }
-                _ => {
-                  // Two consecutive conics: insert virtual on-curve midpoint
+                Conic | Cubic => {
+                  // Two consecutive off-curve: insert virtual on-curve midpoint
                   let virt : @types.Vector = {
                     x: (pt.x + next_pt.x) / 2L,
                     y: (pt.y + next_pt.y) / 2L,
@@ -162,7 +162,7 @@ pub fn outline_decompose(
               (funcs.conic_to)(pt, next_pt)
               i = next_i
             }
-            _ => {
+            Conic | Cubic => {
               let virt : @types.Vector = {
                 x: (pt.x + next_pt.x) / 2L,
                 y: (pt.y + next_pt.y) / 2L,
