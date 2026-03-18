@@ -18,6 +18,9 @@ test/fonts/.downloaded
 # Golden generator binary
 test/golden/generate/gen_golden
 
+# Benchmark binary
+bench/bench_c
+
 # Dolt database files (added by bd init)
 .dolt/
 *.db
