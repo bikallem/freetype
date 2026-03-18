@@ -29,7 +29,9 @@ pub fn parse_table_directory(
   let search_range = reader.read_u16_be()
   let entry_selector = reader.read_u16_be()
   let range_shift = reader.read_u16_be()
-  let tables : Array[TableRecord] = []
+  let tables : Array[TableRecord] = Array::new(
+    capacity=num_tables.reinterpret_as_int(),
+  )
   for _ in 0..<num_tables.reinterpret_as_int() {
     let tag = reader.read_u32_be()
     let checksum = reader.read_u32_be()
@@ -80,7 +82,9 @@ pub fn parse_ttc_header(
   }
   let version = reader.read_u32_be()
   let num_fonts = reader.read_u32_be()
-  let offsets : Array[UInt] = []
+  let offsets : Array[UInt] = Array::new(
+    capacity=num_fonts.reinterpret_as_int(),
+  )
   for _ in 0..<num_fonts.reinterpret_as_int() {
     offsets.push(reader.read_u32_be())
   }

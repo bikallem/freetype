@@ -15,7 +15,7 @@ pub fn parse_loca(
   let ng = num_glyphs.reinterpret_as_int()
   // loca has numGlyphs + 1 entries (the extra one gives the end of the last glyph)
   let count = ng + 1
-  let offsets : Array[UInt] = []
+  let offsets : Array[UInt] = Array::new(capacity=count)
   ignore(length)
   if index_format == 0 {
     // Short format: each entry is UInt16, actual offset = value * 2

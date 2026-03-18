@@ -22,7 +22,9 @@ pub fn parse_cmap_header(
   reader.seek(offset.reinterpret_as_int())
   let version = reader.read_u16_be()
   let num_tables = reader.read_u16_be()
-  let subtables : Array[CmapSubtable] = []
+  let subtables : Array[CmapSubtable] = Array::new(
+    capacity=num_tables.reinterpret_as_int(),
+  )
   for _ in 0..<num_tables.reinterpret_as_int() {
     let platform_id = reader.read_u16_be()
     let encoding_id = reader.read_u16_be()
@@ -141,25 +143,25 @@ fn parse_cmap_format4(
   let _entry_selector = reader.read_u16_be()
   let _range_shift = reader.read_u16_be()
   // endCode[segCount]
-  let end_codes : Array[UInt] = []
+  let end_codes : Array[UInt] = Array::new(capacity=seg_count)
   for _ in 0..<seg_count {
     end_codes.push(reader.read_u16_be())
   }
   // reservedPad
   let _reserved = reader.read_u16_be()
   // startCode[segCount]
-  let start_codes : Array[UInt] = []
+  let start_codes : Array[UInt] = Array::new(capacity=seg_count)
   for _ in 0..<seg_count {
     start_codes.push(reader.read_u16_be())
   }
   // idDelta[segCount]
-  let id_deltas : Array[Int] = []
+  let id_deltas : Array[Int] = Array::new(capacity=seg_count)
   for _ in 0..<seg_count {
     id_deltas.push(reader.read_i16_be())
   }
   // idRangeOffset[segCount]
   let id_range_offset_start = reader.position()
-  let id_range_offsets : Array[UInt] = []
+  let id_range_offsets : Array[UInt] = Array::new(capacity=seg_count)
   for _ in 0..<seg_count {
     id_range_offsets.push(reader.read_u16_be())
   }
@@ -248,7 +250,9 @@ fn parse_cmap_format6(
   let _language = reader.read_u16_be()
   let first_code = reader.read_u16_be()
   let entry_count = reader.read_u16_be()
-  let glyph_ids : Array[UInt] = []
+  let glyph_ids : Array[UInt] = Array::new(
+    capacity=entry_count.reinterpret_as_int(),
+  )
   for _ in 0..<entry_count.reinterpret_as_int() {
     glyph_ids.push(reader.read_u16_be())
   }
@@ -295,7 +299,7 @@ fn parse_cmap_format12(
   let _language = reader.read_u32_be()
   let num_groups = reader.read_u32_be().reinterpret_as_int()
   ignore(abs_offset)
-  let groups : Array[CmapFormat12Group] = []
+  let groups : Array[CmapFormat12Group] = Array::new(capacity=num_groups)
   for _ in 0..<num_groups {
     let start_char_code = reader.read_u32_be()
     let end_char_code = reader.read_u32_be()

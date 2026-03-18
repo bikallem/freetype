@@ -59,7 +59,9 @@ pub fn parse_name(
   let format = reader.read_u16_be()
   let count = reader.read_u16_be()
   let string_offset = reader.read_u16_be()
-  let records : Array[NameRecord] = []
+  let records : Array[NameRecord] = Array::new(
+    capacity=count.reinterpret_as_int(),
+  )
   for _ in 0..<count.reinterpret_as_int() {
     let platform_id = reader.read_u16_be()
     let encoding_id = reader.read_u16_be()

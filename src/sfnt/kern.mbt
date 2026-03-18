@@ -44,6 +44,7 @@ pub fn parse_kern(
           let _search_range = reader.read_u16_be()
           let _entry_selector = reader.read_u16_be()
           let _range_shift = reader.read_u16_be()
+          pairs.reserve_capacity(pairs.length() + n_pairs)
           for _ in 0..<n_pairs {
             let left = reader.read_u16_be()
             let right = reader.read_u16_be()

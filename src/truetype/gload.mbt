@@ -24,7 +24,7 @@ pub fn load_simple_glyph(
   let _x_max = reader.read_i16_be()
   let _y_max = reader.read_i16_be()
   // Read end points of contours
-  let contours : Array[UInt] = []
+  let contours : Array[UInt] = Array::new(capacity=num_contours)
   for _ in 0..<num_contours {
     contours.push(reader.read_u16_be())
   }
@@ -41,7 +41,7 @@ pub fn load_simple_glyph(
     b""
   }
   // Read flags (compressed with repeat)
-  let flags : Array[Byte] = []
+  let flags : Array[Byte] = Array::new(capacity=n_points)
   let mut i = 0
   while i < n_points {
     let flag = reader.read_byte()
@@ -57,7 +57,7 @@ pub fn load_simple_glyph(
     }
   }
   // Read x coordinates (delta-encoded)
-  let x_coords : Array[Int64] = []
+  let x_coords : Array[Int64] = Array::new(capacity=n_points)
   let mut x = 0L
   for _, flag in flags {
     let x_short = (flag & 0x02) != b'\x00' // bit 1: x is 1 byte
@@ -77,7 +77,7 @@ pub fn load_simple_glyph(
     x_coords.push(x)
   }
   // Read y coordinates (delta-encoded)
-  let y_coords : Array[Int64] = []
+  let y_coords : Array[Int64] = Array::new(capacity=n_points)
   let mut y = 0L
   for _, flag in flags {
     let y_short = (flag & 0x04) != b'\x00' // bit 2: y is 1 byte
@@ -95,8 +95,8 @@ pub fn load_simple_glyph(
     y_coords.push(y)
   }
   // Build outline
-  let points : Array[@types.Vector] = []
-  let tags : Array[Byte] = []
+  let points : Array[@types.Vector] = Array::new(capacity=n_points)
+  let tags : Array[Byte] = Array::new(capacity=n_points)
   for i, flag in flags {
     points.push({ x: x_coords[i], y: y_coords[i] })
     // Convert TT flags to FreeType tags:

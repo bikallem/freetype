@@ -17,6 +17,7 @@ pub fn parse_post(
   offset : UInt,
   length : UInt,
   num_glyphs : UInt,
+  parse_names? : Bool = true,
 ) -> PostTable raise @error.FTError {
   let len = length.reinterpret_as_int()
   if len < 12 {
@@ -38,12 +39,12 @@ pub fn parse_post(
   reader.exit_frame()
   let glyph_names : Array[String] = []
   // Format 2.0: per-glyph name table
-  if format == 0x00020000U && len > 34 {
+  if parse_names && format == 0x00020000U && len > 34 {
     let ng = num_glyphs.reinterpret_as_int()
     let table_num_glyphs = reader.read_u16_be().reinterpret_as_int()
     let actual_count = if table_num_glyphs < ng { table_num_glyphs } else { ng }
     // Read glyph name indices
-    let indices : Array[UInt] = []
+    let indices : Array[UInt] = Array::new(capacity=actual_count)
     for _ in 0..<actual_count {
       indices.push(reader.read_u16_be())
     }

@@ -79,7 +79,16 @@ pub fn load_sfnt_face(
     None => None
   }
   let post = match table_dir.find_table(@types.tag_post) {
-    Some(r) => Some(parse_post(reader, r.offset, r.length, maxp.num_glyphs))
+    Some(r) =>
+      Some(
+        parse_post(
+          reader,
+          r.offset,
+          r.length,
+          maxp.num_glyphs,
+          parse_names=false,
+        ),
+      )
     None => None
   }
   let cmap_table = match table_dir.find_table(@types.tag_cmap) {
@@ -131,7 +140,7 @@ pub fn load_sfnt_face(
   if kern is Some(_) {
     face.face_flags = face.face_flags | @base.face_flag_kerning
   }
-  if post is Some(p) && p.glyph_names.length() > 0 {
+  if post is Some(p) && p.format == 0x00020000U {
     face.face_flags = face.face_flags | @base.face_flag_glyph_names
   }
   // Style flags from head.mac_style
