@@ -2,18 +2,21 @@
 /// 16.16 fixed-point number. Wraps Int64 to avoid overflow in intermediate
 /// computations (C FreeType relies on two's-complement wrapping of 32-bit
 /// `signed long`; we use 64-bit and mask/truncate where needed).
-struct Fixed {
+#valtype
+pub struct Fixed {
   val : Int64
 } derive(Eq, Compare, Show)
 
 ///|
 /// 26.6 fixed-point number (used for pixel coordinates).
+#valtype
 struct F26Dot6 {
   val : Int64
 } derive(Eq, Compare, Show)
 
 ///|
 /// 2.14 fixed-point number (used for unit vectors).
+#valtype
 struct F2Dot14 {
   val : Int
 } derive(Eq, Compare, Show)

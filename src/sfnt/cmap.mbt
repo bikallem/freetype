@@ -1,5 +1,6 @@
 ///|
 /// Cmap subtable header.
+#valtype
 struct CmapSubtable {
   platform_id : UInt
   encoding_id : UInt
@@ -8,6 +9,7 @@ struct CmapSubtable {
 
 ///|
 /// Parsed cmap table header.
+#valtype
 struct CmapTable {
   version : UInt
   subtables : Array[CmapSubtable]
@@ -86,6 +88,7 @@ pub fn parse_cmap_subtable(
 // ---------------------------------------------------------------------------
 
 ///|
+#valtype
 struct CmapFormat0 {
   glyph_ids : FixedArray[Byte] // 256 entries
 } derive(Show)

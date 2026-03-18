@@ -26,6 +26,7 @@ struct PsInterp {
 
 ///|
 /// A stem hint (horizontal or vertical).
+#valtype
 struct StemHint {
   position : Int64 // start position (font units)
   width : Int64 // stem width (font units)

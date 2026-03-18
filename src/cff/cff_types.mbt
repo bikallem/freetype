@@ -22,6 +22,7 @@ pub fn CffIndex::new(
 
 ///|
 /// CFF header.
+#valtype
 struct CffHeader {
   major : Int
   minor : Int

@@ -40,6 +40,7 @@ const PCF_BYTE_MASK : UInt = 4U
 
 ///|
 /// An entry in the PCF table of contents.
+#valtype
 struct PcfTableEntry {
   table_type : UInt // one of the PCF_* constants
   format : UInt // format flags (byte order, etc.)
@@ -49,6 +50,7 @@ struct PcfTableEntry {
 
 ///|
 /// A PCF property (key-value pair from the properties table).
+#valtype
 struct PcfProperty {
   name : String
   is_string : Bool
@@ -58,6 +60,7 @@ struct PcfProperty {
 
 ///|
 /// PCF per-glyph metrics.
+#valtype
 struct PcfMetric {
   left_bearing : Int
   right_bearing : Int
@@ -68,6 +71,7 @@ struct PcfMetric {
 
 ///|
 /// PCF encoding entry: maps character code to glyph index.
+#valtype
 struct PcfEncodings {
   min_char_or_byte2 : Int
   max_char_or_byte2 : Int

@@ -1,5 +1,6 @@
 ///|
 /// Blue zone for PostScript hinting.
+#valtype
 struct BlueZone {
   position : Int64 // reference position (font units)
   overshoot : Int64 // overshoot position
@@ -37,6 +38,7 @@ pub fn PsGlobals::new() -> PsGlobals {
 
 ///|
 /// A fitted stem: original and pixel-aligned positions.
+#valtype
 struct FittedStem {
   org_pos : Int64 // original position (font units)
   org_width : Int64 // original width (font units)
