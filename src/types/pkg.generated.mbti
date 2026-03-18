@@ -222,6 +222,15 @@ pub fn Bitmap::new() -> Self
 pub impl Eq for Bitmap
 pub impl Show for Bitmap
 
+pub(all) enum CurveTag {
+  On
+  Conic
+  Cubic
+}
+pub fn CurveTag::from_byte(Byte) -> Self
+pub impl Eq for CurveTag
+pub impl Show for CurveTag
+
 pub(all) enum GlyphFormat {
   None
   Composite

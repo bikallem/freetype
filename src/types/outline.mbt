@@ -54,7 +54,27 @@ pub let outline_high_precision : Int = 0x100
 ///|
 pub let outline_single_pass : Int = 0x200
 
-// Curve tag constants
+// Curve tag enum — preferred over raw Byte constants
+
+///|
+/// Curve point classification.
+pub(all) enum CurveTag {
+  On // on-curve point (was 0x01)
+  Conic // off-curve conic/quadratic (was 0x00)
+  Cubic // off-curve cubic (was 0x02)
+} derive(Eq, Show)
+
+///|
+/// Convert a raw tag byte to a CurveTag, masking to the low 2 bits.
+pub fn CurveTag::from_byte(b : Byte) -> CurveTag {
+  match (b & 0x03).to_int() {
+    0x01 => On
+    0x02 => Cubic
+    _ => Conic
+  }
+}
+
+// Legacy Byte constants — kept for backward compatibility
 
 ///|
 /// Extract curve tag from point flag byte.
@@ -63,15 +83,15 @@ pub fn curve_tag(flag : Byte) -> Byte {
 }
 
 ///|
-/// On-curve point.
+/// On-curve point. (legacy — prefer CurveTag::On)
 pub let curve_tag_on : Byte = 0x01
 
 ///|
-/// Off-curve conic (quadratic) control point.
+/// Off-curve conic (quadratic) control point. (legacy — prefer CurveTag::Conic)
 pub let curve_tag_conic : Byte = 0x00
 
 ///|
-/// Off-curve cubic control point.
+/// Off-curve cubic control point. (legacy — prefer CurveTag::Cubic)
 pub let curve_tag_cubic : Byte = 0x02
 
 ///|

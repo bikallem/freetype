@@ -27,42 +27,46 @@ pub fn parse_kern(
   reader.seek(offset.reinterpret_as_int())
   let version = reader.read_u16_be()
   let pairs : Array[KernPair] = []
-  if version == 0U {
-    // Microsoft format: version(2), nTables(2)
-    let n_tables = reader.read_u16_be().reinterpret_as_int()
-    for _ in 0..<n_tables {
-      let sub_version = reader.read_u16_be()
-      let sub_length = reader.read_u16_be().reinterpret_as_int()
-      let coverage = reader.read_u16_be()
-      ignore(sub_version)
-      // Format 0: ordered list of pairs
-      let format = (coverage >> 8).reinterpret_as_int()
-      let horizontal = (coverage & 1U) != 0U
-      if format == 0 && horizontal {
-        let n_pairs = reader.read_u16_be().reinterpret_as_int()
-        let _search_range = reader.read_u16_be()
-        let _entry_selector = reader.read_u16_be()
-        let _range_shift = reader.read_u16_be()
-        for _ in 0..<n_pairs {
-          let left = reader.read_u16_be()
-          let right = reader.read_u16_be()
-          let value = reader.read_i16_be()
-          pairs.push({ left, right, value })
-        }
-      } else {
-        // Skip unsupported subtable
-        let remaining = sub_length - 6
-        if remaining > 0 {
-          reader.skip(remaining)
+  match version {
+    0U => {
+      // Microsoft format: version(2), nTables(2)
+      let n_tables = reader.read_u16_be().reinterpret_as_int()
+      for _ in 0..<n_tables {
+        let sub_version = reader.read_u16_be()
+        let sub_length = reader.read_u16_be().reinterpret_as_int()
+        let coverage = reader.read_u16_be()
+        ignore(sub_version)
+        // Format 0: ordered list of pairs
+        let format = (coverage >> 8).reinterpret_as_int()
+        let horizontal = (coverage & 1U) != 0U
+        if format == 0 && horizontal {
+          let n_pairs = reader.read_u16_be().reinterpret_as_int()
+          let _search_range = reader.read_u16_be()
+          let _entry_selector = reader.read_u16_be()
+          let _range_shift = reader.read_u16_be()
+          for _ in 0..<n_pairs {
+            let left = reader.read_u16_be()
+            let right = reader.read_u16_be()
+            let value = reader.read_i16_be()
+            pairs.push({ left, right, value })
+          }
+        } else {
+          // Skip unsupported subtable
+          let remaining = sub_length - 6
+          if remaining > 0 {
+            reader.skip(remaining)
+          }
         }
       }
     }
-  } else if version == 1U {
-    // Apple format (version 1.0): version is actually u32
-    let _version_lo = reader.read_u16_be()
-    let n_tables = reader.read_u32_be().reinterpret_as_int()
-    // Skip Apple kern subtables for now
-    ignore(n_tables)
+    1U => {
+      // Apple format (version 1.0): version is actually u32
+      let _version_lo = reader.read_u16_be()
+      let n_tables = reader.read_u32_be().reinterpret_as_int()
+      // Skip Apple kern subtables for now
+      ignore(n_tables)
+    }
+    _ => ()
   }
   { pairs, }
 }

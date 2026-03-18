@@ -88,13 +88,13 @@ pub fn outline_decompose(
     let last = outline.contours[c].reinterpret_as_int()
     // Find first on-curve point
     let mut start = first
-    let mut start_tag = @types.curve_tag(outline.tags[start])
+    let mut start_ct = @types.CurveTag::from_byte(outline.tags[start])
     // If first point is off-curve conic, check last point
-    if start_tag == @types.curve_tag_conic {
-      let last_tag = @types.curve_tag(outline.tags[last])
-      if last_tag == @types.curve_tag_on {
+    if start_ct == Conic {
+      let last_ct = @types.CurveTag::from_byte(outline.tags[last])
+      if last_ct == On {
         start = last
-        start_tag = @types.curve_tag_on
+        start_ct = On
       } else {
         // Both off-curve: start at virtual on-curve midpoint
         let p0 = outline.points[first]
@@ -107,33 +107,36 @@ pub fn outline_decompose(
         // Process from first point
         let mut i = first
         while i <= last {
-          let tag = @types.curve_tag(outline.tags[i])
           let pt = apply(outline.points[i])
-          if tag == @types.curve_tag_on {
-            (funcs.line_to)(pt)
-          } else if tag == @types.curve_tag_conic {
-            // Look ahead for next on-curve or another conic
-            let next_i = if i < last { i + 1 } else { first }
-            let next_tag = @types.curve_tag(outline.tags[next_i])
-            let next_pt = apply(outline.points[next_i])
-            if next_tag == @types.curve_tag_on {
-              (funcs.conic_to)(pt, next_pt)
-              i += 1 // skip the on-curve point we just consumed
-            } else {
-              // Two consecutive conics: insert virtual on-curve midpoint
-              let virt : @types.Vector = {
-                x: (pt.x + next_pt.x) / 2L,
-                y: (pt.y + next_pt.y) / 2L,
+          match @types.CurveTag::from_byte(outline.tags[i]) {
+            On => (funcs.line_to)(pt)
+            Conic => {
+              // Look ahead for next on-curve or another conic
+              let next_i = if i < last { i + 1 } else { first }
+              let next_pt = apply(outline.points[next_i])
+              match @types.CurveTag::from_byte(outline.tags[next_i]) {
+                On => {
+                  (funcs.conic_to)(pt, next_pt)
+                  i += 1 // skip the on-curve point we just consumed
+                }
+                _ => {
+                  // Two consecutive conics: insert virtual on-curve midpoint
+                  let virt : @types.Vector = {
+                    x: (pt.x + next_pt.x) / 2L,
+                    y: (pt.y + next_pt.y) / 2L,
+                  }
+                  (funcs.conic_to)(pt, virt)
+                }
               }
-              (funcs.conic_to)(pt, virt)
             }
-            // Cubic
-          } else if i + 1 <= last {
-            let ctrl2 = apply(outline.points[i + 1])
-            let next_i = if i + 2 <= last { i + 2 } else { first }
-            let to = apply(outline.points[next_i])
-            (funcs.cubic_to)(pt, ctrl2, to)
-            i += 2
+            Cubic =>
+              if i + 1 <= last {
+                let ctrl2 = apply(outline.points[i + 1])
+                let next_i = if i + 2 <= last { i + 2 } else { first }
+                let to = apply(outline.points[next_i])
+                (funcs.cubic_to)(pt, ctrl2, to)
+                i += 2
+              }
           }
           i += 1
         }
@@ -148,32 +151,35 @@ pub fn outline_decompose(
     let mut i = if start == last { first } else { start + 1 }
     let mut done = false
     while not(done) {
-      let tag = @types.curve_tag(outline.tags[i])
       let pt = apply(outline.points[i])
-      if tag == @types.curve_tag_on {
-        (funcs.line_to)(pt)
-      } else if tag == @types.curve_tag_conic {
-        let next_i = if i < last { i + 1 } else { first }
-        let next_tag = @types.curve_tag(outline.tags[next_i])
-        let next_pt = apply(outline.points[next_i])
-        if next_tag == @types.curve_tag_on {
-          (funcs.conic_to)(pt, next_pt)
-          i = next_i
-        } else {
-          let virt : @types.Vector = {
-            x: (pt.x + next_pt.x) / 2L,
-            y: (pt.y + next_pt.y) / 2L,
+      match @types.CurveTag::from_byte(outline.tags[i]) {
+        On => (funcs.line_to)(pt)
+        Conic => {
+          let next_i = if i < last { i + 1 } else { first }
+          let next_pt = apply(outline.points[next_i])
+          match @types.CurveTag::from_byte(outline.tags[next_i]) {
+            On => {
+              (funcs.conic_to)(pt, next_pt)
+              i = next_i
+            }
+            _ => {
+              let virt : @types.Vector = {
+                x: (pt.x + next_pt.x) / 2L,
+                y: (pt.y + next_pt.y) / 2L,
+              }
+              (funcs.conic_to)(pt, virt)
+            }
           }
-          (funcs.conic_to)(pt, virt)
         }
-      } else {
-        // Cubic: expect two off-curve points + one on-curve
-        let next_i = if i < last { i + 1 } else { first }
-        let ctrl2 = apply(outline.points[next_i])
-        let to_i = if next_i < last { next_i + 1 } else { first }
-        let to = apply(outline.points[to_i])
-        (funcs.cubic_to)(pt, ctrl2, to)
-        i = to_i
+        Cubic => {
+          // Cubic: expect two off-curve points + one on-curve
+          let next_i = if i < last { i + 1 } else { first }
+          let ctrl2 = apply(outline.points[next_i])
+          let to_i = if next_i < last { next_i + 1 } else { first }
+          let to = apply(outline.points[to_i])
+          (funcs.cubic_to)(pt, ctrl2, to)
+          i = to_i
+        }
       }
       if i == start || (start == last && i == last) {
         done = true

@@ -27,73 +27,80 @@ fn exec_type2_code(
   for ip = 0; ip < len; {
     let b0 = code[ip].to_int()
     let mut next_ip = ip + 1
-    if b0 >= 0 && b0 <= 11 {
-      // Operator
-      next_ip = exec_type2_op(interp, code, next_ip, b0)
-    } else if b0 == 12 {
-      // Two-byte operator
-      if next_ip >= len {
-        raise @error.FTError::SyntaxError
+    match b0 {
+      n if n >= 0 && n <= 11 =>
+        // Operator
+        next_ip = exec_type2_op(interp, code, next_ip, b0)
+      12 => {
+        // Two-byte operator
+        if next_ip >= len {
+          raise @error.FTError::SyntaxError
+        }
+        let b1 = code[next_ip].to_int()
+        next_ip += 1
+        next_ip = exec_type2_op2(interp, code, next_ip, b1)
       }
-      let b1 = code[next_ip].to_int()
-      next_ip += 1
-      next_ip = exec_type2_op2(interp, code, next_ip, b1)
-    } else if b0 >= 13 && b0 <= 18 {
-      next_ip = exec_type2_op(interp, code, next_ip, b0)
-    } else if b0 == 19 || b0 == 20 {
-      // hintmask / cntrmask: consume (num_hints + 7) / 8 bytes
-      check_width(interp)
-      let num_hints = interp.hints_h.length() + interp.hints_v.length()
-      // First, consume any remaining stem hints on stack
-      let pairs_on_stack = interp.stack.length() / 2
-      for _ in 0..<pairs_on_stack {
-        ignore(interp.pop())
-        ignore(interp.pop())
+      n if n >= 13 && n <= 18 =>
+        next_ip = exec_type2_op(interp, code, next_ip, b0)
+      19 | 20 => {
+        // hintmask / cntrmask: consume (num_hints + 7) / 8 bytes
+        check_width(interp)
+        let num_hints = interp.hints_h.length() + interp.hints_v.length()
+        // First, consume any remaining stem hints on stack
+        let pairs_on_stack = interp.stack.length() / 2
+        for _ in 0..<pairs_on_stack {
+          ignore(interp.pop())
+          ignore(interp.pop())
+        }
+        let mask_bytes = (num_hints + 7) / 8
+        next_ip += mask_bytes
       }
-      let mask_bytes = (num_hints + 7) / 8
-      next_ip += mask_bytes
-    } else if b0 >= 21 && b0 <= 31 {
-      next_ip = exec_type2_op(interp, code, next_ip, b0)
-    } else if b0 == 28 {
-      // 16-bit signed integer
-      if next_ip + 1 >= len {
-        raise @error.FTError::SyntaxError
+      28 => {
+        // 16-bit signed integer
+        if next_ip + 1 >= len {
+          raise @error.FTError::SyntaxError
+        }
+        let hi = code[next_ip].to_int()
+        let lo = code[next_ip + 1].to_int()
+        let val = (hi << 8) | lo
+        let signed_val = if val >= 0x8000 { val - 0x10000 } else { val }
+        interp.push(signed_val.to_int64())
+        next_ip += 2
       }
-      let hi = code[next_ip].to_int()
-      let lo = code[next_ip + 1].to_int()
-      let val = (hi << 8) | lo
-      let signed_val = if val >= 0x8000 { val - 0x10000 } else { val }
-      interp.push(signed_val.to_int64())
-      next_ip += 2
-    } else if b0 >= 32 && b0 <= 246 {
-      interp.push((b0 - 139).to_int64())
-    } else if b0 >= 247 && b0 <= 250 {
-      if next_ip >= len {
-        raise @error.FTError::SyntaxError
+      n if n >= 21 && n <= 31 =>
+        next_ip = exec_type2_op(interp, code, next_ip, b0)
+      n if n >= 32 && n <= 246 => interp.push((b0 - 139).to_int64())
+      n if n >= 247 && n <= 250 => {
+        if next_ip >= len {
+          raise @error.FTError::SyntaxError
+        }
+        let b1 = code[next_ip].to_int()
+        next_ip += 1
+        interp.push(((b0 - 247) * 256 + b1 + 108).to_int64())
       }
-      let b1 = code[next_ip].to_int()
-      next_ip += 1
-      interp.push(((b0 - 247) * 256 + b1 + 108).to_int64())
-    } else if b0 >= 251 && b0 <= 254 {
-      if next_ip >= len {
-        raise @error.FTError::SyntaxError
+      n if n >= 251 && n <= 254 => {
+        if next_ip >= len {
+          raise @error.FTError::SyntaxError
+        }
+        let b1 = code[next_ip].to_int()
+        next_ip += 1
+        interp.push((-((b0 - 251) * 256 + b1 + 108)).to_int64())
       }
-      let b1 = code[next_ip].to_int()
-      next_ip += 1
-      interp.push((-((b0 - 251) * 256 + b1 + 108)).to_int64())
-    } else if b0 == 255 {
-      // 32-bit fixed point (16.16)
-      if next_ip + 3 >= len {
-        raise @error.FTError::SyntaxError
+      255 => {
+        // 32-bit fixed point (16.16)
+        if next_ip + 3 >= len {
+          raise @error.FTError::SyntaxError
+        }
+        let val = (code[next_ip].to_int() << 24) |
+          (code[next_ip + 1].to_int() << 16) |
+          (code[next_ip + 2].to_int() << 8) |
+          code[next_ip + 3].to_int()
+        // CFF spec: this is a 16.16 fixed-point value
+        // For outline coords, we convert to integer by >> 16
+        interp.push(val.to_int64())
+        next_ip += 4
       }
-      let val = (code[next_ip].to_int() << 24) |
-        (code[next_ip + 1].to_int() << 16) |
-        (code[next_ip + 2].to_int() << 8) |
-        code[next_ip + 3].to_int()
-      // CFF spec: this is a 16.16 fixed-point value
-      // For outline coords, we convert to integer by >> 16
-      interp.push(val.to_int64())
-      next_ip += 4
+      _ => ()
     }
     continue next_ip
   }

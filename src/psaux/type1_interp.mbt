@@ -39,51 +39,63 @@ fn exec_type1_code(
   for ip = 0; ip < len; {
     let b0 = code[ip].to_int()
     let mut next_ip = ip + 1
-    if b0 >= 0 && b0 <= 31 && b0 != 12 {
-      // Operator
-      next_ip = exec_type1_op(interp, code, next_ip, b0, state)
-    } else if b0 == 12 {
-      // Two-byte operator
-      if next_ip >= len {
-        raise @error.FTError::SyntaxError
+    match b0 {
+      n if n >= 0 && n <= 11 =>
+        // Operator
+        next_ip = exec_type1_op(interp, code, next_ip, b0, state)
+      12 => {
+        // Two-byte operator
+        if next_ip >= len {
+          raise @error.FTError::SyntaxError
+        }
+        let b1 = code[next_ip].to_int()
+        next_ip += 1
+        next_ip = exec_type1_op2(interp, code, next_ip, b1, state)
       }
-      let b1 = code[next_ip].to_int()
-      next_ip += 1
-      next_ip = exec_type1_op2(interp, code, next_ip, b1, state)
-    } else if b0 >= 32 && b0 <= 246 {
-      interp.push((b0 - 139).to_int64())
-    } else if b0 >= 247 && b0 <= 250 {
-      if next_ip >= len {
-        raise @error.FTError::SyntaxError
+      n if n >= 13 && n <= 31 =>
+        // Operator
+        next_ip = exec_type1_op(interp, code, next_ip, b0, state)
+      n if n >= 32 && n <= 246 => interp.push((b0 - 139).to_int64())
+      n if n >= 247 && n <= 250 => {
+        if next_ip >= len {
+          raise @error.FTError::SyntaxError
+        }
+        let b1 = code[next_ip].to_int()
+        next_ip += 1
+        interp.push(((b0 - 247) * 256 + b1 + 108).to_int64())
       }
-      let b1 = code[next_ip].to_int()
-      next_ip += 1
-      interp.push(((b0 - 247) * 256 + b1 + 108).to_int64())
-    } else if b0 >= 251 && b0 <= 254 {
-      if next_ip >= len {
-        raise @error.FTError::SyntaxError
+      n if n >= 251 && n <= 254 => {
+        if next_ip >= len {
+          raise @error.FTError::SyntaxError
+        }
+        let b1 = code[next_ip].to_int()
+        next_ip += 1
+        interp.push((-((b0 - 251) * 256 + b1 + 108)).to_int64())
       }
-      let b1 = code[next_ip].to_int()
-      next_ip += 1
-      interp.push((-((b0 - 251) * 256 + b1 + 108)).to_int64())
-    } else if b0 == 255 {
-      // Type 1: 4-byte signed integer (NOT 16.16 fixed like Type 2)
-      if next_ip + 3 >= len {
-        raise @error.FTError::SyntaxError
+      255 => {
+        // Type 1: 4-byte signed integer (NOT 16.16 fixed like Type 2)
+        if next_ip + 3 >= len {
+          raise @error.FTError::SyntaxError
+        }
+        let b1 = code[next_ip].to_int()
+        let b2 = code[next_ip + 1].to_int()
+        let b3 = code[next_ip + 2].to_int()
+        let b4 = code[next_ip + 3].to_int()
+        // Build as Int64 to avoid overflow
+        let val = (b1.to_int64() << 24) |
+          (b2.to_int64() << 16) |
+          (b3.to_int64() << 8) |
+          b4.to_int64()
+        // Sign-extend: if high bit set, subtract 2^32
+        let signed_val = if val >= 0x80000000L {
+          val - 0x100000000L
+        } else {
+          val
+        }
+        interp.push(signed_val)
+        next_ip += 4
       }
-      let b1 = code[next_ip].to_int()
-      let b2 = code[next_ip + 1].to_int()
-      let b3 = code[next_ip + 2].to_int()
-      let b4 = code[next_ip + 3].to_int()
-      // Build as Int64 to avoid overflow
-      let val = (b1.to_int64() << 24) |
-        (b2.to_int64() << 16) |
-        (b3.to_int64() << 8) |
-        b4.to_int64()
-      // Sign-extend: if high bit set, subtract 2^32
-      let signed_val = if val >= 0x80000000L { val - 0x100000000L } else { val }
-      interp.push(signed_val)
-      next_ip += 4
+      _ => ()
     }
     continue next_ip
   }

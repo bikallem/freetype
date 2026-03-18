@@ -131,10 +131,10 @@ pub fn parse_type1_pfb(data : Bytes) -> Type1Font raise @error.FTError {
       raise @error.FTError::InvalidFileFormat
     }
     let seg_data = data[data_start:data_start + seg_len].to_bytes()
-    if seg_type == 1 {
-      ascii_parts.push(seg_data)
-    } else if seg_type == 2 {
-      binary_parts.push(seg_data)
+    match seg_type {
+      1 => ascii_parts.push(seg_data)
+      2 => binary_parts.push(seg_data)
+      _ => ()
     }
     continue data_start + seg_len
   }

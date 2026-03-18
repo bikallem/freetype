@@ -280,12 +280,12 @@ pub fn compute_edges(
   let n = sorted.length()
   for i in 1..<n {
     let key = sorted[i]
-    let mut j = i - 1
-    while j >= 0 && sorted[j].position > key.position {
+    for j = i - 1; j >= 0 && sorted[j].position > key.position; {
       sorted[j + 1] = sorted[j]
-      j -= 1
+      continue j - 1
+    } nobreak {
+      sorted[j + 1] = key
     }
-    sorted[j + 1] = key
   }
   // Merge nearby segments into edges.
   // Threshold: half a pixel (32 in 26.6) converted back to font units via scale.
@@ -324,17 +324,16 @@ pub fn compute_edges(
 pub fn detect_stems(edges : Array[Edge]) -> Array[Stem] {
   let stems : Array[Stem] = []
   let n = edges.length()
-  let mut i = 0
-  while i + 1 < n {
+  for i = 0; i + 1 < n; {
     let width = edges[i + 1].position - edges[i].position
     // Reasonable stem width: between 10 and 500 font units
     if width > 10L && width < 500L {
       stems.push({ edge1: i, edge2: i + 1 })
       edges[i].linked_edge = i + 1
       edges[i + 1].linked_edge = i
-      i += 2
+      continue i + 2
     } else {
-      i += 1
+      continue i + 1
     }
   }
   stems
