@@ -119,7 +119,7 @@ pub fn CmapFormat0::char_index(self : CmapFormat0, charcode : UInt) -> UInt {
   if charcode >= 256U {
     return 0U
   }
-  self.glyph_ids[charcode.reinterpret_as_int()].to_uint()
+  self.glyph_ids.unsafe_get(charcode.reinterpret_as_int()).to_uint()
 }
 
 // ---------------------------------------------------------------------------
@@ -197,24 +197,21 @@ pub fn CmapFormat4::char_index(self : CmapFormat4, charcode : UInt) -> UInt {
     return 0U
   }
   // Binary search for the segment containing charcode
+  // All array accesses use unsafe_get since mid is always in [0, seg_count)
   for lo = 0, hi = self.seg_count - 1; lo <= hi; {
     let mid = (lo + hi) / 2
-    if charcode > self.end_codes[mid] {
+    if charcode > self.end_codes.unsafe_get(mid) {
       continue mid + 1, hi
-    } else if charcode < self.start_codes[mid] {
+    } else if charcode < self.start_codes.unsafe_get(mid) {
       continue lo, mid - 1
     } else {
-      // Found: charcode is in segment [startCode[mid], endCode[mid]]
-      let range_offset = self.id_range_offsets[mid]
+      let range_offset = self.id_range_offsets.unsafe_get(mid)
       if range_offset == 0U {
-        // Use delta
-        let result = charcode.reinterpret_as_int() + self.id_deltas[mid]
+        let result = charcode.reinterpret_as_int() +
+          self.id_deltas.unsafe_get(mid)
         return (result & 0xFFFF).reinterpret_as_uint()
       }
-      // Use glyph id array
-      // The idRangeOffset is a byte offset from its own position in the table
-      // to the glyph ID. We compute the index into glyph_ids array.
-      let offset_in_range = (charcode - self.start_codes[mid]).reinterpret_as_int()
+      let offset_in_range = (charcode - self.start_codes.unsafe_get(mid)).reinterpret_as_int()
       let range_offset_pos = self.id_range_offset_start + mid * 2
       let glyph_addr = range_offset_pos +
         range_offset.reinterpret_as_int() +
@@ -222,11 +219,12 @@ pub fn CmapFormat4::char_index(self : CmapFormat4, charcode : UInt) -> UInt {
       let glyph_array_base = self.id_range_offset_start + self.seg_count * 2
       let glyph_idx = (glyph_addr - glyph_array_base) / 2
       if glyph_idx >= 0 && glyph_idx < self.glyph_ids.length() {
-        let gid = self.glyph_ids[glyph_idx]
+        let gid = self.glyph_ids.unsafe_get(glyph_idx)
         if gid == 0U {
           return 0U
         }
-        return ((gid.reinterpret_as_int() + self.id_deltas[mid]) & 0xFFFF).reinterpret_as_uint()
+        return ((gid.reinterpret_as_int() + self.id_deltas.unsafe_get(mid)) &
+        0xFFFF).reinterpret_as_uint()
       }
       return 0U
     }
@@ -281,7 +279,7 @@ pub fn CmapFormat6::char_index(self : CmapFormat6, charcode : UInt) -> UInt {
   }
   let idx = (charcode - self.first_code).reinterpret_as_int()
   if idx < self.glyph_ids.length() {
-    self.glyph_ids[idx]
+    self.glyph_ids.unsafe_get(idx)
   } else {
     0U
   }
@@ -340,10 +338,10 @@ fn parse_cmap_format12(
 
 ///|
 pub fn CmapFormat12::char_index(self : CmapFormat12, charcode : UInt) -> UInt {
-  // Binary search
+  // Binary search — mid is always in [0, groups.length()) so unsafe_get is safe
   for lo = 0, hi = self.groups.length() - 1; lo <= hi; {
     let mid = (lo + hi) / 2
-    let g = self.groups[mid]
+    let g = self.groups.unsafe_get(mid)
     if charcode > g.end_char_code {
       continue mid + 1, hi
     } else if charcode < g.start_char_code {
