@@ -2,15 +2,8 @@
 /// Load a simple glyph from the 'glyf' table.
 /// Returns the parsed outline (points, tags, contours) and the glyph instructions.
 ///
-/// Simple glyph layout:
-///   numberOfContours (i16) — already read, passed as parameter
-///   xMin, yMin, xMax, yMax (i16 each)
-///   endPtsOfContours[numberOfContours] (u16 each)
-///   instructionLength (u16)
-///   instructions[instructionLength] (byte each)
-///   flags[] (compressed: repeat flag)
-///   xCoordinates[] (compressed: delta-encoded)
-///   yCoordinates[] (compressed: delta-encoded)
+/// Optimized: reads flag/coordinate data directly from raw bytes to
+/// avoid per-read bounds checks in ByteReader.
 pub fn load_simple_glyph(
   reader : @stream.ByteReader,
   num_contours : Int,
@@ -40,16 +33,20 @@ pub fn load_simple_glyph(
   } else {
     b""
   }
-  // Read flags (compressed with repeat) — use FixedArray to avoid growth
+  // Switch to direct byte access for the hot flag/coordinate loops
+  let data = reader.raw_data()
+  let mut pos = reader.position()
+  // Read flags (compressed with repeat)
   let flags = FixedArray::make(n_points, b'\x00')
   let mut fi = 0
   while fi < n_points {
-    let flag = reader.read_byte()
+    let flag = data[pos]
+    pos += 1
     flags[fi] = flag
     fi += 1
-    // Bit 3: repeat flag
     if (flag & 0x08) != b'\x00' {
-      let repeat_count = reader.read_byte().to_int()
+      let repeat_count = data[pos].to_int()
+      pos += 1
       for _ in 0..<repeat_count {
         if fi < n_points {
           flags[fi] = flag
@@ -58,7 +55,7 @@ pub fn load_simple_glyph(
       }
     }
   }
-  // Read x coordinates (delta-encoded) directly into FixedArray
+  // Read x coordinates (delta-encoded) directly from bytes
   let x_coords = FixedArray::make(n_points, 0L)
   let mut x = 0L
   for i in 0..<n_points {
@@ -66,14 +63,17 @@ pub fn load_simple_glyph(
     let x_short = (flag & 0x02) != b'\x00'
     let x_same = (flag & 0x10) != b'\x00'
     if x_short {
-      let delta = reader.read_byte().to_int().to_int64()
-      if x_same {
-        x += delta
-      } else {
-        x -= delta
-      }
+      let delta = data[pos].to_int().to_int64()
+      pos += 1
+      x = if x_same { x + delta } else { x - delta }
     } else if !x_same {
-      x += reader.read_i16_be().to_int64()
+      // 2-byte signed big-endian delta
+      let hi = data[pos].to_int()
+      let lo = data[pos + 1].to_int()
+      pos += 2
+      let v = (hi << 8) | lo
+      let signed_v = if v >= 0x8000 { v - 0x10000 } else { v }
+      x += signed_v.to_int64()
     }
     x_coords[i] = x
   }
@@ -86,14 +86,16 @@ pub fn load_simple_glyph(
     let y_short = (flag & 0x04) != b'\x00'
     let y_same = (flag & 0x20) != b'\x00'
     if y_short {
-      let delta = reader.read_byte().to_int().to_int64()
-      if y_same {
-        y += delta
-      } else {
-        y -= delta
-      }
+      let delta = data[pos].to_int().to_int64()
+      pos += 1
+      y = if y_same { y + delta } else { y - delta }
     } else if !y_same {
-      y += reader.read_i16_be().to_int64()
+      let hi = data[pos].to_int()
+      let lo = data[pos + 1].to_int()
+      pos += 2
+      let v = (hi << 8) | lo
+      let signed_v = if v >= 0x8000 { v - 0x10000 } else { v }
+      y += signed_v.to_int64()
     }
     points.push(@types.Vector::new(x_coords[i], y))
     tags.push(
@@ -104,6 +106,8 @@ pub fn load_simple_glyph(
       },
     )
   }
+  // Update reader position past all the data we consumed
+  reader.seek(pos)
   (@types.Outline::create(points, tags, contours), instructions)
 }
 
@@ -122,7 +126,6 @@ struct CompositeComponent {
 
 ///|
 /// Parse composite glyph components from the reader.
-/// Reader should be positioned right after the numberOfContours field.
 pub fn load_composite_glyph(
   reader : @stream.ByteReader,
 ) -> Array[CompositeComponent] raise @error.FTError {
@@ -136,7 +139,6 @@ pub fn load_composite_glyph(
   while has_more {
     let flags = reader.read_u16_be()
     let glyph_index = reader.read_u16_be()
-    // Read arguments
     let (arg1, arg2) = if (flags & ARG_1_AND_2_ARE_WORDS) != 0U {
       if (flags & ARGS_ARE_XY_VALUES) != 0U {
         (reader.read_i16_be(), reader.read_i16_be())
@@ -155,7 +157,6 @@ pub fn load_composite_glyph(
     } else {
       (reader.read_byte().to_int(), reader.read_byte().to_int())
     }
-    // Read transformation matrix
     let mut xx = @fixed.Fixed::one()
     let mut xy = @fixed.Fixed::zero()
     let mut yx = @fixed.Fixed::zero()

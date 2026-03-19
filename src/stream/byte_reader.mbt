@@ -48,6 +48,12 @@ pub fn ByteReader::remaining(self : ByteReader) -> Int {
 }
 
 ///|
+/// Access the underlying raw bytes for direct reading.
+pub fn ByteReader::raw_data(self : ByteReader) -> Bytes {
+  self.data
+}
+
+///|
 /// Whether we're currently inside a frame.
 pub fn ByteReader::in_frame(self : ByteReader) -> Bool {
   self.cursor >= 0
