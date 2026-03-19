@@ -116,10 +116,9 @@ fn load_sfnt(
   let hint_h_hints : Ref[Array[@psaux.StemHint]] = Ref::new([])
   let hint_v_hints : Ref[Array[@psaux.StemHint]] = Ref::new([])
   let hint_has_hints : Ref[Bool] = Ref::new(false)
-  // Closure-based driver ops
-  // Lazy cmap: resolved on first char_index call, then direct dispatch
-  let char_index_ref : Ref[(UInt) -> UInt] = Ref::new(fn(_c) { 0U })
-  char_index_ref.val = fn(charcode) {
+  // Lazy cmap: first call resolves subtable and replaces face.char_index_fn
+  // directly, eliminating all Ref indirection for subsequent calls
+  let char_index_fn : (UInt) -> UInt = fn(charcode) {
     let lookup : @sfnt.CmapLookup? = match sfnt_data.cmap() {
       Some(ct) =>
         match sfnt_data.table_dir().find_table(@types.TAG_CMAP) {
@@ -135,11 +134,9 @@ fn load_sfnt(
       Some(@sfnt.CmapLookup::Format12(t)) => fn(c) { t.char_index(c) }
       None => fn(_c) { 0U }
     }
-    char_index_ref.val = fast_fn
+    // Replace face's char_index_fn directly — no Ref on subsequent calls
+    face.set_char_index_fn(fast_fn)
     fast_fn(charcode)
-  }
-  let char_index_fn : (UInt) -> UInt = fn(charcode) {
-    (char_index_ref.val)(charcode)
   }
   let load_glyph_fn : (UInt, Int) -> (
     @base.GlyphSlotData,
