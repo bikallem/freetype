@@ -154,6 +154,18 @@ pub fn InterpContext::set_func_defs(
 }
 
 ///|
+pub fn InterpContext::set_cvt(self : InterpContext, v : Array[Int64]) -> Unit {
+  self.cvt = v
+}
+
+///|
+pub fn InterpContext::reset_sp(self : InterpContext) -> Unit {
+  self.sp = 0
+  self.error = false
+  self.loop_count = 1
+}
+
+///|
 pub fn InterpContext::set_zone0_org(
   self : InterpContext,
   v : Array[@types.Vector],

@@ -106,11 +106,12 @@ fn load_sfnt(
   }
   // Reusable glyph loading buffers (captured by load_glyph_fn closure)
   let glyph_bufs = @truetype.GlyphBufs::new()
-  // Cached TT interpreter state: fpgm func_defs + prep-modified CVT
-  // Keyed by ppem — invalidated when size changes
+  // Cached TT interpreter state: fpgm func_defs + prep-modified CVT + reusable context
   let tt_cached_funcs : Ref[Map[Int, @truetype.FuncDef]?] = Ref::new(None)
   let tt_cached_cvt : Ref[Array[Int64]?] = Ref::new(None)
   let tt_cached_ppem : Ref[UInt] = Ref::new(0U)
+  // Reusable interpreter context — avoid allocating new one per glyph
+  let tt_reuse_ctx : Ref[@truetype.InterpContext?] = Ref::new(None)
   // Per-face hint state
   let hint_h_hints : Ref[Array[@psaux.StemHint]] = Ref::new([])
   let hint_v_hints : Ref[Array[@psaux.StemHint]] = Ref::new([])
@@ -271,16 +272,31 @@ fn load_sfnt(
         tt_cached_cvt.val = Some(init_ctx.cvt())
         tt_cached_ppem.val = ppem
       }
-      // Create glyph-specific context reusing cached func_defs + CVT
+      // Reuse or create interpreter context
       let cached_cvt = tt_cached_cvt.val.unwrap()
       let cached_funcs = tt_cached_funcs.val.unwrap()
-      let ctx = @truetype.InterpContext::new(
-        cvt=cached_cvt.copy(),
-        storage_size=64,
-        max_stack=256,
-      )
+      let ctx = match tt_reuse_ctx.val {
+        Some(c) => c
+        None => {
+          let c = @truetype.InterpContext::new(storage_size=64, max_stack=256)
+          let twilight_size = 16
+          c.set_zone0_org(
+            Array::make(twilight_size, @types.Vector::new(0L, 0L)),
+          )
+          c.set_zone0_cur(
+            Array::make(twilight_size, @types.Vector::new(0L, 0L)),
+          )
+          c.set_zone0_tags(Array::make(twilight_size, b'\x00'))
+          c.set_zone0_points(c.zone0_cur())
+          tt_reuse_ctx.val = Some(c)
+          c
+        }
+      }
+      // Reset context for this glyph
+      ctx.set_cvt(cached_cvt.copy())
       ctx.set_ppem(ppem.reinterpret_as_int())
       ctx.set_func_defs(cached_funcs)
+      ctx.reset_sp()
       // Set up glyph zone points
       let n_points = outline.points().length()
       let total_points = n_points + 4
@@ -307,11 +323,6 @@ fn load_sfnt(
           b'\x01'
         }
       }
-      let twilight_size = 16
-      ctx.set_zone0_org(Array::make(twilight_size, @types.Vector::new(0L, 0L)))
-      ctx.set_zone0_cur(Array::make(twilight_size, @types.Vector::new(0L, 0L)))
-      ctx.set_zone0_tags(Array::make(twilight_size, b'\x00'))
-      ctx.set_zone0_points(ctx.zone0_cur())
       // Run glyph instructions only (fpgm+prep already cached)
       ctx.set_gs(@truetype.GraphicsState::default())
       let glyph_result = try? ctx.execute(instructions)
