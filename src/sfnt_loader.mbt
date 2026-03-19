@@ -297,15 +297,26 @@ fn load_sfnt(
       ctx.set_ppem(ppem.reinterpret_as_int())
       ctx.set_func_defs(cached_funcs)
       ctx.reset_sp()
-      // Set up glyph zone points
+      // Reuse zone1 arrays if large enough, else reallocate
       let n_points = outline.points().length()
       let total_points = n_points + 4
       let zero_vec = @types.Vector::new(0L, 0L)
-      ctx.set_zone1_org(Array::make(total_points, zero_vec))
-      ctx.set_zone1_cur(Array::make(total_points, @types.Vector::new(0L, 0L)))
-      ctx.set_zone1_tags(Array::make(total_points, b'\x00'))
-      ctx.set_zone1_touch(Array::make(total_points, b'\x00'))
-      ctx.set_zone1_points(ctx.zone1_cur())
+      if ctx.zone1_org().length() < total_points {
+        ctx.set_zone1_org(Array::make(total_points, zero_vec))
+        ctx.set_zone1_cur(Array::make(total_points, @types.Vector::new(0L, 0L)))
+        ctx.set_zone1_tags(Array::make(total_points, b'\x00'))
+        ctx.set_zone1_touch(Array::make(total_points, b'\x00'))
+        ctx.set_zone1_points(ctx.zone1_cur())
+      } else {
+        // Zero out reused arrays
+        for i in 0..<total_points {
+          ctx.zone1_org()[i] = zero_vec
+          ctx.zone1_cur()[i] = @types.Vector::new(0L, 0L)
+          ctx.zone1_tags()[i] = b'\x00'
+          ctx.zone1_touch()[i] = b'\x00'
+        }
+        ctx.set_zone1_points(ctx.zone1_cur())
+      }
       for i in 0..<n_points {
         let sx = @fixed.mul_fix(
           x_scale,
