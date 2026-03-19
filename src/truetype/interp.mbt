@@ -240,7 +240,7 @@ pub fn InterpContext::set_zone1_points(
 ///|
 fn InterpContext::push(self : InterpContext, val : Int64) -> Unit {
   if self.sp < self.stack.length() {
-    self.stack[self.sp] = val
+    self.stack.unsafe_set(self.sp, val)
     self.sp += 1
   } else {
     self.error = true
@@ -251,7 +251,7 @@ fn InterpContext::push(self : InterpContext, val : Int64) -> Unit {
 fn InterpContext::pop(self : InterpContext) -> Int64 {
   if self.sp > 0 {
     self.sp -= 1
-    self.stack[self.sp]
+    self.stack.unsafe_get(self.sp)
   } else {
     self.error = true
     0L
@@ -434,7 +434,7 @@ pub fn InterpContext::execute(
   self.code = code
   self.ip = 0
   let len = code.length()
-  while self.ip < len && not(self.error) {
+  while self.ip < len && !self.error {
     let opcode = code[self.ip].to_int()
     self.ip += 1
     self.exec_opcode(opcode)
