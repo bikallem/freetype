@@ -110,6 +110,7 @@ fn load_sfnt(
   let tt_cached_funcs : Ref[Map[Int, @truetype.FuncDef]?] = Ref::new(None)
   let tt_cached_cvt : Ref[Array[Int64]?] = Ref::new(None)
   let tt_cached_ppem : Ref[UInt] = Ref::new(0U)
+  let tt_cached_ok : Ref[Bool] = Ref::new(false)
   // Reusable interpreter context — avoid allocating new one per glyph
   let tt_reuse_ctx : Ref[@truetype.InterpContext?] = Ref::new(None)
   // Per-face hint state
@@ -258,23 +259,27 @@ fn load_sfnt(
         init_ctx.set_zone1_tags(FixedArray::default())
         init_ctx.set_zone1_touch(FixedArray::default())
         init_ctx.set_zone1_points(init_ctx.zone1_cur())
+        let mut init_ok = true
         if tt.fpgm().length() > 0 {
-          let fpgm_result = try? init_ctx.execute(tt.fpgm())
-          if fpgm_result is Err(_) {
-            return false
+          if (try? init_ctx.execute(tt.fpgm())) is Err(_) {
+            init_ok = false
           }
         }
         init_ctx.set_gs(@truetype.GraphicsState::default())
-        if tt.prep().length() > 0 {
-          let prep_result = try? init_ctx.execute(tt.prep())
-          if prep_result is Err(_) {
-            return false
+        if init_ok && tt.prep().length() > 0 {
+          if (try? init_ctx.execute(tt.prep())) is Err(_) {
+            init_ok = false
           }
         }
         // Cache func_defs and scaled CVT
         tt_cached_funcs.val = Some(init_ctx.func_defs())
         tt_cached_cvt.val = Some(init_ctx.cvt())
         tt_cached_ppem.val = ppem
+        tt_cached_ok.val = init_ok
+      }
+      // If fpgm/prep failed, skip TT hinting (fall back to auto-hint)
+      if !tt_cached_ok.val {
+        return false
       }
       // Reuse or create interpreter context
       let cached_cvt = tt_cached_cvt.val.unwrap()
