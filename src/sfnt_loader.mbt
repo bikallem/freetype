@@ -302,7 +302,7 @@ fn load_sfnt(
       ctx.set_func_defs(cached_funcs)
       ctx.reset_sp()
       // Reuse zone1 arrays if large enough, else reallocate
-      let n_points = outline.points().length()
+      let n_points = outline.n_points()
       let total_points = n_points + 4
       let zero_vec = @types.Vector::new(0L, 0L)
       if ctx.zone1_org().length() < total_points {
@@ -326,22 +326,24 @@ fn load_sfnt(
         @blit.fill_bytes(ctx.zone1_touch(), 0, b'\x00', total_points)
         ctx.set_zone1_points(ctx.zone1_cur())
       }
+      let z1_org = ctx.zone1_org()
+      let z1_cur = ctx.zone1_cur()
+      let z1_tags = ctx.zone1_tags()
+      let o_pts = outline.points()
+      let o_tags = outline.tags()
+      let xs = x_scale.val()
+      let ys = y_scale.val()
       for i in 0..<n_points {
-        let sx = @fixed.mul_fix(
-          x_scale,
-          @fixed.Fixed::from_raw(outline.points()[i].x()),
-        ).val()
-        let sy = @fixed.mul_fix(
-          y_scale,
-          @fixed.Fixed::from_raw(outline.points()[i].y()),
-        ).val()
-        ctx.zone1_org()[i] = @types.Vector::new(sx, sy)
-        ctx.zone1_cur()[i] = @types.Vector::new(sx, sy)
-        ctx.zone1_tags()[i] = if i < outline.tags().length() {
-          outline.tags()[i]
-        } else {
-          b'\x01'
-        }
+        let p = o_pts.unsafe_get(i)
+        // Inline mul_fix: (a * b + 0x8000 + (a*b >> 63)) >> 16
+        let abx = xs * p.x()
+        let sx = (abx + 0x8000L + (abx >> 63)) >> 16
+        let aby = ys * p.y()
+        let sy = (aby + 0x8000L + (aby >> 63)) >> 16
+        let v = @types.Vector::new(sx, sy)
+        z1_org.unsafe_set(i, v)
+        z1_cur.unsafe_set(i, v)
+        z1_tags.unsafe_set(i, o_tags.unsafe_get(i))
       }
       // Run glyph instructions only (fpgm+prep already cached)
       ctx.set_gs(@truetype.GraphicsState::default())
@@ -350,9 +352,9 @@ fn load_sfnt(
         return false
       }
       for i in 0..<n_points {
-        outline.points()[i] = @types.Vector::new(
-          ctx.zone1_cur()[i].x(),
-          ctx.zone1_cur()[i].y(),
+        o_pts.unsafe_set(
+          i,
+          @types.Vector::new(z1_cur.unsafe_get(i).x(), z1_cur.unsafe_get(i).y()),
         )
       }
       true

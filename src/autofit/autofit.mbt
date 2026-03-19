@@ -474,7 +474,7 @@ pub fn interpolate_points(
   if edges.length() == 0 {
     return
   }
-  for i in 0..<outline.points().length() {
+  for i in 0..<outline.n_points() {
     let coord = if is_horizontal {
       outline.points()[i].x()
     } else {
