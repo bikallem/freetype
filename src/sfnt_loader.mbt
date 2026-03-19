@@ -131,9 +131,12 @@ fn load_sfnt(
         result
       }
     }
-    // Replace with direct lookup for all subsequent calls
+    // Replace with format-specific lookup — no enum match per call
     let resolved_fn : (UInt) -> UInt = match lookup {
-      Some(cl) => fn(c) { cl.char_index(c) }
+      Some(@sfnt.CmapLookup::Format0(t)) => fn(c) { t.char_index(c) }
+      Some(@sfnt.CmapLookup::Format4(t)) => fn(c) { t.char_index(c) }
+      Some(@sfnt.CmapLookup::Format6(t)) => fn(c) { t.char_index(c) }
+      Some(@sfnt.CmapLookup::Format12(t)) => fn(c) { t.char_index(c) }
       None => fn(_c) { 0U }
     }
     char_index_ref.val = resolved_fn
