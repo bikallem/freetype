@@ -63,6 +63,9 @@ struct FaceRec {
   // --- Font variations ---
   mut var_coords : Array[Int] // normalized variation coordinates (empty = default instance)
 
+  // --- Direct char_index function (avoids enum dispatch per call) ---
+  mut char_index_fn : (UInt) -> UInt
+
   // --- Format-specific data ---
   // The font driver stores its own data here. In C this was TT_FaceRec,
   // CFF_FontRec, etc. We use a trait object approach.
@@ -283,10 +286,21 @@ pub fn FaceRec::new(
     underline_position: 0,
     underline_thickness: 0,
     var_coords: [],
+    char_index_fn: fn(_c) { 0U },
     glyph: GlyphSlot::new(),
     size: SizeRec::new(),
     driver_data: DriverData::Empty,
   }
+}
+
+///|
+pub fn FaceRec::char_index_fn(self : FaceRec) -> (UInt) -> UInt {
+  self.char_index_fn
+}
+
+///|
+pub fn FaceRec::set_char_index_fn(self : FaceRec, f : (UInt) -> UInt) -> Unit {
+  self.char_index_fn = f
 }
 
 // --- Face flag query helpers ---

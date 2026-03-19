@@ -74,6 +74,7 @@ fn load_type1_pfb(data : Bytes) -> @base.FaceRec raise @error.FTError {
     )
     (slot_data, outline)
   }
+  face.set_char_index_fn(char_index_fn)
   face.set_driver_data(
     @base.DriverData::Type1Ops(
       @base.Type1Ops::new(char_index=char_index_fn, load_glyph=load_glyph_fn),

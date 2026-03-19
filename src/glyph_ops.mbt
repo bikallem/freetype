@@ -3,11 +3,7 @@
 ///|
 /// Map a character code to a glyph index using the active charmap.
 pub fn get_char_index(face : @base.FaceRec, charcode : UInt) -> UInt {
-  match face.driver_data() {
-    SfntDriver(ops) => ops.char_index()(charcode)
-    Type1Ops(ops) => ops.char_index()(charcode)
-    Empty => 0U
-  }
+  face.char_index_fn()(charcode)
 }
 
 // ─── Public API: glyph loading ───────────────────────────────────────

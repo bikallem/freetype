@@ -396,6 +396,7 @@ fn load_sfnt(
       face.set_var_coords(Array::make(fvar.axes().length(), 0))
     }
   }
+  face.set_char_index_fn(char_index_fn)
   face.set_driver_data(
     @base.DriverData::SfntDriver(
       @base.SfntOps::new(
