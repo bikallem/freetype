@@ -1,9 +1,11 @@
 ///|
 /// Outline representation: a set of contours made of points.
 struct Outline {
-  mut points : FixedArray[Vector] // coordinates
+  mut points : FixedArray[Vector] // coordinates (may be larger than n_points)
   mut tags : FixedArray[Byte] // point flags (on-curve, conic, cubic)
   mut contours : FixedArray[UInt] // end-point index for each contour
+  mut n_points_ : Int // actual point count (may be < points.length())
+  mut n_contours_ : Int // actual contour count
   mut flags : Int // FT_OUTLINE_XXX
 } derive(Eq, Show)
 
@@ -13,6 +15,8 @@ pub fn Outline::new() -> Outline {
     points: FixedArray::default(),
     tags: FixedArray::default(),
     contours: FixedArray::default(),
+    n_points_: 0,
+    n_contours_: 0,
     flags: 0,
   }
 }
@@ -24,7 +28,34 @@ pub fn Outline::create(
   contours : FixedArray[UInt],
   flags? : Int = 0,
 ) -> Outline {
-  { points, tags, contours, flags }
+  {
+    points,
+    tags,
+    contours,
+    n_points_: points.length(),
+    n_contours_: contours.length(),
+    flags,
+  }
+}
+
+///|
+/// Create an outline with explicit point/contour counts.
+/// Used when arrays may be larger than the actual data (reusable buffers).
+pub fn Outline::create_with_counts(
+  points : FixedArray[Vector],
+  tags : FixedArray[Byte],
+  contours : FixedArray[UInt],
+  n_points : Int,
+  n_contours : Int,
+) -> Outline {
+  {
+    points,
+    tags,
+    contours,
+    n_points_: n_points,
+    n_contours_: n_contours,
+    flags: 0,
+  }
 }
 
 ///|
@@ -34,12 +65,12 @@ pub fn Outline::set_flags(self : Outline, flags : Int) -> Unit {
 
 ///|
 pub fn Outline::n_points(self : Outline) -> Int {
-  self.points.length()
+  self.n_points_
 }
 
 ///|
 pub fn Outline::n_contours(self : Outline) -> Int {
-  self.contours.length()
+  self.n_contours_
 }
 
 ///|

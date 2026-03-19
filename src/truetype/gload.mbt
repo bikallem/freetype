@@ -4,15 +4,24 @@
 pub struct GlyphBufs {
   mut flags : FixedArray[Byte]
   mut x_coords : FixedArray[Int64]
+  // Reusable outline arrays — avoids per-glyph allocation
+  mut points : FixedArray[@types.Vector]
+  mut tags : FixedArray[Byte]
+  mut contours : FixedArray[UInt]
 } derive(Show)
 
 ///|
 pub fn GlyphBufs::new() -> GlyphBufs {
-  { flags: FixedArray::default(), x_coords: FixedArray::default() }
+  {
+    flags: FixedArray::default(),
+    x_coords: FixedArray::default(),
+    points: FixedArray::default(),
+    tags: FixedArray::default(),
+    contours: FixedArray::default(),
+  }
 }
 
 ///|
-/// Ensure buffer is at least `n` elements, reallocating only if needed.
 fn GlyphBufs::ensure_flags(self : GlyphBufs, n : Int) -> FixedArray[Byte] {
   if self.flags.length() < n {
     self.flags = @blit.make_uninit(n)
@@ -26,6 +35,33 @@ fn GlyphBufs::ensure_x_coords(self : GlyphBufs, n : Int) -> FixedArray[Int64] {
     self.x_coords = FixedArray::make(n, 0L)
   }
   self.x_coords
+}
+
+///|
+fn GlyphBufs::ensure_points(
+  self : GlyphBufs,
+  n : Int,
+) -> FixedArray[@types.Vector] {
+  if self.points.length() < n {
+    self.points = FixedArray::make(n, @types.Vector::new(0L, 0L))
+  }
+  self.points
+}
+
+///|
+fn GlyphBufs::ensure_tags(self : GlyphBufs, n : Int) -> FixedArray[Byte] {
+  if self.tags.length() < n {
+    self.tags = @blit.make_uninit(n)
+  }
+  self.tags
+}
+
+///|
+fn GlyphBufs::ensure_contours(self : GlyphBufs, n : Int) -> FixedArray[UInt] {
+  if self.contours.length() < n {
+    self.contours = FixedArray::make(n, 0U)
+  }
+  self.contours
 }
 
 ///|
@@ -61,8 +97,8 @@ pub fn load_simple_glyph(
   let y_max = read_i16(data, pos + 6).to_int64()
   let bbox = @types.BBox::new(x_min, y_min, x_max, y_max)
   pos += 8
-  // Read end points of contours
-  let contours : FixedArray[UInt] = FixedArray::make(num_contours, 0U)
+  // Read end points of contours — reuse buffer
+  let contours = bufs.ensure_contours(num_contours)
   for i in 0..<num_contours {
     let hi = data[pos].to_int()
     let lo = data[pos + 1].to_int()
@@ -121,10 +157,9 @@ pub fn load_simple_glyph(
     }
     x_coords[i] = x
   }
-  // Read y coordinates and build points + tags in one pass
-  let zero_vec = @types.Vector::new(0L, 0L)
-  let points : FixedArray[@types.Vector] = FixedArray::make(n_points, zero_vec)
-  let tags : FixedArray[Byte] = @blit.make_uninit(n_points)
+  // Read y coordinates and build points + tags in one pass — reuse buffers
+  let points = bufs.ensure_points(n_points)
+  let tags = bufs.ensure_tags(n_points)
   let mut y = 0L
   for i in 0..<n_points {
     let flag = flags[i]
@@ -152,7 +187,13 @@ pub fn load_simple_glyph(
       },
     )
   }
-  (@types.Outline::create(points, tags, contours), instructions, bbox)
+  (
+    @types.Outline::create_with_counts(
+      points, tags, contours, n_points, num_contours,
+    ),
+    instructions,
+    bbox,
+  )
 }
 
 ///|
