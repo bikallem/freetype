@@ -1,64 +1,137 @@
 ///|
 /// Load an SFNT-based font (TrueType, CFF/OpenType, TTC).
+/// Uses lazy initialization for expensive table parsing — only the table
+/// directory, head, maxp, hhea, and metadata tables are parsed eagerly.
+/// hmtx, cmap subtables, TT/CFF data are parsed on first use.
 fn load_sfnt(
   data : Bytes,
   face_index : Int,
 ) -> @base.FaceRec raise @error.FTError {
   let (sfnt_data, face) = @sfnt.load_sfnt_face(data, face_index.to_int64())
-  // Parse the best cmap subtable for charmap lookup
-  let cmap_lookup : @sfnt.CmapLookup? = match sfnt_data.cmap() {
-    Some(ct) => {
-      let cmap_table_rec = sfnt_data.table_dir().find_table(@types.TAG_CMAP)
-      match cmap_table_rec {
-        Some(rec) => find_best_cmap(data, ct, rec.offset())
-        None => None
-      }
-    }
-    None => None
-  }
-  // Initialize format-specific data
+  // Lazy state: None = not yet parsed
+  let hmtx_ref : Ref[@sfnt.HmtxTable?] = Ref::new(None)
+  let cmap_ref : Ref[@sfnt.CmapLookup??] = Ref::new(None)
+  let tt_ref : Ref[@truetype.TtFaceData??] = Ref::new(None)
+  let cff_ref : Ref[@cff.CffFont??] = Ref::new(None)
+  let hint_globals_ref : Ref[@pshinter.PsGlobals?] = Ref::new(None)
+  // Check table presence (cheap O(1) lookups)
   let has_glyf = sfnt_data.table_dir().find_table(@types.TAG_GLYF) is Some(_)
   let has_cff = sfnt_data.table_dir().find_table(@types.TAG_CFF) is Some(_)
-  let tt_data : @truetype.TtFaceData? = if has_glyf {
-    Some(@truetype.init_tt_face(sfnt_data, face))
-  } else {
-    None
+  // Set FACE_FLAG_HINTER eagerly from table directory (avoids lazy TT init)
+  if has_glyf &&
+    (
+      sfnt_data.table_dir().find_table(@types.TAG_FPGM) is Some(_) ||
+      sfnt_data.table_dir().find_table(@types.TAG_PREP) is Some(_)
+    ) {
+    face.set_face_flags(face.face_flags() | @base.FACE_FLAG_HINTER)
   }
-  let cff_font : @cff.CffFont? = if has_cff {
-    match sfnt_data.table_dir().find_table(@types.TAG_CFF) {
-      Some(rec) => Some(@cff.load_cff(data, rec.offset().reinterpret_as_int()))
-      None => None
+  // Lazy initializers
+  let ensure_hmtx = fn() -> @sfnt.HmtxTable raise @error.FTError {
+    match hmtx_ref.val {
+      Some(h) => h
+      None => {
+        let reader = @stream.ByteReader::new(data)
+        match sfnt_data.table_dir().find_table(@types.TAG_HMTX) {
+          Some(r) => {
+            let h = @sfnt.parse_hmtx(
+              reader,
+              r.offset(),
+              sfnt_data.hhea().number_of_h_metrics(),
+              sfnt_data.maxp().num_glyphs(),
+            )
+            hmtx_ref.val = Some(h)
+            h
+          }
+          None => raise @error.FTError::HmtxTableMissing
+        }
+      }
     }
-  } else {
-    None
   }
-  // Build the closure-based driver ops
-  let kern_table = sfnt_data.kern()
-  let hmtx = sfnt_data.hmtx()
-  // Per-face hint state (captured by closures below, avoids module-level mutable)
+  let ensure_cmap = fn() -> @sfnt.CmapLookup? {
+    match cmap_ref.val {
+      Some(result) => result
+      None => {
+        let result : @sfnt.CmapLookup? = match sfnt_data.cmap() {
+          Some(ct) =>
+            match sfnt_data.table_dir().find_table(@types.TAG_CMAP) {
+              Some(rec) => find_best_cmap(data, ct, rec.offset())
+              None => None
+            }
+          None => None
+        }
+        cmap_ref.val = Some(result)
+        result
+      }
+    }
+  }
+  let ensure_tt = fn() -> @truetype.TtFaceData? raise @error.FTError {
+    match tt_ref.val {
+      Some(result) => result
+      None => {
+        let result : @truetype.TtFaceData? = if has_glyf {
+          Some(@truetype.init_tt_face(sfnt_data, face))
+        } else {
+          None
+        }
+        tt_ref.val = Some(result)
+        result
+      }
+    }
+  }
+  let ensure_cff = fn() -> @cff.CffFont? raise @error.FTError {
+    match cff_ref.val {
+      Some(result) => result
+      None => {
+        let result : @cff.CffFont? = if has_cff {
+          match sfnt_data.table_dir().find_table(@types.TAG_CFF) {
+            Some(rec) =>
+              Some(@cff.load_cff(data, rec.offset().reinterpret_as_int()))
+            None => None
+          }
+        } else {
+          None
+        }
+        cff_ref.val = Some(result)
+        result
+      }
+    }
+  }
+  let ensure_hint_globals = fn() -> @pshinter.PsGlobals {
+    match hint_globals_ref.val {
+      Some(g) => g
+      None => {
+        // Use cff_ref directly (already cached if CFF was loaded)
+        let g = match cff_ref.val {
+          Some(Some(cff)) => {
+            let pd = cff.private_dict()
+            let defaults = @pshinter.PsGlobals::new()
+            @pshinter.build_ps_globals(
+              pd.blue_values().map(fn(v) { v.to_int() }),
+              pd.other_blues().map(fn(v) { v.to_int() }),
+              pd.std_hw().to_int(),
+              pd.std_vw().to_int(),
+              defaults.blue_scale(),
+              defaults.blue_shift().to_int(),
+              defaults.blue_fuzz().to_int(),
+            )
+          }
+          _ => @pshinter.PsGlobals::new()
+        }
+        hint_globals_ref.val = Some(g)
+        g
+      }
+    }
+  }
+  // Per-face hint state
   let hint_h_hints : Ref[Array[@psaux.StemHint]] = Ref::new([])
   let hint_v_hints : Ref[Array[@psaux.StemHint]] = Ref::new([])
   let hint_has_hints : Ref[Bool] = Ref::new(false)
-  // Build PS hint globals for CFF fonts
-  let hint_globals : Ref[@pshinter.PsGlobals] = Ref::new(
-    @pshinter.PsGlobals::new(),
-  )
-  if cff_font is Some(cff) {
-    let pd = cff.private_dict()
-    let defaults = @pshinter.PsGlobals::new()
-    hint_globals.val = @pshinter.build_ps_globals(
-      pd.blue_values().map(fn(v) { v.to_int() }),
-      pd.other_blues().map(fn(v) { v.to_int() }),
-      pd.std_hw().to_int(),
-      pd.std_vw().to_int(),
-      defaults.blue_scale(),
-      defaults.blue_shift().to_int(),
-      defaults.blue_fuzz().to_int(),
-    )
-  }
-  let char_index_fn : (UInt) -> UInt = match cmap_lookup {
-    Some(cl) => fn(charcode) { cl.char_index(charcode) }
-    None => fn(_charcode) { 0U }
+  // Closure-based driver ops
+  let char_index_fn : (UInt) -> UInt = fn(charcode) {
+    match ensure_cmap() {
+      Some(cl) => cl.char_index(charcode)
+      None => 0U
+    }
   }
   let load_glyph_fn : (UInt, Int) -> (
     @base.GlyphSlotData,
@@ -66,6 +139,8 @@ fn load_sfnt(
     Bytes,
   ) raise @error.FTError = fn(glyph_index, load_flags) raise @error.FTError {
     let no_hinting = (load_flags & @base.LOAD_NO_HINTING) != 0
+    let tt_data = ensure_tt()
+    let cff_font = ensure_cff()
     let (outline, tt_instructions) = if tt_data is Some(tt) {
       hint_has_hints.val = false
       @truetype.load_tt_glyph(
@@ -79,7 +154,6 @@ fn load_sfnt(
       if no_hinting {
         hint_has_hints.val = false
       } else {
-        // Store stem hints for use during point scaling
         hint_h_hints.val = hh
         hint_v_hints.val = hv
         hint_has_hints.val = hh.length() > 0 || hv.length() > 0
@@ -89,7 +163,7 @@ fn load_sfnt(
       hint_has_hints.val = false
       (@types.Outline::new(), b"")
     }
-    // Compute metrics from outline bbox + hmtx
+    let hmtx = ensure_hmtx()
     let (advance_width, _lsb) = hmtx.get_metrics(glyph_index)
     let bb = @base.outline_get_bbox(outline)
     let slot_data = @base.GlyphSlotData::new(
@@ -106,11 +180,12 @@ fn load_sfnt(
     y_scale,
   ) {
     if hint_has_hints.val {
+      let globals = ensure_hint_globals()
       @pshinter.hint_outline(
         outline,
         hint_h_hints.val,
         hint_v_hints.val,
-        hint_globals.val,
+        globals,
         y_scale,
       )
       hint_has_hints.val = false
@@ -119,7 +194,6 @@ fn load_sfnt(
       false
     }
   }
-  // TrueType bytecode hinting closure — captures tt_data (cvt, fpgm, prep)
   let tt_hint_fn : (@types.Outline, Bytes, @fixed.Fixed, @fixed.Fixed, UInt) -> Bool = fn(
     outline,
     instructions,
@@ -127,15 +201,18 @@ fn load_sfnt(
     y_scale,
     ppem,
   ) {
+    let tt_result = try? ensure_tt()
+    let tt_data = match tt_result {
+      Ok(d) => d
+      Err(_) => return false
+    }
     if tt_data is Some(tt) && instructions.length() > 0 {
-      // Create interpreter context
       let ctx = @truetype.InterpContext::new(
         cvt=tt.cvt().copy(),
         storage_size=64,
         max_stack=256,
       )
       ctx.set_ppem(ppem.reinterpret_as_int())
-      // Scale CVT values by y_scale (CVT stored in font units << 6, need 26.6 at current size)
       for i in 0..<ctx.cvt().length() {
         let font_units = ctx.cvt()[i] >> 6
         ctx.cvt()[i] = @fixed.mul_fix(
@@ -143,9 +220,7 @@ fn load_sfnt(
           @fixed.Fixed::from_raw(font_units),
         ).val()
       }
-      // Populate zone1 with scaled glyph points
       let n_points = outline.points().length()
-      // Add phantom points (4 extra): origin, advance width, top, bottom
       let total_points = n_points + 4
       let zero_vec = @types.Vector::new(0L, 0L)
       ctx.set_zone1_org(Array::make(total_points, zero_vec))
@@ -154,7 +229,6 @@ fn load_sfnt(
       ctx.set_zone1_touch(Array::make(total_points, b'\x00'))
       ctx.set_zone1_points(ctx.zone1_cur())
       for i in 0..<n_points {
-        // Scale from font units to 26.6 pixels
         let sx = @fixed.mul_fix(
           x_scale,
           @fixed.Fixed::from_raw(outline.points()[i].x()),
@@ -171,36 +245,29 @@ fn load_sfnt(
           b'\x01'
         }
       }
-      // Initialize twilight zone with some capacity
       let twilight_size = 16
       ctx.set_zone0_org(Array::make(twilight_size, @types.Vector::new(0L, 0L)))
       ctx.set_zone0_cur(Array::make(twilight_size, @types.Vector::new(0L, 0L)))
       ctx.set_zone0_tags(Array::make(twilight_size, b'\x00'))
       ctx.set_zone0_points(ctx.zone0_cur())
-      // Run font program (defines functions)
       if tt.fpgm().length() > 0 {
         let fpgm_result = try? ctx.execute(tt.fpgm())
         if fpgm_result is Err(_) {
           return false
         }
       }
-      // Reset graphics state for prep program
       ctx.set_gs(@truetype.GraphicsState::default())
-      // Run CVT program (modifies CVT for current size)
       if tt.prep().length() > 0 {
         let prep_result = try? ctx.execute(tt.prep())
         if prep_result is Err(_) {
           return false
         }
       }
-      // Reset graphics state for glyph program
       ctx.set_gs(@truetype.GraphicsState::default())
-      // Run glyph instructions
       let glyph_result = try? ctx.execute(instructions)
       if glyph_result is Err(_) {
         return false
       }
-      // Copy hinted points back to outline (already in 26.6)
       for i in 0..<n_points {
         outline.points()[i] = @types.Vector::new(
           ctx.zone1_cur()[i].x(),
@@ -212,7 +279,7 @@ fn load_sfnt(
       false
     }
   }
-  let kern_fn : (UInt, UInt) -> Int = match kern_table {
+  let kern_fn : (UInt, UInt) -> Int = match sfnt_data.kern() {
     Some(k) => fn(left, right) { k.get_kerning(left, right) }
     None => fn(_left, _right) { 0 }
   }
@@ -226,7 +293,6 @@ fn load_sfnt(
     )
     if fvar_result is Ok(fvar) && fvar.axes().length() > 0 {
       face.set_face_flags(face.face_flags() | @base.FACE_FLAG_MULTIPLE_MASTERS)
-      // Initialize var_coords to default (all zeros = default instance)
       face.set_var_coords(Array::make(fvar.axes().length(), 0))
     }
   }
@@ -243,7 +309,7 @@ fn load_sfnt(
       ),
     ),
   )
-  // Add synthetic charmap for CFF fonts (matches C FreeType behavior)
+  // Add synthetic charmap for CFF fonts
   if has_cff {
     face.charmaps().push(@base.CharMapRec::new(@base.Encoding::Unicode, 7U, 0U))
   }

@@ -19,6 +19,11 @@ struct HheaTable {
 } derive(Show)
 
 ///|
+pub fn HheaTable::number_of_h_metrics(self : HheaTable) -> UInt {
+  self.number_of_h_metrics
+}
+
+///|
 /// Parse the 'hhea' table.
 pub fn parse_hhea(
   reader : @stream.ByteReader,

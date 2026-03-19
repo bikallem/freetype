@@ -5,7 +5,6 @@ struct SfntData {
   head : HeadTable
   hhea : HheaTable
   maxp : MaxpTable
-  hmtx : HmtxTable
   name : NameTable?
   os2 : Os2Table?
   post : PostTable?
@@ -33,11 +32,6 @@ pub fn SfntData::hhea(self : SfntData) -> HheaTable {
 ///|
 pub fn SfntData::maxp(self : SfntData) -> MaxpTable {
   self.maxp
-}
-
-///|
-pub fn SfntData::hmtx(self : SfntData) -> HmtxTable {
-  self.hmtx
 }
 
 ///|
@@ -118,11 +112,6 @@ pub fn load_sfnt_face(
   let maxp = match table_dir.find_table(@types.TAG_MAXP) {
     Some(r) => parse_maxp(reader, r.offset, r.length)
     None => raise @error.FTError::InvalidTable
-  }
-  let hmtx = match table_dir.find_table(@types.TAG_HMTX) {
-    Some(r) =>
-      parse_hmtx(reader, r.offset, hhea.number_of_h_metrics, maxp.num_glyphs)
-    None => raise @error.FTError::HmtxTableMissing
   }
   // Optional tables
   let name_table = match table_dir.find_table(@types.TAG_NAME) {
@@ -240,7 +229,6 @@ pub fn load_sfnt_face(
     head,
     hhea,
     maxp,
-    hmtx,
     name: name_table,
     os2,
     post,
