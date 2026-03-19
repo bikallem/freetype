@@ -60,9 +60,9 @@ let font_data : Bytes = ... // font file contents
 let face = @freetype.from_bytes(font_data)
 
 // Face metadata
-println(face.family_name)     // "DejaVu Sans"
-println(face.num_glyphs)      // 6253
-println(face.units_per_em)    // 2048
+println(face.family_name())    // "DejaVu Sans"
+println(face.num_glyphs())     // 6253
+println(face.units_per_em())   // 2048
 println(face.is_scalable())   // true
 println(face.has_kerning())   // true
 ```
@@ -79,16 +79,16 @@ let glyph_index = @freetype.get_char_index(face, 65U) // 'A' → glyph index
 
 ```moonbit
 // Font units (no scaling)
-@freetype.load_glyph(face, glyph_index, load_flags=@base.load_no_scale)
-let outline = face.glyph.outline
+@freetype.load_glyph(face, glyph_index, load_flags=@base.LOAD_NO_SCALE)
+let outline = face.glyph().outline()
 println(outline.n_points())    // number of outline points
 println(outline.n_contours())  // number of contours
-println(outline.points[0].x)   // first point x coordinate
+println(outline.points()[0].x())  // first point x coordinate
 
 // Scaled to pixel size
 @freetype.set_pixel_sizes(face, 0U, 16U)  // 16 ppem
 @freetype.load_glyph(face, glyph_index)
-println(face.glyph.metrics.hori_advance)   // advance width in 26.6
+println(face.glyph().metrics().hori_advance())  // advance width in 26.6
 ```
 
 ### Kerning
@@ -129,17 +129,19 @@ src/
   cache/               # Glyph/charmap LRU cache
   otvalid/, gxvalid/   # OpenType and GX/AAT table validation
   parity/              # Parity tests (read fonts from disk, compare with C FreeType)
-  bench/               # Benchmarks
+  bench/               # C FreeType comparison benchmark + report
+  benchmarks/          # MoonBit benchmarks (moon bench)
+  blit/                # Fast byte-level blit operations (memcpy/memset FFI)
 ```
 
 ## Build
 
 ```bash
 make build     # Compile
-make test      # Run unit tests (285 tests)
-make parity    # Run parity tests against C FreeType golden data (91 tests)
+make test      # Run unit tests (307 tests)
+make parity    # Run parity tests against C FreeType golden data (122 tests)
 make fmt       # Format code + regenerate .mbti files
-make bench     # Run benchmarks
+make bench     # Run C vs MoonBit benchmark comparison
 make clean     # Remove build artifacts
 make all       # build + fmt + test + parity
 ```
@@ -189,15 +191,36 @@ $ make parity
 
   PARITY REPORT: MoonBit FreeType Port vs C FreeType
 
-  Total: 91 tests, 91 passed, 0 failed
+  Total: 122 tests, 122 passed, 0 failed
 
   Format coverage:
      FULL  TrueType
      FULL  CFF/OpenType
      FULL  TrueType Collection
      FULL  WOFF1
-     LOAD  Type 1 PFB
+     FULL  Type 1 PFB
      LOAD  BDF Bitmap
+```
+
+## Performance
+
+The MoonBit port achieves near-parity or better performance compared to C FreeType across most font formats. Benchmarks run with `moon bench --release --target native` against C FreeType compiled with `-O2`.
+
+| Font | Format | MoonBit / C Ratio |
+|------|--------|-------------------|
+| DejaVuSans.ttf | TrueType | **0.5x** (faster) |
+| DejaVuSans.ttc | TrueType Collection | **0.8x** (faster) |
+| SourceCodePro-Regular.otf | CFF/OpenType | **0.7x** (faster) |
+| NotoSansJP-Regular.otf | CFF/OpenType CJK | **0.1x** (faster) |
+| NimbusSans-Regular.pfb | Type 1 PFB | **0.5x** (faster) |
+| Roboto[wdth,wght].ttf | Variable TrueType | **1.5x** |
+| unifont.bdf | BDF Bitmap | 2.3x |
+| DejaVuSans.woff | WOFF1 | 9.9x (zlib overhead) |
+
+Run benchmarks:
+
+```bash
+make bench    # Runs C FreeType + MoonBit benchmarks and generates comparison report
 ```
 
 ## Dependencies
