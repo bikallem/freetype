@@ -5,6 +5,7 @@ import {
   "bikallem/freetype/stream",
   "bikallem/freetype/base",
   "bikallem/freetype/sfnt",
+  "bikallem/freetype/blit" @blit,
 }
 
 warnings = "-15"

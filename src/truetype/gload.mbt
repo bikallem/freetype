@@ -2,42 +2,41 @@
 /// Load a simple glyph from the 'glyf' table.
 /// Returns the parsed outline (points, tags, contours) and the glyph instructions.
 ///
-/// Optimized: reads flag/coordinate data directly from raw bytes to
-/// avoid per-read bounds checks in ByteReader.
+/// Optimized: reads all data directly from raw bytes — no ByteReader allocation.
+/// Uses @blit.make_uninit for tags array to avoid zeroing memory.
 pub fn load_simple_glyph(
-  reader : @stream.ByteReader,
+  data : Bytes,
+  start_pos : Int,
   num_contours : Int,
-) -> (@types.Outline, Bytes) raise @error.FTError {
+) -> (@types.Outline, Bytes) {
   if num_contours <= 0 {
     return (@types.Outline::new(), b"")
   }
-  // Read bbox (4 × i16), skip — we compute it from points
-  let _x_min = reader.read_i16_be()
-  let _y_min = reader.read_i16_be()
-  let _x_max = reader.read_i16_be()
-  let _y_max = reader.read_i16_be()
+  let mut pos = start_pos
+  // Skip bbox (4 × i16) — we compute it from points
+  pos += 8
   // Read end points of contours
   let contours : FixedArray[UInt] = FixedArray::make(num_contours, 0U)
   for i in 0..<num_contours {
-    contours.unsafe_set(i, reader.read_u16_be())
+    let hi = data[pos].to_int()
+    let lo = data[pos + 1].to_int()
+    contours.unsafe_set(i, ((hi << 8) | lo).reinterpret_as_uint())
+    pos += 2
   }
-  let n_points = if num_contours > 0 {
-    contours.unsafe_get(num_contours - 1).reinterpret_as_int() + 1
-  } else {
-    0
-  }
-  // Read instructions
-  let instruction_length = reader.read_u16_be().reinterpret_as_int()
+  let n_points = contours.unsafe_get(num_contours - 1).reinterpret_as_int() + 1
+  // Read instruction length and instructions
+  let instr_hi = data[pos].to_int()
+  let instr_lo = data[pos + 1].to_int()
+  let instruction_length = (instr_hi << 8) | instr_lo
+  pos += 2
   let instructions = if instruction_length > 0 {
-    reader.read_bytes(instruction_length)
+    data[pos:pos + instruction_length].to_bytes()
   } else {
     b""
   }
-  // Switch to direct byte access for the hot flag/coordinate loops
-  let data = reader.raw_data()
-  let mut pos = reader.position()
+  pos += instruction_length
   // Read flags (compressed with repeat)
-  let flags = FixedArray::make(n_points, b'\x00')
+  let flags = @blit.make_uninit(n_points)
   let mut fi = 0
   while fi < n_points {
     let flag = data[pos]
@@ -67,7 +66,6 @@ pub fn load_simple_glyph(
       pos += 1
       x = if x_same { x + delta } else { x - delta }
     } else if !x_same {
-      // 2-byte signed big-endian delta
       let hi = data[pos].to_int()
       let lo = data[pos + 1].to_int()
       pos += 2
@@ -78,10 +76,9 @@ pub fn load_simple_glyph(
     x_coords[i] = x
   }
   // Read y coordinates and build points + tags in one pass
-  // Pre-allocate exact size and use unsafe_set to avoid push() overhead
   let zero_vec = @types.Vector::new(0L, 0L)
   let points : FixedArray[@types.Vector] = FixedArray::make(n_points, zero_vec)
-  let tags : FixedArray[Byte] = FixedArray::make(n_points, b'\x00')
+  let tags : FixedArray[Byte] = @blit.make_uninit(n_points)
   let mut y = 0L
   for i in 0..<n_points {
     let flag = flags[i]
@@ -109,8 +106,6 @@ pub fn load_simple_glyph(
       },
     )
   }
-  // Update reader position past all the data we consumed
-  reader.seek(pos)
   (@types.Outline::create(points, tags, contours), instructions)
 }
 
@@ -186,6 +181,9 @@ pub fn load_composite_glyph(
 ///|
 /// Load a glyph from a TrueType font, returning the outline.
 /// Handles both simple and composite glyphs (recursively).
+///
+/// Optimized: reads num_contours directly from raw bytes and avoids
+/// ByteReader allocation for simple glyphs (the hot path).
 pub fn load_tt_glyph(
   data : Bytes,
   glyph_offsets : Array[UInt],
@@ -205,12 +203,23 @@ pub fn load_tt_glyph(
   if glyph_start == glyph_end {
     return (@types.Outline::new(), b"")
   }
-  let reader = @stream.ByteReader::new(data)
-  reader.seek(glyph_start.reinterpret_as_int())
-  let num_contours = reader.read_i16_be()
-  if num_contours >= 0 {
-    load_simple_glyph(reader, num_contours)
+  // Read num_contours directly from raw bytes — avoid ByteReader for simple glyphs
+  let start = glyph_start.reinterpret_as_int()
+  let hi = data[start].to_int()
+  let lo = data[start + 1].to_int()
+  let num_contours_raw = (hi << 8) | lo
+  let num_contours = if num_contours_raw >= 0x8000 {
+    num_contours_raw - 0x10000
   } else {
+    num_contours_raw
+  }
+  if num_contours >= 0 {
+    // Simple glyph — pass raw data + position, no ByteReader needed
+    load_simple_glyph(data, start + 2, num_contours)
+  } else {
+    // Composite glyph — use ByteReader (rare path, not performance-critical)
+    let reader = @stream.ByteReader::new(data)
+    reader.seek(start + 2)
     let components = load_composite_glyph(reader)
     let loader = @base.GlyphLoader::new()
     for _, comp in components {

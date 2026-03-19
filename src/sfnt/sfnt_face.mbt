@@ -1,13 +1,13 @@
 ///|
 /// SFNT face data — all parsed tables for an SFNT-based font.
 /// Kern table is deferred to first use via lazy Ref in load_sfnt.
+/// Name and OS/2 tables are NOT stored — family/style names are extracted
+/// directly from raw bytes during load to avoid full table parsing overhead.
 struct SfntData {
   table_dir : TableDirectory
   head : HeadTable
   hhea : HheaTable
   maxp : MaxpTable
-  name : NameTable?
-  os2 : Os2Table?
   cmap : CmapTable?
   // Raw table data access for driver-specific tables
   raw_data : Bytes
@@ -31,16 +31,6 @@ pub fn SfntData::hhea(self : SfntData) -> HheaTable {
 ///|
 pub fn SfntData::maxp(self : SfntData) -> MaxpTable {
   self.maxp
-}
-
-///|
-pub fn SfntData::name(self : SfntData) -> NameTable? {
-  self.name
-}
-
-///|
-pub fn SfntData::os2(self : SfntData) -> Os2Table? {
-  self.os2
 }
 
 ///|
@@ -102,14 +92,17 @@ pub fn load_sfnt_face(
     Some(r) => parse_maxp(reader, r.offset, r.length)
     None => raise @error.FTError::InvalidTable
   }
-  // Optional tables
-  let name_table = match table_dir.find_table(@types.TAG_NAME) {
-    Some(r) => Some(parse_name(reader, r.offset, r.length))
-    None => None
-  }
-  let os2 = match table_dir.find_table(@types.TAG_OS2) {
-    Some(r) => Some(parse_os2(reader, r.offset, r.length))
-    None => None
+  // Extract family_name and style_name directly from raw name table bytes
+  // instead of parsing the full name table. We scan name records for nameID 1
+  // (family) and nameID 2 (subfamily) and decode just those strings.
+  let (family_name, style_name) = match table_dir.find_table(@types.TAG_NAME) {
+    Some(r) =>
+      extract_names_from_raw(
+        data,
+        r.offset.reinterpret_as_int(),
+        r.length.reinterpret_as_int(),
+      )
+    None => (None, None)
   }
   // Read post header fields directly from raw bytes (format, underline pos/thickness)
   // to avoid full parse_post overhead. Glyph names are deferred.
@@ -197,16 +190,12 @@ pub fn load_sfnt_face(
   // Underline
   face.set_underline_position(post_underline_position)
   face.set_underline_thickness(post_underline_thickness)
-  // Names
-  if name_table is Some(nt) {
-    match nt.get_name(NAME_ID_FONT_FAMILY) {
-      Some(n) => face.set_family_name(n)
-      None => ()
-    }
-    match nt.get_name(NAME_ID_FONT_SUBFAMILY) {
-      Some(n) => face.set_style_name(n)
-      None => ()
-    }
+  // Names (extracted directly from raw bytes above)
+  if family_name is Some(n) {
+    face.set_family_name(n)
+  }
+  if style_name is Some(n) {
+    face.set_style_name(n)
   }
   // Build charmaps from cmap subtables
   if cmap_table is Some(ct) {
@@ -225,12 +214,95 @@ pub fn load_sfnt_face(
     head,
     hhea,
     maxp,
-    name: name_table,
-    os2,
     cmap: cmap_table,
     raw_data: data,
   }
   (sfnt_data, face)
+}
+
+///|
+/// Extract family_name (nameID 1) and style_name (nameID 2) directly from raw
+/// name table bytes without building intermediate NameRecord/NameTable structs.
+/// Uses the same platform priority as NameTable::get_name: Windows Unicode >
+/// Unicode platform > Mac Roman.
+fn extract_names_from_raw(
+  data : Bytes,
+  table_offset : Int,
+  table_length : Int,
+) -> (String?, String?) {
+  if table_length < 6 {
+    return (None, None)
+  }
+  // Read name table header: format(u16), count(u16), string_offset(u16)
+  let count = (data[table_offset + 2].to_int() << 8) |
+    data[table_offset + 3].to_int()
+  let storage_offset = (data[table_offset + 4].to_int() << 8) |
+    data[table_offset + 5].to_int()
+  let string_base = table_offset + storage_offset
+  // Each name record is 12 bytes, starting at offset 6
+  let records_start = table_offset + 6
+  let records_end = records_start + count * 12
+  if records_end > table_offset + table_length {
+    return (None, None)
+  }
+  // Helper to find a name by nameID with platform priority
+  let find_name : (Int) -> String? = fn(target_name_id) {
+    // Pass 1: Windows Unicode (platform 3, encoding 1)
+    for i in 0..<count {
+      let off = records_start + i * 12
+      let plat = (data[off].to_int() << 8) | data[off + 1].to_int()
+      let enc = (data[off + 2].to_int() << 8) | data[off + 3].to_int()
+      let name_id = (data[off + 6].to_int() << 8) | data[off + 7].to_int()
+      if name_id == target_name_id && plat == 3 && enc == 1 {
+        let str_len = (data[off + 8].to_int() << 8) | data[off + 9].to_int()
+        let str_off = (data[off + 10].to_int() << 8) | data[off + 11].to_int()
+        return Some(
+          decode_utf16_be(
+            data,
+            (string_base + str_off).reinterpret_as_uint(),
+            str_len.reinterpret_as_uint(),
+          ),
+        )
+      }
+    }
+    // Pass 2: Unicode platform (platform 0)
+    for i in 0..<count {
+      let off = records_start + i * 12
+      let plat = (data[off].to_int() << 8) | data[off + 1].to_int()
+      let name_id = (data[off + 6].to_int() << 8) | data[off + 7].to_int()
+      if name_id == target_name_id && plat == 0 {
+        let str_len = (data[off + 8].to_int() << 8) | data[off + 9].to_int()
+        let str_off = (data[off + 10].to_int() << 8) | data[off + 11].to_int()
+        return Some(
+          decode_utf16_be(
+            data,
+            (string_base + str_off).reinterpret_as_uint(),
+            str_len.reinterpret_as_uint(),
+          ),
+        )
+      }
+    }
+    // Pass 3: Mac Roman (platform 1, encoding 0)
+    for i in 0..<count {
+      let off = records_start + i * 12
+      let plat = (data[off].to_int() << 8) | data[off + 1].to_int()
+      let enc = (data[off + 2].to_int() << 8) | data[off + 3].to_int()
+      let name_id = (data[off + 6].to_int() << 8) | data[off + 7].to_int()
+      if name_id == target_name_id && plat == 1 && enc == 0 {
+        let str_len = (data[off + 8].to_int() << 8) | data[off + 9].to_int()
+        let str_off = (data[off + 10].to_int() << 8) | data[off + 11].to_int()
+        return Some(
+          decode_mac_roman(
+            data,
+            (string_base + str_off).reinterpret_as_uint(),
+            str_len.reinterpret_as_uint(),
+          ),
+        )
+      }
+    }
+    None
+  }
+  (find_name(1), find_name(2))
 }
 
 ///|
