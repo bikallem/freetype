@@ -120,14 +120,14 @@ pub fn load_simple_glyph(
   while fi < n_points {
     let flag = data[pos]
     pos += 1
-    flags[fi] = flag
+    flags.unsafe_set(fi, flag)
     fi += 1
     if (flag & 0x08) != b'\x00' {
       let repeat_count = data[pos].to_int()
       pos += 1
       for _ in 0..<repeat_count {
         if fi < n_points {
-          flags[fi] = flag
+          flags.unsafe_set(fi, flag)
           fi += 1
         }
       }
@@ -137,7 +137,7 @@ pub fn load_simple_glyph(
   let x_coords = bufs.ensure_x_coords(n_points)
   let mut x = 0L
   for i in 0..<n_points {
-    let flag = flags[i]
+    let flag = flags.unsafe_get(i)
     let x_short = (flag & 0x02) != b'\x00'
     let x_same = (flag & 0x10) != b'\x00'
     if x_short {
@@ -152,14 +152,14 @@ pub fn load_simple_glyph(
       let signed_v = if v >= 0x8000 { v - 0x10000 } else { v }
       x += signed_v.to_int64()
     }
-    x_coords[i] = x
+    x_coords.unsafe_set(i, x)
   }
   // Read y coordinates and build points + tags in one pass — reuse buffers
   let points = bufs.ensure_points(n_points)
   let tags = bufs.ensure_tags(n_points)
   let mut y = 0L
   for i in 0..<n_points {
-    let flag = flags[i]
+    let flag = flags.unsafe_get(i)
     let y_short = (flag & 0x04) != b'\x00'
     let y_same = (flag & 0x20) != b'\x00'
     if y_short {
@@ -174,7 +174,7 @@ pub fn load_simple_glyph(
       let signed_v = if v >= 0x8000 { v - 0x10000 } else { v }
       y += signed_v.to_int64()
     }
-    points.unsafe_set(i, @types.Vector::new(x_coords[i], y))
+    points.unsafe_set(i, @types.Vector::new(x_coords.unsafe_get(i), y))
     tags.unsafe_set(
       i,
       if (flag & 0x01) != b'\x00' {
