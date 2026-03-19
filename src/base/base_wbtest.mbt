@@ -143,12 +143,14 @@ test "GlyphLoader: reset" {
 
 ///|
 test "outline_translate" {
-  let outline = @types.Outline::new()
-  outline.points().push(@types.Vector::new(10L, 20L))
-  outline.points().push(@types.Vector::new(30L, 40L))
-  outline.tags().push(@types.CURVE_TAG_ON)
-  outline.tags().push(@types.CURVE_TAG_ON)
-  outline.contours().push(1U)
+  let outline = @types.Outline::create(
+    FixedArray::from_array([
+      @types.Vector::new(10L, 20L),
+      @types.Vector::new(30L, 40L),
+    ]),
+    FixedArray::from_array([@types.CURVE_TAG_ON, @types.CURVE_TAG_ON]),
+    FixedArray::from_array([1U]),
+  )
   outline_translate(outline, 100L, -10L)
   inspect(outline.points()[0].x(), content="110")
   inspect(outline.points()[0].y(), content="10")
@@ -158,10 +160,11 @@ test "outline_translate" {
 
 ///|
 test "outline_transform with identity" {
-  let outline = @types.Outline::new()
-  outline.points().push(@types.Vector::new(100L, 200L))
-  outline.tags().push(@types.CURVE_TAG_ON)
-  outline.contours().push(0U)
+  let outline = @types.Outline::create(
+    FixedArray::from_array([@types.Vector::new(100L, 200L)]),
+    FixedArray::from_array([@types.CURVE_TAG_ON]),
+    FixedArray::from_array([0U]),
+  )
   outline_transform(outline, @fixed.Matrix::identity())
   // Should be unchanged (within fixed-point precision)
   inspect(outline.points()[0].x(), content="100")
@@ -170,14 +173,19 @@ test "outline_transform with identity" {
 
 ///|
 test "outline_reverse: triangle" {
-  let outline = @types.Outline::new()
-  outline.points().push(@types.Vector::new(0L, 0L))
-  outline.points().push(@types.Vector::new(100L, 0L))
-  outline.points().push(@types.Vector::new(50L, 100L))
-  outline.tags().push(@types.CURVE_TAG_ON)
-  outline.tags().push(@types.CURVE_TAG_ON)
-  outline.tags().push(@types.CURVE_TAG_ON)
-  outline.contours().push(2U)
+  let outline = @types.Outline::create(
+    FixedArray::from_array([
+      @types.Vector::new(0L, 0L),
+      @types.Vector::new(100L, 0L),
+      @types.Vector::new(50L, 100L),
+    ]),
+    FixedArray::from_array([
+      @types.CURVE_TAG_ON,
+      @types.CURVE_TAG_ON,
+      @types.CURVE_TAG_ON,
+    ]),
+    FixedArray::from_array([2U]),
+  )
   outline_reverse(outline)
   // Points should be reversed: (50,100), (100,0), (0,0)
   inspect(outline.points()[0].x(), content="50")
@@ -188,15 +196,19 @@ test "outline_reverse: triangle" {
 
 ///|
 test "outline_get_orientation: clockwise triangle" {
-  let outline = @types.Outline::new()
-  // Clockwise triangle (positive signed area)
-  outline.points().push(@types.Vector::new(0L, 0L))
-  outline.points().push(@types.Vector::new(100L, 0L))
-  outline.points().push(@types.Vector::new(50L, 100L))
-  outline.tags().push(@types.CURVE_TAG_ON)
-  outline.tags().push(@types.CURVE_TAG_ON)
-  outline.tags().push(@types.CURVE_TAG_ON)
-  outline.contours().push(2U)
+  let outline = @types.Outline::create(
+    FixedArray::from_array([
+      @types.Vector::new(0L, 0L),
+      @types.Vector::new(100L, 0L),
+      @types.Vector::new(50L, 100L),
+    ]),
+    FixedArray::from_array([
+      @types.CURVE_TAG_ON,
+      @types.CURVE_TAG_ON,
+      @types.CURVE_TAG_ON,
+    ]),
+    FixedArray::from_array([2U]),
+  )
   let orient = outline_get_orientation(outline)
   // Orientation depends on coordinate system convention
   inspect(orient != 0, content="true")
@@ -204,14 +216,19 @@ test "outline_get_orientation: clockwise triangle" {
 
 ///|
 test "outline_get_bbox: simple" {
-  let outline = @types.Outline::new()
-  outline.points().push(@types.Vector::new(-10L, 5L))
-  outline.points().push(@types.Vector::new(100L, -20L))
-  outline.points().push(@types.Vector::new(50L, 200L))
-  outline.tags().push(@types.CURVE_TAG_ON)
-  outline.tags().push(@types.CURVE_TAG_ON)
-  outline.tags().push(@types.CURVE_TAG_ON)
-  outline.contours().push(2U)
+  let outline = @types.Outline::create(
+    FixedArray::from_array([
+      @types.Vector::new(-10L, 5L),
+      @types.Vector::new(100L, -20L),
+      @types.Vector::new(50L, 200L),
+    ]),
+    FixedArray::from_array([
+      @types.CURVE_TAG_ON,
+      @types.CURVE_TAG_ON,
+      @types.CURVE_TAG_ON,
+    ]),
+    FixedArray::from_array([2U]),
+  )
   let bb = outline_get_bbox(outline)
   inspect(bb.x_min(), content="-10")
   inspect(bb.y_min(), content="-20")
@@ -221,14 +238,19 @@ test "outline_get_bbox: simple" {
 
 ///|
 test "outline_get_cbox: includes off-curve" {
-  let outline = @types.Outline::new()
-  outline.points().push(@types.Vector::new(0L, 0L))
-  outline.points().push(@types.Vector::new(500L, 500L)) // off-curve control
-  outline.points().push(@types.Vector::new(100L, 0L))
-  outline.tags().push(@types.CURVE_TAG_ON)
-  outline.tags().push(@types.CURVE_TAG_CONIC)
-  outline.tags().push(@types.CURVE_TAG_ON)
-  outline.contours().push(2U)
+  let outline = @types.Outline::create(
+    FixedArray::from_array([
+      @types.Vector::new(0L, 0L),
+      @types.Vector::new(500L, 500L),
+      @types.Vector::new(100L, 0L),
+    ]),
+    FixedArray::from_array([
+      @types.CURVE_TAG_ON,
+      @types.CURVE_TAG_CONIC,
+      @types.CURVE_TAG_ON,
+    ]),
+    FixedArray::from_array([2U]),
+  )
   let cb = outline_get_cbox(outline)
   inspect(cb.x_max(), content="500")
   inspect(cb.y_max(), content="500")
@@ -236,14 +258,19 @@ test "outline_get_cbox: includes off-curve" {
 
 ///|
 test "outline_decompose: simple triangle" {
-  let outline = @types.Outline::new()
-  outline.points().push(@types.Vector::new(0L, 0L))
-  outline.points().push(@types.Vector::new(100L, 0L))
-  outline.points().push(@types.Vector::new(50L, 100L))
-  outline.tags().push(@types.CURVE_TAG_ON)
-  outline.tags().push(@types.CURVE_TAG_ON)
-  outline.tags().push(@types.CURVE_TAG_ON)
-  outline.contours().push(2U)
+  let outline = @types.Outline::create(
+    FixedArray::from_array([
+      @types.Vector::new(0L, 0L),
+      @types.Vector::new(100L, 0L),
+      @types.Vector::new(50L, 100L),
+    ]),
+    FixedArray::from_array([
+      @types.CURVE_TAG_ON,
+      @types.CURVE_TAG_ON,
+      @types.CURVE_TAG_ON,
+    ]),
+    FixedArray::from_array([2U]),
+  )
   let log : Array[String] = []
   let funcs = OutlineFuncs::new(
     move_to=fn(p) { log.push("M(\{p.x()},\{p.y()})") },

@@ -1,22 +1,27 @@
 ///|
 /// Outline representation: a set of contours made of points.
 struct Outline {
-  mut points : Array[Vector] // coordinates
-  mut tags : Array[Byte] // point flags (on-curve, conic, cubic)
-  mut contours : Array[UInt] // end-point index for each contour
+  mut points : FixedArray[Vector] // coordinates
+  mut tags : FixedArray[Byte] // point flags (on-curve, conic, cubic)
+  mut contours : FixedArray[UInt] // end-point index for each contour
   mut flags : Int // FT_OUTLINE_XXX
 } derive(Eq, Show)
 
 ///|
 pub fn Outline::new() -> Outline {
-  { points: [], tags: [], contours: [], flags: 0 }
+  {
+    points: FixedArray::default(),
+    tags: FixedArray::default(),
+    contours: FixedArray::default(),
+    flags: 0,
+  }
 }
 
 ///|
 pub fn Outline::create(
-  points : Array[Vector],
-  tags : Array[Byte],
-  contours : Array[UInt],
+  points : FixedArray[Vector],
+  tags : FixedArray[Byte],
+  contours : FixedArray[UInt],
   flags? : Int = 0,
 ) -> Outline {
   { points, tags, contours, flags }
@@ -38,17 +43,17 @@ pub fn Outline::n_contours(self : Outline) -> Int {
 }
 
 ///|
-pub fn Outline::points(self : Outline) -> Array[Vector] {
+pub fn Outline::points(self : Outline) -> FixedArray[Vector] {
   self.points
 }
 
 ///|
-pub fn Outline::tags(self : Outline) -> Array[Byte] {
+pub fn Outline::tags(self : Outline) -> FixedArray[Byte] {
   self.tags
 }
 
 ///|
-pub fn Outline::contours(self : Outline) -> Array[UInt] {
+pub fn Outline::contours(self : Outline) -> FixedArray[UInt] {
   self.contours
 }
 
@@ -58,17 +63,20 @@ pub fn Outline::flags(self : Outline) -> Int {
 }
 
 ///|
-pub fn Outline::set_points(self : Outline, points : Array[Vector]) -> Unit {
+pub fn Outline::set_points(self : Outline, points : FixedArray[Vector]) -> Unit {
   self.points = points
 }
 
 ///|
-pub fn Outline::set_tags(self : Outline, tags : Array[Byte]) -> Unit {
+pub fn Outline::set_tags(self : Outline, tags : FixedArray[Byte]) -> Unit {
   self.tags = tags
 }
 
 ///|
-pub fn Outline::set_contours(self : Outline, contours : Array[UInt]) -> Unit {
+pub fn Outline::set_contours(
+  self : Outline,
+  contours : FixedArray[UInt],
+) -> Unit {
   self.contours = contours
 }
 

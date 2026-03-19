@@ -17,7 +17,7 @@ pub fn load_simple_glyph(
   let _x_max = reader.read_i16_be()
   let _y_max = reader.read_i16_be()
   // Read end points of contours
-  let contours : Array[UInt] = Array::make(num_contours, 0U)
+  let contours : FixedArray[UInt] = FixedArray::make(num_contours, 0U)
   for i in 0..<num_contours {
     contours.unsafe_set(i, reader.read_u16_be())
   }
@@ -80,8 +80,8 @@ pub fn load_simple_glyph(
   // Read y coordinates and build points + tags in one pass
   // Pre-allocate exact size and use unsafe_set to avoid push() overhead
   let zero_vec = @types.Vector::new(0L, 0L)
-  let points : Array[@types.Vector] = Array::make(n_points, zero_vec)
-  let tags : Array[Byte] = Array::make(n_points, b'\x00')
+  let points : FixedArray[@types.Vector] = FixedArray::make(n_points, zero_vec)
+  let tags : FixedArray[Byte] = FixedArray::make(n_points, b'\x00')
   let mut y = 0L
   for i in 0..<n_points {
     let flag = flags[i]
@@ -224,7 +224,8 @@ pub fn load_tt_glyph(
       let has_transform = (comp.flags & WE_HAVE_A_SCALE) != 0U ||
         (comp.flags & WE_HAVE_AN_X_AND_Y_SCALE) != 0U ||
         (comp.flags & WE_HAVE_A_TWO_BY_TWO) != 0U
-      for j, point in sub_outline.points() {
+      for j in 0..<sub_outline.n_points() {
+        let point = sub_outline.points().unsafe_get(j)
         let mut px = point.x()
         let mut py = point.y()
         if has_transform {
@@ -237,9 +238,9 @@ pub fn load_tt_glyph(
           px += comp.arg1.to_int64()
           py += comp.arg2.to_int64()
         }
-        loader.add_point(px, py, sub_outline.tags()[j])
+        loader.add_point(px, py, sub_outline.tags().unsafe_get(j))
       }
-      for _ in sub_outline.contours() {
+      for _ in 0..<sub_outline.n_contours() {
         loader.end_contour()
       }
       loader.add()

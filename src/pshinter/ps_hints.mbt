@@ -235,7 +235,7 @@ pub fn interpolate_points(
   v_stems : Array[FittedStem],
   scale : @fixed.Fixed,
 ) -> Unit {
-  for i, _pt in outline.points() {
+  for i in 0..<outline.n_points() {
     let p = outline.points()[i]
     let new_x = if v_stems.length() > 0 {
       interpolate_coord(p.x(), v_stems, scale)

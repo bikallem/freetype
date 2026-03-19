@@ -85,7 +85,19 @@ pub fn GlyphLoader::add(self : GlyphLoader) -> Unit {
 ///|
 /// Build an Outline from the accumulated base data.
 pub fn GlyphLoader::to_outline(self : GlyphLoader) -> @types.Outline {
-  @types.Outline::create(self.base_points, self.base_tags, self.base_contours)
+  let n_points = self.base_points.length()
+  let fa_points = FixedArray::make(n_points, @types.Vector::new(0L, 0L))
+  let fa_tags = FixedArray::make(n_points, b'\x00')
+  for i in 0..<n_points {
+    fa_points[i] = self.base_points[i]
+    fa_tags[i] = self.base_tags[i]
+  }
+  let n_contours = self.base_contours.length()
+  let fa_contours = FixedArray::make(n_contours, 0U)
+  for i in 0..<n_contours {
+    fa_contours[i] = self.base_contours[i]
+  }
+  @types.Outline::create(fa_points, fa_tags, fa_contours)
 }
 
 ///|

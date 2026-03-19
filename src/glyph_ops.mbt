@@ -121,8 +121,8 @@ pub fn load_glyph(
       }
       if not(did_hint) {
         // Plain scaling: scale outline points
-        for i, _pt in face.glyph().outline().points() {
-          let p = face.glyph().outline().points()[i]
+        for i in 0..<face.glyph().outline().n_points() {
+          let p = face.glyph().outline().points().unsafe_get(i)
           let sx = @fixed.mul_fix(x_scale, @fixed.Fixed::from_raw(p.x())).val()
           let sy = @fixed.mul_fix(y_scale, @fixed.Fixed::from_raw(p.y())).val()
           face.glyph().outline().points()[i] = @types.Vector::new(sx, sy)

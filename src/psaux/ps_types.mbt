@@ -129,5 +129,17 @@ pub fn PsInterp::finalize(self : PsInterp) -> @types.Outline {
   if self.path_started && self.points.length() > 0 {
     self.contours.push((self.points.length() - 1).reinterpret_as_uint())
   }
-  @types.Outline::create(self.points, self.tags, self.contours)
+  let n_points = self.points.length()
+  let fa_points = FixedArray::make(n_points, @types.Vector::new(0L, 0L))
+  let fa_tags = FixedArray::make(n_points, b'\x00')
+  for i in 0..<n_points {
+    fa_points[i] = self.points[i]
+    fa_tags[i] = self.tags[i]
+  }
+  let n_contours = self.contours.length()
+  let fa_contours = FixedArray::make(n_contours, 0U)
+  for i in 0..<n_contours {
+    fa_contours[i] = self.contours[i]
+  }
+  @types.Outline::create(fa_points, fa_tags, fa_contours)
 }
