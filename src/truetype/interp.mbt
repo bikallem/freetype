@@ -141,6 +141,19 @@ pub fn InterpContext::set_gs(self : InterpContext, v : GraphicsState) -> Unit {
 }
 
 ///|
+pub fn InterpContext::func_defs(self : InterpContext) -> Map[Int, FuncDef] {
+  self.func_defs
+}
+
+///|
+pub fn InterpContext::set_func_defs(
+  self : InterpContext,
+  v : Map[Int, FuncDef],
+) -> Unit {
+  self.func_defs = v
+}
+
+///|
 pub fn InterpContext::set_zone0_org(
   self : InterpContext,
   v : Array[@types.Vector],

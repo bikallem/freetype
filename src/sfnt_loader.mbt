@@ -106,6 +106,11 @@ fn load_sfnt(
   }
   // Reusable glyph loading buffers (captured by load_glyph_fn closure)
   let glyph_bufs = @truetype.GlyphBufs::new()
+  // Cached TT interpreter state: fpgm func_defs + prep-modified CVT
+  // Keyed by ppem — invalidated when size changes
+  let tt_cached_funcs : Ref[Map[Int, @truetype.FuncDef]?] = Ref::new(None)
+  let tt_cached_cvt : Ref[Array[Int64]?] = Ref::new(None)
+  let tt_cached_ppem : Ref[UInt] = Ref::new(0U)
   // Per-face hint state
   let hint_h_hints : Ref[Array[@psaux.StemHint]] = Ref::new([])
   let hint_v_hints : Ref[Array[@psaux.StemHint]] = Ref::new([])
@@ -215,19 +220,68 @@ fn load_sfnt(
       Err(_) => return false
     }
     if tt_data is Some(tt) && instructions.length() > 0 {
+      // Cache fpgm func_defs + prep-modified CVT per ppem
+      if tt_cached_ppem.val != ppem || tt_cached_funcs.val is None {
+        // Run fpgm + prep once, cache results
+        let init_ctx = @truetype.InterpContext::new(
+          cvt=tt.cvt().copy(),
+          storage_size=64,
+          max_stack=256,
+        )
+        init_ctx.set_ppem(ppem.reinterpret_as_int())
+        // Scale CVT
+        for i in 0..<init_ctx.cvt().length() {
+          let font_units = init_ctx.cvt()[i] >> 6
+          init_ctx.cvt()[i] = @fixed.mul_fix(
+            y_scale,
+            @fixed.Fixed::from_raw(font_units),
+          ).val()
+        }
+        // Twilight zone for fpgm/prep
+        let twilight_size = 16
+        init_ctx.set_zone0_org(
+          Array::make(twilight_size, @types.Vector::new(0L, 0L)),
+        )
+        init_ctx.set_zone0_cur(
+          Array::make(twilight_size, @types.Vector::new(0L, 0L)),
+        )
+        init_ctx.set_zone0_tags(Array::make(twilight_size, b'\x00'))
+        init_ctx.set_zone0_points(init_ctx.zone0_cur())
+        // Empty glyph zone for fpgm/prep
+        init_ctx.set_zone1_org([])
+        init_ctx.set_zone1_cur([])
+        init_ctx.set_zone1_tags([])
+        init_ctx.set_zone1_touch([])
+        init_ctx.set_zone1_points(init_ctx.zone1_cur())
+        if tt.fpgm().length() > 0 {
+          let fpgm_result = try? init_ctx.execute(tt.fpgm())
+          if fpgm_result is Err(_) {
+            return false
+          }
+        }
+        init_ctx.set_gs(@truetype.GraphicsState::default())
+        if tt.prep().length() > 0 {
+          let prep_result = try? init_ctx.execute(tt.prep())
+          if prep_result is Err(_) {
+            return false
+          }
+        }
+        // Cache func_defs and scaled CVT
+        tt_cached_funcs.val = Some(init_ctx.func_defs())
+        tt_cached_cvt.val = Some(init_ctx.cvt())
+        tt_cached_ppem.val = ppem
+      }
+      // Create glyph-specific context reusing cached func_defs + CVT
+      let cached_cvt = tt_cached_cvt.val.unwrap()
+      let cached_funcs = tt_cached_funcs.val.unwrap()
       let ctx = @truetype.InterpContext::new(
-        cvt=tt.cvt().copy(),
+        cvt=cached_cvt.copy(),
         storage_size=64,
         max_stack=256,
       )
       ctx.set_ppem(ppem.reinterpret_as_int())
-      for i in 0..<ctx.cvt().length() {
-        let font_units = ctx.cvt()[i] >> 6
-        ctx.cvt()[i] = @fixed.mul_fix(
-          y_scale,
-          @fixed.Fixed::from_raw(font_units),
-        ).val()
-      }
+      ctx.set_func_defs(cached_funcs)
+      // Set up glyph zone points
       let n_points = outline.points().length()
       let total_points = n_points + 4
       let zero_vec = @types.Vector::new(0L, 0L)
@@ -258,19 +312,7 @@ fn load_sfnt(
       ctx.set_zone0_cur(Array::make(twilight_size, @types.Vector::new(0L, 0L)))
       ctx.set_zone0_tags(Array::make(twilight_size, b'\x00'))
       ctx.set_zone0_points(ctx.zone0_cur())
-      if tt.fpgm().length() > 0 {
-        let fpgm_result = try? ctx.execute(tt.fpgm())
-        if fpgm_result is Err(_) {
-          return false
-        }
-      }
-      ctx.set_gs(@truetype.GraphicsState::default())
-      if tt.prep().length() > 0 {
-        let prep_result = try? ctx.execute(tt.prep())
-        if prep_result is Err(_) {
-          return false
-        }
-      }
+      // Run glyph instructions only (fpgm+prep already cached)
       ctx.set_gs(@truetype.GraphicsState::default())
       let glyph_result = try? ctx.execute(instructions)
       if glyph_result is Err(_) {
