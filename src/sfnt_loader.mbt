@@ -10,7 +10,6 @@ fn load_sfnt(
   let (sfnt_data, face) = @sfnt.load_sfnt_face(data, face_index.to_int64())
   // Lazy state: None = not yet parsed
   let hmtx_ref : Ref[@sfnt.HmtxTable?] = Ref::new(None)
-  let cmap_ref : Ref[@sfnt.CmapLookup??] = Ref::new(None)
   let tt_ref : Ref[@truetype.TtFaceData??] = Ref::new(None)
   let cff_ref : Ref[@cff.CffFont??] = Ref::new(None)
   let hint_globals_ref : Ref[@pshinter.PsGlobals?] = Ref::new(None)
@@ -112,35 +111,26 @@ fn load_sfnt(
   let hint_v_hints : Ref[Array[@psaux.StemHint]] = Ref::new([])
   let hint_has_hints : Ref[Bool] = Ref::new(false)
   // Closure-based driver ops
-  // Lazy cmap: resolved on first call, then direct dispatch (no Ref check)
-  let char_index_ref : Ref[(UInt) -> UInt] = Ref::new(fn(_charcode) { 0U })
+  // Lazy cmap: resolved on first char_index call, then direct dispatch
+  let char_index_ref : Ref[(UInt) -> UInt] = Ref::new(fn(_c) { 0U })
   char_index_ref.val = fn(charcode) {
-    // First call: resolve cmap and replace ourselves
-    let lookup : @sfnt.CmapLookup? = match cmap_ref.val {
-      Some(result) => result
-      None => {
-        let result : @sfnt.CmapLookup? = match sfnt_data.cmap() {
-          Some(ct) =>
-            match sfnt_data.table_dir().find_table(@types.TAG_CMAP) {
-              Some(rec) => find_best_cmap(data, ct, rec.offset())
-              None => None
-            }
+    let lookup : @sfnt.CmapLookup? = match sfnt_data.cmap() {
+      Some(ct) =>
+        match sfnt_data.table_dir().find_table(@types.TAG_CMAP) {
+          Some(rec) => find_best_cmap(data, ct, rec.offset())
           None => None
         }
-        cmap_ref.val = Some(result)
-        result
-      }
+      None => None
     }
-    // Replace with format-specific lookup — no enum match per call
-    let resolved_fn : (UInt) -> UInt = match lookup {
+    let fast_fn : (UInt) -> UInt = match lookup {
       Some(@sfnt.CmapLookup::Format0(t)) => fn(c) { t.char_index(c) }
       Some(@sfnt.CmapLookup::Format4(t)) => fn(c) { t.char_index(c) }
       Some(@sfnt.CmapLookup::Format6(t)) => fn(c) { t.char_index(c) }
       Some(@sfnt.CmapLookup::Format12(t)) => fn(c) { t.char_index(c) }
       None => fn(_c) { 0U }
     }
-    char_index_ref.val = resolved_fn
-    resolved_fn(charcode)
+    char_index_ref.val = fast_fn
+    fast_fn(charcode)
   }
   let char_index_fn : (UInt) -> UInt = fn(charcode) {
     (char_index_ref.val)(charcode)
