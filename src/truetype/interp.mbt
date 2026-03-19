@@ -1057,7 +1057,7 @@ fn InterpContext::op_pushw(self : InterpContext, count : Int) -> Unit {
 fn InterpContext::op_rs(self : InterpContext) -> Unit {
   let idx = self.pop().to_int()
   if idx >= 0 && idx < self.storage.length() {
-    self.push(self.storage[idx])
+    self.push(self.storage.unsafe_get(idx))
   } else {
     self.push(0L)
   }
@@ -1068,7 +1068,7 @@ fn InterpContext::op_ws(self : InterpContext) -> Unit {
   let val = self.pop()
   let idx = self.pop().to_int()
   if idx >= 0 && idx < self.storage.length() {
-    self.storage[idx] = val
+    self.storage.unsafe_set(idx, val)
   }
 }
 
@@ -1076,7 +1076,7 @@ fn InterpContext::op_ws(self : InterpContext) -> Unit {
 fn InterpContext::op_rcvt(self : InterpContext) -> Unit {
   let idx = self.pop().to_int()
   if idx >= 0 && idx < self.cvt.length() {
-    self.push(self.cvt[idx])
+    self.push(self.cvt.unsafe_get(idx))
   } else {
     self.push(0L)
   }
@@ -1087,7 +1087,7 @@ fn InterpContext::op_wcvtp(self : InterpContext) -> Unit {
   let val = self.pop()
   let idx = self.pop().to_int()
   if idx >= 0 && idx < self.cvt.length() {
-    self.cvt[idx] = val
+    self.cvt.unsafe_set(idx, val)
   }
 }
 
@@ -1097,7 +1097,7 @@ fn InterpContext::op_wcvtf(self : InterpContext) -> Unit {
   let idx = self.pop().to_int()
   if idx >= 0 && idx < self.cvt.length() {
     // Convert from font units to 26.6 (simplified: assume 1:1 for now)
-    self.cvt[idx] = val
+    self.cvt.unsafe_set(idx, val)
   }
 }
 
@@ -1255,7 +1255,7 @@ fn InterpContext::op_miap(self : InterpContext, flag : Int) -> Unit {
   let cvt_idx = self.pop().to_int()
   let point_idx = self.pop().to_int()
   let cvt_dist = if cvt_idx >= 0 && cvt_idx < self.cvt.length() {
-    self.cvt[cvt_idx]
+    self.cvt.unsafe_get(cvt_idx)
   } else {
     0L
   }
@@ -1651,7 +1651,7 @@ fn InterpContext::op_mirp(self : InterpContext, flags : Int) -> Unit {
   let cvt_idx = self.pop().to_int()
   let point_idx = self.pop().to_int()
   let cvt_dist = if cvt_idx >= 0 && cvt_idx < self.cvt.length() {
-    self.cvt[cvt_idx]
+    self.cvt.unsafe_get(cvt_idx)
   } else {
     0L
   }
@@ -1744,7 +1744,7 @@ fn InterpContext::op_deltac(self : InterpContext, selector : Int) -> Unit {
       let step = if magnitude < 8 { -(8 - magnitude) } else { magnitude - 7 }
       let delta = step.to_int64() << 6 >> self.gs.delta_shift
       if cvt_idx >= 0 && cvt_idx < self.cvt.length() {
-        self.cvt[cvt_idx] = self.cvt[cvt_idx] + delta
+        self.cvt.unsafe_set(cvt_idx, self.cvt.unsafe_get(cvt_idx) + delta)
       }
     }
   }
