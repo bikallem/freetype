@@ -1,6 +1,6 @@
 ///|
 /// Load a simple glyph from the 'glyf' table.
-/// Returns the parsed outline (points, tags, contours) and the glyph bbox.
+/// Returns the parsed outline (points, tags, contours) and the glyph instructions.
 ///
 /// Simple glyph layout:
 ///   numberOfContours (i16) — already read, passed as parameter
@@ -40,28 +40,31 @@ pub fn load_simple_glyph(
   } else {
     b""
   }
-  // Read flags (compressed with repeat)
-  let flags : Array[Byte] = Array::new(capacity=n_points)
-  let mut i = 0
-  while i < n_points {
+  // Read flags (compressed with repeat) — use FixedArray to avoid growth
+  let flags = FixedArray::make(n_points, b'\x00')
+  let mut fi = 0
+  while fi < n_points {
     let flag = reader.read_byte()
-    flags.push(flag)
-    i += 1
+    flags[fi] = flag
+    fi += 1
     // Bit 3: repeat flag
     if (flag & 0x08) != b'\x00' {
       let repeat_count = reader.read_byte().to_int()
       for _ in 0..<repeat_count {
-        flags.push(flag)
-        i += 1
+        if fi < n_points {
+          flags[fi] = flag
+          fi += 1
+        }
       }
     }
   }
-  // Read x coordinates (delta-encoded)
-  let x_coords : Array[Int64] = Array::new(capacity=n_points)
+  // Read x coordinates (delta-encoded) directly into FixedArray
+  let x_coords = FixedArray::make(n_points, 0L)
   let mut x = 0L
-  for _, flag in flags {
-    let x_short = (flag & 0x02) != b'\x00' // bit 1: x is 1 byte
-    let x_same = (flag & 0x10) != b'\x00' // bit 4: x same or positive
+  for i in 0..<n_points {
+    let flag = flags[i]
+    let x_short = (flag & 0x02) != b'\x00'
+    let x_same = (flag & 0x10) != b'\x00'
     if x_short {
       let delta = reader.read_byte().to_int().to_int64()
       if x_same {
@@ -69,19 +72,19 @@ pub fn load_simple_glyph(
       } else {
         x -= delta
       }
-    } else if not(x_same) {
-      // 2-byte signed delta
+    } else if !x_same {
       x += reader.read_i16_be().to_int64()
     }
-    // else: x_same && !x_short → x unchanged
-    x_coords.push(x)
+    x_coords[i] = x
   }
-  // Read y coordinates (delta-encoded)
-  let y_coords : Array[Int64] = Array::new(capacity=n_points)
+  // Read y coordinates and build points + tags in one pass
+  let points : Array[@types.Vector] = Array::new(capacity=n_points)
+  let tags : Array[Byte] = Array::new(capacity=n_points)
   let mut y = 0L
-  for _, flag in flags {
-    let y_short = (flag & 0x04) != b'\x00' // bit 2: y is 1 byte
-    let y_same = (flag & 0x20) != b'\x00' // bit 5: y same or positive
+  for i in 0..<n_points {
+    let flag = flags[i]
+    let y_short = (flag & 0x04) != b'\x00'
+    let y_same = (flag & 0x20) != b'\x00'
     if y_short {
       let delta = reader.read_byte().to_int().to_int64()
       if y_same {
@@ -89,21 +92,12 @@ pub fn load_simple_glyph(
       } else {
         y -= delta
       }
-    } else if not(y_same) {
+    } else if !y_same {
       y += reader.read_i16_be().to_int64()
     }
-    y_coords.push(y)
-  }
-  // Build outline
-  let points : Array[@types.Vector] = Array::new(capacity=n_points)
-  let tags : Array[Byte] = Array::new(capacity=n_points)
-  for i, flag in flags {
-    points.push(@types.Vector::new(x_coords[i], y_coords[i]))
-    // Convert TT flags to FreeType tags:
-    // Bit 0 of TT flag = on-curve (1) or off-curve (0)
-    let on_curve = (flag & 0x01) != b'\x00'
+    points.push(@types.Vector::new(x_coords[i], y))
     tags.push(
-      if on_curve {
+      if (flag & 0x01) != b'\x00' {
         @types.CURVE_TAG_ON
       } else {
         @types.CURVE_TAG_CONIC
@@ -153,14 +147,12 @@ pub fn load_composite_glyph(
         )
       }
     } else if (flags & ARGS_ARE_XY_VALUES) != 0U {
-      // 2 signed bytes
       let a1 = reader.read_byte().to_int()
       let a1_signed = if a1 >= 128 { a1 - 256 } else { a1 }
       let a2 = reader.read_byte().to_int()
       let a2_signed = if a2 >= 128 { a2 - 256 } else { a2 }
       (a1_signed, a2_signed)
     } else {
-      // 2 unsigned bytes (point indices)
       (reader.read_byte().to_int(), reader.read_byte().to_int())
     }
     // Read transformation matrix
@@ -169,7 +161,6 @@ pub fn load_composite_glyph(
     let mut yx = @fixed.Fixed::zero()
     let mut yy = @fixed.Fixed::one()
     if (flags & WE_HAVE_A_SCALE) != 0U {
-      // Single scale factor (F2Dot14)
       let scale = @fixed.F2Dot14::from_raw(reader.read_i16_be())
       xx = scale.to_fixed()
       yy = scale.to_fixed()
@@ -191,8 +182,6 @@ pub fn load_composite_glyph(
 ///|
 /// Load a glyph from a TrueType font, returning the outline.
 /// Handles both simple and composite glyphs (recursively).
-/// `glyph_index` is the glyph to load.
-/// `data` is the raw font data, `offsets` from loca table, `glyf_offset` is the glyf table offset.
 pub fn load_tt_glyph(
   data : Bytes,
   glyph_offsets : Array[UInt],
@@ -201,29 +190,26 @@ pub fn load_tt_glyph(
   depth? : Int = 0,
 ) -> (@types.Outline, Bytes) raise @error.FTError {
   if depth > 32 {
-    raise @error.FTError::InvalidComposite // prevent infinite recursion
+    raise @error.FTError::InvalidComposite
   }
   let idx = glyph_index.reinterpret_as_int()
   if idx >= glyph_offsets.length() - 1 {
-    return (@types.Outline::new(), b"") // .notdef or out of range
+    return (@types.Outline::new(), b"")
   }
   let glyph_start = glyf_offset + glyph_offsets[idx]
   let glyph_end = glyf_offset + glyph_offsets[idx + 1]
   if glyph_start == glyph_end {
-    return (@types.Outline::new(), b"") // empty glyph (e.g., space)
+    return (@types.Outline::new(), b"")
   }
   let reader = @stream.ByteReader::new(data)
   reader.seek(glyph_start.reinterpret_as_int())
   let num_contours = reader.read_i16_be()
   if num_contours >= 0 {
-    // Simple glyph
     load_simple_glyph(reader, num_contours)
   } else {
-    // Composite glyph
     let components = load_composite_glyph(reader)
     let loader = @base.GlyphLoader::new()
     for _, comp in components {
-      // Recursively load component glyph
       let (sub_outline, _sub_instr) = load_tt_glyph(
         data,
         glyph_offsets,
@@ -231,11 +217,9 @@ pub fn load_tt_glyph(
         comp.glyph_index,
         depth=depth + 1,
       )
-      // Apply transformation if needed
       let has_transform = (comp.flags & WE_HAVE_A_SCALE) != 0U ||
         (comp.flags & WE_HAVE_AN_X_AND_Y_SCALE) != 0U ||
         (comp.flags & WE_HAVE_A_TWO_BY_TWO) != 0U
-      // Add points to loader
       for j, point in sub_outline.points() {
         let mut px = point.x()
         let mut py = point.y()
@@ -245,20 +229,17 @@ pub fn load_tt_glyph(
           px = rx
           py = ry
         }
-        // Apply offset (args are xy values)
         if (comp.flags & ARGS_ARE_XY_VALUES) != 0U {
           px += comp.arg1.to_int64()
           py += comp.arg2.to_int64()
         }
         loader.add_point(px, py, sub_outline.tags()[j])
       }
-      // Add contour end points
       for _ in sub_outline.contours() {
         loader.end_contour()
       }
       loader.add()
     }
-    // Composite glyphs: no per-glyph instructions returned
     (loader.to_outline(), b"")
   }
 }

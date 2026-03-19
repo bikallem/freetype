@@ -85,11 +85,7 @@ pub fn GlyphLoader::add(self : GlyphLoader) -> Unit {
 ///|
 /// Build an Outline from the accumulated base data.
 pub fn GlyphLoader::to_outline(self : GlyphLoader) -> @types.Outline {
-  @types.Outline::create(
-    self.base_points.copy(),
-    self.base_tags.copy(),
-    self.base_contours.copy(),
-  )
+  @types.Outline::create(self.base_points, self.base_tags, self.base_contours)
 }
 
 ///|

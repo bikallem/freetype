@@ -173,14 +173,12 @@ fn parse_cmap_format4(
   for _ in 0..<seg_count {
     id_range_offsets.push(reader.read_u16_be())
   }
-  // Remaining bytes are the glyphIdArray
-  let glyph_array_start = reader.position()
+  // Remaining bytes are the glyphIdArray — read sequentially (no seeking)
   let glyph_array_end = abs_offset + length
-  let glyph_ids : Array[UInt] = []
-  for pos = glyph_array_start; pos + 1 < glyph_array_end; {
-    reader.seek(pos)
+  let glyph_count = (glyph_array_end - reader.position()) / 2
+  let glyph_ids : Array[UInt] = Array::new(capacity=glyph_count)
+  for _ in 0..<glyph_count {
     glyph_ids.push(reader.read_u16_be())
-    continue pos + 2
   }
   {
     seg_count,

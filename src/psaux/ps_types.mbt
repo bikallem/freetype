@@ -129,9 +129,5 @@ pub fn PsInterp::finalize(self : PsInterp) -> @types.Outline {
   if self.path_started && self.points.length() > 0 {
     self.contours.push((self.points.length() - 1).reinterpret_as_uint())
   }
-  @types.Outline::create(
-    self.points.copy(),
-    self.tags.copy(),
-    self.contours.copy(),
-  )
+  @types.Outline::create(self.points, self.tags, self.contours)
 }
