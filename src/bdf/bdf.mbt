@@ -11,7 +11,7 @@ struct BdfGlyph {
   mut bbx_x_offset : Int // bounding box x offset
   mut bbx_y_offset : Int // bounding box y offset
   mut bitmap : Bytes // bitmap data (row-major, MSB first)
-  mut name : String // glyph name
+  name : String // glyph name
 } derive(Show)
 
 ///|
@@ -30,16 +30,16 @@ pub fn BdfGlyph::new() -> BdfGlyph {
 ///|
 /// BDF font representation.
 struct BdfFont {
-  mut font_name : String
-  mut point_size : Int
-  mut x_resolution : Int
-  mut y_resolution : Int
+  font_name : String
+  point_size : Int
+  x_resolution : Int
+  y_resolution : Int
   glyphs : Array[BdfGlyph]
-  mut num_chars : Int
-  mut bbx_width : Int // global bounding box
-  mut bbx_height : Int
-  mut bbx_x_offset : Int
-  mut bbx_y_offset : Int
+  num_chars : Int
+  bbx_width : Int // global bounding box
+  bbx_height : Int
+  bbx_x_offset : Int
+  bbx_y_offset : Int
 } derive(Show)
 
 ///|
@@ -218,10 +218,18 @@ fn parse_hex_line_bytes(
 /// Parse BDF font data including header and glyph blocks.
 /// Returns a BdfFont with header fields and glyphs populated.
 pub fn parse_bdf_header(data : Bytes) -> BdfFont raise @error.FTError {
-  let font = BdfFont::new()
   let len = data.length()
   let mut found_startfont = false
   let mut pos = 0
+  let mut font_name = ""
+  let mut point_size = 0
+  let mut x_resolution = 0
+  let mut y_resolution = 0
+  let mut num_chars = 0
+  let mut bbx_width = 0
+  let mut bbx_height = 0
+  let mut bbx_x_offset = 0
+  let mut bbx_y_offset = 0
   // --- Parse header ---
   while pos < len {
     // Find end of line
@@ -234,26 +242,26 @@ pub fn parse_bdf_header(data : Bytes) -> BdfFont raise @error.FTError {
     if bytes_starts_with(data, line_start, line_end, "STARTFONT ") {
       found_startfont = true
     } else if bytes_starts_with(data, line_start, line_end, "FONT ") {
-      font.font_name = bytes_to_string(data, line_start + 5, line_end)
+      font_name = bytes_to_string(data, line_start + 5, line_end)
     } else if bytes_starts_with(data, line_start, line_end, "SIZE ") {
       let fields : Array[Int] = []
       bytes_parse_int_fields(data, line_start + 5, line_end, fields, 3)
       if fields.length() >= 3 {
-        font.point_size = fields[0]
-        font.x_resolution = fields[1]
-        font.y_resolution = fields[2]
+        point_size = fields[0]
+        x_resolution = fields[1]
+        y_resolution = fields[2]
       }
     } else if bytes_starts_with(data, line_start, line_end, "FONTBOUNDINGBOX ") {
       let fields : Array[Int] = []
       bytes_parse_int_fields(data, line_start + 16, line_end, fields, 4)
       if fields.length() >= 4 {
-        font.bbx_width = fields[0]
-        font.bbx_height = fields[1]
-        font.bbx_x_offset = fields[2]
-        font.bbx_y_offset = fields[3]
+        bbx_width = fields[0]
+        bbx_height = fields[1]
+        bbx_x_offset = fields[2]
+        bbx_y_offset = fields[3]
       }
     } else if bytes_starts_with(data, line_start, line_end, "CHARS ") {
-      font.num_chars = bytes_parse_int(
+      num_chars = bytes_parse_int(
         data,
         bytes_skip_spaces(data, line_start + 6, line_end),
         line_end,
@@ -275,6 +283,10 @@ pub fn parse_bdf_header(data : Bytes) -> BdfFont raise @error.FTError {
     raise @error.FTError::MissingStartfontField
   }
   // --- Parse glyph blocks ---
+  // Pre-allocate glyphs array using CHARS count to avoid repeated growth
+  let glyphs : Array[BdfGlyph] = Array::new(
+    capacity=if num_chars > 0 { num_chars } else { 256 },
+  )
   while pos < len {
     // Find end of line
     let line_start = pos
@@ -284,7 +296,7 @@ pub fn parse_bdf_header(data : Bytes) -> BdfFont raise @error.FTError {
     }
     if bytes_starts_with(data, line_start, line_end, "STARTCHAR ") {
       let glyph = BdfGlyph::new()
-      glyph.name = bytes_to_string(data, line_start + 10, line_end)
+      // Skip glyph name allocation — names are not used at runtime
       // Advance past STARTCHAR line
       pos = line_end
       if pos < len && data[pos] == b'\r' {
@@ -335,8 +347,13 @@ pub fn parse_bdf_header(data : Bytes) -> BdfFont raise @error.FTError {
           pos = pos + 1
         }
       }
+      // Pre-allocate bitmap based on BBX dimensions: each row = ceil(bbx_width/8) bytes
+      let row_bytes = (glyph.bbx_width + 7) / 8
+      let bitmap_capacity = row_bytes * glyph.bbx_height
+      let bitmap_bytes : Array[Byte] = Array::new(
+        capacity=if bitmap_capacity > 0 { bitmap_capacity } else { 16 },
+      )
       // Read hex bitmap lines until ENDCHAR
-      let bitmap_bytes : Array[Byte] = []
       while pos < len {
         let hs = pos
         let mut he = pos
@@ -364,7 +381,7 @@ pub fn parse_bdf_header(data : Bytes) -> BdfFont raise @error.FTError {
         }
       }
       glyph.bitmap = Bytes::from_array(bitmap_bytes[:])
-      font.glyphs.push(glyph)
+      glyphs.push(glyph)
       continue // Don't advance pos again — already past ENDCHAR
     } else if bytes_equals(data, line_start, line_end, "ENDFONT") {
       break
@@ -378,7 +395,18 @@ pub fn parse_bdf_header(data : Bytes) -> BdfFont raise @error.FTError {
       pos = pos + 1
     }
   }
-  font
+  {
+    font_name,
+    point_size,
+    x_resolution,
+    y_resolution,
+    glyphs,
+    num_chars,
+    bbx_width,
+    bbx_height,
+    bbx_x_offset,
+    bbx_y_offset,
+  }
 }
 
 ///|

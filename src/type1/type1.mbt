@@ -327,21 +327,44 @@ fn extract_font_bbox(ascii_data : Bytes) -> Array[Int] {
 }
 
 ///|
+/// Search for a byte pattern in a Bytes buffer starting from offset.
+/// Returns the index of the first match, or -1 if not found.
+fn bytes_find(data : Bytes, len : Int, pattern : Bytes, from? : Int = 0) -> Int {
+  let plen = pattern.length()
+  if plen == 0 || plen > len - from {
+    return -1
+  }
+  let end = len - plen
+  for i in from..<=end {
+    let mut match_ = true
+    for j in 0..<plen {
+      if data[i + j] != pattern[j] {
+        match_ = false
+        break
+      }
+    }
+    if match_ {
+      return i
+    }
+  }
+  -1
+}
+
+///|
 /// Parse encoding from the ASCII segment.
 /// Looks for "/Encoding StandardEncoding def" or custom "dup N /name put" entries.
 fn parse_encoding(ascii_data : Bytes) -> Array[String] {
   let len = ascii_data.length()
   let encoding : Array[String] = Array::make(256, ".notdef")
-  // Convert to string for easier searching
-  let buf = StringBuilder::new()
-  for i in 0..<len {
-    buf.write_char(Int::unsafe_to_char(ascii_data[i].to_int()))
-  }
-  let text = buf.to_string()
+  // Byte-level search for encoding keywords (no String conversion)
+  let pat_std = b"StandardEncoding"
+  let pat_enc = b"/Encoding"
+  let pat_enc256 = b"/Encoding 256 array"
+  let has_std = bytes_find(ascii_data, len, pat_std) >= 0
+  let has_enc = bytes_find(ascii_data, len, pat_enc) >= 0
+  let has_enc256 = bytes_find(ascii_data, len, pat_enc256) >= 0
   // Check for StandardEncoding
-  if text.contains("StandardEncoding") &&
-    text.contains("/Encoding") &&
-    not(text.contains("/Encoding 256 array")) {
+  if has_std && has_enc && not(has_enc256) {
     // Use standard encoding: map code -> SID -> glyph name
     for i in 0..<256 {
       let sid = @psnames.standard_encoding_sid(i.reinterpret_as_uint())
@@ -356,29 +379,12 @@ fn parse_encoding(ascii_data : Bytes) -> Array[String] {
   }
   // Look for custom encoding: "dup N /name put" entries
   // Search for "/Encoding" first
-  let enc_keyword = "/Encoding"
-  let mut start = 0
-  let mut found_encoding = false
-  for i in 0..<(len - enc_keyword.length()) {
-    let mut match_ = true
-    for j in 0..<enc_keyword.length() {
-      if ascii_data[i + j] != enc_keyword[j].to_byte() {
-        match_ = false
-        break
-      }
-    }
-    if match_ {
-      start = i + enc_keyword.length()
-      found_encoding = true
-      break
-    }
-  }
-  if not(found_encoding) {
+  let enc_pos = bytes_find(ascii_data, len, pat_enc)
+  if enc_pos < 0 {
     return encoding
   }
+  let start = enc_pos + pat_enc.length()
   // Parse "dup N /name put" entries
-  let dup_kw = "dup"
-  let put_kw = "put"
   let mut i = start
   while i + 10 < len {
     // Skip whitespace
@@ -456,8 +462,6 @@ fn parse_encoding(ascii_data : Bytes) -> Array[String] {
       }
       i += 1
     }
-    ignore(dup_kw)
-    ignore(put_kw)
   }
   encoding
 }

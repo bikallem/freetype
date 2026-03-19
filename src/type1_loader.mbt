@@ -35,19 +35,24 @@ fn load_type1_pfb(data : Bytes) -> @base.FaceRec raise @error.FTError {
   for i, name in glyph_names {
     name_to_index[name] = i.reinterpret_as_uint()
   }
+  // Pre-compute charcode -> glyph_index cache (256 entries)
+  let cached_cmap : FixedArray[UInt] = FixedArray::make(256, 0U)
+  let enc = font.encoding()
+  for code in 0..<256 {
+    let glyph_name = enc[code]
+    if glyph_name != ".notdef" {
+      match name_to_index.get(glyph_name) {
+        Some(idx) => cached_cmap[code] = idx
+        None => ()
+      }
+    }
+  }
   // Set up Type1Ops driver data
   let char_index_fn : (UInt) -> UInt = fn(charcode) {
     if charcode >= 256U {
       return 0U
     }
-    let glyph_name = font.encoding()[charcode.reinterpret_as_int()]
-    if glyph_name == ".notdef" {
-      return 0U
-    }
-    match name_to_index.get(glyph_name) {
-      Some(idx) => idx
-      None => 0U
-    }
+    cached_cmap.unsafe_get(charcode.reinterpret_as_int())
   }
   let load_glyph_fn : (UInt, Int) -> (@base.GlyphSlotData, @types.Outline) raise @error.FTError = fn(
     glyph_index,

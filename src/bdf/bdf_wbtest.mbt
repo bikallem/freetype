@@ -42,7 +42,7 @@ test "parse_bdf_header parses glyphs" {
   inspect(font.glyphs[0].encoding, content="65")
   inspect(font.glyphs[0].bbx_width, content="8")
   inspect(font.glyphs[0].bbx_height, content="8")
-  inspect(font.glyphs[0].name, content="A")
+  inspect(font.glyphs[0].name, content="")
   inspect(font.glyphs[0].bitmap.length() > 0, content="true")
   inspect(font.glyphs[0].bitmap.length(), content="8")
 }
@@ -55,10 +55,10 @@ test "BdfFont::get_glyph" {
   inspect(font.glyphs.length(), content="2")
   let g_a = font.get_glyph(65)
   inspect(g_a is Some(_), content="true")
-  inspect(g_a.unwrap().name, content="A")
+  inspect(g_a.unwrap().name, content="")
   let g_b = font.get_glyph(66)
   inspect(g_b is Some(_), content="true")
-  inspect(g_b.unwrap().name, content="B")
+  inspect(g_b.unwrap().name, content="")
   let g_none = font.get_glyph(99)
   inspect(g_none is None, content="true")
 }
