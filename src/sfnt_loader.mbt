@@ -245,18 +245,18 @@ fn load_sfnt(
         // Twilight zone for fpgm/prep
         let twilight_size = 16
         init_ctx.set_zone0_org(
-          Array::make(twilight_size, @types.Vector::new(0L, 0L)),
+          FixedArray::make(twilight_size, @types.Vector::new(0L, 0L)),
         )
         init_ctx.set_zone0_cur(
-          Array::make(twilight_size, @types.Vector::new(0L, 0L)),
+          FixedArray::make(twilight_size, @types.Vector::new(0L, 0L)),
         )
-        init_ctx.set_zone0_tags(Array::make(twilight_size, b'\x00'))
+        init_ctx.set_zone0_tags(FixedArray::make(twilight_size, b'\x00'))
         init_ctx.set_zone0_points(init_ctx.zone0_cur())
         // Empty glyph zone for fpgm/prep
-        init_ctx.set_zone1_org([])
-        init_ctx.set_zone1_cur([])
-        init_ctx.set_zone1_tags([])
-        init_ctx.set_zone1_touch([])
+        init_ctx.set_zone1_org(FixedArray::default())
+        init_ctx.set_zone1_cur(FixedArray::default())
+        init_ctx.set_zone1_tags(FixedArray::default())
+        init_ctx.set_zone1_touch(FixedArray::default())
         init_ctx.set_zone1_points(init_ctx.zone1_cur())
         if tt.fpgm().length() > 0 {
           let fpgm_result = try? init_ctx.execute(tt.fpgm())
@@ -285,12 +285,12 @@ fn load_sfnt(
           let c = @truetype.InterpContext::new(storage_size=64, max_stack=256)
           let twilight_size = 16
           c.set_zone0_org(
-            Array::make(twilight_size, @types.Vector::new(0L, 0L)),
+            FixedArray::make(twilight_size, @types.Vector::new(0L, 0L)),
           )
           c.set_zone0_cur(
-            Array::make(twilight_size, @types.Vector::new(0L, 0L)),
+            FixedArray::make(twilight_size, @types.Vector::new(0L, 0L)),
           )
-          c.set_zone0_tags(Array::make(twilight_size, b'\x00'))
+          c.set_zone0_tags(FixedArray::make(twilight_size, b'\x00'))
           c.set_zone0_points(c.zone0_cur())
           tt_reuse_ctx.val = Some(c)
           c
@@ -306,10 +306,14 @@ fn load_sfnt(
       let total_points = n_points + 4
       let zero_vec = @types.Vector::new(0L, 0L)
       if ctx.zone1_org().length() < total_points {
-        ctx.set_zone1_org(Array::make(total_points, zero_vec))
-        ctx.set_zone1_cur(Array::make(total_points, @types.Vector::new(0L, 0L)))
-        ctx.set_zone1_tags(Array::make(total_points, b'\x00'))
-        ctx.set_zone1_touch(Array::make(total_points, b'\x00'))
+        ctx.set_zone1_org(FixedArray::make(total_points, zero_vec))
+        ctx.set_zone1_cur(
+          FixedArray::make(total_points, @types.Vector::new(0L, 0L)),
+        )
+        ctx.set_zone1_tags(@blit.make_uninit(total_points))
+        ctx.set_zone1_touch(@blit.make_uninit(total_points))
+        @blit.fill_bytes(ctx.zone1_tags(), 0, b'\x00', total_points)
+        @blit.fill_bytes(ctx.zone1_touch(), 0, b'\x00', total_points)
         ctx.set_zone1_points(ctx.zone1_cur())
       } else {
         // Only zero phantom points (n_points..total_points) and touch flags
@@ -319,9 +323,7 @@ fn load_sfnt(
           ctx.zone1_cur()[i] = @types.Vector::new(0L, 0L)
         }
         // Touch flags must all be zero (tracks which points were hinted)
-        for i in 0..<total_points {
-          ctx.zone1_touch()[i] = b'\x00'
-        }
+        @blit.fill_bytes(ctx.zone1_touch(), 0, b'\x00', total_points)
         ctx.set_zone1_points(ctx.zone1_cur())
       }
       for i in 0..<n_points {

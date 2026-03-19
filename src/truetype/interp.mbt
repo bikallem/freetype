@@ -18,15 +18,15 @@ struct InterpContext {
   // Loop counter
   mut loop_count : Int
   // Points (zone 0 = twilight, zone 1 = glyph)
-  mut zone0_org : Array[@types.Vector] // twilight zone original points
-  mut zone0_cur : Array[@types.Vector] // twilight zone current points
-  mut zone0_tags : Array[Byte]
-  mut zone0_points : Array[@types.Vector] // alias for backwards compat
-  mut zone1_org : Array[@types.Vector] // glyph zone original points
-  mut zone1_cur : Array[@types.Vector] // glyph zone current (hinted) points
-  mut zone1_points : Array[@types.Vector] // alias for backwards compat
-  mut zone1_tags : Array[Byte]
-  mut zone1_touch : Array[Byte] // touch flags per point (bit 0 = x touched, bit 1 = y touched)
+  mut zone0_org : FixedArray[@types.Vector] // twilight zone original points
+  mut zone0_cur : FixedArray[@types.Vector] // twilight zone current points
+  mut zone0_tags : FixedArray[Byte]
+  mut zone0_points : FixedArray[@types.Vector] // alias for zone0_cur
+  mut zone1_org : FixedArray[@types.Vector] // glyph zone original points
+  mut zone1_cur : FixedArray[@types.Vector] // glyph zone current (hinted) points
+  mut zone1_points : FixedArray[@types.Vector] // alias for zone1_cur
+  mut zone1_tags : FixedArray[Byte]
+  mut zone1_touch : FixedArray[Byte] // touch flags per point (bit 0 = x touched, bit 1 = y touched)
   // Current pixels per em
   mut ppem : Int
   // Error state
@@ -114,15 +114,15 @@ pub fn InterpContext::new(
     gs: GraphicsState::default(),
     func_defs: {},
     loop_count: 1,
-    zone0_org: [],
-    zone0_cur: [],
-    zone0_tags: [],
-    zone0_points: [],
-    zone1_org: [],
-    zone1_cur: [],
-    zone1_points: [],
-    zone1_tags: [],
-    zone1_touch: [],
+    zone0_org: FixedArray::default(),
+    zone0_cur: FixedArray::default(),
+    zone0_tags: FixedArray::default(),
+    zone0_points: FixedArray::default(),
+    zone1_org: FixedArray::default(),
+    zone1_cur: FixedArray::default(),
+    zone1_points: FixedArray::default(),
+    zone1_tags: FixedArray::default(),
+    zone1_touch: FixedArray::default(),
     ppem: 0,
     error: false,
   }
@@ -168,7 +168,7 @@ pub fn InterpContext::reset_sp(self : InterpContext) -> Unit {
 ///|
 pub fn InterpContext::set_zone0_org(
   self : InterpContext,
-  v : Array[@types.Vector],
+  v : FixedArray[@types.Vector],
 ) -> Unit {
   self.zone0_org = v
 }
@@ -176,7 +176,7 @@ pub fn InterpContext::set_zone0_org(
 ///|
 pub fn InterpContext::set_zone0_cur(
   self : InterpContext,
-  v : Array[@types.Vector],
+  v : FixedArray[@types.Vector],
 ) -> Unit {
   self.zone0_cur = v
 }
@@ -184,7 +184,7 @@ pub fn InterpContext::set_zone0_cur(
 ///|
 pub fn InterpContext::set_zone0_tags(
   self : InterpContext,
-  v : Array[Byte],
+  v : FixedArray[Byte],
 ) -> Unit {
   self.zone0_tags = v
 }
@@ -192,7 +192,7 @@ pub fn InterpContext::set_zone0_tags(
 ///|
 pub fn InterpContext::set_zone0_points(
   self : InterpContext,
-  v : Array[@types.Vector],
+  v : FixedArray[@types.Vector],
 ) -> Unit {
   self.zone0_points = v
 }
@@ -200,7 +200,7 @@ pub fn InterpContext::set_zone0_points(
 ///|
 pub fn InterpContext::set_zone1_org(
   self : InterpContext,
-  v : Array[@types.Vector],
+  v : FixedArray[@types.Vector],
 ) -> Unit {
   self.zone1_org = v
 }
@@ -208,7 +208,7 @@ pub fn InterpContext::set_zone1_org(
 ///|
 pub fn InterpContext::set_zone1_cur(
   self : InterpContext,
-  v : Array[@types.Vector],
+  v : FixedArray[@types.Vector],
 ) -> Unit {
   self.zone1_cur = v
 }
@@ -216,7 +216,7 @@ pub fn InterpContext::set_zone1_cur(
 ///|
 pub fn InterpContext::set_zone1_tags(
   self : InterpContext,
-  v : Array[Byte],
+  v : FixedArray[Byte],
 ) -> Unit {
   self.zone1_tags = v
 }
@@ -224,7 +224,7 @@ pub fn InterpContext::set_zone1_tags(
 ///|
 pub fn InterpContext::set_zone1_touch(
   self : InterpContext,
-  v : Array[Byte],
+  v : FixedArray[Byte],
 ) -> Unit {
   self.zone1_touch = v
 }
@@ -232,7 +232,7 @@ pub fn InterpContext::set_zone1_touch(
 ///|
 pub fn InterpContext::set_zone1_points(
   self : InterpContext,
-  v : Array[@types.Vector],
+  v : FixedArray[@types.Vector],
 ) -> Unit {
   self.zone1_points = v
 }
@@ -1796,51 +1796,59 @@ pub fn InterpContext::cvt(self : InterpContext) -> Array[Int64] {
 }
 
 ///|
-pub fn InterpContext::zone0_org(self : InterpContext) -> Array[@types.Vector] {
+pub fn InterpContext::zone0_org(
+  self : InterpContext,
+) -> FixedArray[@types.Vector] {
   self.zone0_org
 }
 
 ///|
-pub fn InterpContext::zone0_cur(self : InterpContext) -> Array[@types.Vector] {
+pub fn InterpContext::zone0_cur(
+  self : InterpContext,
+) -> FixedArray[@types.Vector] {
   self.zone0_cur
 }
 
 ///|
-pub fn InterpContext::zone0_tags(self : InterpContext) -> Array[Byte] {
+pub fn InterpContext::zone0_tags(self : InterpContext) -> FixedArray[Byte] {
   self.zone0_tags
 }
 
 ///|
 pub fn InterpContext::zone0_points(
   self : InterpContext,
-) -> Array[@types.Vector] {
+) -> FixedArray[@types.Vector] {
   self.zone0_points
 }
 
 ///|
-pub fn InterpContext::zone1_org(self : InterpContext) -> Array[@types.Vector] {
+pub fn InterpContext::zone1_org(
+  self : InterpContext,
+) -> FixedArray[@types.Vector] {
   self.zone1_org
 }
 
 ///|
-pub fn InterpContext::zone1_cur(self : InterpContext) -> Array[@types.Vector] {
+pub fn InterpContext::zone1_cur(
+  self : InterpContext,
+) -> FixedArray[@types.Vector] {
   self.zone1_cur
 }
 
 ///|
 pub fn InterpContext::zone1_points(
   self : InterpContext,
-) -> Array[@types.Vector] {
+) -> FixedArray[@types.Vector] {
   self.zone1_points
 }
 
 ///|
-pub fn InterpContext::zone1_tags(self : InterpContext) -> Array[Byte] {
+pub fn InterpContext::zone1_tags(self : InterpContext) -> FixedArray[Byte] {
   self.zone1_tags
 }
 
 ///|
-pub fn InterpContext::zone1_touch(self : InterpContext) -> Array[Byte] {
+pub fn InterpContext::zone1_touch(self : InterpContext) -> FixedArray[Byte] {
   self.zone1_touch
 }
 
