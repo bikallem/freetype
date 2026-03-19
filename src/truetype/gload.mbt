@@ -1,13 +1,54 @@
 ///|
+/// Reusable glyph loading buffers to avoid per-glyph allocation.
+/// Captured by the glyph loading closure and reused across loads.
+pub struct GlyphBufs {
+  mut flags : FixedArray[Byte]
+  mut x_coords : FixedArray[Int64]
+} derive(Show)
+
+///|
+pub fn GlyphBufs::new() -> GlyphBufs {
+  { flags: FixedArray::default(), x_coords: FixedArray::default() }
+}
+
+///|
+/// Ensure buffer is at least `n` elements, reallocating only if needed.
+fn GlyphBufs::ensure_flags(self : GlyphBufs, n : Int) -> FixedArray[Byte] {
+  if self.flags.length() < n {
+    self.flags = @blit.make_uninit(n)
+  }
+  self.flags
+}
+
+///|
+fn GlyphBufs::ensure_x_coords(self : GlyphBufs, n : Int) -> FixedArray[Int64] {
+  if self.x_coords.length() < n {
+    self.x_coords = FixedArray::make(n, 0L)
+  }
+  self.x_coords
+}
+
+///|
+/// Read a big-endian signed 16-bit integer from raw bytes.
+fn read_i16(data : Bytes, pos : Int) -> Int {
+  let v = (data[pos].to_int() << 8) | data[pos + 1].to_int()
+  if v >= 0x8000 {
+    v - 0x10000
+  } else {
+    v
+  }
+}
+
+///|
 /// Load a simple glyph from the 'glyf' table.
-/// Returns the parsed outline (points, tags, contours) and the glyph instructions.
-///
-/// Optimized: reads all data directly from raw bytes — no ByteReader allocation.
-/// Uses @blit.make_uninit for tags array to avoid zeroing memory.
+/// Uses reusable buffers for flags and x_coords to avoid per-glyph allocation.
+/// Points, tags, and contours FixedArrays are still allocated per glyph
+/// since the Outline takes ownership of them.
 pub fn load_simple_glyph(
   data : Bytes,
   start_pos : Int,
   num_contours : Int,
+  bufs : GlyphBufs,
 ) -> (@types.Outline, Bytes, @types.BBox) {
   if num_contours <= 0 {
     return (@types.Outline::new(), b"", @types.BBox::empty())
@@ -40,8 +81,8 @@ pub fn load_simple_glyph(
     b""
   }
   pos += instruction_length
-  // Read flags (compressed with repeat)
-  let flags = @blit.make_uninit(n_points)
+  // Read flags (compressed with repeat) — reuse buffer
+  let flags = bufs.ensure_flags(n_points)
   let mut fi = 0
   while fi < n_points {
     let flag = data[pos]
@@ -59,8 +100,8 @@ pub fn load_simple_glyph(
       }
     }
   }
-  // Read x coordinates (delta-encoded) directly from bytes
-  let x_coords = FixedArray::make(n_points, 0L)
+  // Read x coordinates (delta-encoded) — reuse buffer
+  let x_coords = bufs.ensure_x_coords(n_points)
   let mut x = 0L
   for i in 0..<n_points {
     let flag = flags[i]
@@ -186,27 +227,12 @@ pub fn load_composite_glyph(
 ///|
 /// Load a glyph from a TrueType font, returning the outline.
 /// Handles both simple and composite glyphs (recursively).
-///
-/// Optimized: reads num_contours directly from raw bytes and avoids
-/// ByteReader allocation for simple glyphs (the hot path).
-
-///|
-/// Read a big-endian signed 16-bit integer from raw bytes.
-fn read_i16(data : Bytes, pos : Int) -> Int {
-  let v = (data[pos].to_int() << 8) | data[pos + 1].to_int()
-  if v >= 0x8000 {
-    v - 0x10000
-  } else {
-    v
-  }
-}
-
-///|
 pub fn load_tt_glyph(
   data : Bytes,
   glyph_offsets : Array[UInt],
   glyf_offset : UInt,
   glyph_index : UInt,
+  bufs : GlyphBufs,
   depth? : Int = 0,
 ) -> (@types.Outline, Bytes, @types.BBox) raise @error.FTError {
   if depth > 32 {
@@ -224,10 +250,9 @@ pub fn load_tt_glyph(
   let start = glyph_start.reinterpret_as_int()
   let num_contours = read_i16(data, start)
   if num_contours >= 0 {
-    load_simple_glyph(data, start + 2, num_contours)
+    load_simple_glyph(data, start + 2, num_contours, bufs)
   } else {
-    // Composite glyph — use ByteReader (rare path, not performance-critical)
-    // Read bbox from composite glyph header
+    // Composite glyph — read bbox from header
     let comp_bbox = @types.BBox::new(
       read_i16(data, start + 2).to_int64(),
       read_i16(data, start + 4).to_int64(),
@@ -244,6 +269,7 @@ pub fn load_tt_glyph(
         glyph_offsets,
         glyf_offset,
         comp.glyph_index,
+        bufs,
         depth=depth + 1,
       )
       let has_transform = (comp.flags & WE_HAVE_A_SCALE) != 0U ||

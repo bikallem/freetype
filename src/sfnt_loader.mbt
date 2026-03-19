@@ -105,6 +105,8 @@ fn load_sfnt(
       }
     }
   }
+  // Reusable glyph loading buffers (captured by load_glyph_fn closure)
+  let glyph_bufs = @truetype.GlyphBufs::new()
   // Per-face hint state
   let hint_h_hints : Ref[Array[@psaux.StemHint]] = Ref::new([])
   let hint_v_hints : Ref[Array[@psaux.StemHint]] = Ref::new([])
@@ -155,6 +157,7 @@ fn load_sfnt(
         tt.glyph_offsets(),
         tt.glyf_offset(),
         glyph_index,
+        glyph_bufs,
       )
     } else if cff_font is Some(cff) {
       let (o, _w, hh, hv) = @cff.load_cff_glyph(cff, glyph_index)
