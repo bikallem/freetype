@@ -1,6 +1,20 @@
 # bikallem/freetype
 
-Pure MoonBit port of the [FreeType](https://freetype.org/) font library. A full rewrite — not FFI bindings — targeting idiomatic MoonBit with GC-managed memory, no I/O, and a stateless API.
+Pure MoonBit port of the [FreeType](https://freetype.org/) font library. 
+
+- Font loading from `Bytes` (in-memory, no file I/O)
+- Character-to-glyph mapping (cmap formats 0, 4, 6, 12)
+- Glyph outline loading (TrueType simple/composite, CFF charstrings)
+- Pixel size scaling with proper 16.16 fixed-point math
+- Kerning pair lookup
+- TrueType bytecode hinting (~160 opcodes: point movement, zones, projection vectors, rounding, deltas)
+- PostScript hinting (stem fitting, blue zone alignment, point interpolation)
+- Auto-hinter (script-aware segment/edge/stem detection, pixel grid fitting)
+- PostScript Type 2 charstring interpreter (path operators, hints, subroutines, flex)
+- PostScript Type 1 charstring interpreter (hsbw, closepath, callothersubr/Flex, seac)
+- Font variations API (`set_var_design_coordinates`, fvar/avar parsing, axis normalization)
+- WOFF1 decompression (zlib via `bikallem/compress`)
+- Format auto-detection from file header bytes
 
 ## Features
 
@@ -19,22 +33,6 @@ Pure MoonBit port of the [FreeType](https://freetype.org/) font library. A full 
 
 Obsolete formats **not supported**: CID-keyed (standalone), Type 42, PFR (Bitstream), Windows FNT/FON.
 CID-keyed fonts inside CFF/OpenType are supported through the CFF driver.
-
-**Core capabilities:**
-
-- Font loading from `Bytes` (in-memory, no file I/O)
-- Character-to-glyph mapping (cmap formats 0, 4, 6, 12)
-- Glyph outline loading (TrueType simple/composite, CFF charstrings)
-- Pixel size scaling with proper 16.16 fixed-point math
-- Kerning pair lookup
-- TrueType bytecode hinting (~160 opcodes: point movement, zones, projection vectors, rounding, deltas)
-- PostScript hinting (stem fitting, blue zone alignment, point interpolation)
-- Auto-hinter (script-aware segment/edge/stem detection, pixel grid fitting)
-- PostScript Type 2 charstring interpreter (path operators, hints, subroutines, flex)
-- PostScript Type 1 charstring interpreter (hsbw, closepath, callothersubr/Flex, seac)
-- Font variations API (`set_var_design_coordinates`, fvar/avar parsing, axis normalization)
-- WOFF1 decompression (zlib via `bikallem/compress`)
-- Format auto-detection from file header bytes
 
 ## What Is Not Ported
 
