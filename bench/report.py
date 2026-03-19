@@ -129,13 +129,14 @@ def parse_moon_bench_output(output):
 
 def run_moon_bench():
     """Run moon bench and parse the output."""
-    sys.stderr.write("Running MoonBit benchmark (moon bench --target native)...\n")
+    sys.stderr.write("Running MoonBit benchmark (moon bench --release --target native)...\n")
     result = subprocess.run(
         [
             "moon",
             "bench",
             "-p",
             "bikallem/freetype/benchmarks",
+            "--release",
             "--target",
             "native",
         ],
