@@ -47,23 +47,6 @@ fn load_sfnt(
       }
     }
   }
-  let ensure_cmap = fn() -> @sfnt.CmapLookup? {
-    match cmap_ref.val {
-      Some(result) => result
-      None => {
-        let result : @sfnt.CmapLookup? = match sfnt_data.cmap() {
-          Some(ct) =>
-            match sfnt_data.table_dir().find_table(@types.TAG_CMAP) {
-              Some(rec) => find_best_cmap(data, ct, rec.offset())
-              None => None
-            }
-          None => None
-        }
-        cmap_ref.val = Some(result)
-        result
-      }
-    }
-  }
   let ensure_tt = fn() -> @truetype.TtFaceData? raise @error.FTError {
     match tt_ref.val {
       Some(result) => result
@@ -127,11 +110,35 @@ fn load_sfnt(
   let hint_v_hints : Ref[Array[@psaux.StemHint]] = Ref::new([])
   let hint_has_hints : Ref[Bool] = Ref::new(false)
   // Closure-based driver ops
-  let char_index_fn : (UInt) -> UInt = fn(charcode) {
-    match ensure_cmap() {
-      Some(cl) => cl.char_index(charcode)
-      None => 0U
+  // Lazy cmap: resolved on first call, then direct dispatch (no Ref check)
+  let char_index_ref : Ref[(UInt) -> UInt] = Ref::new(fn(_charcode) { 0U })
+  char_index_ref.val = fn(charcode) {
+    // First call: resolve cmap and replace ourselves
+    let lookup : @sfnt.CmapLookup? = match cmap_ref.val {
+      Some(result) => result
+      None => {
+        let result : @sfnt.CmapLookup? = match sfnt_data.cmap() {
+          Some(ct) =>
+            match sfnt_data.table_dir().find_table(@types.TAG_CMAP) {
+              Some(rec) => find_best_cmap(data, ct, rec.offset())
+              None => None
+            }
+          None => None
+        }
+        cmap_ref.val = Some(result)
+        result
+      }
     }
+    // Replace with direct lookup for all subsequent calls
+    let resolved_fn : (UInt) -> UInt = match lookup {
+      Some(cl) => fn(c) { cl.char_index(c) }
+      None => fn(_c) { 0U }
+    }
+    char_index_ref.val = resolved_fn
+    resolved_fn(charcode)
+  }
+  let char_index_fn : (UInt) -> UInt = fn(charcode) {
+    (char_index_ref.val)(charcode)
   }
   let load_glyph_fn : (UInt, Int) -> (
     @base.GlyphSlotData,
