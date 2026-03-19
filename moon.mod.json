@@ -5,7 +5,8 @@
     "bikallem/compress": "0.1.1",
     "moonbitlang/x": "0.4.41"
   },
-  "repository": "",
+  "readme": "README.md",
+  "repository": "https://github.com/bikallem/freetype",
   "license": "Apache-2.0",
   "keywords": [
     "font",
