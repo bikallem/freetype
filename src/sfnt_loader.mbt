@@ -279,9 +279,30 @@ fn load_sfnt(
       false
     }
   }
-  let kern_fn : (UInt, UInt) -> Int = match sfnt_data.kern() {
-    Some(k) => fn(left, right) { k.get_kerning(left, right) }
-    None => fn(_left, _right) { 0 }
+  // Lazy kern: defer expensive kern table parsing to first get_kerning() call
+  let kern_ref : Ref[@sfnt.KernTable?] = Ref::new(None)
+  let kern_parsed : Ref[Bool] = Ref::new(false)
+  let kern_fn : (UInt, UInt) -> Int = fn(left, right) {
+    if not(kern_parsed.val) {
+      kern_parsed.val = true
+      let kern_result = match
+        sfnt_data.table_dir().find_table(@types.TAG_KERN) {
+        Some(r) => {
+          let reader = @stream.ByteReader::new(data)
+          let result = try? @sfnt.parse_kern(reader, r.offset(), r.length())
+          match result {
+            Ok(k) => Some(k)
+            Err(_) => None
+          }
+        }
+        None => None
+      }
+      kern_ref.val = kern_result
+    }
+    match kern_ref.val {
+      Some(k) => k.get_kerning(left, right)
+      None => 0
+    }
   }
   // Parse fvar if present (variable font support)
   if sfnt_data.table_dir().find_table(@types.TAG_FVAR) is Some(fvar_rec) {

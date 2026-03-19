@@ -1,5 +1,6 @@
 ///|
 /// SFNT face data — all parsed tables for an SFNT-based font.
+/// Kern table is deferred to first use via lazy Ref in load_sfnt.
 struct SfntData {
   table_dir : TableDirectory
   head : HeadTable
@@ -7,9 +8,7 @@ struct SfntData {
   maxp : MaxpTable
   name : NameTable?
   os2 : Os2Table?
-  post : PostTable?
   cmap : CmapTable?
-  kern : KernTable?
   // Raw table data access for driver-specific tables
   raw_data : Bytes
 } derive(Show)
@@ -45,18 +44,8 @@ pub fn SfntData::os2(self : SfntData) -> Os2Table? {
 }
 
 ///|
-pub fn SfntData::post(self : SfntData) -> PostTable? {
-  self.post
-}
-
-///|
 pub fn SfntData::cmap(self : SfntData) -> CmapTable? {
   self.cmap
-}
-
-///|
-pub fn SfntData::kern(self : SfntData) -> KernTable? {
-  self.kern
 }
 
 ///|
@@ -122,25 +111,34 @@ pub fn load_sfnt_face(
     Some(r) => Some(parse_os2(reader, r.offset, r.length))
     None => None
   }
-  let post = match table_dir.find_table(@types.TAG_POST_LC) {
-    Some(r) =>
-      Some(
-        parse_post(
-          reader,
-          r.offset,
-          r.length,
-          maxp.num_glyphs,
-          parse_names=false,
-        ),
-      )
-    None => None
+  // Read post header fields directly from raw bytes (format, underline pos/thickness)
+  // to avoid full parse_post overhead. Glyph names are deferred.
+  let (post_format, post_underline_position, post_underline_thickness) = match
+    table_dir.find_table(@types.TAG_POST_LC) {
+    Some(r) => {
+      let off = r.offset.reinterpret_as_int()
+      if r.length.reinterpret_as_int() >= 12 {
+        let fmt = (data[off].to_uint() << 24) |
+          (data[off + 1].to_uint() << 16) |
+          (data[off + 2].to_uint() << 8) |
+          data[off + 3].to_uint()
+        let upos = (data[off + 8].to_int() << 8) | data[off + 9].to_int()
+        let upos_signed = if upos >= 0x8000 { upos - 0x10000 } else { upos }
+        let uthick = (data[off + 10].to_int() << 8) | data[off + 11].to_int()
+        let uthick_signed = if uthick >= 0x8000 {
+          uthick - 0x10000
+        } else {
+          uthick
+        }
+        (fmt, upos_signed, uthick_signed)
+      } else {
+        (0U, 0, 0)
+      }
+    }
+    None => (0U, 0, 0)
   }
   let cmap_table = match table_dir.find_table(@types.TAG_CMAP) {
     Some(r) => Some(parse_cmap_header(reader, r.offset))
-    None => None
-  }
-  let kern = match table_dir.find_table(@types.TAG_KERN) {
-    Some(r) => Some(parse_kern(reader, r.offset, r.length))
     None => None
   }
   // Determine number of faces (for TTC)
@@ -183,10 +181,10 @@ pub fn load_sfnt_face(
     table_dir.find_table(@types.TAG_CFF2) is Some(_) {
     face.set_face_flags(face.face_flags() | @base.FACE_FLAG_SCALABLE)
   }
-  if kern is Some(_) {
+  if table_dir.find_table(@types.TAG_KERN) is Some(_) {
     face.set_face_flags(face.face_flags() | @base.FACE_FLAG_KERNING)
   }
-  if post is Some(p) && p.format == 0x00020000U {
+  if post_format == 0x00020000U {
     face.set_face_flags(face.face_flags() | @base.FACE_FLAG_GLYPH_NAMES)
   }
   // Style flags from head.mac_style
@@ -197,10 +195,8 @@ pub fn load_sfnt_face(
     face.set_style_flags(face.style_flags() | @base.STYLE_FLAG_ITALIC)
   }
   // Underline
-  if post is Some(p) {
-    face.set_underline_position(p.underline_position)
-    face.set_underline_thickness(p.underline_thickness)
-  }
+  face.set_underline_position(post_underline_position)
+  face.set_underline_thickness(post_underline_thickness)
   // Names
   if name_table is Some(nt) {
     match nt.get_name(NAME_ID_FONT_FAMILY) {
@@ -231,9 +227,7 @@ pub fn load_sfnt_face(
     maxp,
     name: name_table,
     os2,
-    post,
     cmap: cmap_table,
-    kern,
     raw_data: data,
   }
   (sfnt_data, face)

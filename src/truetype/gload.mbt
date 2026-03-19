@@ -17,12 +17,12 @@ pub fn load_simple_glyph(
   let _x_max = reader.read_i16_be()
   let _y_max = reader.read_i16_be()
   // Read end points of contours
-  let contours : Array[UInt] = Array::new(capacity=num_contours)
-  for _ in 0..<num_contours {
-    contours.push(reader.read_u16_be())
+  let contours : Array[UInt] = Array::make(num_contours, 0U)
+  for i in 0..<num_contours {
+    contours.unsafe_set(i, reader.read_u16_be())
   }
   let n_points = if num_contours > 0 {
-    contours[num_contours - 1].reinterpret_as_int() + 1
+    contours.unsafe_get(num_contours - 1).reinterpret_as_int() + 1
   } else {
     0
   }
@@ -78,8 +78,10 @@ pub fn load_simple_glyph(
     x_coords[i] = x
   }
   // Read y coordinates and build points + tags in one pass
-  let points : Array[@types.Vector] = Array::new(capacity=n_points)
-  let tags : Array[Byte] = Array::new(capacity=n_points)
+  // Pre-allocate exact size and use unsafe_set to avoid push() overhead
+  let zero_vec = @types.Vector::new(0L, 0L)
+  let points : Array[@types.Vector] = Array::make(n_points, zero_vec)
+  let tags : Array[Byte] = Array::make(n_points, b'\x00')
   let mut y = 0L
   for i in 0..<n_points {
     let flag = flags[i]
@@ -97,8 +99,9 @@ pub fn load_simple_glyph(
       let signed_v = if v >= 0x8000 { v - 0x10000 } else { v }
       y += signed_v.to_int64()
     }
-    points.push(@types.Vector::new(x_coords[i], y))
-    tags.push(
+    points.unsafe_set(i, @types.Vector::new(x_coords[i], y))
+    tags.unsafe_set(
+      i,
       if (flag & 0x01) != b'\x00' {
         @types.CURVE_TAG_ON
       } else {

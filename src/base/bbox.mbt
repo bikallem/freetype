@@ -7,12 +7,13 @@ pub fn outline_get_bbox(outline : @types.Outline) -> @types.BBox {
   if n_points == 0 {
     return @types.BBox::empty()
   }
-  let mut x_min = outline.points()[0].x()
-  let mut y_min = outline.points()[0].y()
+  let pts = outline.points()
+  let mut x_min = pts.unsafe_get(0).x()
+  let mut y_min = pts.unsafe_get(0).y()
   let mut x_max = x_min
   let mut y_max = y_min
   for i in 1..<n_points {
-    let p = outline.points()[i]
+    let p = pts.unsafe_get(i)
     let px = p.x()
     let py = p.y()
     if px < x_min {
