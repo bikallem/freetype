@@ -8,12 +8,17 @@ pub fn load_simple_glyph(
   data : Bytes,
   start_pos : Int,
   num_contours : Int,
-) -> (@types.Outline, Bytes) {
+) -> (@types.Outline, Bytes, @types.BBox) {
   if num_contours <= 0 {
-    return (@types.Outline::new(), b"")
+    return (@types.Outline::new(), b"", @types.BBox::empty())
   }
   let mut pos = start_pos
-  // Skip bbox (4 × i16) — we compute it from points
+  // Read bbox from glyf header (4 × i16)
+  let x_min = read_i16(data, pos).to_int64()
+  let y_min = read_i16(data, pos + 2).to_int64()
+  let x_max = read_i16(data, pos + 4).to_int64()
+  let y_max = read_i16(data, pos + 6).to_int64()
+  let bbox = @types.BBox::new(x_min, y_min, x_max, y_max)
   pos += 8
   // Read end points of contours
   let contours : FixedArray[UInt] = FixedArray::make(num_contours, 0U)
@@ -106,7 +111,7 @@ pub fn load_simple_glyph(
       },
     )
   }
-  (@types.Outline::create(points, tags, contours), instructions)
+  (@types.Outline::create(points, tags, contours), instructions, bbox)
 }
 
 ///|
@@ -184,46 +189,57 @@ pub fn load_composite_glyph(
 ///
 /// Optimized: reads num_contours directly from raw bytes and avoids
 /// ByteReader allocation for simple glyphs (the hot path).
+
+///|
+/// Read a big-endian signed 16-bit integer from raw bytes.
+fn read_i16(data : Bytes, pos : Int) -> Int {
+  let v = (data[pos].to_int() << 8) | data[pos + 1].to_int()
+  if v >= 0x8000 {
+    v - 0x10000
+  } else {
+    v
+  }
+}
+
+///|
 pub fn load_tt_glyph(
   data : Bytes,
   glyph_offsets : Array[UInt],
   glyf_offset : UInt,
   glyph_index : UInt,
   depth? : Int = 0,
-) -> (@types.Outline, Bytes) raise @error.FTError {
+) -> (@types.Outline, Bytes, @types.BBox) raise @error.FTError {
   if depth > 32 {
     raise @error.FTError::InvalidComposite
   }
   let idx = glyph_index.reinterpret_as_int()
   if idx >= glyph_offsets.length() - 1 {
-    return (@types.Outline::new(), b"")
+    return (@types.Outline::new(), b"", @types.BBox::empty())
   }
-  let glyph_start = glyf_offset + glyph_offsets[idx]
-  let glyph_end = glyf_offset + glyph_offsets[idx + 1]
+  let glyph_start = glyf_offset + glyph_offsets.unsafe_get(idx)
+  let glyph_end = glyf_offset + glyph_offsets.unsafe_get(idx + 1)
   if glyph_start == glyph_end {
-    return (@types.Outline::new(), b"")
+    return (@types.Outline::new(), b"", @types.BBox::empty())
   }
-  // Read num_contours directly from raw bytes — avoid ByteReader for simple glyphs
   let start = glyph_start.reinterpret_as_int()
-  let hi = data[start].to_int()
-  let lo = data[start + 1].to_int()
-  let num_contours_raw = (hi << 8) | lo
-  let num_contours = if num_contours_raw >= 0x8000 {
-    num_contours_raw - 0x10000
-  } else {
-    num_contours_raw
-  }
+  let num_contours = read_i16(data, start)
   if num_contours >= 0 {
-    // Simple glyph — pass raw data + position, no ByteReader needed
     load_simple_glyph(data, start + 2, num_contours)
   } else {
     // Composite glyph — use ByteReader (rare path, not performance-critical)
+    // Read bbox from composite glyph header
+    let comp_bbox = @types.BBox::new(
+      read_i16(data, start + 2).to_int64(),
+      read_i16(data, start + 4).to_int64(),
+      read_i16(data, start + 6).to_int64(),
+      read_i16(data, start + 8).to_int64(),
+    )
     let reader = @stream.ByteReader::new(data)
     reader.seek(start + 2)
     let components = load_composite_glyph(reader)
     let loader = @base.GlyphLoader::new()
     for _, comp in components {
-      let (sub_outline, _sub_instr) = load_tt_glyph(
+      let (sub_outline, _sub_instr, _sub_bbox) = load_tt_glyph(
         data,
         glyph_offsets,
         glyf_offset,
@@ -254,6 +270,6 @@ pub fn load_tt_glyph(
       }
       loader.add()
     }
-    (loader.to_outline(), b"")
+    (loader.to_outline(), b"", comp_bbox)
   }
 }

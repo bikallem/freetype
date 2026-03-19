@@ -257,7 +257,7 @@ test "load_simple_glyph: triangle" {
   buf.push(b'\x00') // point 1: y += 0
   buf.push(b'\x64') // point 2: y += 100
   let data = Bytes::from_array(buf[:])
-  let (outline, _instr) = load_simple_glyph(data, 0, 1)
+  let (outline, _instr, _bbox) = load_simple_glyph(data, 0, 1)
   inspect(outline.n_points(), content="3")
   inspect(outline.n_contours(), content="1")
   inspect(outline.points()[0].x(), content="0")

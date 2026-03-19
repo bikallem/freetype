@@ -141,7 +141,7 @@ fn load_sfnt(
     let no_hinting = (load_flags & @base.LOAD_NO_HINTING) != 0
     let tt_data = ensure_tt()
     let cff_font = ensure_cff()
-    let (outline, tt_instructions) = if tt_data is Some(tt) {
+    let (outline, tt_instructions, tt_bbox) = if tt_data is Some(tt) {
       hint_has_hints.val = false
       @truetype.load_tt_glyph(
         data,
@@ -158,14 +158,19 @@ fn load_sfnt(
         hint_v_hints.val = hv
         hint_has_hints.val = hh.length() > 0 || hv.length() > 0
       }
-      (o, b"")
+      (o, b"", @types.BBox::empty())
     } else {
       hint_has_hints.val = false
-      (@types.Outline::new(), b"")
+      (@types.Outline::new(), b"", @types.BBox::empty())
     }
     let hmtx = ensure_hmtx()
     let (advance_width, _lsb) = hmtx.get_metrics(glyph_index)
-    let bb = @base.outline_get_bbox(outline)
+    // Use glyf header bbox for TT glyphs (avoids scanning all points)
+    let bb = if tt_bbox.x_max() != 0L || tt_bbox.y_max() != 0L {
+      tt_bbox
+    } else {
+      @base.outline_get_bbox(outline)
+    }
     let slot_data = @base.GlyphSlotData::new(
       bb.x_max() - bb.x_min(),
       bb.y_max() - bb.y_min(),
