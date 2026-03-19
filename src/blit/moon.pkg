@@ -1,0 +1,7 @@
+options(
+  "native-stub": [ "blit_stub.c" ],
+  targets: {
+    "blit_native.mbt": [ "native" ],
+    "blit_non_native.mbt": [ "wasm", "wasm-gc", "js" ],
+  },
+)
