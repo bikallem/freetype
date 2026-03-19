@@ -74,6 +74,21 @@ pub fn BdfFont::get_glyph(self : BdfFont, encoding : Int) -> BdfGlyph? {
 // ---------------------------------------------------------------------------
 
 ///|
+/// Convert a hex ASCII byte to its value (0-15), or -1 if invalid.
+fn hex_val(b : Byte) -> Int {
+  let c = b.to_int()
+  if c >= 0x30 && c <= 0x39 {
+    c - 0x30
+  } else if c >= 0x41 && c <= 0x46 {
+    c - 0x41 + 10
+  } else if c >= 0x61 && c <= 0x66 {
+    c - 0x61 + 10
+  } else {
+    -1
+  }
+}
+
+///|
 /// Check if the bytes at data[start..end) start with the given ASCII prefix.
 fn bytes_starts_with(
   data : Bytes,
@@ -188,25 +203,6 @@ fn bytes_parse_int_fields(
     out.push(bytes_parse_int(data, pos, tok_end))
     count = count + 1
     pos = bytes_skip_spaces(data, tok_end, end)
-  }
-}
-
-///|
-/// Parse hex bitmap bytes directly from data[start..end) into out array.
-fn parse_hex_line_bytes(
-  data : Bytes,
-  start : Int,
-  end : Int,
-  out : Array[Byte],
-) -> Unit {
-  let mut i = start
-  while i + 1 < end {
-    let hi = @stream.hex_digit_value(data[i].to_int())
-    let lo = @stream.hex_digit_value(data[i + 1].to_int())
-    if hi >= 0 && lo >= 0 {
-      out.push(((hi << 4) | lo).to_byte())
-    }
-    i = i + 2
   }
 }
 
@@ -347,12 +343,18 @@ pub fn parse_bdf_header(data : Bytes) -> BdfFont raise @error.FTError {
           pos = pos + 1
         }
       }
-      // Pre-allocate bitmap based on BBX dimensions: each row = ceil(bbx_width/8) bytes
+      // Pre-allocate bitmap based on BBX dimensions and decode hex directly
       let row_bytes = (glyph.bbx_width + 7) / 8
-      let bitmap_capacity = row_bytes * glyph.bbx_height
-      let bitmap_bytes : Array[Byte] = Array::new(
-        capacity=if bitmap_capacity > 0 { bitmap_capacity } else { 16 },
+      let bitmap_size = row_bytes * glyph.bbx_height
+      let bitmap = FixedArray::make(
+        if bitmap_size > 0 {
+          bitmap_size
+        } else {
+          1
+        },
+        b'\x00',
       )
+      let mut bmp_pos = 0
       // Read hex bitmap lines until ENDCHAR
       while pos < len {
         let hs = pos
@@ -361,7 +363,6 @@ pub fn parse_bdf_header(data : Bytes) -> BdfFont raise @error.FTError {
           he = he + 1
         }
         if bytes_equals(data, hs, he, "ENDCHAR") {
-          // Advance past ENDCHAR line
           pos = he
           if pos < len && data[pos] == b'\r' {
             pos = pos + 1
@@ -371,7 +372,17 @@ pub fn parse_bdf_header(data : Bytes) -> BdfFont raise @error.FTError {
           }
           break
         }
-        parse_hex_line_bytes(data, hs, he, bitmap_bytes)
+        // Decode hex line directly into bitmap FixedArray
+        let mut hi_pos = hs
+        while hi_pos + 1 < he && bmp_pos < bitmap_size {
+          let hi_val = hex_val(data[hi_pos])
+          let lo_val = hex_val(data[hi_pos + 1])
+          if hi_val >= 0 && lo_val >= 0 {
+            bitmap[bmp_pos] = ((hi_val << 4) | lo_val).to_byte()
+            bmp_pos += 1
+          }
+          hi_pos += 2
+        }
         pos = he
         if pos < len && data[pos] == b'\r' {
           pos = pos + 1
@@ -380,7 +391,7 @@ pub fn parse_bdf_header(data : Bytes) -> BdfFont raise @error.FTError {
           pos = pos + 1
         }
       }
-      glyph.bitmap = Bytes::from_array(bitmap_bytes[:])
+      glyph.bitmap = Bytes::from_array(bitmap[:])
       glyphs.push(glyph)
       continue // Don't advance pos again — already past ENDCHAR
     } else if bytes_equals(data, line_start, line_end, "ENDFONT") {
