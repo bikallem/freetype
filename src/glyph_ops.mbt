@@ -122,18 +122,10 @@ pub fn load_glyph(
       if not(did_hint) {
         // Plain scaling: scale outline points
         for i, _pt in face.glyph().outline().points() {
-          face.glyph().outline().points()[i].set_x(
-            @fixed.mul_fix(
-              x_scale,
-              @fixed.Fixed::from_raw(face.glyph().outline().points()[i].x()),
-            ).val(),
-          )
-          face.glyph().outline().points()[i].set_y(
-            @fixed.mul_fix(
-              y_scale,
-              @fixed.Fixed::from_raw(face.glyph().outline().points()[i].y()),
-            ).val(),
-          )
+          let p = face.glyph().outline().points()[i]
+          let sx = @fixed.mul_fix(x_scale, @fixed.Fixed::from_raw(p.x())).val()
+          let sy = @fixed.mul_fix(y_scale, @fixed.Fixed::from_raw(p.y())).val()
+          face.glyph().outline().points()[i] = @types.Vector::new(sx, sy)
         }
         // Check if auto-hinting should be applied
         let force_autohint = (load_flags & @base.LOAD_FORCE_AUTOHINT) != 0

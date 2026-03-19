@@ -236,16 +236,18 @@ pub fn interpolate_points(
   scale : @fixed.Fixed,
 ) -> Unit {
   for i, _pt in outline.points() {
-    // Interpolate X using vertical stems (vertical stems control X positions)
-    if v_stems.length() > 0 {
-      let org_x = outline.points()[i].x()
-      outline.points()[i].set_x(interpolate_coord(org_x, v_stems, scale))
+    let p = outline.points()[i]
+    let new_x = if v_stems.length() > 0 {
+      interpolate_coord(p.x(), v_stems, scale)
+    } else {
+      p.x()
     }
-    // Interpolate Y using horizontal stems (horizontal stems control Y positions)
-    if h_stems.length() > 0 {
-      let org_y = outline.points()[i].y()
-      outline.points()[i].set_y(interpolate_coord(org_y, h_stems, scale))
+    let new_y = if h_stems.length() > 0 {
+      interpolate_coord(p.y(), h_stems, scale)
+    } else {
+      p.y()
     }
+    outline.points()[i] = @types.Vector::new(new_x, new_y)
   }
 }
 

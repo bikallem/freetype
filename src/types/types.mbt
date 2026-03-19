@@ -1,29 +1,14 @@
 ///|
 /// 2D vector with position values (font units, 16.16, or 26.6 depending on context).
+#valtype
 struct Vector {
-  mut x : Int64
-  mut y : Int64
+  x : Int64
+  y : Int64
 } derive(Eq, Show, ToJson)
 
 ///|
 pub fn Vector::new(x : Int64, y : Int64) -> Vector {
   { x, y }
-}
-
-///|
-pub fn Vector::set_x(self : Vector, x : Int64) -> Unit {
-  self.x = x
-}
-
-///|
-pub fn Vector::set_y(self : Vector, y : Int64) -> Unit {
-  self.y = y
-}
-
-///|
-pub fn Vector::set(self : Vector, x : Int64, y : Int64) -> Unit {
-  self.x = x
-  self.y = y
 }
 
 ///|
@@ -38,6 +23,7 @@ pub fn Vector::y(self : Vector) -> Int64 {
 
 ///|
 /// Bounding box.
+#valtype
 struct BBox {
   x_min : Int64
   y_min : Int64

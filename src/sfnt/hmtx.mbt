@@ -1,5 +1,6 @@
 ///|
 /// Horizontal metrics for a single glyph.
+#valtype
 struct LongHorMetric {
   advance_width : UInt
   lsb : Int // left side bearing

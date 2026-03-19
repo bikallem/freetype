@@ -525,10 +525,11 @@ pub fn interpolate_points(
     } else {
       scaled
     }
-    if is_horizontal {
-      outline.points()[i].set_x(new_coord)
+    let p = outline.points()[i]
+    outline.points()[i] = if is_horizontal {
+      @types.Vector::new(new_coord, p.y())
     } else {
-      outline.points()[i].set_y(new_coord)
+      @types.Vector::new(p.x(), new_coord)
     }
   }
 }

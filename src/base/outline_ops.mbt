@@ -7,8 +7,8 @@ pub fn outline_translate(
   dy : Int64,
 ) -> Unit {
   for i in 0..<outline.points().length() {
-    outline.points()[i].set_x(outline.points()[i].x() + dx)
-    outline.points()[i].set_y(outline.points()[i].y() + dy)
+    let p = outline.points()[i]
+    outline.points()[i] = @types.Vector::new(p.x() + dx, p.y() + dy)
   }
 }
 
@@ -22,8 +22,7 @@ pub fn outline_transform(
   for i in 0..<outline.points().length() {
     let p = outline.points()[i]
     let (rx, ry) = matrix.transform(p.x(), p.y())
-    outline.points()[i].set_x(rx)
-    outline.points()[i].set_y(ry)
+    outline.points()[i] = @types.Vector::new(rx, ry)
   }
 }
 

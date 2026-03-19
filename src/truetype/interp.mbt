@@ -261,8 +261,7 @@ fn InterpContext::set_zone_point(
 ) -> Unit {
   let points = if zone == 0 { self.zone0_cur } else { self.zone1_cur }
   if idx >= 0 && idx < points.length() {
-    points[idx].set_x(x)
-    points[idx].set_y(y)
+    points[idx] = @types.Vector::new(x, y)
   }
 }
 
@@ -309,11 +308,10 @@ fn InterpContext::move_point(
 ) -> Unit {
   let points = if zone == 0 { self.zone0_cur } else { self.zone1_cur }
   if idx >= 0 && idx < points.length() {
-    points[idx].set_x(
-      points[idx].x() + ((distance * self.gs.freedom_vector_x) >> 14),
-    )
-    points[idx].set_y(
-      points[idx].y() + ((distance * self.gs.freedom_vector_y) >> 14),
+    let p = points[idx]
+    points[idx] = @types.Vector::new(
+      p.x() + ((distance * self.gs.freedom_vector_x) >> 14),
+      p.y() + ((distance * self.gs.freedom_vector_y) >> 14),
     )
     // Mark point as touched
     let touch = if zone == 0 { self.zone0_tags } else { self.zone1_touch }
@@ -1319,9 +1317,8 @@ fn InterpContext::op_iup(self : InterpContext, flag : Int) -> Unit {
           } else {
             0L
           }
-          self.zone1_cur[i].set_x(
-            interp_value(org_x, org1_x, org2_x, cur1_x, cur2_x),
-          )
+          let new_x = interp_value(org_x, org1_x, org2_x, cur1_x, cur2_x)
+          self.zone1_cur[i] = @types.Vector::new(new_x, self.zone1_cur[i].y())
         }
       }
     } else {
@@ -1346,9 +1343,8 @@ fn InterpContext::op_iup(self : InterpContext, flag : Int) -> Unit {
           } else {
             0L
           }
-          self.zone1_cur[i].set_y(
-            interp_value(org_y, org1_y, org2_y, cur1_y, cur2_y),
-          )
+          let new_y = interp_value(org_y, org1_y, org2_y, cur1_y, cur2_y)
+          self.zone1_cur[i] = @types.Vector::new(self.zone1_cur[i].x(), new_y)
         }
       }
     }

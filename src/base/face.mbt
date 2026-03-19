@@ -209,6 +209,7 @@ pub impl Show for SfntOps with output(self, logger) {
 
 ///|
 /// Data returned from glyph loading (before being stored in GlyphSlot).
+#valtype
 struct GlyphSlotData {
   metrics_width : Int64
   metrics_height : Int64
