@@ -151,13 +151,20 @@ fn load_sfnt(
     let cff_font = ensure_cff()
     let (outline, tt_instructions, tt_bbox) = if tt_data is Some(tt) {
       hint_has_hints.val = false
-      @truetype.load_tt_glyph(
+      let (o, instr_off, instr_len, bbox) = @truetype.load_tt_glyph(
         data,
         tt.glyph_offsets(),
         tt.glyf_offset(),
         glyph_index,
         glyph_bufs,
       )
+      // Only copy instructions when hinting is needed
+      let instr = if !no_hinting && instr_len > 0 {
+        data[instr_off:instr_off + instr_len].to_bytes()
+      } else {
+        b""
+      }
+      (o, instr, bbox)
     } else if cff_font is Some(cff) {
       let (o, _w, hh, hv) = @cff.load_cff_glyph(cff, glyph_index)
       if no_hinting {

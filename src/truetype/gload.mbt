@@ -85,9 +85,10 @@ pub fn load_simple_glyph(
   start_pos : Int,
   num_contours : Int,
   bufs : GlyphBufs,
-) -> (@types.Outline, Bytes, @types.BBox) {
+) -> (@types.Outline, Int, Int, @types.BBox) {
+  // Returns (outline, instr_offset, instr_length, bbox)
   if num_contours <= 0 {
-    return (@types.Outline::new(), b"", @types.BBox::empty())
+    return (@types.Outline::new(), 0, 0, @types.BBox::empty())
   }
   let mut pos = start_pos
   // Read bbox from glyf header (4 × i16)
@@ -106,16 +107,12 @@ pub fn load_simple_glyph(
     pos += 2
   }
   let n_points = contours.unsafe_get(num_contours - 1).reinterpret_as_int() + 1
-  // Read instruction length and instructions
+  // Read instruction length — skip over instructions, copy lazily
   let instr_hi = data[pos].to_int()
   let instr_lo = data[pos + 1].to_int()
   let instruction_length = (instr_hi << 8) | instr_lo
   pos += 2
-  let instructions = if instruction_length > 0 {
-    data[pos:pos + instruction_length].to_bytes()
-  } else {
-    b""
-  }
+  let instr_offset = pos
   pos += instruction_length
   // Read flags (compressed with repeat) — reuse buffer
   let flags = bufs.ensure_flags(n_points)
@@ -191,7 +188,8 @@ pub fn load_simple_glyph(
     @types.Outline::create_with_counts(
       points, tags, contours, n_points, num_contours,
     ),
-    instructions,
+    instr_offset,
+    instruction_length,
     bbox,
   )
 }
@@ -275,18 +273,20 @@ pub fn load_tt_glyph(
   glyph_index : UInt,
   bufs : GlyphBufs,
   depth? : Int = 0,
-) -> (@types.Outline, Bytes, @types.BBox) raise @error.FTError {
+) -> (@types.Outline, Int, Int, @types.BBox) raise @error.FTError {
+  // Returns (outline, instr_offset, instr_length, bbox)
+  // Caller copies instructions only when hinting is needed
   if depth > 32 {
     raise @error.FTError::InvalidComposite
   }
   let idx = glyph_index.reinterpret_as_int()
   if idx >= glyph_offsets.length() - 1 {
-    return (@types.Outline::new(), b"", @types.BBox::empty())
+    return (@types.Outline::new(), 0, 0, @types.BBox::empty())
   }
   let glyph_start = glyf_offset + glyph_offsets.unsafe_get(idx)
   let glyph_end = glyf_offset + glyph_offsets.unsafe_get(idx + 1)
   if glyph_start == glyph_end {
-    return (@types.Outline::new(), b"", @types.BBox::empty())
+    return (@types.Outline::new(), 0, 0, @types.BBox::empty())
   }
   let start = glyph_start.reinterpret_as_int()
   let num_contours = read_i16(data, start)
@@ -305,7 +305,7 @@ pub fn load_tt_glyph(
     let components = load_composite_glyph(reader)
     let loader = @base.GlyphLoader::new()
     for _, comp in components {
-      let (sub_outline, _sub_instr, _sub_bbox) = load_tt_glyph(
+      let (sub_outline, _sub_instr_off, _sub_instr_len, _sub_bbox) = load_tt_glyph(
         data,
         glyph_offsets,
         glyf_offset,
@@ -337,6 +337,6 @@ pub fn load_tt_glyph(
       }
       loader.add()
     }
-    (loader.to_outline(), b"", comp_bbox)
+    (loader.to_outline(), 0, 0, comp_bbox)
   }
 }
