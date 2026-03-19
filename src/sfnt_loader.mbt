@@ -312,11 +312,14 @@ fn load_sfnt(
         ctx.set_zone1_touch(Array::make(total_points, b'\x00'))
         ctx.set_zone1_points(ctx.zone1_cur())
       } else {
-        // Zero out reused arrays
-        for i in 0..<total_points {
+        // Only zero phantom points (n_points..total_points) and touch flags
+        // The real points are overwritten below, tags are set below
+        for i in n_points..<total_points {
           ctx.zone1_org()[i] = zero_vec
           ctx.zone1_cur()[i] = @types.Vector::new(0L, 0L)
-          ctx.zone1_tags()[i] = b'\x00'
+        }
+        // Touch flags must all be zero (tracks which points were hinted)
+        for i in 0..<total_points {
           ctx.zone1_touch()[i] = b'\x00'
         }
         ctx.set_zone1_points(ctx.zone1_cur())
