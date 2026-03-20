@@ -112,6 +112,7 @@ pub fn HeadTable::y_min(Self) -> Int
 pub impl Show for HeadTable
 
 type HheaTable
+pub fn HheaTable::number_of_h_metrics(Self) -> UInt
 pub impl Show for HheaTable
 
 type HmtxTable
@@ -165,12 +166,7 @@ type SfntData
 pub fn SfntData::cmap(Self) -> CmapTable?
 pub fn SfntData::head(Self) -> HeadTable
 pub fn SfntData::hhea(Self) -> HheaTable
-pub fn SfntData::hmtx(Self) -> HmtxTable
-pub fn SfntData::kern(Self) -> KernTable?
 pub fn SfntData::maxp(Self) -> MaxpTable
-pub fn SfntData::name(Self) -> NameTable?
-pub fn SfntData::os2(Self) -> Os2Table?
-pub fn SfntData::post(Self) -> PostTable?
 pub fn SfntData::raw_data(Self) -> Bytes
 pub fn SfntData::table_dir(Self) -> TableDirectory
 pub impl Show for SfntData

@@ -37,9 +37,9 @@ pub fn init_tt_face(@sfnt.SfntData, @base.FaceRec) -> TtFaceData raise @error.FT
 
 pub fn load_composite_glyph(@stream.ByteReader) -> Array[CompositeComponent] raise @error.FTError
 
-pub fn load_simple_glyph(@stream.ByteReader, Int) -> (@types.Outline, Bytes) raise @error.FTError
+pub fn load_simple_glyph(Bytes, Int, Int, GlyphBufs) -> (@types.Outline, Int, Int, @types.BBox)
 
-pub fn load_tt_glyph(Bytes, Array[UInt], UInt, UInt, depth? : Int) -> (@types.Outline, Bytes) raise @error.FTError
+pub fn load_tt_glyph(Bytes, Array[UInt], UInt, UInt, GlyphBufs, depth? : Int) -> (@types.Outline, Int, Int, @types.BBox) raise @error.FTError
 
 pub fn normalize_axis(@fixed.Fixed, VarAxis) -> Int
 
@@ -71,6 +71,16 @@ pub fn FvarTable::axes(Self) -> Array[VarAxis]
 pub fn FvarTable::instances(Self) -> Array[NamedInstance]
 pub impl Show for FvarTable
 
+pub struct GlyphBufs {
+  mut flags : FixedArray[Byte]
+  mut x_coords : FixedArray[Int64]
+  mut points : FixedArray[@types.Vector]
+  mut tags : FixedArray[Byte]
+  mut contours : FixedArray[UInt]
+}
+pub fn GlyphBufs::new() -> Self
+pub impl Show for GlyphBufs
+
 type GraphicsState
 pub fn GraphicsState::default() -> Self
 pub impl Show for GraphicsState
@@ -78,27 +88,31 @@ pub impl Show for GraphicsState
 type InterpContext
 pub fn InterpContext::cvt(Self) -> Array[Int64]
 pub fn InterpContext::execute(Self, Bytes) -> Unit raise @error.FTError
+pub fn InterpContext::func_defs(Self) -> Map[Int, FuncDef]
 pub fn InterpContext::new(cvt? : Array[Int64], storage_size? : Int, max_stack? : Int) -> Self
+pub fn InterpContext::reset_sp(Self) -> Unit
+pub fn InterpContext::set_cvt(Self, Array[Int64]) -> Unit
+pub fn InterpContext::set_func_defs(Self, Map[Int, FuncDef]) -> Unit
 pub fn InterpContext::set_gs(Self, GraphicsState) -> Unit
 pub fn InterpContext::set_ppem(Self, Int) -> Unit
-pub fn InterpContext::set_zone0_cur(Self, Array[@types.Vector]) -> Unit
-pub fn InterpContext::set_zone0_org(Self, Array[@types.Vector]) -> Unit
-pub fn InterpContext::set_zone0_points(Self, Array[@types.Vector]) -> Unit
-pub fn InterpContext::set_zone0_tags(Self, Array[Byte]) -> Unit
-pub fn InterpContext::set_zone1_cur(Self, Array[@types.Vector]) -> Unit
-pub fn InterpContext::set_zone1_org(Self, Array[@types.Vector]) -> Unit
-pub fn InterpContext::set_zone1_points(Self, Array[@types.Vector]) -> Unit
-pub fn InterpContext::set_zone1_tags(Self, Array[Byte]) -> Unit
-pub fn InterpContext::set_zone1_touch(Self, Array[Byte]) -> Unit
-pub fn InterpContext::zone0_cur(Self) -> Array[@types.Vector]
-pub fn InterpContext::zone0_org(Self) -> Array[@types.Vector]
-pub fn InterpContext::zone0_points(Self) -> Array[@types.Vector]
-pub fn InterpContext::zone0_tags(Self) -> Array[Byte]
-pub fn InterpContext::zone1_cur(Self) -> Array[@types.Vector]
-pub fn InterpContext::zone1_org(Self) -> Array[@types.Vector]
-pub fn InterpContext::zone1_points(Self) -> Array[@types.Vector]
-pub fn InterpContext::zone1_tags(Self) -> Array[Byte]
-pub fn InterpContext::zone1_touch(Self) -> Array[Byte]
+pub fn InterpContext::set_zone0_cur(Self, FixedArray[@types.Vector]) -> Unit
+pub fn InterpContext::set_zone0_org(Self, FixedArray[@types.Vector]) -> Unit
+pub fn InterpContext::set_zone0_points(Self, FixedArray[@types.Vector]) -> Unit
+pub fn InterpContext::set_zone0_tags(Self, FixedArray[Byte]) -> Unit
+pub fn InterpContext::set_zone1_cur(Self, FixedArray[@types.Vector]) -> Unit
+pub fn InterpContext::set_zone1_org(Self, FixedArray[@types.Vector]) -> Unit
+pub fn InterpContext::set_zone1_points(Self, FixedArray[@types.Vector]) -> Unit
+pub fn InterpContext::set_zone1_tags(Self, FixedArray[Byte]) -> Unit
+pub fn InterpContext::set_zone1_touch(Self, FixedArray[Byte]) -> Unit
+pub fn InterpContext::zone0_cur(Self) -> FixedArray[@types.Vector]
+pub fn InterpContext::zone0_org(Self) -> FixedArray[@types.Vector]
+pub fn InterpContext::zone0_points(Self) -> FixedArray[@types.Vector]
+pub fn InterpContext::zone0_tags(Self) -> FixedArray[Byte]
+pub fn InterpContext::zone1_cur(Self) -> FixedArray[@types.Vector]
+pub fn InterpContext::zone1_org(Self) -> FixedArray[@types.Vector]
+pub fn InterpContext::zone1_points(Self) -> FixedArray[@types.Vector]
+pub fn InterpContext::zone1_tags(Self) -> FixedArray[Byte]
+pub fn InterpContext::zone1_touch(Self) -> FixedArray[Byte]
 pub impl Show for InterpContext
 
 type NamedInstance

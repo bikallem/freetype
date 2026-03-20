@@ -34,6 +34,7 @@ pub fn ByteReader::in_frame(Self) -> Bool
 pub fn ByteReader::length(Self) -> Int
 pub fn ByteReader::new(Bytes) -> Self
 pub fn ByteReader::position(Self) -> Int
+pub fn ByteReader::raw_data(Self) -> Bytes
 pub fn ByteReader::read_byte(Self) -> Byte raise @error.FTError
 pub fn ByteReader::read_bytes(Self, Int) -> Bytes raise @error.FTError
 pub fn ByteReader::read_i16_be(Self) -> Int raise @error.FTError

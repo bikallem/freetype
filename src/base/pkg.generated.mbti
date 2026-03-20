@@ -147,6 +147,7 @@ pub fn FaceRec::active_charmap(Self) -> Int
 pub fn FaceRec::ascender(Self) -> Int
 pub fn FaceRec::available_sizes(Self) -> Array[BitmapSize]
 pub fn FaceRec::bbox(Self) -> @types.BBox
+pub fn FaceRec::char_index_fn(Self) -> (UInt) -> UInt
 pub fn FaceRec::charmaps(Self) -> Array[CharMapRec]
 pub fn FaceRec::descender(Self) -> Int
 pub fn FaceRec::driver_data(Self) -> DriverData
@@ -175,6 +176,7 @@ pub fn FaceRec::set_active_charmap(Self, Int) -> Unit
 pub fn FaceRec::set_ascender(Self, Int) -> Unit
 pub fn FaceRec::set_available_sizes(Self, Array[BitmapSize]) -> Unit
 pub fn FaceRec::set_bbox(Self, @types.BBox) -> Unit
+pub fn FaceRec::set_char_index_fn(Self, (UInt) -> UInt) -> Unit
 pub fn FaceRec::set_descender(Self, Int) -> Unit
 pub fn FaceRec::set_driver_data(Self, DriverData) -> Unit
 pub fn FaceRec::set_face_flags(Self, Int64) -> Unit

@@ -270,18 +270,19 @@ pub impl Show for GlyphMetrics
 pub impl ToJson for GlyphMetrics
 
 type Outline
-pub fn Outline::contours(Self) -> Array[UInt]
-pub fn Outline::create(Array[Vector], Array[Byte], Array[UInt], flags? : Int) -> Self
+pub fn Outline::contours(Self) -> FixedArray[UInt]
+pub fn Outline::create(FixedArray[Vector], FixedArray[Byte], FixedArray[UInt], flags? : Int) -> Self
+pub fn Outline::create_with_counts(FixedArray[Vector], FixedArray[Byte], FixedArray[UInt], Int, Int) -> Self
 pub fn Outline::flags(Self) -> Int
 pub fn Outline::n_contours(Self) -> Int
 pub fn Outline::n_points(Self) -> Int
 pub fn Outline::new() -> Self
-pub fn Outline::points(Self) -> Array[Vector]
-pub fn Outline::set_contours(Self, Array[UInt]) -> Unit
+pub fn Outline::points(Self) -> FixedArray[Vector]
+pub fn Outline::set_contours(Self, FixedArray[UInt]) -> Unit
 pub fn Outline::set_flags(Self, Int) -> Unit
-pub fn Outline::set_points(Self, Array[Vector]) -> Unit
-pub fn Outline::set_tags(Self, Array[Byte]) -> Unit
-pub fn Outline::tags(Self) -> Array[Byte]
+pub fn Outline::set_points(Self, FixedArray[Vector]) -> Unit
+pub fn Outline::set_tags(Self, FixedArray[Byte]) -> Unit
+pub fn Outline::tags(Self) -> FixedArray[Byte]
 pub impl Eq for Outline
 pub impl Show for Outline
 
@@ -321,9 +322,6 @@ pub impl Show for SizeMetrics
 
 type Vector
 pub fn Vector::new(Int64, Int64) -> Self
-pub fn Vector::set(Self, Int64, Int64) -> Unit
-pub fn Vector::set_x(Self, Int64) -> Unit
-pub fn Vector::set_y(Self, Int64) -> Unit
 pub fn Vector::x(Self) -> Int64
 pub fn Vector::y(Self) -> Int64
 pub impl Eq for Vector

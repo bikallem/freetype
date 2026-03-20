@@ -80,7 +80,9 @@ pub impl Compare for F2Dot14
 pub impl Eq for F2Dot14
 pub impl Show for F2Dot14
 
-type Fixed
+pub struct Fixed {
+  val : Int64
+}
 pub fn Fixed::ceil(Self) -> Self
 pub fn Fixed::floor(Self) -> Self
 pub fn Fixed::from_int(Int) -> Self
