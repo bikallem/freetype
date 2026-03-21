@@ -1,6 +1,21 @@
 # bikallem/freetype
 
-Pure MoonBit port of the [FreeType](https://freetype.org/) font library. 
+Pure MoonBit port of the [FreeType](https://freetype.org/) font library.
+
+## Table of Contents
+
+- [Features](#features)
+- [What Is Not Ported](#what-is-not-ported)
+- [API](#api)
+- [Project Structure](#project-structure)
+- [Build](#build)
+- [Parity Testing](#parity-testing)
+- [Performance](#performance)
+- [Dependencies](#dependencies)
+- [C-to-MoonBit Design Decisions](#c-to-moonbit-design-decisions)
+- [License](#license)
+
+## Overview
 
 - Font loading from `Bytes` (in-memory, no file I/O)
 - Character-to-glyph mapping (cmap formats 0, 4, 6, 12)
