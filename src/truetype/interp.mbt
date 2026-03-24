@@ -96,6 +96,7 @@ pub fn GraphicsState::default() -> GraphicsState {
 struct FuncDef {
   start : Int // start offset in code
   end_ : Int // end offset (ENDF position)
+  code : Bytes // the code array this function was defined in
 } derive(Show)
 
 ///|
@@ -952,7 +953,7 @@ fn InterpContext::op_fdef(self : InterpContext) -> Unit {
     self.ip += 1
     if op == 0x2D {
       // ENDF
-      self.func_defs[func_id] = { start, end_: self.ip - 1 }
+      self.func_defs[func_id] = { start, end_: self.ip - 1, code: self.code }
       return
     }
     // Skip push data
@@ -979,6 +980,8 @@ fn InterpContext::op_call(self : InterpContext) -> Unit {
     Some(def) => {
       let saved_ip = self.ip
       let saved_code = self.code
+      // Switch to the code array where this function was defined
+      self.code = def.code
       self.ip = def.start
       while self.ip < def.end_ && not(self.error) {
         let op = self.code[self.ip].to_int()
