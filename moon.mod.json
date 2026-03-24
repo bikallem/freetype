@@ -1,6 +1,6 @@
 {
   "name": "bikallem/freetype",
-  "version": "0.1.2",
+  "version": "0.2.0",
   "deps": {
     "bikallem/compress": "0.3.2",
     "moonbitlang/x": "0.4.41",
