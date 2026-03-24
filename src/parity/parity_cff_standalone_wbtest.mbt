@@ -51,3 +51,21 @@ test "standalone CFF: glyph advance width" {
   guard r is Ok(_) else { return }
   inspect(f.glyph().metrics().hori_advance() > 0L, content="true")
 }
+
+///|
+test "standalone CFF: PS hinted outline differs from unhinted" {
+  let f = @freetype.from_bytes(load_sourcecodepro_standalone_cff())
+  @freetype.set_pixel_sizes(f, 0U, 16U)
+  // Load with hinting (default)
+  let r1 = try? @freetype.load_glyph(f, 2U)
+  guard r1 is Ok(_) else { return }
+  let hinted_pts = f.glyph().outline().points()
+  let hinted_y0 = hinted_pts[0].y()
+  // Load without hinting
+  let r2 = try? @freetype.load_glyph(f, 2U, load_flags=@base.LOAD_NO_HINTING)
+  guard r2 is Ok(_) else { return }
+  let unhinted_pts = f.glyph().outline().points()
+  let unhinted_y0 = unhinted_pts[0].y()
+  // Hinted and unhinted should produce different coordinates
+  inspect(hinted_y0 != unhinted_y0, content="true")
+}
