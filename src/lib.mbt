@@ -32,7 +32,10 @@ pub fn from_bytes(
       )
       face
     }
-    Woff2 => raise @error.FTError::UnimplementedFeature
+    Woff2 => {
+      let decompressed = @sfnt.decompress_woff2(data)
+      from_bytes(decompressed, face_index~)
+    }
     // Obsolete/dead formats not supported: CID, Type 42, PFR, Windows FNT
     Cid | WindowsFnt | Pfr | Unknown => raise @error.FTError::UnknownFileFormat
   }
