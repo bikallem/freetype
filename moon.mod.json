@@ -1,10 +1,10 @@
 {
   "name": "bikallem/freetype",
-  "version": "0.1.0",
+  "version": "0.1.2",
   "deps": {
-    "bikallem/compress": "0.1.1",
+    "bikallem/compress": "0.3.2",
     "moonbitlang/x": "0.4.41",
-    "bikallem/blit": "0.1.0"
+    "bikallem/blit": "0.2.2"
   },
   "readme": "README.md",
   "repository": "https://github.com/bikallem/freetype",
