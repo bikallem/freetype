@@ -191,6 +191,11 @@ pub fn CffTopDict::private_offset(self : CffTopDict) -> UInt {
 }
 
 ///|
+pub fn CffTopDict::font_bbox(self : CffTopDict) -> Array[Int64] {
+  self.font_bbox
+}
+
+///|
 pub fn CffIndex::count(self : CffIndex) -> UInt {
   self.count
 }

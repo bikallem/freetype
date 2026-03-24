@@ -9,6 +9,7 @@ pub fn from_bytes(
   let format = @base.detect_format(data)
   match format {
     TrueType | CffOpenType | TrueTypeCollection => load_sfnt(data, face_index)
+    CffStandalone => load_cff_standalone(data)
     Woff1 => {
       let decompressed = @sfnt.decompress_woff(data)
       from_bytes(decompressed, face_index~)

@@ -4,6 +4,7 @@ pub(all) enum FontFormat {
   TrueType
   TrueTypeCollection
   CffOpenType // 'OTTO' — CFF inside SFNT
+  CffStandalone // bare CFF (major version 1)
   Woff1
   Woff2
   Type1Pfa
@@ -47,6 +48,8 @@ pub fn detect_format(data : Bytes) -> FontFormat {
         (0x80, 0x01) => Type1Pfb // PFB
         (0x25, 0x21) => Type1Pfa // '%!' (PFA)
         (0x4D, 0x5A) => WindowsFnt // 'MZ' (Windows FNT)
+        // CFF: major=1, minor=any, hdrSize>=4
+        (0x01, _) if data[2].to_int() >= 4 => CffStandalone
         _ => Unknown
       }
   }
