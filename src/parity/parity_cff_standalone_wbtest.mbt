@@ -43,3 +43,11 @@ test "standalone CFF: glyph outline" {
   inspect(outline.n_points() > 0, content="true")
   inspect(outline.n_contours() > 0, content="true")
 }
+
+///|
+test "standalone CFF: glyph advance width" {
+  let f = @freetype.from_bytes(load_sourcecodepro_standalone_cff())
+  let r = try? @freetype.load_glyph(f, 2U, load_flags=@base.LOAD_NO_SCALE)
+  guard r is Ok(_) else { return }
+  inspect(f.glyph().metrics().hori_advance() > 0L, content="true")
+}

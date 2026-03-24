@@ -35,14 +35,14 @@ fn load_cff_standalone(data : Bytes) -> @base.FaceRec raise @error.FTError {
     @base.GlyphSlotData,
     @types.Outline,
   ) raise @error.FTError = fn(glyph_index, _load_flags) raise @error.FTError {
-    let (outline, _width, _hh, _hv) = @cff.load_cff_glyph(cff, glyph_index)
+    let (outline, width, _hh, _hv) = @cff.load_cff_glyph(cff, glyph_index)
     let bb = @base.outline_get_bbox(outline)
     let slot_data = @base.GlyphSlotData::new(
       bb.x_max() - bb.x_min(),
       bb.y_max() - bb.y_min(),
       bb.x_min(),
       bb.y_max(),
-      0L,
+      width,
     )
     (slot_data, outline)
   }
