@@ -73,6 +73,8 @@ priv struct Woff2TableEntry {
   flags : UInt
   orig_length : UInt
   transform_length : UInt
+  /// Offset within the uncompressed stream where this table's data starts
+  src_offset : Int
 }
 
 ///|
@@ -111,6 +113,29 @@ fn read_255ushort(reader : @stream.ByteReader) -> UInt raise @error.FTError {
 }
 
 ///|
+/// Compute checksum of a byte range.
+fn compute_checksum(data : Bytes, offset : Int, length : Int) -> UInt {
+  let mut checksum = 0U
+  let aligned = length & -4
+  let mut k = 0
+  while k < aligned {
+    let c = (data[offset + k].to_uint() << 24) |
+      (data[offset + k + 1].to_uint() << 16) |
+      (data[offset + k + 2].to_uint() << 8) |
+      data[offset + k + 3].to_uint()
+    checksum = checksum + c
+    k += 4
+  }
+  let mut shift = 24
+  while k < length {
+    checksum = checksum + (data[offset + k].to_uint() << shift)
+    k += 1
+    shift -= 8
+  }
+  checksum
+}
+
+///|
 /// Parse a WOFF2 file and return the decompressed SFNT data.
 /// Uses @brotli.decompress for the compressed data stream.
 pub fn decompress_woff2(data : Bytes) -> Bytes raise @error.FTError {
@@ -135,7 +160,7 @@ pub fn decompress_woff2(data : Bytes) -> Bytes raise @error.FTError {
   let _priv_length = reader.read_u32_be()
   // Parse table directory
   let entries : Array[Woff2TableEntry] = []
-  let mut src_offset = 0U
+  let mut stream_offset = 0
   for _ in 0..<num_tables {
     let flag_byte = reader.read_byte().to_uint()
     let tag_index = flag_byte & 0x3FU
@@ -148,7 +173,6 @@ pub fn decompress_woff2(data : Bytes) -> Bytes raise @error.FTError {
       woff2_known_tags[tag_index.reinterpret_as_int()]
     }
     let xform_version = (flag_byte >> 6) & 0x03U
-    // Determine if table is transformed
     let is_glyf_or_loca = tag == @types.TAG_GLYF || tag == @types.TAG_LOCA
     let transformed = if is_glyf_or_loca {
       xform_version == 0U
@@ -162,8 +186,9 @@ pub fn decompress_woff2(data : Bytes) -> Bytes raise @error.FTError {
       orig_length
     }
     let flags = (if transformed { 0x100U } else { 0U }) | xform_version
-    entries.push({ tag, flags, orig_length, transform_length })
-    src_offset = src_offset + transform_length
+    let src_offset = stream_offset
+    entries.push({ tag, flags, orig_length, transform_length, src_offset })
+    stream_offset += transform_length.reinterpret_as_int()
   }
   // Read and decompress the compressed data stream
   let compressed_offset = reader.position()
@@ -172,20 +197,68 @@ pub fn decompress_woff2(data : Bytes) -> Bytes raise @error.FTError {
   let uncompressed = @brotli.decompress(compressed_data) catch {
     _ => raise @error.FTError::InvalidTable
   }
-  if uncompressed.length() < src_offset.reinterpret_as_int() {
+  if uncompressed.length() < stream_offset {
     raise @error.FTError::InvalidTable
   }
-  // Build SFNT output
-  let sfnt_header_size = 12 + num_tables * 16
-  // Compute total SFNT size
-  let mut total_size = sfnt_header_size
-  for entry in entries {
-    total_size = (total_size + 3) & -4 // align to 4
-    total_size += entry.orig_length.reinterpret_as_int()
+  // Check for transformed glyf/loca
+  let mut glyf_index = -1
+  let mut loca_index = -1
+  for i, entry in entries {
+    if entry.tag == @types.TAG_GLYF {
+      glyf_index = i
+    }
+    if entry.tag == @types.TAG_LOCA {
+      loca_index = i
+    }
   }
-  total_size = (total_size + 3) & -4
+  let glyf_is_transformed = glyf_index >= 0 &&
+    (entries[glyf_index].flags & 0x100U) != 0U
+  // Pre-reconstruct transformed glyf/loca if needed
+  let glyf_loca_data : (Bytes, Bytes)? = if glyf_is_transformed &&
+    glyf_index >= 0 &&
+    loca_index >= 0 {
+    let glyf_entry = entries[glyf_index]
+    let loca_entry = entries[loca_index]
+    let (glyf_data, loca_data, _x_mins) = reconstruct_glyf(
+      uncompressed,
+      glyf_entry.src_offset,
+      glyf_entry.transform_length.reinterpret_as_int(),
+      loca_entry.orig_length.reinterpret_as_int(),
+    )
+    Some((glyf_data, loca_data))
+  } else {
+    None
+  }
+  // Build SFNT: use a two-pass approach
+  // Pass 1: compute table sizes and offsets
+  let sfnt_header_size = 12 + num_tables * 16
+  let table_offsets : Array[Int] = []
+  let table_lengths : Array[Int] = []
+  let mut dest_offset = sfnt_header_size
+  for i, entry in entries {
+    dest_offset = (dest_offset + 3) & -4
+    table_offsets.push(dest_offset)
+    let actual_length = if glyf_is_transformed && entry.tag == @types.TAG_GLYF {
+      match glyf_loca_data {
+        Some((glyf_data, _)) => glyf_data.length()
+        None => entry.orig_length.reinterpret_as_int()
+      }
+    } else if glyf_is_transformed && entry.tag == @types.TAG_LOCA {
+      match glyf_loca_data {
+        Some((_, loca_data)) => loca_data.length()
+        None => entry.orig_length.reinterpret_as_int()
+      }
+    } else {
+      entry.orig_length.reinterpret_as_int()
+    }
+    table_lengths.push(actual_length)
+    ignore(i)
+    dest_offset += actual_length
+  }
+  let total_size = (dest_offset + 3) & -4
+  // Pass 2: build SFNT
   let sfnt = FixedArray::make(total_size, b'\x00')
-  // Write SFNT header
+  // SFNT header
   write_u32_be(sfnt, 0, flavor)
   write_u16_be(sfnt, 4, num_tables.reinterpret_as_uint())
   let (sr, es) = for sr = 1, es = 0; sr * 2 <= num_tables; {
@@ -196,50 +269,58 @@ pub fn decompress_woff2(data : Bytes) -> Bytes raise @error.FTError {
   write_u16_be(sfnt, 6, sr.reinterpret_as_uint())
   write_u16_be(sfnt, 8, es.reinterpret_as_uint())
   write_u16_be(sfnt, 10, (num_tables * 16 - sr).reinterpret_as_uint())
-  // Copy tables from uncompressed stream to SFNT
-  let mut uncompressed_pos = 0
-  for i = 0, table_offset = sfnt_header_size; i < num_tables; {
-    let entry = entries[i]
-    let table_offset = (table_offset + 3) & -4
+  // Copy/reconstruct tables
+  for i, entry in entries {
+    let table_offset = table_offsets[i]
+    let actual_length = table_lengths[i]
     let is_transformed = (entry.flags & 0x100U) != 0U
-    if is_transformed {
-      // Transformed glyf/loca/hmtx — not yet supported, skip source data
-      // and write zeros (will produce invalid font for TT with transforms)
+    if is_transformed && entry.tag == @types.TAG_GLYF {
+      // Copy reconstructed glyf
+      match glyf_loca_data {
+        Some((glyf_data, _)) =>
+          for j in 0..<actual_length {
+            sfnt[table_offset + j] = glyf_data[j]
+          }
+        None => ()
+      }
+    } else if is_transformed && entry.tag == @types.TAG_LOCA {
+      // Copy reconstructed loca
+      match glyf_loca_data {
+        Some((_, loca_data)) =>
+          for j in 0..<actual_length {
+            sfnt[table_offset + j] = loca_data[j]
+          }
+        None => ()
+      }
+    } else if is_transformed {
+      // Other transformed tables (hmtx) — not yet supported
       raise @error.FTError::UnimplementedFeature
+    } else {
+      // Non-transformed: copy from uncompressed stream
+      let src = entry.src_offset
+      let copy_len = if entry.transform_length.reinterpret_as_int() <
+        actual_length {
+        entry.transform_length.reinterpret_as_int()
+      } else {
+        actual_length
+      }
+      for j in 0..<copy_len {
+        sfnt[table_offset + j] = uncompressed[src + j]
+      }
     }
-    // Non-transformed: copy directly from uncompressed stream
-    let src_len = entry.transform_length.reinterpret_as_int()
-    let orig_len = entry.orig_length.reinterpret_as_int()
-    let copy_len = if src_len < orig_len { src_len } else { orig_len }
-    for j in 0..<copy_len {
-      sfnt[table_offset + j] = uncompressed[uncompressed_pos + j]
-    }
-    // Compute checksum
-    let mut checksum = 0U
-    let aligned = copy_len & -4
-    let mut k = 0
-    while k < aligned {
-      let c = (sfnt[table_offset + k].to_uint() << 24) |
-        (sfnt[table_offset + k + 1].to_uint() << 16) |
-        (sfnt[table_offset + k + 2].to_uint() << 8) |
-        sfnt[table_offset + k + 3].to_uint()
-      checksum = checksum + c
-      k += 4
-    }
-    let mut shift = 24
-    while k < copy_len {
-      checksum = checksum + (sfnt[table_offset + k].to_uint() << shift)
-      k += 1
-      shift -= 8
-    }
-    // Write table record in SFNT directory
+    // Compute checksum from the final data
+    let result = Bytes::from_array(sfnt[:])
+    let checksum = compute_checksum(result, table_offset, actual_length)
+    // Write table record
     let rec_offset = 12 + i * 16
     write_u32_be(sfnt, rec_offset, entry.tag)
     write_u32_be(sfnt, rec_offset + 4, checksum)
-    write_u32_be(sfnt, rec_offset + 8, table_offset.reinterpret_as_uint())
-    write_u32_be(sfnt, rec_offset + 12, entry.orig_length)
-    uncompressed_pos += src_len
-    continue i + 1, table_offset + orig_len
+    write_u32_be(
+      sfnt,
+      rec_offset + 8,
+      table_offset.reinterpret_as_uint(),
+    )
+    write_u32_be(sfnt, rec_offset + 12, actual_length.reinterpret_as_uint())
   }
   Bytes::from_array(sfnt[:])
 }

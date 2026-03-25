@@ -7,4 +7,5 @@ import {
   "bikallem/freetype/psnames",
   "bikallem/compress/zlib" @zlib,
   "bikallem/compress/brotli" @brotli,
+  "bikallem/blit" @blit,
 }
