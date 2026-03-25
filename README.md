@@ -29,6 +29,8 @@ Pure MoonBit port of the [FreeType](https://freetype.org/) font library.
 - PostScript Type 1 charstring interpreter (hsbw, closepath, callothersubr/Flex, seac)
 - Font variations API (`set_var_design_coordinates`, fvar/avar parsing, axis normalization)
 - WOFF1 decompression (zlib via `bikallem/compress`)
+- WOFF2 decompression (Brotli via `bikallem/compress`) with glyf/loca transform reconstruction
+- Standalone CFF font loading (bare CFF without SFNT container)
 - Format auto-detection from file header bytes
 
 ## Features
@@ -41,7 +43,8 @@ Pure MoonBit port of the [FreeType](https://freetype.org/) font library.
 | OpenType/CFF | `.otf` | Full | `cff/` — CFF INDEX/DICT parsing, Type 2 charstrings |
 | TrueType Collection | `.ttc` | Full | `sfnt/` — collection header, per-face loading |
 | WOFF1 | `.woff` | Full | `sfnt/woff.mbt` — zlib decompression via `bikallem/compress` |
-| WOFF2 | `.woff2` | Not yet | Blocked on Brotli in `bikallem/compress` ([ticket](https://github.com/bikallem/freetype)) |
+| WOFF2 | `.woff2` | Full | `sfnt/woff2.mbt` — Brotli decompression, glyf/loca transform reconstruction |
+| Standalone CFF | `.cff` | Full | `cff_loader.mbt` — bare CFF without SFNT container, PS hinting |
 | Type 1 (PFB/PFA) | `.pfb` `.pfa` | Full | `type1/` — PFB/PFA parsing, eexec, Type 1 charstrings |
 | BDF (bitmap) | `.bdf` | Full | `bdf/` — header + glyph bitmap extraction |
 | PCF (bitmap) | `.pcf` | Full | `pcf/` — TOC, properties, metrics, encodings, bitmaps |
@@ -58,7 +61,7 @@ The following FreeType subsystems are **excluded** from this port:
 | **Rendering/rasterization** (`src/smooth/`, `src/raster/`, `src/sdf/`) | Out of scope — this library produces outlines, not pixels |
 | **File I/O** (`ftsystem.c` file operations) | Accepts `Bytes` instead of file paths; no I/O or OS dependency |
 | **SVG rendering** | Requires external SVG renderer |
-| **WOFF2** | Requires Brotli decompression (not yet in `bikallem/compress`) |
+| **Transformed hmtx in WOFF2** | Rarely needed; non-transformed hmtx works fine |
 | **FT_Library global state** | Eliminated — API is stateless, no initialization needed |
 | **Memory allocator** (`FT_ALLOC`/`FT_FREE`/`FT_Memory`) | Eliminated — GC handles memory |
 | **FT_Generic** (user data hooks) | Omitted — users wrap `Face` in their own struct |
@@ -115,7 +118,7 @@ let (kern_x, kern_y) = @freetype.get_kerning(face, glyph_a, glyph_v)
 ```moonbit
 let format = @base.detect_format(data)
 // Returns: TrueType, CffOpenType, TrueTypeCollection, Woff1, Woff2,
-//          Type1Pfb, Type1Pfa, Bdf, Pcf, WindowsFnt, Pfr, Unknown
+//          Type1Pfb, Type1Pfa, CffStandalone, Bdf, Pcf, WindowsFnt, Pfr, Unknown
 ```
 
 ## Project Structure
@@ -130,7 +133,7 @@ src/
   stream/              # ByteReader: position-tracked Bytes reader
   base/                # FaceRec, GlyphSlot, GlyphLoader, outline ops, format detection
   sfnt/                # SFNT parsing: table directory, head, hhea, maxp, hmtx, name,
-                       #   OS/2, post, cmap (formats 0/4/6/12), kern, WOFF1
+                       #   OS/2, post, cmap (formats 0/4/6/12), kern, WOFF1, WOFF2
   truetype/            # TrueType: glyph loading, loca, bytecode interpreter
   cff/                 # CFF: INDEX/DICT parsing, charstring loading
   psaux/               # PostScript charstring interpreter (Type 2)
@@ -151,7 +154,7 @@ src/
 
 ```bash
 make build     # Compile
-make test      # Run unit tests (307 tests)
+make test      # Run unit tests (319 tests)
 make parity    # Run parity tests against C FreeType golden data (122 tests)
 make fmt       # Format code + regenerate .mbti files
 make bench     # Run C vs MoonBit benchmark comparison
@@ -180,6 +183,10 @@ Parity tests verify that the MoonBit port produces identical results to the vend
 | DejaVu Sans | TTC | 6,253 × 2 | Converted from TTF |
 | DejaVu Sans | WOFF1 | 6,253 | Converted from TTF |
 | Source Code Pro | WOFF1 | 1,568 | Converted from OTF |
+| DejaVu Sans | WOFF2 | 6,253 | Converted from TTF |
+| minimal | WOFF2 (CFF) | 3 | Converted from OTF |
+| Source Code Pro | Standalone CFF | 1,568 | Extracted CFF table |
+| minimal | Standalone CFF | 3 | Extracted CFF table |
 | Nimbus Sans | Type 1 PFB | 855 | URW base35 |
 | GNU Unifont | BDF | 57,087 | unifoundry.com |
 
@@ -211,6 +218,8 @@ $ make parity
      FULL  CFF/OpenType
      FULL  TrueType Collection
      FULL  WOFF1
+     FULL  WOFF2
+     FULL  Standalone CFF
      FULL  Type 1 PFB
      LOAD  BDF Bitmap
 ```
@@ -238,7 +247,7 @@ make bench    # Runs C FreeType + MoonBit benchmarks and generates comparison re
 
 ## Dependencies
 
-- [`bikallem/compress`](https://github.com/bikallem/compress) — zlib decompression for WOFF1 table extraction
+- [`bikallem/compress`](https://github.com/bikallem/compress) — zlib decompression (WOFF1) and Brotli decompression (WOFF2)
 - [`moonbitlang/x`](https://mooncakes.io/docs/#/moonbitlang/x/) — file I/O for parity tests (native target only)
 
 ## C-to-MoonBit Design Decisions
@@ -254,7 +263,7 @@ make bench    # Runs C FreeType + MoonBit benchmarks and generates comparison re
 | `FT_Driver_ClassRec` (fn ptr table) | Closure-based `SfntOps` / `Type1Ops` |
 | `FT_CMap_ClassRec` (fn ptr table) | `CmapLookup` enum with per-format structs |
 | `FT_Generic` (user data) | Omitted — users wrap `Face` |
-| `src/gzip/`, `src/bzip2/` | `bikallem/compress` |
+| `src/gzip/`, `src/bzip2/`, Brotli | `bikallem/compress` (zlib + brotli) |
 
 ## License
 
