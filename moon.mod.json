@@ -2,7 +2,7 @@
   "name": "bikallem/freetype",
   "version": "0.2.0",
   "deps": {
-    "bikallem/compress": "0.3.3",
+    "bikallem/compress": "0.3.4",
     "moonbitlang/x": "0.4.41",
     "bikallem/blit": "0.2.2"
   },
