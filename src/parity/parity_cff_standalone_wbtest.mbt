@@ -44,6 +44,25 @@ test "standalone CFF: loads SourceCodePro" {
 }
 
 ///|
+test "standalone CFF: metadata matches FreeType samples" {
+  let minimal = @freetype.from_bytes(load_minimal_standalone_cff())
+  inspect(minimal.family_name(), content="Minimal-Regular")
+  inspect(minimal.style_name(), content="Regular")
+  inspect(minimal.height(), content="1200")
+  inspect(minimal.is_fixed_width(), content="false")
+  inspect(minimal.has_glyph_names(), content="true")
+
+  let source = @freetype.from_bytes(load_sourcecodepro_standalone_cff())
+  inspect(source.family_name(), content="Source Code Pro")
+  inspect(source.style_name(), content="Regular")
+  inspect(source.ascender(), content="1060")
+  inspect(source.descender(), content="-454")
+  inspect(source.height(), content="1514")
+  inspect(source.is_fixed_width(), content="true")
+  inspect(source.has_glyph_names(), content="true")
+}
+
+///|
 test "standalone CFF: minimal charmaps match FreeType" {
   let f = @freetype.from_bytes(load_minimal_standalone_cff())
   inspect(f.charmaps().length(), content="2")

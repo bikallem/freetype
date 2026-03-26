@@ -238,3 +238,20 @@ fn parse_cff_encoding(
     }
   }
 }
+
+///|
+fn style_name_from_ps_name(font_name : String, weight : String) -> String {
+  let mut dash_pos = -1
+  for i in 0..<font_name.length() {
+    if font_name[i] == '-' {
+      dash_pos = i
+    }
+  }
+  if dash_pos >= 0 && dash_pos + 1 < font_name.length() {
+    font_name[dash_pos + 1:].to_string()
+  } else if weight != "" {
+    weight
+  } else {
+    "Regular"
+  }
+}

@@ -127,6 +127,18 @@ pub fn parse_top_dict(data : Bytes) -> CffTopDict {
 ///|
 fn apply_top_dict_op(dict : CffTopDict, stack : Array[Int64], op : Int) -> Unit {
   match op {
+    2 =>
+      if stack.length() > 0 {
+        dict.full_name_sid = stack[0].to_int().reinterpret_as_uint()
+      }
+    3 =>
+      if stack.length() > 0 {
+        dict.family_name_sid = stack[0].to_int().reinterpret_as_uint()
+      }
+    4 =>
+      if stack.length() > 0 {
+        dict.weight_sid = stack[0].to_int().reinterpret_as_uint()
+      }
     15 => dict.charset_offset = stack[0].to_int().reinterpret_as_uint() // charset
     16 => dict.encoding_offset = stack[0].to_int().reinterpret_as_uint() // Encoding
     17 => dict.charstrings_offset = stack[0].to_int().reinterpret_as_uint() // CharStrings
@@ -152,6 +164,7 @@ fn apply_top_dict_op2(
   op : Int,
 ) -> Unit {
   match op {
+    1 => if stack.length() > 0 { dict.is_fixed_pitch = stack[0].to_int() != 0 }
     3 => if stack.length() > 0 { dict.underline_position = stack[0].to_int() }
     4 => if stack.length() > 0 { dict.underline_thickness = stack[0].to_int() }
     30 =>
@@ -269,6 +282,18 @@ pub fn load_cff(data : Bytes, offset : Int) -> CffFont raise @error.FTError {
   // Parse String INDEX
   let string_index = parse_cff_index(reader)
   let custom_strings = parse_cff_string_index(string_index)
+  let family_name = if top_dict.family_name_sid == 0U {
+    ""
+  } else {
+    sid_to_string(top_dict.family_name_sid, custom_strings)
+  }
+  let weight = if top_dict.weight_sid == 0U {
+    ""
+  } else {
+    sid_to_string(top_dict.weight_sid, custom_strings)
+  }
+  let style_name = style_name_from_ps_name(name, weight)
+  let units_per_em = 1000U
   // Parse Global Subr INDEX
   let global_subrs = parse_cff_index(reader)
   // Parse Charstrings INDEX
@@ -406,6 +431,14 @@ pub fn load_cff(data : Bytes, offset : Int) -> CffFont raise @error.FTError {
   {
     header,
     name,
+    family_name: if family_name != "" {
+      family_name
+    } else {
+      name
+    },
+    style_name,
+    units_per_em,
+    is_fixed_pitch: top_dict.is_fixed_pitch,
     top_dict,
     private_dict,
     charstrings,

@@ -33,6 +33,10 @@ struct CffHeader {
 ///|
 /// CFF Top DICT values.
 struct CffTopDict {
+  mut full_name_sid : UInt
+  mut family_name_sid : UInt
+  mut weight_sid : UInt
+  mut is_fixed_pitch : Bool
   mut charset_offset : UInt
   mut encoding_offset : UInt
   mut charstrings_offset : UInt
@@ -51,6 +55,10 @@ struct CffTopDict {
 ///|
 pub fn CffTopDict::new() -> CffTopDict {
   {
+    full_name_sid: 0U,
+    family_name_sid: 0U,
+    weight_sid: 0U,
+    is_fixed_pitch: false,
     charset_offset: 0U,
     encoding_offset: 0U,
     charstrings_offset: 0U,
@@ -97,6 +105,10 @@ pub fn CffPrivateDict::new() -> CffPrivateDict {
 struct CffFont {
   header : CffHeader
   name : String // font name from Name INDEX
+  family_name : String
+  style_name : String
+  units_per_em : UInt
+  is_fixed_pitch : Bool
   top_dict : CffTopDict
   private_dict : CffPrivateDict
   charstrings : CffIndex // Charstrings INDEX
@@ -121,6 +133,26 @@ pub fn CffFont::private_dict(self : CffFont) -> CffPrivateDict {
 ///|
 pub fn CffFont::top_dict(self : CffFont) -> CffTopDict {
   self.top_dict
+}
+
+///|
+pub fn CffFont::family_name(self : CffFont) -> String {
+  self.family_name
+}
+
+///|
+pub fn CffFont::style_name(self : CffFont) -> String {
+  self.style_name
+}
+
+///|
+pub fn CffFont::units_per_em(self : CffFont) -> UInt {
+  self.units_per_em
+}
+
+///|
+pub fn CffFont::is_fixed_pitch(self : CffFont) -> Bool {
+  self.is_fixed_pitch
 }
 
 ///|

@@ -3,20 +3,36 @@
 fn load_cff_standalone(data : Bytes) -> @base.FaceRec raise @error.FTError {
   let cff = @cff.load_cff(data, 0)
   let face = @base.FaceRec::new()
-  face.set_family_name(cff.name())
+  face.set_family_name(cff.family_name())
+  face.set_style_name(cff.style_name())
   let has_glyph_names = cff.glyph_names().length() > 0
   let mut face_flags = @base.FACE_FLAG_SCALABLE |
     @base.FACE_FLAG_HORIZONTAL |
     @base.FACE_FLAG_HINTER
+  if cff.is_fixed_pitch() {
+    face_flags = face_flags | @base.FACE_FLAG_FIXED_WIDTH
+  }
   if has_glyph_names {
     face_flags = face_flags | @base.FACE_FLAG_GLYPH_NAMES
   }
   face.set_face_flags(face_flags)
   face.set_num_glyphs(cff.num_glyphs().reinterpret_as_int().to_int64())
-  face.set_units_per_em(1000U)
+  face.set_units_per_em(cff.units_per_em())
   let bbox = cff.top_dict().font_bbox()
   if bbox.length() == 4 {
     face.set_bbox(@types.BBox::new(bbox[0], bbox[1], bbox[2], bbox[3]))
+    let has_nonzero_bbox = bbox[0] != 0L ||
+      bbox[1] != 0L ||
+      bbox[2] != 0L ||
+      bbox[3] != 0L
+    if has_nonzero_bbox {
+      face.set_ascender(bbox[3].to_int())
+      face.set_descender(bbox[1].to_int())
+      face.set_height((bbox[3] - bbox[1]).to_int())
+    }
+  }
+  if face.height() == 0 {
+    face.set_height(cff.units_per_em().reinterpret_as_int() * 12 / 10)
   }
   if cff.top_dict().underline_position() != 0 {
     face.set_underline_position(cff.top_dict().underline_position())
