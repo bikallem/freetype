@@ -61,25 +61,37 @@ fn load_cff_standalone(data : Bytes) -> @base.FaceRec raise @error.FTError {
   if face.charmaps().length() > 0 {
     face.set_active_charmap(0)
   }
-  let char_index_fn : (UInt) -> UInt = if has_unicode {
-    fn(charcode) {
-      match unicode_cmap.get(charcode) {
-        Some(glyph_index) => glyph_index
-        None =>
-          if charcode < 256U {
-            encoding_glyphs[charcode.reinterpret_as_int()]
-          } else {
-            0U
-          }
-      }
+  let unicode_char_index_fn : (UInt) -> UInt = fn(charcode) {
+    match unicode_cmap.get(charcode) {
+      Some(glyph_index) => glyph_index
+      None =>
+        if charcode < 256U {
+          encoding_glyphs[charcode.reinterpret_as_int()]
+        } else {
+          0U
+        }
     }
-  } else {
-    fn(charcode) {
-      if charcode < 256U {
-        encoding_glyphs[charcode.reinterpret_as_int()]
-      } else {
-        0U
-      }
+  }
+  let encoding_char_index_fn : (UInt) -> UInt = fn(charcode) {
+    if charcode < 256U {
+      encoding_glyphs[charcode.reinterpret_as_int()]
+    } else {
+      0U
+    }
+  }
+  let unicode_charmap_index = if has_unicode { 0 } else { -1 }
+  let encoding_charmap_index = if has_unicode { 1 } else { 0 }
+  let char_index_fn : (UInt) -> UInt = fn(charcode) {
+    if face.active_charmap() == encoding_charmap_index {
+      return encoding_char_index_fn(charcode)
+    }
+    if face.active_charmap() == unicode_charmap_index && has_unicode {
+      return unicode_char_index_fn(charcode)
+    }
+    if has_unicode {
+      unicode_char_index_fn(charcode)
+    } else {
+      encoding_char_index_fn(charcode)
     }
   }
   // PS hint state (shared between load_glyph and apply_hints closures)

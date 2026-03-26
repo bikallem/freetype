@@ -89,24 +89,15 @@ fn load_type1_pfb(data : Bytes) -> @base.FaceRec raise @error.FTError {
   }
   // Set up Type1Ops driver data. Public API uses the active charmap, which we
   // synthesize as Unicode when glyph names allow it.
-  let char_index_fn : (UInt) -> UInt = if has_unicode {
-    fn(charcode) {
-      match unicode_cmap.get(charcode) {
-        Some(gid) => gid
-        None =>
-          if charcode < 256U {
-            cached_cmap.unsafe_get(charcode.reinterpret_as_int())
-          } else {
-            0U
-          }
-      }
-    }
-  } else {
-    fn(charcode) {
-      if charcode >= 256U {
-        return 0U
-      }
-      cached_cmap.unsafe_get(charcode.reinterpret_as_int())
+  let unicode_char_index_fn : (UInt) -> UInt = fn(charcode) {
+    match unicode_cmap.get(charcode) {
+      Some(gid) => gid
+      None =>
+        if charcode < 256U {
+          cached_cmap.unsafe_get(charcode.reinterpret_as_int())
+        } else {
+          0U
+        }
     }
   }
   let encoding_char_index_fn : (UInt) -> UInt = fn(charcode) {
@@ -114,6 +105,21 @@ fn load_type1_pfb(data : Bytes) -> @base.FaceRec raise @error.FTError {
       return 0U
     }
     cached_cmap.unsafe_get(charcode.reinterpret_as_int())
+  }
+  let unicode_charmap_index = if has_unicode { 0 } else { -1 }
+  let encoding_charmap_index = if has_unicode { 1 } else { 0 }
+  let char_index_fn : (UInt) -> UInt = fn(charcode) {
+    if face.active_charmap() == encoding_charmap_index {
+      return encoding_char_index_fn(charcode)
+    }
+    if face.active_charmap() == unicode_charmap_index && has_unicode {
+      return unicode_char_index_fn(charcode)
+    }
+    if has_unicode {
+      unicode_char_index_fn(charcode)
+    } else {
+      encoding_char_index_fn(charcode)
+    }
   }
   let hint_h_hints : Ref[Array[@psaux.StemHint]] = Ref::new([])
   let hint_v_hints : Ref[Array[@psaux.StemHint]] = Ref::new([])

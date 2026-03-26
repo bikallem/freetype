@@ -164,10 +164,52 @@ fn load_sfnt(
   let hint_h_hints : Ref[Array[@psaux.StemHint]] = Ref::new([])
   let hint_v_hints : Ref[Array[@psaux.StemHint]] = Ref::new([])
   let hint_has_hints : Ref[Bool] = Ref::new(false)
-  // Lazy cmap: first call resolves subtable and replaces face.char_index_fn
-  // directly, eliminating all Ref indirection for subsequent calls
-  let char_index_fn : (UInt) -> UInt = fn(charcode) {
-    let lookup : @sfnt.CmapLookup? = match sfnt_data.cmap() {
+  let actual_cmap_count = match sfnt_data.cmap() {
+    Some(ct) => ct.subtables().length()
+    None => 0
+  }
+  let best_cmap_lookup_ref : Ref[@sfnt.CmapLookup?] = Ref::new(None)
+  let best_cmap_lookup_done : Ref[Bool] = Ref::new(false)
+  let cmap_lookup_cache : Ref[Map[Int, @sfnt.CmapLookup?]] = Ref::new({})
+  let synthetic_adobe_charmap_index : Ref[Int] = Ref::new(-1)
+  let resolve_cmap_lookup = fn(index : Int) -> @sfnt.CmapLookup? {
+    match cmap_lookup_cache.val.get(index) {
+      Some(lookup) => lookup
+      None => {
+        let lookup : @sfnt.CmapLookup? = match sfnt_data.cmap() {
+          Some(ct) =>
+            if index >= 0 && index < ct.subtables().length() {
+              match sfnt_data.table_dir().find_table(@types.TAG_CMAP) {
+                Some(rec) => {
+                  let reader = @stream.ByteReader::new(data)
+                  let result = try? @sfnt.parse_cmap_subtable(
+                    reader,
+                    rec.offset(),
+                    ct.subtables()[index].offset(),
+                  )
+                  match result {
+                    Ok(parsed) => Some(parsed)
+                    Err(_) => None
+                  }
+                }
+                None => None
+              }
+            } else {
+              None
+            }
+          None => None
+        }
+        cmap_lookup_cache.val[index] = lookup
+        lookup
+      }
+    }
+  }
+  let resolve_best_cmap_lookup = fn() -> @sfnt.CmapLookup? {
+    if best_cmap_lookup_done.val {
+      return best_cmap_lookup_ref.val
+    }
+    best_cmap_lookup_done.val = true
+    best_cmap_lookup_ref.val = match sfnt_data.cmap() {
       Some(ct) =>
         match sfnt_data.table_dir().find_table(@types.TAG_CMAP) {
           Some(rec) => find_best_cmap(data, ct, rec.offset())
@@ -175,20 +217,33 @@ fn load_sfnt(
         }
       None => None
     }
-    let fast_fn : (UInt) -> UInt = match lookup {
-      Some(@sfnt.CmapLookup::Format0(t)) => fn(c) { t.char_index(c) }
-      Some(@sfnt.CmapLookup::Format2(t)) => fn(c) { t.char_index(c) }
-      Some(@sfnt.CmapLookup::Format4(t)) => fn(c) { t.char_index(c) }
-      Some(@sfnt.CmapLookup::Format6(t)) => fn(c) { t.char_index(c) }
-      Some(@sfnt.CmapLookup::Format8(t)) => fn(c) { t.char_index(c) }
-      Some(@sfnt.CmapLookup::Format10(t)) => fn(c) { t.char_index(c) }
-      Some(@sfnt.CmapLookup::Format12(t)) => fn(c) { t.char_index(c) }
-      Some(@sfnt.CmapLookup::Format13(t)) => fn(c) { t.char_index(c) }
-      None => fn(_c) { 0U }
+    best_cmap_lookup_ref.val
+  }
+  let cff_encoding_char_index_fn : (UInt) -> UInt = fn(charcode) {
+    if charcode >= 256U {
+      return 0U
     }
-    // Replace face's char_index_fn directly — no Ref on subsequent calls
-    face.set_char_index_fn(fast_fn)
-    fast_fn(charcode)
+    let cff_result = try? ensure_cff()
+    match cff_result {
+      Ok(Some(cff)) => cff.encoding_glyphs()[charcode.reinterpret_as_int()]
+      _ => 0U
+    }
+  }
+  let char_index_fn : (UInt) -> UInt = fn(charcode) {
+    let active = face.active_charmap()
+    if active == synthetic_adobe_charmap_index.val {
+      return cff_encoding_char_index_fn(charcode)
+    }
+    if active >= 0 && active < actual_cmap_count {
+      match resolve_cmap_lookup(active) {
+        Some(lookup) => return lookup.char_index(charcode)
+        None => ()
+      }
+    }
+    match resolve_best_cmap_lookup() {
+      Some(lookup) => lookup.char_index(charcode)
+      None => 0U
+    }
   }
   let load_glyph_fn : (UInt, Int) -> (
     @base.GlyphSlotData,
@@ -502,6 +557,13 @@ fn load_sfnt(
       face.set_var_coords(Array::make(fvar.axes().length(), 0))
     }
   }
+  if actual_cmap_count > 0 {
+    let default_cmap_index = match sfnt_data.cmap() {
+      Some(ct) => find_best_cmap_index(ct).unwrap_or(0)
+      None => 0
+    }
+    face.set_active_charmap(default_cmap_index)
+  }
   face.set_char_index_fn(char_index_fn)
   face.set_driver_data(
     @base.DriverData::SfntDriver(
@@ -521,6 +583,7 @@ fn load_sfnt(
     match ensure_cff() {
       Some(cff) =>
         if not(cff.top_dict().is_cid()) {
+          synthetic_adobe_charmap_index.val = face.charmaps().length()
           face
           .charmaps()
           .push(@base.CharMapRec::new(@base.Encoding::Unicode, 7U, 0U))
@@ -529,6 +592,34 @@ fn load_sfnt(
     }
   }
   face
+}
+
+///|
+fn find_best_cmap_index(ct : @sfnt.CmapTable) -> Int? {
+  let priorities : Array[(UInt, UInt)] = [
+    (3U, 10U),
+    (0U, 10U),
+    (0U, 6U),
+    (0U, 4U),
+    (3U, 1U),
+    (0U, 3U),
+    (0U, 2U),
+    (0U, 1U),
+    (0U, 0U),
+  ]
+  for _, prio in priorities {
+    let (plat, enc) = prio
+    for i, sub in ct.subtables() {
+      if sub.platform_id() == plat && sub.encoding_id() == enc {
+        return Some(i)
+      }
+    }
+  }
+  if ct.subtables().length() > 0 {
+    Some(0)
+  } else {
+    None
+  }
 }
 
 ///|
