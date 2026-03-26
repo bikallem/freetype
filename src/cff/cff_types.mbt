@@ -104,6 +104,9 @@ struct CffFont {
   local_subrs : CffIndex? // Local Subr INDEX (from Private DICT)
   num_glyphs : UInt
   cached_local_subrs : Array[Bytes]
+  fd_private_dicts : Array[CffPrivateDict]
+  fd_local_subrs : Array[Array[Bytes]]
+  fd_select : Array[Int]
   cached_global_subrs : Array[Bytes]
 } derive(Show)
 
@@ -143,6 +146,21 @@ pub fn CffFont::cached_local_subrs(self : CffFont) -> Array[Bytes] {
 }
 
 ///|
+pub fn CffFont::fd_private_dicts(self : CffFont) -> Array[CffPrivateDict] {
+  self.fd_private_dicts
+}
+
+///|
+pub fn CffFont::fd_local_subrs(self : CffFont) -> Array[Array[Bytes]] {
+  self.fd_local_subrs
+}
+
+///|
+pub fn CffFont::fd_select(self : CffFont) -> Array[Int] {
+  self.fd_select
+}
+
+///|
 pub fn CffFont::cached_global_subrs(self : CffFont) -> Array[Bytes] {
   self.cached_global_subrs
 }
@@ -150,6 +168,50 @@ pub fn CffFont::cached_global_subrs(self : CffFont) -> Array[Bytes] {
 ///|
 pub fn CffFont::name(self : CffFont) -> String {
   self.name
+}
+
+///|
+pub fn CffFont::fd_index_for_glyph(self : CffFont, glyph_index : UInt) -> Int {
+  let idx = glyph_index.reinterpret_as_int()
+  if idx < 0 || idx >= self.fd_select.length() {
+    0
+  } else {
+    self.fd_select[idx]
+  }
+}
+
+///|
+pub fn CffFont::private_dict_for_glyph(
+  self : CffFont,
+  glyph_index : UInt,
+) -> CffPrivateDict {
+  if not(self.top_dict.is_cid) || self.fd_private_dicts.length() == 0 {
+    self.private_dict
+  } else {
+    let fd_idx = self.fd_index_for_glyph(glyph_index)
+    if fd_idx < 0 || fd_idx >= self.fd_private_dicts.length() {
+      self.private_dict
+    } else {
+      self.fd_private_dicts[fd_idx]
+    }
+  }
+}
+
+///|
+pub fn CffFont::cached_local_subrs_for_glyph(
+  self : CffFont,
+  glyph_index : UInt,
+) -> Array[Bytes] {
+  if not(self.top_dict.is_cid) || self.fd_local_subrs.length() == 0 {
+    self.cached_local_subrs
+  } else {
+    let fd_idx = self.fd_index_for_glyph(glyph_index)
+    if fd_idx < 0 || fd_idx >= self.fd_local_subrs.length() {
+      self.cached_local_subrs
+    } else {
+      self.fd_local_subrs[fd_idx]
+    }
+  }
 }
 
 ///|

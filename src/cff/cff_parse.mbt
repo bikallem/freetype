@@ -316,6 +316,82 @@ pub fn load_cff(data : Bytes, offset : Int) -> CffFont raise @error.FTError {
   for i in 0..<global_count {
     cached_global_subrs.push(global_subrs.get_item(i))
   }
+  let fd_private_dicts : Array[CffPrivateDict] = []
+  let fd_local_subrs : Array[Array[Bytes]] = []
+  if top_dict.is_cid && top_dict.fd_array_offset > 0U {
+    reader.seek(offset + top_dict.fd_array_offset.reinterpret_as_int())
+    let fd_array = parse_cff_index(reader)
+    let fd_count = fd_array.count.reinterpret_as_int()
+    for i in 0..<fd_count {
+      let fd_dict = parse_top_dict(fd_array.get_item(i))
+      let fd_private_dict = if fd_dict.private_size > 0U {
+        let priv_start = offset + fd_dict.private_offset.reinterpret_as_int()
+        let priv_size = fd_dict.private_size.reinterpret_as_int()
+        reader.seek(priv_start)
+        let priv_data = reader.read_bytes(priv_size)
+        parse_private_dict(priv_data)
+      } else {
+        CffPrivateDict::new()
+      }
+      let cached_fd_local_subrs : Array[Bytes] = if fd_private_dict.subrs_offset >
+        0U {
+        let subrs_abs = offset +
+          fd_dict.private_offset.reinterpret_as_int() +
+          fd_private_dict.subrs_offset.reinterpret_as_int()
+        reader.seek(subrs_abs)
+        let idx = parse_cff_index(reader)
+        let count = idx.count.reinterpret_as_int()
+        let subrs : Array[Bytes] = []
+        for j in 0..<count {
+          subrs.push(idx.get_item(j))
+        }
+        subrs
+      } else {
+        []
+      }
+      fd_private_dicts.push(fd_private_dict)
+      fd_local_subrs.push(cached_fd_local_subrs)
+    }
+  }
+  let fd_select : Array[Int] = Array::make(num_glyphs.reinterpret_as_int(), 0)
+  if top_dict.is_cid && top_dict.fd_select_offset > 0U {
+    reader.seek(offset + top_dict.fd_select_offset.reinterpret_as_int())
+    let format = reader.read_byte().to_int()
+    match format {
+      0 =>
+        for i in 0..<num_glyphs.reinterpret_as_int() {
+          fd_select[i] = reader.read_byte().to_int()
+        }
+      3 => {
+        let n_ranges = reader.read_u16_be().reinterpret_as_int()
+        let first_glyphs : Array[Int] = []
+        let fds : Array[Int] = []
+        for _ in 0..<n_ranges {
+          first_glyphs.push(reader.read_u16_be().reinterpret_as_int())
+          fds.push(reader.read_byte().to_int())
+        }
+        let sentinel = reader.read_u16_be().reinterpret_as_int()
+        for i in 0..<n_ranges {
+          let start = first_glyphs[i]
+          let end_ = if i + 1 < n_ranges {
+            first_glyphs[i + 1]
+          } else {
+            sentinel
+          }
+          let clamped_start = if start < 0 { 0 } else { start }
+          let clamped_end = if end_ > num_glyphs.reinterpret_as_int() {
+            num_glyphs.reinterpret_as_int()
+          } else {
+            end_
+          }
+          for glyph in clamped_start..<clamped_end {
+            fd_select[glyph] = fds[i]
+          }
+        }
+      }
+      _ => ()
+    }
+  }
   {
     header,
     name,
@@ -326,6 +402,9 @@ pub fn load_cff(data : Bytes, offset : Int) -> CffFont raise @error.FTError {
     local_subrs,
     num_glyphs,
     cached_local_subrs,
+    fd_private_dicts,
+    fd_local_subrs,
+    fd_select,
     cached_global_subrs,
   }
 }
@@ -340,12 +419,12 @@ pub fn load_cff_glyph(
   if charstring.length() == 0 {
     return (@types.Outline::new(), 0L, [], [])
   }
-  // Use cached subroutine arrays (built once at load time)
+  let private_dict = cff.private_dict_for_glyph(glyph_index)
   @psaux.execute_type2(
     charstring,
-    cff.private_dict.default_width_x,
-    cff.private_dict.nominal_width_x,
-    local_subrs=cff.cached_local_subrs,
+    private_dict.default_width_x(),
+    private_dict.nominal_width_x(),
+    local_subrs=cff.cached_local_subrs_for_glyph(glyph_index),
     global_subrs=cff.cached_global_subrs,
   )
 }

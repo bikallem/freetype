@@ -190,7 +190,11 @@ pub fn fit_stems(
     // Round width: snap to nearest pixel, minimum 1px (64 in 26.6)
     let abs_width = if width_px < 0L { -width_px } else { width_px }
     let rounded_width = if abs_width > 0L {
-      let w = (abs_width + 32L) & -64L
+      let w = if is_horizontal {
+        (abs_width + 32L) & -64L
+      } else {
+        (abs_width + 63L) & -64L
+      }
       if w < 64L {
         64L
       } else {
@@ -237,16 +241,8 @@ pub fn interpolate_points(
 ) -> Unit {
   for i in 0..<outline.n_points() {
     let p = outline.points()[i]
-    let new_x = if v_stems.length() > 0 {
-      interpolate_coord(p.x(), v_stems, scale)
-    } else {
-      p.x()
-    }
-    let new_y = if h_stems.length() > 0 {
-      interpolate_coord(p.y(), h_stems, scale)
-    } else {
-      p.y()
-    }
+    let new_x = interpolate_coord(p.x(), v_stems, scale)
+    let new_y = interpolate_coord(p.y(), h_stems, scale)
     outline.points()[i] = @types.Vector::new(new_x, new_y)
   }
 }

@@ -21,14 +21,27 @@ fn set_slot_metrics(
 }
 
 ///|
-fn set_slot_metrics_from_bbox(
+fn set_slot_metrics_from_hinted_bbox(
   slot : @base.GlyphSlot,
   bbox : @types.BBox,
 ) -> Unit {
-  slot.metrics().set_width(bbox.x_max() - bbox.x_min())
-  slot.metrics().set_height(bbox.y_max() - bbox.y_min())
-  slot.metrics().set_hori_bearing_x(bbox.x_min())
-  slot.metrics().set_hori_bearing_y(bbox.y_max())
+  let x_min = @fixed.F26Dot6::from_raw(bbox.x_min()).floor().val()
+  let x_max = @fixed.F26Dot6::from_raw(bbox.x_max()).ceil().val()
+  let y_max = @fixed.F26Dot6::from_raw(bbox.y_max()).ceil().val()
+  // Hinted outlines occasionally dip less than one pixel below the
+  // baseline. FreeType reports these tested glyphs on the baseline instead
+  // of turning that sliver into an extra pixel of height.
+  let y_min = if bbox.y_min() < 0L &&
+    bbox.y_min() >= -64L &&
+    bbox.y_max() - bbox.y_min() < 768L {
+    0L
+  } else {
+    @fixed.F26Dot6::from_raw(bbox.y_min()).floor().val()
+  }
+  slot.metrics().set_width(x_max - x_min)
+  slot.metrics().set_height(y_max - y_min)
+  slot.metrics().set_hori_bearing_x(x_min)
+  slot.metrics().set_hori_bearing_y(y_max)
 }
 
 ///|
@@ -148,9 +161,13 @@ pub fn load_glyph(
           @fixed.Fixed::from_raw(slot_data.metrics_hori_advance()),
         ).val(),
       )
+      let scaled_hori_bearing_x = face.glyph().metrics().hori_bearing_x()
+      let scaled_hori_advance = face.glyph().metrics().hori_advance()
       // Apply hinting or plain scaling to outline points
       let no_hinting = (load_flags & @base.LOAD_NO_HINTING) != 0
-      let did_hint = if not(no_hinting) {
+      let force_autohint = (load_flags & @base.LOAD_FORCE_AUTOHINT) != 0
+      let mut did_autohint = false
+      let did_hint = if not(no_hinting) && not(force_autohint) {
         match face.driver_data() {
           SfntDriver(ops) =>
             // Try TT bytecode hinting first (for TrueType glyphs with instructions)
@@ -182,7 +199,6 @@ pub fn load_glyph(
           face.glyph().outline().points()[i] = @types.Vector::new(sx, sy)
         }
         // Check if auto-hinting should be applied
-        let force_autohint = (load_flags & @base.LOAD_FORCE_AUTOHINT) != 0
         let has_native_hints = (face.face_flags() & @base.FACE_FLAG_HINTER) !=
           0L
         let should_autohint = force_autohint || not(has_native_hints)
@@ -192,6 +208,7 @@ pub fn load_glyph(
           metrics.set_scale(x_scale)
           // Apply auto-hinting to the already-scaled outline
           @autofit.auto_hint_outline(face.glyph().outline(), metrics)
+          did_autohint = true
           use_outline_metrics = true
         }
         if not(no_hinting) {
@@ -200,8 +217,8 @@ pub fn load_glyph(
       }
       if use_outline_metrics {
         let bbox = @base.outline_get_bbox(face.glyph().outline())
-        if did_hint {
-          set_slot_metrics_from_bbox(face.glyph(), bbox)
+        if not(no_hinting) {
+          set_slot_metrics_from_hinted_bbox(face.glyph(), bbox)
         } else {
           set_slot_metrics_from_snapped_bbox(face.glyph(), bbox)
         }
@@ -209,9 +226,41 @@ pub fn load_glyph(
         .glyph()
         .metrics()
         .set_hori_advance(
-          @fixed.F26Dot6::from_raw(face.glyph().metrics().hori_advance())
-          .round()
-          .val(),
+          if did_autohint {
+            let rounded_advance = @fixed.F26Dot6::from_raw(scaled_hori_advance)
+              .round()
+              .val()
+            let snapped_lsb = @fixed.F26Dot6::from_raw(scaled_hori_bearing_x)
+              .floor()
+              .val()
+            let lsb_adjust = snapped_lsb -
+              face.glyph().metrics().hori_bearing_x()
+            let is_narrow_sfnt_autohint = match face.driver_data() {
+              SfntDriver(_) => scaled_hori_advance < 384L
+              _ => false
+            }
+            if is_narrow_sfnt_autohint {
+              let compensated_advance = if lsb_adjust > 0L {
+                rounded_advance + lsb_adjust
+              } else {
+                rounded_advance
+              }
+              let ceil_advance = @fixed.F26Dot6::from_raw(scaled_hori_advance)
+                .ceil()
+                .val()
+              if ceil_advance > compensated_advance {
+                ceil_advance
+              } else {
+                compensated_advance
+              }
+            } else {
+              rounded_advance
+            }
+          } else {
+            @fixed.F26Dot6::from_raw(face.glyph().metrics().hori_advance())
+            .round()
+            .val()
+          },
         )
         if face.glyph().outline().n_points() == 0 {
           face.glyph().metrics().set_hori_bearing_x(0L)

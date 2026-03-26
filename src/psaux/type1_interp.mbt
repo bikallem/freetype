@@ -116,7 +116,7 @@ fn exec_type1_op(
       // hstem (1) / vstem (3)
       let pairs = interp.stack.length() / 2
       let hints = if op == 1 { interp.hints_h } else { interp.hints_v }
-      let mut pos = 0L
+      let mut pos = if op == 1 { interp.current_y } else { interp.current_x }
       for i in 0..<pairs {
         let d1 = interp.stack[i * 2]
         let d2 = interp.stack[i * 2 + 1]

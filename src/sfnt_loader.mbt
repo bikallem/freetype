@@ -78,32 +78,6 @@ fn load_sfnt(
       }
     }
   }
-  let ensure_hint_globals = fn() -> @pshinter.PsGlobals {
-    match hint_globals_ref.val {
-      Some(g) => g
-      None => {
-        // Use cff_ref directly (already cached if CFF was loaded)
-        let g = match cff_ref.val {
-          Some(Some(cff)) => {
-            let pd = cff.private_dict()
-            let defaults = @pshinter.PsGlobals::new()
-            @pshinter.build_ps_globals(
-              pd.blue_values().map(fn(v) { v.to_int() }),
-              pd.other_blues().map(fn(v) { v.to_int() }),
-              pd.std_hw().to_int(),
-              pd.std_vw().to_int(),
-              defaults.blue_scale(),
-              defaults.blue_shift().to_int(),
-              defaults.blue_fuzz().to_int(),
-            )
-          }
-          _ => @pshinter.PsGlobals::new()
-        }
-        hint_globals_ref.val = Some(g)
-        g
-      }
-    }
-  }
   // Reusable glyph loading buffers (captured by load_glyph_fn closure)
   let glyph_bufs = @truetype.GlyphBufs::new()
   // Cached TT interpreter state: fpgm func_defs + prep-modified CVT + reusable context
@@ -166,14 +140,29 @@ fn load_sfnt(
       let (o, _w, hh, hv) = @cff.load_cff_glyph(cff, glyph_index)
       if no_hinting {
         hint_has_hints.val = false
+        hint_globals_ref.val = None
       } else {
         hint_h_hints.val = hh
         hint_v_hints.val = hv
         hint_has_hints.val = hh.length() > 0 || hv.length() > 0
+        let pd = cff.private_dict_for_glyph(glyph_index)
+        let defaults = @pshinter.PsGlobals::new()
+        hint_globals_ref.val = Some(
+          @pshinter.build_ps_globals(
+            pd.blue_values().map(fn(v) { v.to_int() }),
+            pd.other_blues().map(fn(v) { v.to_int() }),
+            pd.std_hw().to_int(),
+            pd.std_vw().to_int(),
+            defaults.blue_scale(),
+            defaults.blue_shift().to_int(),
+            defaults.blue_fuzz().to_int(),
+          ),
+        )
       }
       (o, b"", @types.BBox::empty())
     } else {
       hint_has_hints.val = false
+      hint_globals_ref.val = None
       (@types.Outline::new(), b"", @types.BBox::empty())
     }
     let hmtx = ensure_hmtx()
@@ -198,7 +187,7 @@ fn load_sfnt(
     y_scale,
   ) {
     if hint_has_hints.val {
-      let globals = ensure_hint_globals()
+      let globals = hint_globals_ref.val.unwrap_or(@pshinter.PsGlobals::new())
       @pshinter.hint_outline(
         outline,
         hint_h_hints.val,

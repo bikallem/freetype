@@ -82,13 +82,37 @@ fn PsInterp::pop(self : PsInterp) -> Int64 {
 }
 
 ///|
+fn PsInterp::close_current_contour(self : PsInterp) -> Unit {
+  let n = self.points.length()
+  if n == 0 {
+    return
+  }
+  let contour_start = if self.contours.length() == 0 {
+    0
+  } else {
+    self.contours[self.contours.length() - 1].reinterpret_as_int() + 1
+  }
+  if n - contour_start >= 4 {
+    let end = n - 1
+    let start_pt = self.points[contour_start]
+    let end_pt = self.points[end]
+    if start_pt.x() == end_pt.x() &&
+      start_pt.y() == end_pt.y() &&
+      self.tags[end] == @types.CURVE_TAG_ON &&
+      self.tags[end - 1] == @types.CURVE_TAG_CUBIC &&
+      self.tags[end - 2] == @types.CURVE_TAG_CUBIC {
+      ignore(self.points.pop())
+      ignore(self.tags.pop())
+    }
+  }
+  self.contours.push((self.points.length() - 1).reinterpret_as_uint())
+}
+
+///|
 fn PsInterp::move_to(self : PsInterp, x : Int64, y : Int64) -> Unit {
   if self.path_started {
     // Close previous contour
-    let n = self.points.length()
-    if n > 0 {
-      self.contours.push((n - 1).reinterpret_as_uint())
-    }
+    self.close_current_contour()
   }
   self.current_x = x
   self.current_y = y
@@ -129,7 +153,7 @@ fn PsInterp::curve_to(
 /// Finalize the outline: close the last contour.
 pub fn PsInterp::finalize(self : PsInterp) -> @types.Outline {
   if self.path_started && self.points.length() > 0 {
-    self.contours.push((self.points.length() - 1).reinterpret_as_uint())
+    self.close_current_contour()
   }
   let n_points = self.points.length()
   let fa_points = FixedArray::make(n_points, @types.Vector::new(0L, 0L))

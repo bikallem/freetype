@@ -25,12 +25,18 @@ pub fn parse_top_dict(Bytes) -> CffTopDict
 type CffFont
 pub fn CffFont::cached_global_subrs(Self) -> Array[Bytes]
 pub fn CffFont::cached_local_subrs(Self) -> Array[Bytes]
+pub fn CffFont::cached_local_subrs_for_glyph(Self, UInt) -> Array[Bytes]
 pub fn CffFont::charstrings(Self) -> CffIndex
+pub fn CffFont::fd_index_for_glyph(Self, UInt) -> Int
+pub fn CffFont::fd_local_subrs(Self) -> Array[Array[Bytes]]
+pub fn CffFont::fd_private_dicts(Self) -> Array[CffPrivateDict]
+pub fn CffFont::fd_select(Self) -> Array[Int]
 pub fn CffFont::global_subrs(Self) -> CffIndex
 pub fn CffFont::local_subrs(Self) -> CffIndex?
 pub fn CffFont::name(Self) -> String
 pub fn CffFont::num_glyphs(Self) -> UInt
 pub fn CffFont::private_dict(Self) -> CffPrivateDict
+pub fn CffFont::private_dict_for_glyph(Self, UInt) -> CffPrivateDict
 pub fn CffFont::top_dict(Self) -> CffTopDict
 pub impl Show for CffFont
 

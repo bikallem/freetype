@@ -33,26 +33,6 @@ fn load_cff_standalone(data : Bytes) -> @base.FaceRec raise @error.FTError {
   let hint_v_hints : Ref[Array[@psaux.StemHint]] = Ref::new([])
   let hint_has_hints : Ref[Bool] = Ref::new(false)
   let hint_globals_ref : Ref[@pshinter.PsGlobals?] = Ref::new(None)
-  let ensure_hint_globals = fn() -> @pshinter.PsGlobals {
-    match hint_globals_ref.val {
-      Some(g) => g
-      None => {
-        let pd = cff.private_dict()
-        let defaults = @pshinter.PsGlobals::new()
-        let g = @pshinter.build_ps_globals(
-          pd.blue_values().map(fn(v) { v.to_int() }),
-          pd.other_blues().map(fn(v) { v.to_int() }),
-          pd.std_hw().to_int(),
-          pd.std_vw().to_int(),
-          defaults.blue_scale(),
-          defaults.blue_shift().to_int(),
-          defaults.blue_fuzz().to_int(),
-        )
-        hint_globals_ref.val = Some(g)
-        g
-      }
-    }
-  }
   let load_glyph_fn : (UInt, Int) -> (
     @base.GlyphSlotData,
     @types.Outline,
@@ -62,10 +42,24 @@ fn load_cff_standalone(data : Bytes) -> @base.FaceRec raise @error.FTError {
     let (outline, width, hh, hv) = @cff.load_cff_glyph(cff, glyph_index)
     if no_hinting {
       hint_has_hints.val = false
+      hint_globals_ref.val = None
     } else {
       hint_h_hints.val = hh
       hint_v_hints.val = hv
       hint_has_hints.val = hh.length() > 0 || hv.length() > 0
+      let pd = cff.private_dict_for_glyph(glyph_index)
+      let defaults = @pshinter.PsGlobals::new()
+      hint_globals_ref.val = Some(
+        @pshinter.build_ps_globals(
+          pd.blue_values().map(fn(v) { v.to_int() }),
+          pd.other_blues().map(fn(v) { v.to_int() }),
+          pd.std_hw().to_int(),
+          pd.std_vw().to_int(),
+          defaults.blue_scale(),
+          defaults.blue_shift().to_int(),
+          defaults.blue_fuzz().to_int(),
+        ),
+      )
     }
     let bb = @base.outline_get_bbox(outline)
     let slot_data = @base.GlyphSlotData::new(
@@ -82,7 +76,7 @@ fn load_cff_standalone(data : Bytes) -> @base.FaceRec raise @error.FTError {
     y_scale,
   ) {
     if hint_has_hints.val {
-      let globals = ensure_hint_globals()
+      let globals = hint_globals_ref.val.unwrap_or(@pshinter.PsGlobals::new())
       @pshinter.hint_outline(
         outline,
         hint_h_hints.val,
