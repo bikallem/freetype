@@ -207,26 +207,30 @@ test "parse_cmap_subtable: format 10" {
 ///|
 test "parse_cmap_subtable: format 2" {
   let data : Bytes = [
-    0x00, 0x02, // format
-     0x02, 0x1C, // length = 540
-     0x00, 0x00, // language
-  ] + Bytes::from_array({
-    let keys = FixedArray::make(512, b'\x00')
-    keys[0x81 * 2 + 1] = b'\x08' // subHeader index 1
-    keys
-  }[:]) + [
-    0x00, 0x20, // subHeader 0 firstCode
-     0x00, 0x01, // entryCount
-     0x00, 0x00, // idDelta
-     0x00, 0x0A, // idRangeOffset -> first glyph word
-     0x00, 0x40, // subHeader 1 firstCode
-     0x00, 0x02, // entryCount
-     0x00, 0x00, // idDelta
-     0x00, 0x04, // idRangeOffset -> second glyph word
-     0x00, 0x05, // glyphIdArray[0]
-     0x02, 0xBC, // glyphIdArray[1] = 700
-     0x02, 0xBD, // glyphIdArray[2] = 701
-  ]
+      0x00, 0x02, // format
+       0x02, 0x1C, // length = 540
+       0x00, 0x00,
+    ] + // language
+    Bytes::from_array(
+      ({
+        let keys = FixedArray::make(512, b'\x00')
+        keys[0x81 * 2 + 1] = b'\x08' // subHeader index 1
+        keys
+      })[:],
+    ) +
+    [
+      0x00, 0x20, // subHeader 0 firstCode
+       0x00, 0x01, // entryCount
+       0x00, 0x00, // idDelta
+       0x00, 0x0A, // idRangeOffset -> first glyph word
+       0x00, 0x40, // subHeader 1 firstCode
+       0x00, 0x02, // entryCount
+       0x00, 0x00, // idDelta
+       0x00, 0x04, // idRangeOffset -> second glyph word
+       0x00, 0x05, // glyphIdArray[0]
+       0x02, 0xBC, // glyphIdArray[1] = 700
+       0x02, 0xBD, // glyphIdArray[2] = 701
+    ]
   let reader = @stream.ByteReader::new(data)
   let lookup = parse_cmap_subtable(reader, 0U, 0U)
   let gid = match lookup {
@@ -280,6 +284,72 @@ test "parse_cmap_subtable: format 13" {
     _ => 0xFFFFFFFFU
   }
   assert_eq(gid, 900U)
+}
+
+///|
+test "parse_cmap_subtable: format 14" {
+  let data : Bytes = [
+    0x00, 0x0E, // format
+     0x00, 0x00, 0x00, 0x26, // length = 38
+     0x00, 0x00, 0x00, 0x01, // numSelectorRecords = 1
+     0x00, 0xFE, 0x0F, // varSelector = U+FE0F
+     0x00, 0x00, 0x00, 0x15, // default UVS offset = 21
+     0x00, 0x00, 0x00, 0x1D, // non-default UVS offset = 29
+     0x00, 0x00, 0x00, 0x01, // default numRanges = 1
+     0x00, 0x00, 0x20, 0x00, // U+0020, additionalCount = 0
+     0x00, 0x00, 0x00, 0x01, // non-default numMappings = 1
+     0x00, 0x00, 0x41, // U+0041
+     0x00, 0x03, // glyph id = 3
+  ]
+  let reader = @stream.ByteReader::new(data)
+  let lookup = parse_cmap_subtable(reader, 0U, 0U)
+  match lookup {
+    Format14(t) => {
+      assert_eq(
+        t.char_variant_index(0x20U, 0xFE0FU, fn(charcode) {
+          if charcode == 0x20U {
+            1U
+          } else {
+            0U
+          }
+        }),
+        1U,
+      )
+      assert_eq(
+        t.char_variant_index(0x41U, 0xFE0FU, fn(charcode) {
+          if charcode == 0x41U {
+            2U
+          } else {
+            0U
+          }
+        }),
+        3U,
+      )
+      assert_eq(
+        t.char_variant_is_default(0x20U, 0xFE0FU, fn(_charcode) { 0U }),
+        1,
+      )
+      assert_eq(
+        t.char_variant_is_default(0x41U, 0xFE0FU, fn(_charcode) { 0U }),
+        0,
+      )
+      assert_eq(
+        t.char_variant_is_default(0x42U, 0xFE0FU, fn(_charcode) { 0U }),
+        -1,
+      )
+      let selectors = t.variant_selectors()
+      assert_eq(selectors.length(), 1)
+      assert_eq(selectors[0], 0xFE0FU)
+      let variants = t.variants_of_char(0x41U)
+      assert_eq(variants.length(), 1)
+      assert_eq(variants[0], 0xFE0FU)
+      let chars = t.chars_of_variant(0xFE0FU)
+      assert_eq(chars.length(), 2)
+      assert_eq(chars[0], 0x20U)
+      assert_eq(chars[1], 0x41U)
+    }
+    _ => inspect(false, content="true")
+  }
 }
 
 ///|

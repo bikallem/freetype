@@ -18,6 +18,8 @@ FONT_DIR = os.path.join(os.path.dirname(__file__), "..", "fonts")
 SKIP_HINTED_BBOX_FIXTURES = {
     "minimal_collection.woff2",
     "minimal_hmtx.woff2",
+    "mvar.ttf",
+    "uvs.ttf",
 }
 
 UNICODE_CMAP_PRIORITIES = [

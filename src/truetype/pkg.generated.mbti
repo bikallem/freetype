@@ -57,6 +57,8 @@ pub fn parse_hvar(@stream.ByteReader, UInt, UInt) -> HvarTable raise @error.FTEr
 
 pub fn parse_loca(@stream.ByteReader, UInt, UInt, UInt, Int) -> Array[UInt] raise @error.FTError
 
+pub fn parse_mvar(@stream.ByteReader, UInt, UInt) -> MvarTable raise @error.FTError
+
 // Errors
 
 // Types and methods
@@ -140,6 +142,28 @@ pub fn InterpContext::zone1_tags(Self) -> FixedArray[Byte]
 pub fn InterpContext::zone1_touch(Self) -> FixedArray[Byte]
 
 type ItemVariationData derive(Show)
+
+pub struct MvarFaceDeltas {
+  hasc : Int
+  hdsc : Int
+  hlgp : Int
+  undo : Int
+  unds : Int
+} derive(Eq, Show)
+pub fn MvarFaceDeltas::hasc(Self) -> Int
+pub fn MvarFaceDeltas::hdsc(Self) -> Int
+pub fn MvarFaceDeltas::hlgp(Self) -> Int
+pub fn MvarFaceDeltas::undo(Self) -> Int
+pub fn MvarFaceDeltas::unds(Self) -> Int
+
+pub struct MvarTable {
+  regions : Array[Array[RegionAxisCoordinates]]
+  item_data : Array[ItemVariationData?]
+  records : Array[MvarValueRecord]
+} derive(Show)
+pub fn MvarTable::face_metric_deltas(Self, Array[Int]) -> MvarFaceDeltas
+
+type MvarValueRecord derive(Show)
 
 type NamedInstance derive(Show)
 

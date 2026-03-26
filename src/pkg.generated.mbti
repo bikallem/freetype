@@ -12,7 +12,17 @@ pub fn from_bytes(Bytes, face_index? : Int) -> @base.FaceRec raise @error.FTErro
 
 pub fn get_char_index(@base.FaceRec, UInt) -> UInt
 
+pub fn get_char_variant_index(@base.FaceRec, UInt, UInt) -> UInt
+
+pub fn get_char_variant_is_default(@base.FaceRec, UInt, UInt) -> Int
+
+pub fn get_chars_of_variant(@base.FaceRec, UInt) -> Array[UInt]
+
 pub fn get_kerning(@base.FaceRec, UInt, UInt) -> (Int64, Int64)
+
+pub fn get_variant_selectors(@base.FaceRec) -> Array[UInt]
+
+pub fn get_variants_of_char(@base.FaceRec, UInt) -> Array[UInt]
 
 pub fn load_glyph(@base.FaceRec, UInt, load_flags? : Int) -> Unit raise @error.FTError
 

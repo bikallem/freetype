@@ -83,6 +83,24 @@ pub fn CmapFormat13::new(groups~ : Array[CmapFormat13Group]) -> Self
 type CmapFormat13Group derive(Eq, Show)
 pub fn CmapFormat13Group::new(start_char_code~ : UInt, end_char_code~ : UInt, glyph_id~ : UInt) -> Self
 
+type CmapFormat14 derive(Show)
+pub fn CmapFormat14::char_index(Self, UInt) -> UInt
+pub fn CmapFormat14::char_variant_index(Self, UInt, UInt, (UInt) -> UInt) -> UInt
+pub fn CmapFormat14::char_variant_is_default(Self, UInt, UInt, (UInt) -> UInt) -> Int
+pub fn CmapFormat14::chars_of_variant(Self, UInt) -> Array[UInt]
+pub fn CmapFormat14::new(selectors~ : Array[CmapFormat14Selector]) -> Self
+pub fn CmapFormat14::variant_selectors(Self) -> Array[UInt]
+pub fn CmapFormat14::variants_of_char(Self, UInt) -> Array[UInt]
+
+type CmapFormat14Mapping derive(Eq, Show)
+pub fn CmapFormat14Mapping::new(unicode_value~ : UInt, glyph_id~ : UInt) -> Self
+
+type CmapFormat14Range derive(Eq, Show)
+pub fn CmapFormat14Range::new(start_unicode_value~ : UInt, additional_count~ : UInt) -> Self
+
+type CmapFormat14Selector derive(Show)
+pub fn CmapFormat14Selector::new(selector~ : UInt, default_ranges~ : Array[CmapFormat14Range], non_default_mappings~ : Array[CmapFormat14Mapping]) -> Self
+
 type CmapFormat2 derive(Show)
 pub fn CmapFormat2::char_index(Self, UInt) -> UInt
 pub fn CmapFormat2::new(sub_header_keys~ : FixedArray[Int], sub_headers~ : Array[CmapFormat2SubHeader], glyph_ids~ : Array[UInt]) -> Self
@@ -110,6 +128,7 @@ pub(all) enum CmapLookup {
   Format10(CmapFormat10)
   Format12(CmapFormat12)
   Format13(CmapFormat13)
+  Format14(CmapFormat14)
 }
 pub fn CmapLookup::char_index(Self, UInt) -> UInt
 
@@ -132,6 +151,10 @@ pub fn HeadTable::y_max(Self) -> Int
 pub fn HeadTable::y_min(Self) -> Int
 
 type HheaTable derive(Show)
+pub fn HheaTable::advance_width_max(Self) -> UInt
+pub fn HheaTable::ascender(Self) -> Int
+pub fn HheaTable::descender(Self) -> Int
+pub fn HheaTable::line_gap(Self) -> Int
 pub fn HheaTable::number_of_h_metrics(Self) -> UInt
 
 type HmtxTable derive(Show)
@@ -167,16 +190,23 @@ pub fn NameTable::get_name(Self, UInt) -> String?
 pub fn NameTable::new(format~ : UInt, count~ : UInt, string_offset~ : UInt, records~ : Array[NameRecord], string_data~ : Bytes) -> Self
 
 type Os2Table derive(Show)
+pub fn Os2Table::s_typo_ascender(Self) -> Int
+pub fn Os2Table::s_typo_descender(Self) -> Int
+pub fn Os2Table::version(Self) -> UInt
 
 type PostTable derive(Show)
+pub fn PostTable::underline_position(Self) -> Int
+pub fn PostTable::underline_thickness(Self) -> Int
 
 type SfntData derive(Show)
 pub fn SfntData::cmap(Self) -> CmapTable?
 pub fn SfntData::head(Self) -> HeadTable
 pub fn SfntData::hhea(Self) -> HheaTable
 pub fn SfntData::maxp(Self) -> MaxpTable
+pub fn SfntData::os2(Self) -> Os2Table?
 pub fn SfntData::raw_data(Self) -> Bytes
 pub fn SfntData::table_dir(Self) -> TableDirectory
+pub fn SfntData::vhea(Self) -> HheaTable?
 
 type TableDirectory derive(Show)
 pub fn TableDirectory::find_table(Self, UInt) -> TableRecord?

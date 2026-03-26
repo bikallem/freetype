@@ -48,6 +48,7 @@ pub(all) enum CmapLookup {
   Format10(CmapFormat10)
   Format12(CmapFormat12)
   Format13(CmapFormat13)
+  Format14(CmapFormat14)
 }
 
 ///|
@@ -62,6 +63,7 @@ pub fn CmapLookup::char_index(self : CmapLookup, charcode : UInt) -> UInt {
     Format10(t) => t.char_index(charcode)
     Format12(t) => t.char_index(charcode)
     Format13(t) => t.char_index(charcode)
+    Format14(t) => t.char_index(charcode)
   }
 }
 
@@ -103,6 +105,7 @@ pub fn parse_cmap_subtable(
       ignore(reader.read_u16_be())
       Format13(parse_cmap_format13(reader, abs_offset))
     }
+    14U => Format14(parse_cmap_format14(reader, abs_offset))
     _ => raise @error.FTError::InvalidCharMapFormat
   }
 }
@@ -661,6 +664,283 @@ pub fn CmapFormat13::char_index(self : CmapFormat13, charcode : UInt) -> UInt {
     }
   } nobreak {
     0U
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Format 14: Unicode variation sequences
+// ---------------------------------------------------------------------------
+
+///|
+struct CmapFormat14Range {
+  start_unicode_value : UInt
+  additional_count : UInt
+} derive(Eq, Show)
+
+///|
+pub fn CmapFormat14Range::new(
+  start_unicode_value~ : UInt,
+  additional_count~ : UInt,
+) -> CmapFormat14Range {
+  { start_unicode_value, additional_count }
+}
+
+///|
+struct CmapFormat14Mapping {
+  unicode_value : UInt
+  glyph_id : UInt
+} derive(Eq, Show)
+
+///|
+pub fn CmapFormat14Mapping::new(
+  unicode_value~ : UInt,
+  glyph_id~ : UInt,
+) -> CmapFormat14Mapping {
+  { unicode_value, glyph_id }
+}
+
+///|
+struct CmapFormat14Selector {
+  selector : UInt
+  default_ranges : Array[CmapFormat14Range]
+  non_default_mappings : Array[CmapFormat14Mapping]
+} derive(Show)
+
+///|
+pub fn CmapFormat14Selector::new(
+  selector~ : UInt,
+  default_ranges~ : Array[CmapFormat14Range],
+  non_default_mappings~ : Array[CmapFormat14Mapping],
+) -> CmapFormat14Selector {
+  { selector, default_ranges, non_default_mappings }
+}
+
+///|
+struct CmapFormat14 {
+  selectors : Array[CmapFormat14Selector]
+} derive(Show)
+
+///|
+pub fn CmapFormat14::new(
+  selectors~ : Array[CmapFormat14Selector],
+) -> CmapFormat14 {
+  { selectors, }
+}
+
+///|
+fn read_u24_be(reader : @stream.ByteReader) -> UInt raise @error.FTError {
+  (reader.read_byte().to_uint() << 16) |
+  (reader.read_byte().to_uint() << 8) |
+  reader.read_byte().to_uint()
+}
+
+///|
+fn parse_cmap_format14(
+  reader : @stream.ByteReader,
+  abs_offset : Int,
+) -> CmapFormat14 raise @error.FTError {
+  reader.seek(abs_offset + 2)
+  let _length = reader.read_u32_be()
+  let num_selector_records = reader.read_u32_be().reinterpret_as_int()
+  let records : Array[(UInt, UInt, UInt)] = Array::new(
+    capacity=num_selector_records,
+  )
+  for _ in 0..<num_selector_records {
+    records.push(
+      (read_u24_be(reader), reader.read_u32_be(), reader.read_u32_be()),
+    )
+  }
+  let selectors : Array[CmapFormat14Selector] = Array::new(
+    capacity=num_selector_records,
+  )
+  for _, record in records {
+    let (selector, default_offset, non_default_offset) = record
+    let default_ranges : Array[CmapFormat14Range] = []
+    if default_offset != 0U {
+      reader.seek(abs_offset + default_offset.reinterpret_as_int())
+      let num_ranges = reader.read_u32_be().reinterpret_as_int()
+      for _ in 0..<num_ranges {
+        default_ranges.push(
+          CmapFormat14Range::new(
+            start_unicode_value=read_u24_be(reader),
+            additional_count=reader.read_byte().to_uint(),
+          ),
+        )
+      }
+    }
+    let non_default_mappings : Array[CmapFormat14Mapping] = []
+    if non_default_offset != 0U {
+      reader.seek(abs_offset + non_default_offset.reinterpret_as_int())
+      let num_mappings = reader.read_u32_be().reinterpret_as_int()
+      for _ in 0..<num_mappings {
+        non_default_mappings.push(
+          CmapFormat14Mapping::new(
+            unicode_value=read_u24_be(reader),
+            glyph_id=reader.read_u16_be(),
+          ),
+        )
+      }
+    }
+    selectors.push(
+      CmapFormat14Selector::new(
+        selector~,
+        default_ranges~,
+        non_default_mappings~,
+      ),
+    )
+  }
+  { selectors, }
+}
+
+///|
+pub fn CmapFormat14::char_index(self : CmapFormat14, _charcode : UInt) -> UInt {
+  ignore(self)
+  0U
+}
+
+///|
+fn CmapFormat14::find_selector(
+  self : CmapFormat14,
+  selector : UInt,
+) -> CmapFormat14Selector? {
+  for _, entry in self.selectors {
+    if entry.selector == selector {
+      return Some(entry)
+    }
+  }
+  None
+}
+
+///|
+fn range_contains(range : CmapFormat14Range, charcode : UInt) -> Bool {
+  let end = range.start_unicode_value + range.additional_count
+  charcode >= range.start_unicode_value && charcode <= end
+}
+
+///|
+fn CmapFormat14Selector::default_contains(
+  self : CmapFormat14Selector,
+  charcode : UInt,
+) -> Bool {
+  for _, range in self.default_ranges {
+    if range_contains(range, charcode) {
+      return true
+    }
+  }
+  false
+}
+
+///|
+fn CmapFormat14Selector::non_default_glyph(
+  self : CmapFormat14Selector,
+  charcode : UInt,
+) -> UInt {
+  for _, mapping in self.non_default_mappings {
+    if mapping.unicode_value == charcode {
+      return mapping.glyph_id
+    }
+  }
+  0U
+}
+
+///|
+pub fn CmapFormat14::char_variant_index(
+  self : CmapFormat14,
+  charcode : UInt,
+  selector : UInt,
+  unicode_char_index : (UInt) -> UInt,
+) -> UInt {
+  match self.find_selector(selector) {
+    Some(entry) => {
+      let non_default = entry.non_default_glyph(charcode)
+      if non_default != 0U {
+        return non_default
+      }
+      if entry.default_contains(charcode) {
+        return unicode_char_index(charcode)
+      }
+      0U
+    }
+    None => 0U
+  }
+}
+
+///|
+pub fn CmapFormat14::char_variant_is_default(
+  self : CmapFormat14,
+  charcode : UInt,
+  selector : UInt,
+  _unicode_char_index : (UInt) -> UInt,
+) -> Int {
+  match self.find_selector(selector) {
+    Some(entry) => {
+      if entry.non_default_glyph(charcode) != 0U {
+        return 0
+      }
+      if entry.default_contains(charcode) {
+        return 1
+      }
+      -1
+    }
+    None => -1
+  }
+}
+
+///|
+pub fn CmapFormat14::variant_selectors(self : CmapFormat14) -> Array[UInt] {
+  let selectors : Array[UInt] = Array::new(capacity=self.selectors.length())
+  for _, entry in self.selectors {
+    selectors.push(entry.selector)
+  }
+  selectors
+}
+
+///|
+pub fn CmapFormat14::variants_of_char(
+  self : CmapFormat14,
+  charcode : UInt,
+) -> Array[UInt] {
+  let selectors : Array[UInt] = []
+  for _, entry in self.selectors {
+    if entry.default_contains(charcode) ||
+      entry.non_default_glyph(charcode) != 0U {
+      selectors.push(entry.selector)
+    }
+  }
+  selectors
+}
+
+///|
+pub fn CmapFormat14::chars_of_variant(
+  self : CmapFormat14,
+  selector : UInt,
+) -> Array[UInt] {
+  match self.find_selector(selector) {
+    Some(entry) => {
+      let chars : Array[UInt] = []
+      for _, range in entry.default_ranges {
+        let end = range.start_unicode_value + range.additional_count
+        for
+          value in range.start_unicode_value.reinterpret_as_int()..<=end.reinterpret_as_int() {
+          chars.push(value.reinterpret_as_uint())
+        }
+      }
+      for _, mapping in entry.non_default_mappings {
+        let mut exists = false
+        for _, value in chars {
+          if value == mapping.unicode_value {
+            exists = true
+            break
+          }
+        }
+        if !exists {
+          chars.push(mapping.unicode_value)
+        }
+      }
+      chars.sort()
+      chars
+    }
+    None => []
   }
 }
 

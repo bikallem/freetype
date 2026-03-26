@@ -101,3 +101,18 @@ pub fn parse_os2(
     us_win_descent,
   }
 }
+
+///|
+pub fn Os2Table::version(self : Os2Table) -> UInt {
+  self.version
+}
+
+///|
+pub fn Os2Table::s_typo_ascender(self : Os2Table) -> Int {
+  self.s_typo_ascender
+}
+
+///|
+pub fn Os2Table::s_typo_descender(self : Os2Table) -> Int {
+  self.s_typo_descender
+}

@@ -7,7 +7,9 @@ struct SfntData {
   table_dir : TableDirectory
   head : HeadTable
   hhea : HheaTable
+  vhea : HheaTable?
   maxp : MaxpTable
+  os2 : Os2Table?
   cmap : CmapTable?
   // Raw table data access for driver-specific tables
   raw_data : Bytes
@@ -29,8 +31,18 @@ pub fn SfntData::hhea(self : SfntData) -> HheaTable {
 }
 
 ///|
+pub fn SfntData::vhea(self : SfntData) -> HheaTable? {
+  self.vhea
+}
+
+///|
 pub fn SfntData::maxp(self : SfntData) -> MaxpTable {
   self.maxp
+}
+
+///|
+pub fn SfntData::os2(self : SfntData) -> Os2Table? {
+  self.os2
 }
 
 ///|
@@ -91,6 +103,14 @@ pub fn load_sfnt_face(
   let maxp = match table_dir.find_table(@types.TAG_MAXP) {
     Some(r) => parse_maxp(reader, r.offset, r.length)
     None => raise @error.FTError::InvalidTable
+  }
+  let vhea = match table_dir.find_table(@types.TAG_VHEA) {
+    Some(r) => Some(parse_hhea(reader, r.offset, r.length))
+    None => None
+  }
+  let os2 = match table_dir.find_table(@types.TAG_OS2) {
+    Some(r) => Some(parse_os2(reader, r.offset, r.length))
+    None => None
   }
   // Extract family_name and style_name directly from raw name table bytes
   // instead of parsing the full name table. We scan name records for nameID 1
@@ -158,6 +178,13 @@ pub fn load_sfnt_face(
   face.set_descender(hhea.descender)
   face.set_height(hhea.ascender - hhea.descender + hhea.line_gap)
   face.set_max_advance_width(hhea.advance_width_max.reinterpret_as_int())
+  match vhea {
+    Some(vertical) =>
+      face.set_max_advance_height(
+        vertical.advance_width_max.reinterpret_as_int(),
+      )
+    None => ()
+  }
   face.set_bbox(
     @types.BBox::new(
       head.x_min.to_int64(),
@@ -168,6 +195,9 @@ pub fn load_sfnt_face(
   )
   // Set face flags
   face.set_face_flags(@base.FACE_FLAG_SFNT | @base.FACE_FLAG_HORIZONTAL)
+  if vhea is Some(_) && table_dir.find_table(@types.TAG_VMTX) is Some(_) {
+    face.set_face_flags(face.face_flags() | @base.FACE_FLAG_VERTICAL)
+  }
   // Scalable if has outlines (glyf or CFF table)
   if table_dir.find_table(@types.TAG_GLYF) is Some(_) ||
     table_dir.find_table(@types.TAG_CFF) is Some(_) ||
@@ -215,7 +245,9 @@ pub fn load_sfnt_face(
     table_dir,
     head,
     hhea,
+    vhea,
     maxp,
+    os2,
     cmap: cmap_table,
     raw_data: data,
   }

@@ -24,6 +24,26 @@ pub fn HheaTable::number_of_h_metrics(self : HheaTable) -> UInt {
 }
 
 ///|
+pub fn HheaTable::ascender(self : HheaTable) -> Int {
+  self.ascender
+}
+
+///|
+pub fn HheaTable::descender(self : HheaTable) -> Int {
+  self.descender
+}
+
+///|
+pub fn HheaTable::line_gap(self : HheaTable) -> Int {
+  self.line_gap
+}
+
+///|
+pub fn HheaTable::advance_width_max(self : HheaTable) -> UInt {
+  self.advance_width_max
+}
+
+///|
 /// Parse the 'hhea' table.
 pub fn parse_hhea(
   reader : @stream.ByteReader,

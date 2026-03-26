@@ -4,6 +4,8 @@ generate_test_fonts.py — Generate minimal synthetic test fonts for FreeType te
 
 Generates:
   minimal.ttf  — Minimal TrueType font (3 glyphs: .notdef, space, A)
+  mvar.ttf     — Minimal variable TrueType font with MVAR face-metric deltas
+  uvs.ttf      — Minimal TrueType font with cmap format 14 variation selectors
   minimal.otf  — Minimal CFF/OpenType font (OTTO signature)
   minimal.bdf  — Minimal BDF bitmap font
   minimal.pfb  — Minimal Type 1 PFB font
@@ -275,6 +277,69 @@ def build_cmap_table() -> bytes:
     return header + enc_record + subtable
 
 
+def build_cmap_table_uvs() -> bytes:
+    """Build a cmap with a base Unicode BMP subtable and a format 14 UVS table."""
+    import math
+
+    seg_count = 3
+    seg_count_x2 = seg_count * 2
+    entry_sel = int(math.floor(math.log2(seg_count)))
+    search_rng = (2 ** entry_sel) * 2
+    range_shift = seg_count_x2 - search_rng
+
+    end_codes = struct.pack('>HHH', 32, 65, 0xFFFF)
+    reserved = struct.pack('>H', 0)
+    start_codes = struct.pack('>HHH', 32, 65, 0xFFFF)
+    id_deltas = struct.pack('>hhh', 1 - 32, 2 - 65, 1)
+    id_range_offsets = struct.pack('>HHH', 0, 0, 0)
+    format4_body = end_codes + reserved + start_codes + id_deltas + id_range_offsets
+    format4 = struct.pack(
+        '>HHHHHHH',
+        4,
+        14 + len(format4_body),
+        0,
+        seg_count_x2,
+        search_rng,
+        entry_sel,
+        range_shift,
+    ) + format4_body
+
+    selector = 0xFE0F
+    default_uvs = (
+        struct.pack('>I', 1) +
+        bytes([0x00, 0x00, 0x20, 0x00])
+    )
+    non_default_uvs = (
+        struct.pack('>I', 1) +
+        bytes([0x00, 0x00, 0x41]) +
+        struct.pack('>H', 3)
+    )
+    format14_header_len = 10
+    selector_record_len = 11
+    default_off = format14_header_len + selector_record_len
+    non_default_off = default_off + len(default_uvs)
+    format14 = (
+        struct.pack('>H', 14) +
+        struct.pack('>I', format14_header_len + selector_record_len +
+                    len(default_uvs) + len(non_default_uvs)) +
+        struct.pack('>I', 1) +
+        bytes([(selector >> 16) & 0xFF, (selector >> 8) & 0xFF, selector & 0xFF]) +
+        struct.pack('>I', default_off) +
+        struct.pack('>I', non_default_off) +
+        default_uvs +
+        non_default_uvs
+    )
+
+    header = struct.pack('>HH', 0, 2)
+    format4_offset = 4 + 2 * 8
+    format14_offset = format4_offset + len(format4)
+    records = (
+        struct.pack('>HHI', 3, 1, format4_offset) +
+        struct.pack('>HHI', 0, 5, format14_offset)
+    )
+    return header + records + format4 + format14
+
+
 def build_post_table() -> bytes:
     """Build a minimal 'post' table (format 3 — no glyph names)."""
     return struct.pack('>I'    # format (3.0)
@@ -356,6 +421,48 @@ def build_glyf_and_loca():
     return glyf_data, loca_data
 
 
+def build_glyf_and_loca_uvs():
+    """Build glyf/loca for .notdef, space, A, and A.alt."""
+    glyphs = []
+
+    notdef = struct.pack('>h', 0) + struct.pack('>hhhh', 0, 0, 0, 0)
+    glyphs.append(pad4(notdef))
+
+    space = struct.pack('>h', 0) + struct.pack('>hhhh', 0, 0, 0, 0)
+    glyphs.append(pad4(space))
+
+    a_glyph = (
+        struct.pack('>h', 1) +
+        struct.pack('>hhhh', 50, 0, 450, 700) +
+        struct.pack('>H', 2) +
+        struct.pack('>H', 0) +
+        bytes([0x01, 0x01, 0x01]) +
+        struct.pack('>hhh', 50, 200, 200) +
+        struct.pack('>hhh', 0, 700, -700)
+    )
+    glyphs.append(pad4(a_glyph))
+
+    a_alt = (
+        struct.pack('>h', 1) +
+        struct.pack('>hhhh', 50, 0, 450, 700) +
+        struct.pack('>H', 3) +
+        struct.pack('>H', 0) +
+        bytes([0x01, 0x01, 0x01, 0x01]) +
+        struct.pack('>hhhh', 50, 0, 400, 0) +
+        struct.pack('>hhhh', 0, 700, 0, -700)
+    )
+    glyphs.append(pad4(a_alt))
+
+    glyf_data = b''.join(glyphs)
+    offsets = [0]
+    pos = 0
+    for glyph in glyphs:
+        pos += len(glyph)
+        offsets.append(pos)
+    loca_data = b''.join(struct.pack('>H', offset // 2) for offset in offsets)
+    return glyf_data, loca_data
+
+
 def build_hmtx_table() -> bytes:
     """Build hmtx for 3 glyphs. Each has advanceWidth and lsb."""
     # .notdef: advance=500, lsb=0
@@ -365,6 +472,72 @@ def build_hmtx_table() -> bytes:
     data += struct.pack('>Hh', 250, 0)  # space
     data += struct.pack('>Hh', 500, 50) # A
     return data
+
+
+def build_hmtx_table_uvs() -> bytes:
+    """Build hmtx for .notdef, space, A, and A.alt."""
+    data = struct.pack('>Hh', 500, 0)
+    data += struct.pack('>Hh', 250, 0)
+    data += struct.pack('>Hh', 500, 50)
+    data += struct.pack('>Hh', 550, 50)
+    return data
+
+
+def build_fvar_table() -> bytes:
+    """Build a minimal fvar table with a single wght axis and no instances."""
+    axis = struct.pack(
+        '>4siiiHH',
+        b'wght',
+        100 << 16,
+        400 << 16,
+        900 << 16,
+        0,
+        256,
+    )
+    return struct.pack(
+        '>HHHHHHHH',
+        1,   # majorVersion
+        0,   # minorVersion
+        16,  # axesArrayOffset
+        2,   # reserved
+        1,   # axisCount
+        20,  # axisSize
+        0,   # instanceCount
+        4,   # instanceSize
+    ) + axis
+
+
+def build_mvar_table() -> bytes:
+    """Build an MVAR table that adjusts face metrics at max weight."""
+    value_records = b''.join([
+        struct.pack('>4sHH', b'hasc', 0, 0),
+        struct.pack('>4sHH', b'hdsc', 0, 1),
+        struct.pack('>4sHH', b'hlgp', 0, 2),
+        struct.pack('>4sHH', b'undo', 0, 3),
+        struct.pack('>4sHH', b'unds', 0, 4),
+    ])
+
+    region_list = (
+        struct.pack('>HH', 1, 1) +
+        struct.pack('>hhh', 0, 0x4000, 0x4000)
+    )
+    item_data = (
+        struct.pack('>HHH', 5, 1, 1) +
+        struct.pack('>H', 0) +
+        struct.pack('>hhhhh', 50, -20, 30, -10, 8)
+    )
+    item_store = (
+        struct.pack('>HIH', 1, 12, 1) +
+        struct.pack('>I', 12 + len(region_list)) +
+        region_list +
+        item_data
+    )
+
+    return (
+        struct.pack('>HHHHHH', 1, 0, 0, 8, 5, 12 + len(value_records)) +
+        value_records +
+        item_store
+    )
 
 
 def assemble_sfnt(tables: dict, sfnt_version: bytes = b'\x00\x01\x00\x00') -> bytes:
@@ -417,6 +590,44 @@ def generate_ttf() -> bytes:
         'glyf': glyf_data,
         'loca': loca_data,
         'hmtx': build_hmtx_table(),
+    }
+    return assemble_sfnt(tables, sfnt_version=b'\x00\x01\x00\x00')
+
+
+def generate_uvs_ttf() -> bytes:
+    glyf_data, loca_data = build_glyf_and_loca_uvs()
+    tables = {
+        'head': build_head_table(x_min=0, y_min=0, x_max=450, y_max=700,
+                                 index_to_loc_format=0),
+        'hhea': build_hhea_table(num_hmetrics=4, advance_width_max=550),
+        'maxp': build_maxp_table(num_glyphs=4, max_points=4, max_contours=1),
+        'OS/2': build_os2_table(),
+        'name': build_name_table(family='UVS', style='Regular'),
+        'cmap': build_cmap_table_uvs(),
+        'post': build_post_table(),
+        'glyf': glyf_data,
+        'loca': loca_data,
+        'hmtx': build_hmtx_table_uvs(),
+    }
+    return assemble_sfnt(tables, sfnt_version=b'\x00\x01\x00\x00')
+
+
+def generate_mvar_ttf() -> bytes:
+    glyf_data, loca_data = build_glyf_and_loca()
+    tables = {
+        'head': build_head_table(x_min=0, y_min=0, x_max=450, y_max=700,
+                                 index_to_loc_format=0),
+        'hhea': build_hhea_table(num_hmetrics=3, advance_width_max=500),
+        'maxp': build_maxp_table(num_glyphs=3, max_points=3, max_contours=1),
+        'OS/2': build_os2_table(),
+        'name': build_name_table(family='MVAR', style='Regular'),
+        'cmap': build_cmap_table(),
+        'post': build_post_table(),
+        'glyf': glyf_data,
+        'loca': loca_data,
+        'hmtx': build_hmtx_table(),
+        'fvar': build_fvar_table(),
+        'MVAR': build_mvar_table(),
     }
     return assemble_sfnt(tables, sfnt_version=b'\x00\x01\x00\x00')
 
@@ -968,6 +1179,22 @@ def main():
     with open(ttf_path, 'wb') as f:
         f.write(ttf_data)
     print(f"  Written {len(ttf_data)} bytes to {ttf_path}")
+
+    # MVAR TTF
+    print("Generating mvar.ttf...")
+    mvar_data = generate_mvar_ttf()
+    mvar_path = os.path.join(SCRIPT_DIR, 'mvar.ttf')
+    with open(mvar_path, 'wb') as f:
+        f.write(mvar_data)
+    print(f"  Written {len(mvar_data)} bytes to {mvar_path}")
+
+    # UVS TTF
+    print("Generating uvs.ttf...")
+    uvs_data = generate_uvs_ttf()
+    uvs_path = os.path.join(SCRIPT_DIR, 'uvs.ttf')
+    with open(uvs_path, 'wb') as f:
+        f.write(uvs_data)
+    print(f"  Written {len(uvs_data)} bytes to {uvs_path}")
 
     # OTF
     print("Generating minimal.otf...")

@@ -642,7 +642,9 @@ pub fn decompress_woff2(data : Bytes) -> Bytes raise @error.FTError {
     }
     let is_transformed = (entry.flags & 0x100U) != 0U
     if is_transformed {
-      raise @error.FTError::UnimplementedFeature
+      // WOFF2 only defines transforms for glyf/loca and hmtx; anything else
+      // is an invalid font rather than a missing implementation detail.
+      raise @error.FTError::InvalidTable
     }
     resolved_tables[i] = woff2_table_bytes(uncompressed, entry)
     table_is_resolved[i] = true

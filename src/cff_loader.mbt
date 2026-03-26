@@ -146,6 +146,18 @@ fn load_cff_standalone(data : Bytes) -> @base.FaceRec raise @error.FTError {
     }
   }
   let no_kerning : (UInt, UInt) -> Int = fn(_left, _right) { 0 }
+  let no_char_variant_index : (UInt, UInt) -> UInt = fn(_charcode, _selector) {
+    0U
+  }
+  let no_char_variant_is_default : (UInt, UInt) -> Int = fn(
+    _charcode,
+    _selector,
+  ) {
+    -1
+  }
+  let no_variant_selectors : () -> Array[UInt] = fn() { [] }
+  let no_variants_of_char : (UInt) -> Array[UInt] = fn(_charcode) { [] }
+  let no_chars_of_variant : (UInt) -> Array[UInt] = fn(_selector) { [] }
   let no_tt_hint : (@types.Outline, Bytes, @fixed.Fixed, @fixed.Fixed, UInt) -> Bool = fn(
     _outline,
     _instructions,
@@ -160,6 +172,11 @@ fn load_cff_standalone(data : Bytes) -> @base.FaceRec raise @error.FTError {
     @base.DriverData::SfntDriver(
       @base.SfntOps::new(
         char_index=char_index_fn,
+        char_variant_index=no_char_variant_index,
+        char_variant_is_default=no_char_variant_is_default,
+        variant_selectors=no_variant_selectors,
+        variants_of_char=no_variants_of_char,
+        chars_of_variant=no_chars_of_variant,
         load_glyph=load_glyph_fn,
         get_kerning=no_kerning,
         apply_hints=apply_hints_fn,

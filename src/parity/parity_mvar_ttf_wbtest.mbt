@@ -1,25 +1,25 @@
-// Parity tests for minimal_collection.woff2
+// Parity tests for mvar.ttf
 // AUTO-GENERATED — do not edit
 
 ///|
-fn load_generated_minimal_collection_woff2() -> Bytes {
-  try! @fs.read_file_to_bytes("test/fonts/minimal_collection.woff2")
+fn load_generated_mvar_ttf() -> Bytes {
+  try! @fs.read_file_to_bytes("test/fonts/mvar.ttf")
 }
 
 ///|
-test "parity/minimal_collection.woff2: format" {
-  inspect(@base.detect_format(load_generated_minimal_collection_woff2()), content="Woff2")
+test "parity/mvar.ttf: format" {
+  inspect(@base.detect_format(load_generated_mvar_ttf()) is (TrueType | TrueTypeCollection), content="true")
 }
 
 ///|
-test "parity/minimal_collection.woff2: loads" {
-  inspect((try? @freetype.from_bytes(load_generated_minimal_collection_woff2())) is Ok(_), content="true")
+test "parity/mvar.ttf: loads" {
+  inspect((try? @freetype.from_bytes(load_generated_mvar_ttf())) is Ok(_), content="true")
 }
 
 ///|
-test "parity/minimal_collection.woff2: metadata" {
-  let f = @freetype.from_bytes(load_generated_minimal_collection_woff2())
-  inspect(f.family_name(), content="Minimal")
+test "parity/mvar.ttf: metadata" {
+  let f = @freetype.from_bytes(load_generated_mvar_ttf())
+  inspect(f.family_name(), content="MVAR")
   inspect(f.num_glyphs(), content="3")
   inspect(f.units_per_em(), content="1000")
   inspect(f.ascender(), content="800")
@@ -28,8 +28,8 @@ test "parity/minimal_collection.woff2: metadata" {
 }
 
 ///|
-test "parity/minimal_collection.woff2: bbox" {
-  let f = @freetype.from_bytes(load_generated_minimal_collection_woff2())
+test "parity/mvar.ttf: bbox" {
+  let f = @freetype.from_bytes(load_generated_mvar_ttf())
   inspect(f.bbox().x_min(), content="0")
   inspect(f.bbox().y_min(), content="0")
   inspect(f.bbox().x_max(), content="450")
@@ -37,8 +37,8 @@ test "parity/minimal_collection.woff2: bbox" {
 }
 
 ///|
-test "parity/minimal_collection.woff2: flags" {
-  let f = @freetype.from_bytes(load_generated_minimal_collection_woff2())
+test "parity/mvar.ttf: flags" {
+  let f = @freetype.from_bytes(load_generated_mvar_ttf())
   inspect(f.is_scalable(), content="true")
   inspect(f.is_sfnt(), content="true")
   inspect(f.has_horizontal(), content="true")
@@ -46,8 +46,8 @@ test "parity/minimal_collection.woff2: flags" {
 }
 
 ///|
-test "parity/minimal_collection.woff2: charmaps" {
-  let f = @freetype.from_bytes(load_generated_minimal_collection_woff2())
+test "parity/mvar.ttf: charmaps" {
+  let f = @freetype.from_bytes(load_generated_mvar_ttf())
   inspect(f.charmaps().length(), content="1")
   if f.charmaps().length() > 0 {
     inspect(f.charmaps()[0].platform_id(), content="3")
@@ -56,15 +56,15 @@ test "parity/minimal_collection.woff2: charmaps" {
 }
 
 ///|
-test "parity/minimal_collection.woff2: charmap entries" {
-  let f = @freetype.from_bytes(load_generated_minimal_collection_woff2())
+test "parity/mvar.ttf: charmap entries" {
+  let f = @freetype.from_bytes(load_generated_mvar_ttf())
   inspect(@freetype.get_char_index(f, 32U), content="1")
   inspect(@freetype.get_char_index(f, 65U), content="2")
 }
 
 ///|
-test "parity/minimal_collection.woff2: glyph 2 outline NO_SCALE" {
-  let f = @freetype.from_bytes(load_generated_minimal_collection_woff2())
+test "parity/mvar.ttf: glyph 2 outline NO_SCALE" {
+  let f = @freetype.from_bytes(load_generated_mvar_ttf())
   let r = try? @freetype.load_glyph(f, 2U, load_flags=@base.LOAD_NO_SCALE)
   guard r is Ok(_) else { return }
   inspect(f.glyph().outline().n_points(), content="3")
@@ -79,8 +79,8 @@ test "parity/minimal_collection.woff2: glyph 2 outline NO_SCALE" {
 }
 
 ///|
-test "parity/minimal_collection.woff2: glyph metrics at 16ppem" {
-  let f = @freetype.from_bytes(load_generated_minimal_collection_woff2())
+test "parity/mvar.ttf: glyph metrics at 16ppem" {
+  let f = @freetype.from_bytes(load_generated_mvar_ttf())
   let r1 = try? @freetype.set_pixel_sizes(f, 0U, 16U)
   guard r1 is Ok(_) else { return }
   let r2 = try? @freetype.load_glyph(f, 2U)
@@ -89,16 +89,8 @@ test "parity/minimal_collection.woff2: glyph metrics at 16ppem" {
 }
 
 ///|
-test "parity/minimal_collection.woff2: multi-face" {
-  let f0 = @freetype.from_bytes(load_generated_minimal_collection_woff2(), face_index=0)
-  inspect(f0.num_glyphs() > 0L, content="true")
-  let f1 = @freetype.from_bytes(load_generated_minimal_collection_woff2(), face_index=1)
-  inspect(f1.num_glyphs() > 0L, content="true")
-}
-
-///|
-test "parity/minimal_collection.woff2: outline NO_HINTING 16ppem" {
-  let f = @freetype.from_bytes(load_generated_minimal_collection_woff2())
+test "parity/mvar.ttf: outline NO_HINTING 16ppem" {
+  let f = @freetype.from_bytes(load_generated_mvar_ttf())
   let r1 = try? @freetype.set_pixel_sizes(f, 0U, 16U)
   guard r1 is Ok(_) else { return }
   let r2 = try? @freetype.load_glyph(f, 2U, load_flags=@base.LOAD_NO_HINTING)
@@ -107,8 +99,8 @@ test "parity/minimal_collection.woff2: outline NO_HINTING 16ppem" {
 }
 
 ///|
-test "parity/minimal_collection.woff2: outline FORCE_AUTOHINT 16ppem" {
-  let f = @freetype.from_bytes(load_generated_minimal_collection_woff2())
+test "parity/mvar.ttf: outline FORCE_AUTOHINT 16ppem" {
+  let f = @freetype.from_bytes(load_generated_mvar_ttf())
   let r1 = try? @freetype.set_pixel_sizes(f, 0U, 16U)
   guard r1 is Ok(_) else { return }
   let r2 = try? @freetype.load_glyph(f, 2U, load_flags=@base.LOAD_FORCE_AUTOHINT)

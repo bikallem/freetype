@@ -268,8 +268,11 @@ pub fn GlyphSlotData::metrics_height(Self) -> Int64
 pub fn GlyphSlotData::metrics_hori_advance(Self) -> Int64
 pub fn GlyphSlotData::metrics_hori_bearing_x(Self) -> Int64
 pub fn GlyphSlotData::metrics_hori_bearing_y(Self) -> Int64
+pub fn GlyphSlotData::metrics_vert_advance(Self) -> Int64
+pub fn GlyphSlotData::metrics_vert_bearing_x(Self) -> Int64
+pub fn GlyphSlotData::metrics_vert_bearing_y(Self) -> Int64
 pub fn GlyphSlotData::metrics_width(Self) -> Int64
-pub fn GlyphSlotData::new(Int64, Int64, Int64, Int64, Int64) -> Self
+pub fn GlyphSlotData::new(Int64, Int64, Int64, Int64, Int64, metrics_vert_bearing_x? : Int64, metrics_vert_bearing_y? : Int64, metrics_vert_advance? : Int64) -> Self
 
 type OutlineFuncs
 pub fn OutlineFuncs::new(move_to~ : (@types.Vector) -> Unit raise @error.FTError, line_to~ : (@types.Vector) -> Unit raise @error.FTError, conic_to~ : (@types.Vector, @types.Vector) -> Unit raise @error.FTError, cubic_to~ : (@types.Vector, @types.Vector, @types.Vector) -> Unit raise @error.FTError, shift? : Int, delta? : Int64) -> Self
@@ -277,12 +280,17 @@ pub fn OutlineFuncs::new(move_to~ : (@types.Vector) -> Unit raise @error.FTError
 type SfntOps
 pub fn SfntOps::apply_hints(Self) -> (@types.Outline, @fixed.Fixed) -> Bool
 pub fn SfntOps::char_index(Self) -> (UInt) -> UInt
+pub fn SfntOps::char_variant_index(Self) -> (UInt, UInt) -> UInt
+pub fn SfntOps::char_variant_is_default(Self) -> (UInt, UInt) -> Int
+pub fn SfntOps::chars_of_variant(Self) -> (UInt) -> Array[UInt]
 pub fn SfntOps::get_kerning(Self) -> (UInt, UInt) -> Int
 pub fn SfntOps::load_glyph(Self) -> (UInt, Int) -> (GlyphSlotData, @types.Outline, Bytes) raise @error.FTError
-pub fn SfntOps::new(char_index~ : (UInt) -> UInt, load_glyph~ : (UInt, Int) -> (GlyphSlotData, @types.Outline, Bytes) raise @error.FTError, get_kerning~ : (UInt, UInt) -> Int, apply_hints~ : (@types.Outline, @fixed.Fixed) -> Bool, tt_hint~ : (@types.Outline, Bytes, @fixed.Fixed, @fixed.Fixed, UInt) -> Bool, num_glyphs~ : UInt, raw_data~ : Bytes) -> Self
+pub fn SfntOps::new(char_index~ : (UInt) -> UInt, char_variant_index~ : (UInt, UInt) -> UInt, char_variant_is_default~ : (UInt, UInt) -> Int, variant_selectors~ : () -> Array[UInt], variants_of_char~ : (UInt) -> Array[UInt], chars_of_variant~ : (UInt) -> Array[UInt], load_glyph~ : (UInt, Int) -> (GlyphSlotData, @types.Outline, Bytes) raise @error.FTError, get_kerning~ : (UInt, UInt) -> Int, apply_hints~ : (@types.Outline, @fixed.Fixed) -> Bool, tt_hint~ : (@types.Outline, Bytes, @fixed.Fixed, @fixed.Fixed, UInt) -> Bool, num_glyphs~ : UInt, raw_data~ : Bytes) -> Self
 pub fn SfntOps::num_glyphs(Self) -> UInt
 pub fn SfntOps::raw_data(Self) -> Bytes
 pub fn SfntOps::tt_hint(Self) -> (@types.Outline, Bytes, @fixed.Fixed, @fixed.Fixed, UInt) -> Bool
+pub fn SfntOps::variant_selectors(Self) -> () -> Array[UInt]
+pub fn SfntOps::variants_of_char(Self) -> (UInt) -> Array[UInt]
 pub impl Show for SfntOps
 
 type SizeRec derive(Show)

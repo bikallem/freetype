@@ -8,19 +8,12 @@ fn load_generated_roboto_wdth_wght__ttf() -> Bytes {
 
 ///|
 test "parity/Roboto[wdth,wght].ttf: format" {
-  inspect(
-    @base.detect_format(load_generated_roboto_wdth_wght__ttf())
-    is (TrueType | TrueTypeCollection),
-    content="true",
-  )
+  inspect(@base.detect_format(load_generated_roboto_wdth_wght__ttf()) is (TrueType | TrueTypeCollection), content="true")
 }
 
 ///|
 test "parity/Roboto[wdth,wght].ttf: loads" {
-  inspect(
-    (try? @freetype.from_bytes(load_generated_roboto_wdth_wght__ttf())) is Ok(_),
-    content="true",
-  )
+  inspect((try? @freetype.from_bytes(load_generated_roboto_wdth_wght__ttf())) is Ok(_), content="true")
 }
 
 ///|
@@ -239,11 +232,7 @@ test "parity/Roboto[wdth,wght].ttf: outline FORCE_AUTOHINT 16ppem" {
   let f = @freetype.from_bytes(load_generated_roboto_wdth_wght__ttf())
   let r1 = try? @freetype.set_pixel_sizes(f, 0U, 16U)
   guard r1 is Ok(_) else { return }
-  let r2 = try? @freetype.load_glyph(
-    f,
-    5U,
-    load_flags=@base.LOAD_FORCE_AUTOHINT,
-  )
+  let r2 = try? @freetype.load_glyph(f, 5U, load_flags=@base.LOAD_FORCE_AUTOHINT)
   guard r2 is Ok(_) else { return }
   inspect(f.glyph().metrics().hori_advance(), content="320")
 }
@@ -253,20 +242,26 @@ test "parity/Roboto[wdth,wght].ttf: variation state" {
   let f = @freetype.from_bytes(load_generated_roboto_wdth_wght__ttf())
   inspect(f.has_multiple_masters(), content="true")
   inspect(f.is_variation(), content="false")
-  try! @freetype.set_var_design_coordinates(f, [
-    (@fixed.Fixed::from_raw(58982400L), 0x77676874U),
-    (@fixed.Fixed::from_raw(4915200L), 0x77647468U),
-  ])
+  try! @freetype.set_var_design_coordinates(
+    f,
+    [
+      (@fixed.Fixed::from_raw(58982400L), 0x77676874U),
+      (@fixed.Fixed::from_raw(4915200L), 0x77647468U),
+    ],
+  )
   inspect(f.is_variation(), content="true")
 }
 
 ///|
 test "parity/Roboto[wdth,wght].ttf: varied 65 outline NO_SCALE" {
   let f = @freetype.from_bytes(load_generated_roboto_wdth_wght__ttf())
-  try! @freetype.set_var_design_coordinates(f, [
-    (@fixed.Fixed::from_raw(58982400L), 0x77676874U),
-    (@fixed.Fixed::from_raw(4915200L), 0x77647468U),
-  ])
+  try! @freetype.set_var_design_coordinates(
+    f,
+    [
+      (@fixed.Fixed::from_raw(58982400L), 0x77676874U),
+      (@fixed.Fixed::from_raw(4915200L), 0x77647468U),
+    ],
+  )
   let gid = @freetype.get_char_index(f, 65U)
   let r = try? @freetype.load_glyph(f, gid, load_flags=@base.LOAD_NO_SCALE)
   guard r is Ok(_) else { return }
@@ -289,10 +284,13 @@ test "parity/Roboto[wdth,wght].ttf: varied 65 outline NO_SCALE" {
 ///|
 test "parity/Roboto[wdth,wght].ttf: varied 97 outline NO_SCALE" {
   let f = @freetype.from_bytes(load_generated_roboto_wdth_wght__ttf())
-  try! @freetype.set_var_design_coordinates(f, [
-    (@fixed.Fixed::from_raw(58982400L), 0x77676874U),
-    (@fixed.Fixed::from_raw(4915200L), 0x77647468U),
-  ])
+  try! @freetype.set_var_design_coordinates(
+    f,
+    [
+      (@fixed.Fixed::from_raw(58982400L), 0x77676874U),
+      (@fixed.Fixed::from_raw(4915200L), 0x77647468U),
+    ],
+  )
   let gid = @freetype.get_char_index(f, 97U)
   let r = try? @freetype.load_glyph(f, gid, load_flags=@base.LOAD_NO_SCALE)
   guard r is Ok(_) else { return }
@@ -315,10 +313,13 @@ test "parity/Roboto[wdth,wght].ttf: varied 97 outline NO_SCALE" {
 ///|
 test "parity/Roboto[wdth,wght].ttf: varied outline NO_HINTING 16ppem" {
   let f = @freetype.from_bytes(load_generated_roboto_wdth_wght__ttf())
-  try! @freetype.set_var_design_coordinates(f, [
-    (@fixed.Fixed::from_raw(58982400L), 0x77676874U),
-    (@fixed.Fixed::from_raw(4915200L), 0x77647468U),
-  ])
+  try! @freetype.set_var_design_coordinates(
+    f,
+    [
+      (@fixed.Fixed::from_raw(58982400L), 0x77676874U),
+      (@fixed.Fixed::from_raw(4915200L), 0x77647468U),
+    ],
+  )
   let gid = @freetype.get_char_index(f, 65U)
   let r1 = try? @freetype.set_pixel_sizes(f, 0U, 16U)
   guard r1 is Ok(_) else { return }
@@ -336,10 +337,13 @@ test "parity/Roboto[wdth,wght].ttf: varied outline NO_HINTING 16ppem" {
 ///|
 test "parity/Roboto[wdth,wght].ttf: varied hinted outline DEFAULT 16ppem" {
   let f = @freetype.from_bytes(load_generated_roboto_wdth_wght__ttf())
-  try! @freetype.set_var_design_coordinates(f, [
-    (@fixed.Fixed::from_raw(58982400L), 0x77676874U),
-    (@fixed.Fixed::from_raw(4915200L), 0x77647468U),
-  ])
+  try! @freetype.set_var_design_coordinates(
+    f,
+    [
+      (@fixed.Fixed::from_raw(58982400L), 0x77676874U),
+      (@fixed.Fixed::from_raw(4915200L), 0x77647468U),
+    ],
+  )
   let gid = @freetype.get_char_index(f, 65U)
   let r1 = try? @freetype.set_pixel_sizes(f, 0U, 16U)
   guard r1 is Ok(_) else { return }
@@ -355,18 +359,18 @@ test "parity/Roboto[wdth,wght].ttf: varied hinted outline DEFAULT 16ppem" {
 ///|
 test "parity/Roboto[wdth,wght].ttf: varied outline FORCE_AUTOHINT 16ppem" {
   let f = @freetype.from_bytes(load_generated_roboto_wdth_wght__ttf())
-  try! @freetype.set_var_design_coordinates(f, [
-    (@fixed.Fixed::from_raw(58982400L), 0x77676874U),
-    (@fixed.Fixed::from_raw(4915200L), 0x77647468U),
-  ])
+  try! @freetype.set_var_design_coordinates(
+    f,
+    [
+      (@fixed.Fixed::from_raw(58982400L), 0x77676874U),
+      (@fixed.Fixed::from_raw(4915200L), 0x77647468U),
+    ],
+  )
   let gid = @freetype.get_char_index(f, 65U)
   let r1 = try? @freetype.set_pixel_sizes(f, 0U, 16U)
   guard r1 is Ok(_) else { return }
-  let r2 = try? @freetype.load_glyph(
-    f,
-    gid,
-    load_flags=@base.LOAD_FORCE_AUTOHINT,
-  )
+  let r2 = try? @freetype.load_glyph(f, gid, load_flags=@base.LOAD_FORCE_AUTOHINT)
   guard r2 is Ok(_) else { return }
   inspect(f.glyph().metrics().hori_advance(), content="640")
 }
+

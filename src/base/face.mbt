@@ -177,6 +177,11 @@ pub impl Show for DriverData with output(self, logger) {
 /// SFNT driver operations — closures that capture the parsed font data.
 struct SfntOps {
   char_index : (UInt) -> UInt // charcode → glyph index
+  char_variant_index : (UInt, UInt) -> UInt // (charcode, selector) → glyph index
+  char_variant_is_default : (UInt, UInt) -> Int // (charcode, selector) → 1,0,-1
+  variant_selectors : () -> Array[UInt]
+  variants_of_char : (UInt) -> Array[UInt]
+  chars_of_variant : (UInt) -> Array[UInt]
   load_glyph : (UInt, Int) -> (GlyphSlotData, @types.Outline, Bytes) raise @error.FTError // (glyph_index, load_flags) → (slot data, outline, tt instructions)
   get_kerning : (UInt, UInt) -> Int // (left, right) → kern value
   apply_hints : (@types.Outline, @fixed.Fixed) -> Bool // (outline, y_scale) → true if PS hints were applied
@@ -188,6 +193,11 @@ struct SfntOps {
 ///|
 pub fn SfntOps::new(
   char_index~ : (UInt) -> UInt,
+  char_variant_index~ : (UInt, UInt) -> UInt,
+  char_variant_is_default~ : (UInt, UInt) -> Int,
+  variant_selectors~ : () -> Array[UInt],
+  variants_of_char~ : (UInt) -> Array[UInt],
+  chars_of_variant~ : (UInt) -> Array[UInt],
   load_glyph~ : (UInt, Int) -> (GlyphSlotData, @types.Outline, Bytes) raise @error.FTError,
   get_kerning~ : (UInt, UInt) -> Int,
   apply_hints~ : (@types.Outline, @fixed.Fixed) -> Bool,
@@ -197,6 +207,11 @@ pub fn SfntOps::new(
 ) -> SfntOps {
   {
     char_index,
+    char_variant_index,
+    char_variant_is_default,
+    variant_selectors,
+    variants_of_char,
+    chars_of_variant,
     load_glyph,
     get_kerning,
     apply_hints,
@@ -215,13 +230,15 @@ pub impl Show for SfntOps with output(self, logger) {
 
 ///|
 /// Data returned from glyph loading (before being stored in GlyphSlot).
-#valtype
 struct GlyphSlotData {
   metrics_width : Int64
   metrics_height : Int64
   metrics_hori_bearing_x : Int64
   metrics_hori_bearing_y : Int64
   metrics_hori_advance : Int64
+  metrics_vert_bearing_x : Int64
+  metrics_vert_bearing_y : Int64
+  metrics_vert_advance : Int64
 } derive(Show)
 
 ///|
@@ -231,6 +248,9 @@ pub fn GlyphSlotData::new(
   metrics_hori_bearing_x : Int64,
   metrics_hori_bearing_y : Int64,
   metrics_hori_advance : Int64,
+  metrics_vert_bearing_x? : Int64 = 0L,
+  metrics_vert_bearing_y? : Int64 = 0L,
+  metrics_vert_advance? : Int64 = 0L,
 ) -> GlyphSlotData {
   {
     metrics_width,
@@ -238,6 +258,9 @@ pub fn GlyphSlotData::new(
     metrics_hori_bearing_x,
     metrics_hori_bearing_y,
     metrics_hori_advance,
+    metrics_vert_bearing_x,
+    metrics_vert_bearing_y,
+    metrics_vert_advance,
   }
 }
 
@@ -792,6 +815,21 @@ pub fn GlyphSlotData::metrics_hori_advance(self : GlyphSlotData) -> Int64 {
   self.metrics_hori_advance
 }
 
+///|
+pub fn GlyphSlotData::metrics_vert_bearing_x(self : GlyphSlotData) -> Int64 {
+  self.metrics_vert_bearing_x
+}
+
+///|
+pub fn GlyphSlotData::metrics_vert_bearing_y(self : GlyphSlotData) -> Int64 {
+  self.metrics_vert_bearing_y
+}
+
+///|
+pub fn GlyphSlotData::metrics_vert_advance(self : GlyphSlotData) -> Int64 {
+  self.metrics_vert_advance
+}
+
 // --- BitmapGlyphData getters ---
 
 ///|
@@ -826,6 +864,31 @@ pub fn SfntOps::load_glyph(
   self : SfntOps,
 ) -> (UInt, Int) -> (GlyphSlotData, @types.Outline, Bytes) raise @error.FTError {
   self.load_glyph
+}
+
+///|
+pub fn SfntOps::char_variant_index(self : SfntOps) -> (UInt, UInt) -> UInt {
+  self.char_variant_index
+}
+
+///|
+pub fn SfntOps::char_variant_is_default(self : SfntOps) -> (UInt, UInt) -> Int {
+  self.char_variant_is_default
+}
+
+///|
+pub fn SfntOps::variant_selectors(self : SfntOps) -> () -> Array[UInt] {
+  self.variant_selectors
+}
+
+///|
+pub fn SfntOps::variants_of_char(self : SfntOps) -> (UInt) -> Array[UInt] {
+  self.variants_of_char
+}
+
+///|
+pub fn SfntOps::chars_of_variant(self : SfntOps) -> (UInt) -> Array[UInt] {
+  self.chars_of_variant
 }
 
 ///|

@@ -51,6 +51,69 @@ pub struct HvarTable {
 } derive(Show)
 
 ///|
+struct MvarValueRecord {
+  tag : UInt
+  outer_index : Int
+  inner_index : Int
+} derive(Show)
+
+///|
+pub struct MvarTable {
+  regions : Array[Array[RegionAxisCoordinates]]
+  item_data : Array[ItemVariationData?]
+  records : Array[MvarValueRecord]
+} derive(Show)
+
+///|
+pub struct MvarFaceDeltas {
+  hasc : Int
+  hdsc : Int
+  hlgp : Int
+  undo : Int
+  unds : Int
+} derive(Eq, Show)
+
+///|
+pub fn MvarFaceDeltas::hasc(self : MvarFaceDeltas) -> Int {
+  self.hasc
+}
+
+///|
+pub fn MvarFaceDeltas::hdsc(self : MvarFaceDeltas) -> Int {
+  self.hdsc
+}
+
+///|
+pub fn MvarFaceDeltas::hlgp(self : MvarFaceDeltas) -> Int {
+  self.hlgp
+}
+
+///|
+pub fn MvarFaceDeltas::undo(self : MvarFaceDeltas) -> Int {
+  self.undo
+}
+
+///|
+pub fn MvarFaceDeltas::unds(self : MvarFaceDeltas) -> Int {
+  self.unds
+}
+
+///|
+let mvar_tag_hasc : UInt = @types.make_tag(b'h', b'a', b's', b'c')
+
+///|
+let mvar_tag_hdsc : UInt = @types.make_tag(b'h', b'd', b's', b'c')
+
+///|
+let mvar_tag_hlgp : UInt = @types.make_tag(b'h', b'l', b'g', b'p')
+
+///|
+let mvar_tag_undo : UInt = @types.make_tag(b'u', b'n', b'd', b'o')
+
+///|
+let mvar_tag_unds : UInt = @types.make_tag(b'u', b'n', b'd', b's')
+
+///|
 pub fn GvarTable::axis_count(self : GvarTable) -> Int {
   self.axis_count
 }
@@ -144,6 +207,61 @@ pub fn parse_hvar(
 }
 
 ///|
+pub fn parse_mvar(
+  reader : @stream.ByteReader,
+  offset : UInt,
+  length : UInt,
+) -> MvarTable raise @error.FTError {
+  if length.reinterpret_as_int() < 12 {
+    raise @error.FTError::InvalidTable
+  }
+  reader.seek(offset.reinterpret_as_int())
+  let major = reader.read_u16_be()
+  let minor = reader.read_u16_be()
+  if major != 1U || minor != 0U {
+    raise @error.FTError::InvalidTable
+  }
+  ignore(reader.read_u16_be()) // reserved
+  let value_record_size = reader.read_u16_be().reinterpret_as_int()
+  let value_count = reader.read_u16_be().reinterpret_as_int()
+  let store_offset = reader.read_u16_be()
+  if value_record_size < 8 || store_offset == 0U {
+    raise @error.FTError::InvalidTable
+  }
+  let records_offset = reader.position()
+  let (regions, item_data) = parse_item_variation_store(
+    reader,
+    offset + store_offset,
+  )
+  reader.seek(records_offset)
+  let records : Array[MvarValueRecord] = Array::new(capacity=value_count)
+  for _ in 0..<value_count {
+    let tag = reader.read_u32_be()
+    let outer_index = reader.read_u16_be().reinterpret_as_int()
+    let inner_index = reader.read_u16_be().reinterpret_as_int()
+    if value_record_size > 8 {
+      reader.seek(reader.position() + value_record_size - 8)
+    }
+    if outer_index != 0xFFFF &&
+      (
+        outer_index < 0 ||
+        outer_index >= item_data.length() ||
+        item_data[outer_index] is None
+      ) {
+      raise @error.FTError::InvalidTable
+    }
+    if outer_index != 0xFFFF {
+      let subtable = item_data[outer_index].unwrap()
+      if inner_index < 0 || inner_index >= subtable.delta_sets.length() {
+        raise @error.FTError::InvalidTable
+      }
+    }
+    records.push({ tag, outer_index, inner_index })
+  }
+  { regions, item_data, records }
+}
+
+///|
 pub fn HvarTable::advance_width_delta(
   self : HvarTable,
   glyph_index : UInt,
@@ -167,28 +285,80 @@ fn HvarTable::delta_from_mapping(
   mapping : DeltaSetIndexMapEntry,
   normalized_coords : Array[Int],
 ) -> Int64 {
-  if mapping.outer_index < 0 || mapping.outer_index >= self.item_data.length() {
+  item_store_delta(
+    self.regions,
+    self.item_data,
+    mapping.outer_index,
+    mapping.inner_index,
+    normalized_coords,
+  )
+}
+
+///|
+pub fn MvarTable::face_metric_deltas(
+  self : MvarTable,
+  normalized_coords : Array[Int],
+) -> MvarFaceDeltas {
+  let mut hasc = 0
+  let mut hdsc = 0
+  let mut hlgp = 0
+  let mut undo = 0
+  let mut unds = 0
+  for _, record in self.records {
+    if record.outer_index == 0xFFFF && record.inner_index == 0xFFFF {
+      continue
+    }
+    let delta = item_store_delta(
+      self.regions,
+      self.item_data,
+      record.outer_index,
+      record.inner_index,
+      normalized_coords,
+    ).to_int()
+    if record.tag == mvar_tag_hasc {
+      hasc = delta
+    } else if record.tag == mvar_tag_hdsc {
+      hdsc = delta
+    } else if record.tag == mvar_tag_hlgp {
+      hlgp = delta
+    } else if record.tag == mvar_tag_undo {
+      undo = delta
+    } else if record.tag == mvar_tag_unds {
+      unds = delta
+    }
+  }
+  { hasc, hdsc, hlgp, undo, unds }
+}
+
+///|
+fn item_store_delta(
+  regions : Array[Array[RegionAxisCoordinates]],
+  item_data : Array[ItemVariationData?],
+  outer_index : Int,
+  inner_index : Int,
+  normalized_coords : Array[Int],
+) -> Int64 {
+  if outer_index < 0 || outer_index >= item_data.length() {
     return 0L
   }
-  let subtable = match self.item_data[mapping.outer_index] {
+  let subtable = match item_data[outer_index] {
     Some(v) => v
     None => return 0L
   }
-  if mapping.inner_index < 0 ||
-    mapping.inner_index >= subtable.delta_sets.length() {
+  if inner_index < 0 || inner_index >= subtable.delta_sets.length() {
     return 0L
   }
-  let deltas = subtable.delta_sets[mapping.inner_index]
+  let deltas = subtable.delta_sets[inner_index]
   let mut total = 0L
   for i, delta in deltas {
     if i >= subtable.region_indexes.length() {
       break
     }
     let region_index = subtable.region_indexes[i]
-    if region_index < 0 || region_index >= self.regions.length() {
+    if region_index < 0 || region_index >= regions.length() {
       continue
     }
-    let scalar = region_scalar(self.regions[region_index], normalized_coords)
+    let scalar = region_scalar(regions[region_index], normalized_coords)
     if scalar.val() != 0L {
       total += scale_delta(delta, scalar)
     }

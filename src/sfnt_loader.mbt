@@ -10,6 +10,7 @@ fn load_sfnt(
   let (sfnt_data, face) = @sfnt.load_sfnt_face(data, face_index.to_int64())
   // Lazy state: None = not yet parsed
   let hmtx_ref : Ref[@sfnt.HmtxTable?] = Ref::new(None)
+  let vmtx_ref : Ref[@sfnt.HmtxTable??] = Ref::new(None)
   let tt_ref : Ref[@truetype.TtFaceData??] = Ref::new(None)
   let cff_ref : Ref[@cff.CffFont??] = Ref::new(None)
   let gvar_ref : Ref[@truetype.GvarTable??] = Ref::new(None)
@@ -48,6 +49,31 @@ fn load_sfnt(
           }
           None => raise @error.FTError::HmtxTableMissing
         }
+      }
+    }
+  }
+  let ensure_vmtx = fn() -> @sfnt.HmtxTable? raise @error.FTError {
+    match vmtx_ref.val {
+      Some(result) => result
+      None => {
+        let result : @sfnt.HmtxTable? = match sfnt_data.vhea() {
+          Some(vhea) =>
+            match sfnt_data.table_dir().find_table(@types.TAG_VMTX) {
+              Some(r) =>
+                Some(
+                  @sfnt.parse_hmtx(
+                    @stream.ByteReader::new(data),
+                    r.offset(),
+                    vhea.number_of_h_metrics(),
+                    sfnt_data.maxp().num_glyphs(),
+                  ),
+                )
+              None => None
+            }
+          None => None
+        }
+        vmtx_ref.val = Some(result)
+        result
       }
     }
   }
@@ -170,6 +196,8 @@ fn load_sfnt(
   }
   let best_cmap_lookup_ref : Ref[@sfnt.CmapLookup?] = Ref::new(None)
   let best_cmap_lookup_done : Ref[Bool] = Ref::new(false)
+  let format14_lookup_ref : Ref[@sfnt.CmapFormat14?] = Ref::new(None)
+  let format14_lookup_done : Ref[Bool] = Ref::new(false)
   let cmap_lookup_cache : Ref[Map[Int, @sfnt.CmapLookup?]] = Ref::new({})
   let synthetic_adobe_charmap_index : Ref[Int] = Ref::new(-1)
   let resolve_cmap_lookup = fn(index : Int) -> @sfnt.CmapLookup? {
@@ -219,6 +247,42 @@ fn load_sfnt(
     }
     best_cmap_lookup_ref.val
   }
+  let resolve_format14_lookup = fn() -> @sfnt.CmapFormat14? {
+    if format14_lookup_done.val {
+      return format14_lookup_ref.val
+    }
+    format14_lookup_done.val = true
+    format14_lookup_ref.val = match sfnt_data.cmap() {
+      Some(ct) =>
+        match sfnt_data.table_dir().find_table(@types.TAG_CMAP) {
+          Some(_) => {
+            for i in 0..<ct.subtables().length() {
+              match resolve_cmap_lookup(i) {
+                Some(@sfnt.Format14(t)) => {
+                  format14_lookup_ref.val = Some(t)
+                  return Some(t)
+                }
+                _ => ()
+              }
+            }
+            None
+          }
+          None => None
+        }
+      None => None
+    }
+    format14_lookup_ref.val
+  }
+  let resolve_active_unicode_cmap_lookup = fn() -> @sfnt.CmapLookup? {
+    let active = face.active_charmap()
+    if active < 0 || active >= actual_cmap_count {
+      return None
+    }
+    if face.charmaps()[active].encoding() != @base.Encoding::Unicode {
+      return None
+    }
+    resolve_cmap_lookup(active)
+  }
   let cff_encoding_char_index_fn : (UInt) -> UInt = fn(charcode) {
     if charcode >= 256U {
       return 0U
@@ -243,6 +307,47 @@ fn load_sfnt(
     match resolve_best_cmap_lookup() {
       Some(lookup) => lookup.char_index(charcode)
       None => 0U
+    }
+  }
+  let char_variant_index_fn : (UInt, UInt) -> UInt = fn(charcode, selector) {
+    match resolve_format14_lookup() {
+      Some(format14) =>
+        match resolve_active_unicode_cmap_lookup() {
+          Some(base_lookup) =>
+            format14.char_variant_index(charcode, selector, fn(code) {
+              base_lookup.char_index(code)
+            })
+          None => 0U
+        }
+      None => 0U
+    }
+  }
+  let char_variant_is_default_fn : (UInt, UInt) -> Int = fn(
+    charcode,
+    selector,
+  ) {
+    match resolve_format14_lookup() {
+      Some(format14) =>
+        format14.char_variant_is_default(charcode, selector, fn(_code) { 0U })
+      None => -1
+    }
+  }
+  let variant_selectors_fn : () -> Array[UInt] = fn() {
+    match resolve_format14_lookup() {
+      Some(format14) => format14.variant_selectors()
+      None => []
+    }
+  }
+  let variants_of_char_fn : (UInt) -> Array[UInt] = fn(charcode) {
+    match resolve_format14_lookup() {
+      Some(format14) => format14.variants_of_char(charcode)
+      None => []
+    }
+  }
+  let chars_of_variant_fn : (UInt) -> Array[UInt] = fn(selector) {
+    match resolve_format14_lookup() {
+      Some(format14) => format14.chars_of_variant(selector)
+      None => []
     }
   }
   let load_glyph_fn : (UInt, Int) -> (
@@ -316,12 +421,33 @@ fn load_sfnt(
     } else {
       @base.outline_get_bbox(outline)
     }
+    let raw_height = bb.y_max() - bb.y_min()
+    let (vert_top_bearing, vert_advance) = match ensure_vmtx() {
+      Some(vmtx) => {
+        let (advance_height, top_side_bearing) = vmtx.get_metrics(glyph_index)
+        (
+          top_side_bearing.to_int64(),
+          advance_height.reinterpret_as_int().to_int64(),
+        )
+      }
+      None => {
+        let fallback_advance = match sfnt_data.os2() {
+          Some(os2) =>
+            (os2.s_typo_ascender() - os2.s_typo_descender()).to_int64()
+          None => (face.ascender() - face.descender()).to_int64()
+        }
+        ((fallback_advance - raw_height) / 2, fallback_advance)
+      }
+    }
     let slot_data = @base.GlyphSlotData::new(
       bb.x_max() - bb.x_min(),
-      bb.y_max() - bb.y_min(),
+      raw_height,
       bb.x_min(),
       bb.y_max(),
       varied_advance,
+      metrics_vert_bearing_x=bb.x_min() - varied_advance / 2,
+      metrics_vert_bearing_y=vert_top_bearing,
+      metrics_vert_advance=vert_advance,
     )
     (slot_data, outline, tt_instructions)
   }
@@ -569,6 +695,11 @@ fn load_sfnt(
     @base.DriverData::SfntDriver(
       @base.SfntOps::new(
         char_index=char_index_fn,
+        char_variant_index=char_variant_index_fn,
+        char_variant_is_default=char_variant_is_default_fn,
+        variant_selectors=variant_selectors_fn,
+        variants_of_char=variants_of_char_fn,
+        chars_of_variant=chars_of_variant_fn,
         load_glyph=load_glyph_fn,
         get_kerning=kern_fn,
         apply_hints=apply_hints_fn,

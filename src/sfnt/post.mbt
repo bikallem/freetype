@@ -11,6 +11,16 @@ struct PostTable {
 } derive(Show)
 
 ///|
+pub fn PostTable::underline_position(self : PostTable) -> Int {
+  self.underline_position
+}
+
+///|
+pub fn PostTable::underline_thickness(self : PostTable) -> Int {
+  self.underline_thickness
+}
+
+///|
 /// Parse the 'post' table.
 pub fn parse_post(
   reader : @stream.ByteReader,

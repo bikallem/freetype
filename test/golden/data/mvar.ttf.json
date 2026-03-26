@@ -1,0 +1,830 @@
+{
+  "metadata": {
+    "family_name": "MVAR",
+    "style_name": "Regular",
+    "num_glyphs": 3,
+    "num_faces": 1,
+    "units_per_em": 1000,
+    "ascender": 800,
+    "descender": -200,
+    "height": 1000,
+    "max_advance_width": 500,
+    "bbox": { "xMin": 0, "yMin": 0, "xMax": 450, "yMax": 700 },
+    "face_flags": 2073,
+    "style_flags": 0,
+    "num_charmaps": 1,
+    "underline_position": 0,
+    "underline_thickness": 0
+  },
+  "charmaps": [
+    {
+      "platform_id": 3,
+      "encoding_id": 1,
+      "entries": [[32,1],[65,2]]
+    }
+  ],
+  "glyphs": [
+    {
+      "glyph_index": 1,
+      "charcode": 32,
+      "size_ppem": 12,
+      "load_flags": "DEFAULT",
+      "metrics": {
+        "width": 0,
+        "height": 0,
+        "horiBearingX": 0,
+        "horiBearingY": 0,
+        "horiAdvance": 192
+      },
+      "outline": {
+        "n_points": 0,
+        "n_contours": 0,
+        "points": [],
+        "tags": [],
+        "contours": []
+      }
+    },
+    {
+      "glyph_index": 2,
+      "charcode": 65,
+      "size_ppem": 12,
+      "load_flags": "DEFAULT",
+      "metrics": {
+        "width": 384,
+        "height": 576,
+        "horiBearingX": 0,
+        "horiBearingY": 576,
+        "horiAdvance": 384
+      },
+      "outline": {
+        "n_points": 3,
+        "n_contours": 1,
+        "points": [[38,0],[192,538],[346,0]],
+        "tags": [1,1,1],
+        "contours": [2]
+      }
+    },
+    {
+      "glyph_index": 1,
+      "charcode": 32,
+      "size_ppem": 12,
+      "load_flags": "NO_HINTING",
+      "metrics": {
+        "width": 0,
+        "height": 0,
+        "horiBearingX": 0,
+        "horiBearingY": 0,
+        "horiAdvance": 192
+      },
+      "outline": {
+        "n_points": 0,
+        "n_contours": 0,
+        "points": [],
+        "tags": [],
+        "contours": []
+      }
+    },
+    {
+      "glyph_index": 2,
+      "charcode": 65,
+      "size_ppem": 12,
+      "load_flags": "NO_HINTING",
+      "metrics": {
+        "width": 308,
+        "height": 538,
+        "horiBearingX": 38,
+        "horiBearingY": 538,
+        "horiAdvance": 384
+      },
+      "outline": {
+        "n_points": 3,
+        "n_contours": 1,
+        "points": [[38,0],[192,538],[346,0]],
+        "tags": [1,1,1],
+        "contours": [2]
+      }
+    },
+    {
+      "glyph_index": 1,
+      "charcode": 32,
+      "size_ppem": 12,
+      "load_flags": "NO_SCALE",
+      "metrics": {
+        "width": 0,
+        "height": 0,
+        "horiBearingX": 0,
+        "horiBearingY": 0,
+        "horiAdvance": 250
+      },
+      "outline": {
+        "n_points": 0,
+        "n_contours": 0,
+        "points": [],
+        "tags": [],
+        "contours": []
+      }
+    },
+    {
+      "glyph_index": 2,
+      "charcode": 65,
+      "size_ppem": 12,
+      "load_flags": "NO_SCALE",
+      "metrics": {
+        "width": 400,
+        "height": 700,
+        "horiBearingX": 50,
+        "horiBearingY": 700,
+        "horiAdvance": 500
+      },
+      "outline": {
+        "n_points": 3,
+        "n_contours": 1,
+        "points": [[50,0],[250,700],[450,0]],
+        "tags": [1,1,1],
+        "contours": [2]
+      }
+    },
+    {
+      "glyph_index": 1,
+      "charcode": 32,
+      "size_ppem": 12,
+      "load_flags": "NO_AUTOHINT",
+      "metrics": {
+        "width": 0,
+        "height": 0,
+        "horiBearingX": 0,
+        "horiBearingY": 0,
+        "horiAdvance": 192
+      },
+      "outline": {
+        "n_points": 0,
+        "n_contours": 0,
+        "points": [],
+        "tags": [],
+        "contours": []
+      }
+    },
+    {
+      "glyph_index": 2,
+      "charcode": 65,
+      "size_ppem": 12,
+      "load_flags": "NO_AUTOHINT",
+      "metrics": {
+        "width": 384,
+        "height": 576,
+        "horiBearingX": 0,
+        "horiBearingY": 576,
+        "horiAdvance": 384
+      },
+      "outline": {
+        "n_points": 3,
+        "n_contours": 1,
+        "points": [[38,0],[192,538],[346,0]],
+        "tags": [1,1,1],
+        "contours": [2]
+      }
+    },
+    {
+      "glyph_index": 1,
+      "charcode": 32,
+      "size_ppem": 12,
+      "load_flags": "FORCE_AUTOHINT",
+      "metrics": {
+        "width": 0,
+        "height": 0,
+        "horiBearingX": 0,
+        "horiBearingY": 0,
+        "horiAdvance": 192
+      },
+      "outline": {
+        "n_points": 0,
+        "n_contours": 0,
+        "points": [],
+        "tags": [],
+        "contours": []
+      }
+    },
+    {
+      "glyph_index": 2,
+      "charcode": 65,
+      "size_ppem": 12,
+      "load_flags": "FORCE_AUTOHINT",
+      "metrics": {
+        "width": 384,
+        "height": 576,
+        "horiBearingX": 0,
+        "horiBearingY": 576,
+        "horiAdvance": 384
+      },
+      "outline": {
+        "n_points": 3,
+        "n_contours": 1,
+        "points": [[38,0],[192,538],[346,0]],
+        "tags": [1,1,1],
+        "contours": [2]
+      }
+    },
+    {
+      "glyph_index": 1,
+      "charcode": 32,
+      "size_ppem": 16,
+      "load_flags": "DEFAULT",
+      "metrics": {
+        "width": 0,
+        "height": 0,
+        "horiBearingX": 0,
+        "horiBearingY": 0,
+        "horiAdvance": 256
+      },
+      "outline": {
+        "n_points": 0,
+        "n_contours": 0,
+        "points": [],
+        "tags": [],
+        "contours": []
+      }
+    },
+    {
+      "glyph_index": 2,
+      "charcode": 65,
+      "size_ppem": 16,
+      "load_flags": "DEFAULT",
+      "metrics": {
+        "width": 512,
+        "height": 768,
+        "horiBearingX": 0,
+        "horiBearingY": 768,
+        "horiAdvance": 512
+      },
+      "outline": {
+        "n_points": 3,
+        "n_contours": 1,
+        "points": [[51,0],[256,717],[461,0]],
+        "tags": [1,1,1],
+        "contours": [2]
+      }
+    },
+    {
+      "glyph_index": 1,
+      "charcode": 32,
+      "size_ppem": 16,
+      "load_flags": "NO_HINTING",
+      "metrics": {
+        "width": 0,
+        "height": 0,
+        "horiBearingX": 0,
+        "horiBearingY": 0,
+        "horiAdvance": 256
+      },
+      "outline": {
+        "n_points": 0,
+        "n_contours": 0,
+        "points": [],
+        "tags": [],
+        "contours": []
+      }
+    },
+    {
+      "glyph_index": 2,
+      "charcode": 65,
+      "size_ppem": 16,
+      "load_flags": "NO_HINTING",
+      "metrics": {
+        "width": 410,
+        "height": 717,
+        "horiBearingX": 51,
+        "horiBearingY": 717,
+        "horiAdvance": 512
+      },
+      "outline": {
+        "n_points": 3,
+        "n_contours": 1,
+        "points": [[51,0],[256,717],[461,0]],
+        "tags": [1,1,1],
+        "contours": [2]
+      }
+    },
+    {
+      "glyph_index": 1,
+      "charcode": 32,
+      "size_ppem": 16,
+      "load_flags": "NO_SCALE",
+      "metrics": {
+        "width": 0,
+        "height": 0,
+        "horiBearingX": 0,
+        "horiBearingY": 0,
+        "horiAdvance": 250
+      },
+      "outline": {
+        "n_points": 0,
+        "n_contours": 0,
+        "points": [],
+        "tags": [],
+        "contours": []
+      }
+    },
+    {
+      "glyph_index": 2,
+      "charcode": 65,
+      "size_ppem": 16,
+      "load_flags": "NO_SCALE",
+      "metrics": {
+        "width": 400,
+        "height": 700,
+        "horiBearingX": 50,
+        "horiBearingY": 700,
+        "horiAdvance": 500
+      },
+      "outline": {
+        "n_points": 3,
+        "n_contours": 1,
+        "points": [[50,0],[250,700],[450,0]],
+        "tags": [1,1,1],
+        "contours": [2]
+      }
+    },
+    {
+      "glyph_index": 1,
+      "charcode": 32,
+      "size_ppem": 16,
+      "load_flags": "NO_AUTOHINT",
+      "metrics": {
+        "width": 0,
+        "height": 0,
+        "horiBearingX": 0,
+        "horiBearingY": 0,
+        "horiAdvance": 256
+      },
+      "outline": {
+        "n_points": 0,
+        "n_contours": 0,
+        "points": [],
+        "tags": [],
+        "contours": []
+      }
+    },
+    {
+      "glyph_index": 2,
+      "charcode": 65,
+      "size_ppem": 16,
+      "load_flags": "NO_AUTOHINT",
+      "metrics": {
+        "width": 512,
+        "height": 768,
+        "horiBearingX": 0,
+        "horiBearingY": 768,
+        "horiAdvance": 512
+      },
+      "outline": {
+        "n_points": 3,
+        "n_contours": 1,
+        "points": [[51,0],[256,717],[461,0]],
+        "tags": [1,1,1],
+        "contours": [2]
+      }
+    },
+    {
+      "glyph_index": 1,
+      "charcode": 32,
+      "size_ppem": 16,
+      "load_flags": "FORCE_AUTOHINT",
+      "metrics": {
+        "width": 0,
+        "height": 0,
+        "horiBearingX": 0,
+        "horiBearingY": 0,
+        "horiAdvance": 256
+      },
+      "outline": {
+        "n_points": 0,
+        "n_contours": 0,
+        "points": [],
+        "tags": [],
+        "contours": []
+      }
+    },
+    {
+      "glyph_index": 2,
+      "charcode": 65,
+      "size_ppem": 16,
+      "load_flags": "FORCE_AUTOHINT",
+      "metrics": {
+        "width": 512,
+        "height": 768,
+        "horiBearingX": 0,
+        "horiBearingY": 768,
+        "horiAdvance": 512
+      },
+      "outline": {
+        "n_points": 3,
+        "n_contours": 1,
+        "points": [[51,0],[256,717],[461,0]],
+        "tags": [1,1,1],
+        "contours": [2]
+      }
+    },
+    {
+      "glyph_index": 1,
+      "charcode": 32,
+      "size_ppem": 24,
+      "load_flags": "DEFAULT",
+      "metrics": {
+        "width": 0,
+        "height": 0,
+        "horiBearingX": 0,
+        "horiBearingY": 0,
+        "horiAdvance": 384
+      },
+      "outline": {
+        "n_points": 0,
+        "n_contours": 0,
+        "points": [],
+        "tags": [],
+        "contours": []
+      }
+    },
+    {
+      "glyph_index": 2,
+      "charcode": 65,
+      "size_ppem": 24,
+      "load_flags": "DEFAULT",
+      "metrics": {
+        "width": 640,
+        "height": 1088,
+        "horiBearingX": 64,
+        "horiBearingY": 1088,
+        "horiAdvance": 768
+      },
+      "outline": {
+        "n_points": 3,
+        "n_contours": 1,
+        "points": [[77,0],[384,1075],[691,0]],
+        "tags": [1,1,1],
+        "contours": [2]
+      }
+    },
+    {
+      "glyph_index": 1,
+      "charcode": 32,
+      "size_ppem": 24,
+      "load_flags": "NO_HINTING",
+      "metrics": {
+        "width": 0,
+        "height": 0,
+        "horiBearingX": 0,
+        "horiBearingY": 0,
+        "horiAdvance": 384
+      },
+      "outline": {
+        "n_points": 0,
+        "n_contours": 0,
+        "points": [],
+        "tags": [],
+        "contours": []
+      }
+    },
+    {
+      "glyph_index": 2,
+      "charcode": 65,
+      "size_ppem": 24,
+      "load_flags": "NO_HINTING",
+      "metrics": {
+        "width": 614,
+        "height": 1075,
+        "horiBearingX": 77,
+        "horiBearingY": 1075,
+        "horiAdvance": 768
+      },
+      "outline": {
+        "n_points": 3,
+        "n_contours": 1,
+        "points": [[77,0],[384,1075],[691,0]],
+        "tags": [1,1,1],
+        "contours": [2]
+      }
+    },
+    {
+      "glyph_index": 1,
+      "charcode": 32,
+      "size_ppem": 24,
+      "load_flags": "NO_SCALE",
+      "metrics": {
+        "width": 0,
+        "height": 0,
+        "horiBearingX": 0,
+        "horiBearingY": 0,
+        "horiAdvance": 250
+      },
+      "outline": {
+        "n_points": 0,
+        "n_contours": 0,
+        "points": [],
+        "tags": [],
+        "contours": []
+      }
+    },
+    {
+      "glyph_index": 2,
+      "charcode": 65,
+      "size_ppem": 24,
+      "load_flags": "NO_SCALE",
+      "metrics": {
+        "width": 400,
+        "height": 700,
+        "horiBearingX": 50,
+        "horiBearingY": 700,
+        "horiAdvance": 500
+      },
+      "outline": {
+        "n_points": 3,
+        "n_contours": 1,
+        "points": [[50,0],[250,700],[450,0]],
+        "tags": [1,1,1],
+        "contours": [2]
+      }
+    },
+    {
+      "glyph_index": 1,
+      "charcode": 32,
+      "size_ppem": 24,
+      "load_flags": "NO_AUTOHINT",
+      "metrics": {
+        "width": 0,
+        "height": 0,
+        "horiBearingX": 0,
+        "horiBearingY": 0,
+        "horiAdvance": 384
+      },
+      "outline": {
+        "n_points": 0,
+        "n_contours": 0,
+        "points": [],
+        "tags": [],
+        "contours": []
+      }
+    },
+    {
+      "glyph_index": 2,
+      "charcode": 65,
+      "size_ppem": 24,
+      "load_flags": "NO_AUTOHINT",
+      "metrics": {
+        "width": 640,
+        "height": 1088,
+        "horiBearingX": 64,
+        "horiBearingY": 1088,
+        "horiAdvance": 768
+      },
+      "outline": {
+        "n_points": 3,
+        "n_contours": 1,
+        "points": [[77,0],[384,1075],[691,0]],
+        "tags": [1,1,1],
+        "contours": [2]
+      }
+    },
+    {
+      "glyph_index": 1,
+      "charcode": 32,
+      "size_ppem": 24,
+      "load_flags": "FORCE_AUTOHINT",
+      "metrics": {
+        "width": 0,
+        "height": 0,
+        "horiBearingX": 0,
+        "horiBearingY": 0,
+        "horiAdvance": 384
+      },
+      "outline": {
+        "n_points": 0,
+        "n_contours": 0,
+        "points": [],
+        "tags": [],
+        "contours": []
+      }
+    },
+    {
+      "glyph_index": 2,
+      "charcode": 65,
+      "size_ppem": 24,
+      "load_flags": "FORCE_AUTOHINT",
+      "metrics": {
+        "width": 640,
+        "height": 1088,
+        "horiBearingX": 64,
+        "horiBearingY": 1088,
+        "horiAdvance": 768
+      },
+      "outline": {
+        "n_points": 3,
+        "n_contours": 1,
+        "points": [[77,0],[384,1075],[691,0]],
+        "tags": [1,1,1],
+        "contours": [2]
+      }
+    },
+    {
+      "glyph_index": 1,
+      "charcode": 32,
+      "size_ppem": 48,
+      "load_flags": "DEFAULT",
+      "metrics": {
+        "width": 0,
+        "height": 0,
+        "horiBearingX": 0,
+        "horiBearingY": 0,
+        "horiAdvance": 768
+      },
+      "outline": {
+        "n_points": 0,
+        "n_contours": 0,
+        "points": [],
+        "tags": [],
+        "contours": []
+      }
+    },
+    {
+      "glyph_index": 2,
+      "charcode": 65,
+      "size_ppem": 48,
+      "load_flags": "DEFAULT",
+      "metrics": {
+        "width": 1280,
+        "height": 2176,
+        "horiBearingX": 128,
+        "horiBearingY": 2176,
+        "horiAdvance": 1536
+      },
+      "outline": {
+        "n_points": 3,
+        "n_contours": 1,
+        "points": [[154,0],[768,2150],[1382,0]],
+        "tags": [1,1,1],
+        "contours": [2]
+      }
+    },
+    {
+      "glyph_index": 1,
+      "charcode": 32,
+      "size_ppem": 48,
+      "load_flags": "NO_HINTING",
+      "metrics": {
+        "width": 0,
+        "height": 0,
+        "horiBearingX": 0,
+        "horiBearingY": 0,
+        "horiAdvance": 768
+      },
+      "outline": {
+        "n_points": 0,
+        "n_contours": 0,
+        "points": [],
+        "tags": [],
+        "contours": []
+      }
+    },
+    {
+      "glyph_index": 2,
+      "charcode": 65,
+      "size_ppem": 48,
+      "load_flags": "NO_HINTING",
+      "metrics": {
+        "width": 1228,
+        "height": 2150,
+        "horiBearingX": 154,
+        "horiBearingY": 2150,
+        "horiAdvance": 1536
+      },
+      "outline": {
+        "n_points": 3,
+        "n_contours": 1,
+        "points": [[154,0],[768,2150],[1382,0]],
+        "tags": [1,1,1],
+        "contours": [2]
+      }
+    },
+    {
+      "glyph_index": 1,
+      "charcode": 32,
+      "size_ppem": 48,
+      "load_flags": "NO_SCALE",
+      "metrics": {
+        "width": 0,
+        "height": 0,
+        "horiBearingX": 0,
+        "horiBearingY": 0,
+        "horiAdvance": 250
+      },
+      "outline": {
+        "n_points": 0,
+        "n_contours": 0,
+        "points": [],
+        "tags": [],
+        "contours": []
+      }
+    },
+    {
+      "glyph_index": 2,
+      "charcode": 65,
+      "size_ppem": 48,
+      "load_flags": "NO_SCALE",
+      "metrics": {
+        "width": 400,
+        "height": 700,
+        "horiBearingX": 50,
+        "horiBearingY": 700,
+        "horiAdvance": 500
+      },
+      "outline": {
+        "n_points": 3,
+        "n_contours": 1,
+        "points": [[50,0],[250,700],[450,0]],
+        "tags": [1,1,1],
+        "contours": [2]
+      }
+    },
+    {
+      "glyph_index": 1,
+      "charcode": 32,
+      "size_ppem": 48,
+      "load_flags": "NO_AUTOHINT",
+      "metrics": {
+        "width": 0,
+        "height": 0,
+        "horiBearingX": 0,
+        "horiBearingY": 0,
+        "horiAdvance": 768
+      },
+      "outline": {
+        "n_points": 0,
+        "n_contours": 0,
+        "points": [],
+        "tags": [],
+        "contours": []
+      }
+    },
+    {
+      "glyph_index": 2,
+      "charcode": 65,
+      "size_ppem": 48,
+      "load_flags": "NO_AUTOHINT",
+      "metrics": {
+        "width": 1280,
+        "height": 2176,
+        "horiBearingX": 128,
+        "horiBearingY": 2176,
+        "horiAdvance": 1536
+      },
+      "outline": {
+        "n_points": 3,
+        "n_contours": 1,
+        "points": [[154,0],[768,2150],[1382,0]],
+        "tags": [1,1,1],
+        "contours": [2]
+      }
+    },
+    {
+      "glyph_index": 1,
+      "charcode": 32,
+      "size_ppem": 48,
+      "load_flags": "FORCE_AUTOHINT",
+      "metrics": {
+        "width": 0,
+        "height": 0,
+        "horiBearingX": 0,
+        "horiBearingY": 0,
+        "horiAdvance": 768
+      },
+      "outline": {
+        "n_points": 0,
+        "n_contours": 0,
+        "points": [],
+        "tags": [],
+        "contours": []
+      }
+    },
+    {
+      "glyph_index": 2,
+      "charcode": 65,
+      "size_ppem": 48,
+      "load_flags": "FORCE_AUTOHINT",
+      "metrics": {
+        "width": 1280,
+        "height": 2176,
+        "horiBearingX": 128,
+        "horiBearingY": 2176,
+        "horiAdvance": 1536
+      },
+      "outline": {
+        "n_points": 3,
+        "n_contours": 1,
+        "points": [[154,0],[768,2150],[1382,0]],
+        "tags": [1,1,1],
+        "contours": [2]
+      }
+    }
+  ],
+  "kerning": [],
+  "variations": []
+}
