@@ -469,3 +469,38 @@ pub fn BdfFont::x_resolution(self : BdfFont) -> Int {
 pub fn BdfFont::y_resolution(self : BdfFont) -> Int {
   self.y_resolution
 }
+
+///|
+pub fn BdfGlyph::encoding(self : BdfGlyph) -> Int {
+  self.encoding
+}
+
+///|
+pub fn BdfGlyph::bbx_width(self : BdfGlyph) -> Int {
+  self.bbx_width
+}
+
+///|
+pub fn BdfGlyph::bbx_height(self : BdfGlyph) -> Int {
+  self.bbx_height
+}
+
+///|
+pub fn BdfGlyph::bbx_x_offset(self : BdfGlyph) -> Int {
+  self.bbx_x_offset
+}
+
+///|
+pub fn BdfGlyph::bbx_y_offset(self : BdfGlyph) -> Int {
+  self.bbx_y_offset
+}
+
+///|
+pub fn BdfGlyph::bitmap(self : BdfGlyph) -> Bytes {
+  self.bitmap
+}
+
+///|
+pub fn BdfGlyph::name(self : BdfGlyph) -> String {
+  self.name
+}

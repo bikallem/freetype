@@ -188,7 +188,9 @@ pub fn load_sfnt_face(
     face.set_style_flags(face.style_flags() | @base.STYLE_FLAG_ITALIC)
   }
   // Underline
-  face.set_underline_position(post_underline_position)
+  face.set_underline_position(
+    post_underline_position - post_underline_thickness / 2,
+  )
   face.set_underline_thickness(post_underline_thickness)
   // Names (extracted directly from raw bytes above)
   if family_name is Some(n) {

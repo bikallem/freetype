@@ -30,6 +30,41 @@ def font_path_expr(ff):
     return f'"test/fonts/{ff}"'
 
 
+def detect_font_format_name(ff):
+    path = os.path.join(FONT_DIR, ff)
+    with open(path, "rb") as f:
+        header = f.read(4)
+    if len(header) < 4:
+        return "Unknown"
+    b0, b1, b2, b3 = header
+    tag = (b0 << 24) | (b1 << 16) | (b2 << 8) | b3
+    if tag == 0x00010000 or tag == 0x74727565:
+        return "TrueType"
+    if tag == 0x4F54544F:
+        return "CffOpenType"
+    if tag == 0x74746366:
+        return "TrueTypeCollection"
+    if tag == 0x774F4646:
+        return "Woff1"
+    if tag == 0x774F4632:
+        return "Woff2"
+    if tag == 0x53544152:
+        return "Bdf"
+    if tag == 0x01666370:
+        return "Pcf"
+    if tag == 0x50465230:
+        return "Pfr"
+    if (b0, b1) == (0x80, 0x01):
+        return "Type1Pfb"
+    if (b0, b1) == (0x25, 0x21):
+        return "Type1Pfa"
+    if (b0, b1) == (0x4D, 0x5A):
+        return "WindowsFnt"
+    if b0 == 0x01 and b2 >= 4:
+        return "CffStandalone"
+    return FMT.get(os.path.splitext(ff)[1].lower(), "Unknown")
+
+
 def gen_font_tests(ff, golden):
     """Generate test lines for one font. Returns (lines, test_count)."""
     v = vn(ff)
@@ -52,7 +87,7 @@ def gen_font_tests(ff, golden):
     if ext == ".ttf":
         L += [f'  inspect(@base.detect_format(load_{v}()) is (TrueType | TrueTypeCollection), content="true")']
     else:
-        L += [f'  inspect(@base.detect_format(load_{v}()), content="{FMT.get(ext, "Unknown")}")']
+        L += [f'  inspect(@base.detect_format(load_{v}()), content="{detect_font_format_name(ff)}")']
     L += ["}", ""]
     tc += 1
 
@@ -69,17 +104,17 @@ def gen_font_tests(ff, golden):
     L += [f"///|", f'test "parity/{ff}: metadata" {{',
           f"  let f = @freetype.from_bytes(load_{v}())"]
     if meta.get("family_name"):
-        L += [f'  inspect(f.family_name, content="{esc(meta["family_name"])}")']
-    L += [f'  inspect(f.num_glyphs, content="{meta["num_glyphs"]}")']
+        L += [f'  inspect(f.family_name(), content="{esc(meta["family_name"])}")']
+    L += [f'  inspect(f.num_glyphs(), content="{meta["num_glyphs"]}")']
     if upe > 0:
-        L += [f'  inspect(f.units_per_em, content="{upe}")',
-              f'  inspect(f.ascender, content="{meta["ascender"]}")',
-              f'  inspect(f.descender, content="{meta["descender"]}")',
-              f'  inspect(f.height, content="{meta["height"]}")']
+        L += [f'  inspect(f.units_per_em(), content="{upe}")',
+              f'  inspect(f.ascender(), content="{meta["ascender"]}")',
+              f'  inspect(f.descender(), content="{meta["descender"]}")',
+              f'  inspect(f.height(), content="{meta["height"]}")']
     ul_pos, ul_th = meta.get("underline_position", 0), meta.get("underline_thickness", 0)
     if ul_pos or ul_th:
-        L += [f'  inspect(f.underline_position, content="{ul_pos}")',
-              f'  inspect(f.underline_thickness, content="{ul_th}")']
+        L += [f'  inspect(f.underline_position(), content="{ul_pos}")',
+              f'  inspect(f.underline_thickness(), content="{ul_th}")']
     L += ["}", ""]
     tc += 1
 
@@ -88,10 +123,10 @@ def gen_font_tests(ff, golden):
     if bbox and upe > 0:
         L += [f"///|", f'test "parity/{ff}: bbox" {{',
               f"  let f = @freetype.from_bytes(load_{v}())",
-              f'  inspect(f.bbox.x_min, content="{bbox["xMin"]}")',
-              f'  inspect(f.bbox.y_min, content="{bbox["yMin"]}")',
-              f'  inspect(f.bbox.x_max, content="{bbox["xMax"]}")',
-              f'  inspect(f.bbox.y_max, content="{bbox["yMax"]}")',
+              f'  inspect(f.bbox().x_min(), content="{bbox["xMin"]}")',
+              f'  inspect(f.bbox().y_min(), content="{bbox["yMin"]}")',
+              f'  inspect(f.bbox().x_max(), content="{bbox["xMax"]}")',
+              f'  inspect(f.bbox().y_max(), content="{bbox["yMax"]}")',
               "}", ""]
         tc += 1
 
@@ -112,11 +147,11 @@ def gen_font_tests(ff, golden):
     if n_cm > 0:  # charmaps apply to all formats
         L += [f"///|", f'test "parity/{ff}: charmaps" {{',
               f"  let f = @freetype.from_bytes(load_{v}())",
-              f'  inspect(f.charmaps.length(), content="{n_cm}")']
+              f'  inspect(f.charmaps().length(), content="{n_cm}")']
         for ci, cm in enumerate(charmaps):
-            L += [f"  if f.charmaps.length() > {ci} {{",
-                  f'    inspect(f.charmaps[{ci}].platform_id, content="{cm["platform_id"]}")',
-                  f'    inspect(f.charmaps[{ci}].encoding_id, content="{cm["encoding_id"]}")',
+            L += [f"  if f.charmaps().length() > {ci} {{",
+                  f'    inspect(f.charmaps()[{ci}].platform_id(), content="{cm["platform_id"]}")',
+                  f'    inspect(f.charmaps()[{ci}].encoding_id(), content="{cm["encoding_id"]}")',
                   "  }"]
         L += ["}", ""]
         tc += 1
@@ -155,14 +190,14 @@ def gen_font_tests(ff, golden):
             L += [f"///|",
                   f'test "parity/{ff}: glyph {g["glyph_index"]} outline NO_SCALE" {{',
                   f"  let f = @freetype.from_bytes(load_{v}())",
-                  f"  let r = try? @freetype.load_glyph(f, {g['glyph_index']}U, load_flags=@base.load_no_scale)",
+                  f"  let r = try? @freetype.load_glyph(f, {g['glyph_index']}U, load_flags=@base.LOAD_NO_SCALE)",
                   f"  guard r is Ok(_) else {{ return }}"]
-            L += [f'  inspect(f.glyph.outline.n_points(), content="{o["n_points"]}")',
-                  f'  inspect(f.glyph.outline.n_contours(), content="{o["n_contours"]}")']
+            L += [f'  inspect(f.glyph().outline().n_points(), content="{o["n_points"]}")',
+                  f'  inspect(f.glyph().outline().n_contours(), content="{o["n_contours"]}")']
             for pi, (px, py) in enumerate(o["points"][:8]):
-                L += [f'  inspect(f.glyph.outline.points[{pi}].x, content="{px}")',
-                      f'  inspect(f.glyph.outline.points[{pi}].y, content="{py}")']
-            L += [f'  inspect(f.glyph.metrics.hori_advance, content="{g["metrics"]["horiAdvance"]}")']
+                L += [f'  inspect(f.glyph().outline().points()[{pi}].x(), content="{px}")',
+                      f'  inspect(f.glyph().outline().points()[{pi}].y(), content="{py}")']
+            L += [f'  inspect(f.glyph().metrics().hori_advance(), content="{g["metrics"]["horiAdvance"]}")']
             L += ["}", ""]
             tc += 1
 
@@ -180,7 +215,7 @@ def gen_font_tests(ff, golden):
                   f"  guard r1 is Ok(_) else {{ return }}",
                   f"  let r2 = try? @freetype.load_glyph(f, {g['glyph_index']}U)",
                   f"  guard r2 is Ok(_) else {{ return }}",
-                  f'  inspect(f.glyph.metrics.hori_advance, content="{m["horiAdvance"]}")',
+                  f'  inspect(f.glyph().metrics().hori_advance(), content="{m["horiAdvance"]}")',
                   "}", ""]
             tc += 1
 
@@ -191,7 +226,7 @@ def gen_font_tests(ff, golden):
             L += [f"///|", f'test "parity/{ff}: TTC multi-face" {{']
             for fi in range(min(nf, 3)):
                 L += [f"  let f{fi} = @freetype.from_bytes(load_{v}(), face_index={fi})",
-                      f'  inspect(f{fi}.num_glyphs > 0L, content="true")']
+                      f'  inspect(f{fi}.num_glyphs() > 0L, content="true")']
             L += ["}", ""]
             tc += 1
 
@@ -218,10 +253,10 @@ def gen_font_tests(ff, golden):
                   f"  guard r1 is Ok(_) else {{ return }}",
                   f"  let r2 = try? @freetype.load_glyph(f, {g['glyph_index']}U)",
                   f"  guard r2 is Ok(_) else {{ return }}",
-                  f'  inspect(f.glyph.outline.n_points(), content="{o["n_points"]}")',
-                  f'  inspect(f.glyph.metrics.width, content="{g["metrics"]["width"]}")',
-                  f'  inspect(f.glyph.metrics.height, content="{g["metrics"]["height"]}")',
-                  f'  inspect(f.glyph.metrics.hori_advance, content="{g["metrics"]["horiAdvance"]}")',
+                  f'  inspect(f.glyph().outline().n_points(), content="{o["n_points"]}")',
+                  f'  inspect(f.glyph().metrics().width(), content="{g["metrics"]["width"]}")',
+                  f'  inspect(f.glyph().metrics().height(), content="{g["metrics"]["height"]}")',
+                  f'  inspect(f.glyph().metrics().hori_advance(), content="{g["metrics"]["horiAdvance"]}")',
                   "}", ""]
             tc += 1
 
@@ -236,9 +271,9 @@ def gen_font_tests(ff, golden):
                   f"  let f = @freetype.from_bytes(load_{v}())",
                   f"  let r1 = try? @freetype.set_pixel_sizes(f, 0U, 16U)",
                   f"  guard r1 is Ok(_) else {{ return }}",
-                  f"  let r2 = try? @freetype.load_glyph(f, {g['glyph_index']}U, load_flags=@base.load_no_hinting)",
+                  f"  let r2 = try? @freetype.load_glyph(f, {g['glyph_index']}U, load_flags=@base.LOAD_NO_HINTING)",
                   f"  guard r2 is Ok(_) else {{ return }}",
-                  f'  inspect(f.glyph.metrics.hori_advance, content="{g["metrics"]["horiAdvance"]}")',
+                  f'  inspect(f.glyph().metrics().hori_advance(), content="{g["metrics"]["horiAdvance"]}")',
                   "}", ""]
             tc += 1
 
@@ -253,9 +288,9 @@ def gen_font_tests(ff, golden):
                   f"  let f = @freetype.from_bytes(load_{v}())",
                   f"  let r1 = try? @freetype.set_pixel_sizes(f, 0U, 16U)",
                   f"  guard r1 is Ok(_) else {{ return }}",
-                  f"  let r2 = try? @freetype.load_glyph(f, {g['glyph_index']}U, load_flags=@base.load_force_autohint)",
+                  f"  let r2 = try? @freetype.load_glyph(f, {g['glyph_index']}U, load_flags=@base.LOAD_FORCE_AUTOHINT)",
                   f"  guard r2 is Ok(_) else {{ return }}",
-                  f'  inspect(f.glyph.metrics.hori_advance, content="{g["metrics"]["horiAdvance"]}")',
+                  f'  inspect(f.glyph().metrics().hori_advance(), content="{g["metrics"]["horiAdvance"]}")',
                   "}", ""]
             tc += 1
 

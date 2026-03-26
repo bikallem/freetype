@@ -11,6 +11,12 @@ fn load_cff_standalone(data : Bytes) -> @base.FaceRec raise @error.FTError {
   if bbox.length() == 4 {
     face.set_bbox(@types.BBox::new(bbox[0], bbox[1], bbox[2], bbox[3]))
   }
+  if cff.top_dict().underline_position() != 0 {
+    face.set_underline_position(cff.top_dict().underline_position())
+  }
+  if cff.top_dict().underline_thickness() != 0 {
+    face.set_underline_thickness(cff.top_dict().underline_thickness())
+  }
   face.charmaps().push(@base.CharMapRec::new(@base.Encoding::Unicode, 7U, 0U))
   if face.charmaps().length() > 0 {
     face.set_active_charmap(0)

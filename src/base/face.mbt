@@ -157,6 +157,8 @@ pub(all) enum DriverData {
   /// SFNT data stored as: (cmap_lookup_fn, glyph_load_fn, kern_fn, raw_data)
   /// Using closures to avoid circular dependency between base and sfnt/truetype/cff.
   SfntDriver(SfntOps)
+  /// Bitmap-only fonts (BDF/PCF) use a dedicated glyph-loading path.
+  BitmapOps(BitmapOps)
   /// Type 1 data stored with closures for charmap and glyph loading.
   Type1Ops(Type1Ops)
 }
@@ -166,6 +168,7 @@ pub impl Show for DriverData with output(self, logger) {
   match self {
     Empty => logger.write_string("Empty")
     SfntDriver(_) => logger.write_string("SfntDriver(...)")
+    BitmapOps(_) => logger.write_string("BitmapOps(...)")
     Type1Ops(_) => logger.write_string("Type1Ops(...)")
   }
 }
@@ -239,18 +242,56 @@ pub fn GlyphSlotData::new(
 }
 
 ///|
+struct BitmapGlyphData {
+  slot_data : GlyphSlotData
+  bitmap : @types.Bitmap
+  bitmap_left : Int
+  bitmap_top : Int
+} derive(Show)
+
+///|
+pub fn BitmapGlyphData::new(
+  slot_data : GlyphSlotData,
+  bitmap : @types.Bitmap,
+  bitmap_left : Int,
+  bitmap_top : Int,
+) -> BitmapGlyphData {
+  { slot_data, bitmap, bitmap_left, bitmap_top }
+}
+
+///|
+struct BitmapOps {
+  load_glyph : (UInt, Int) -> BitmapGlyphData raise @error.FTError
+}
+
+///|
+pub fn BitmapOps::new(
+  load_glyph~ : (UInt, Int) -> BitmapGlyphData raise @error.FTError,
+) -> BitmapOps {
+  { load_glyph, }
+}
+
+///|
+pub impl Show for BitmapOps with output(self, logger) {
+  logger.write_string("BitmapOps(...)")
+  ignore(self)
+}
+
+///|
 /// Type 1 driver operations.
 struct Type1Ops {
   char_index : (UInt) -> UInt
   load_glyph : (UInt, Int) -> (GlyphSlotData, @types.Outline) raise @error.FTError
+  apply_hints : (@types.Outline, @fixed.Fixed) -> Bool
 }
 
 ///|
 pub fn Type1Ops::new(
   char_index~ : (UInt) -> UInt,
   load_glyph~ : (UInt, Int) -> (GlyphSlotData, @types.Outline) raise @error.FTError,
+  apply_hints~ : (@types.Outline, @fixed.Fixed) -> Bool,
 ) -> Type1Ops {
-  { char_index, load_glyph }
+  { char_index, load_glyph, apply_hints }
 }
 
 ///|
@@ -751,6 +792,28 @@ pub fn GlyphSlotData::metrics_hori_advance(self : GlyphSlotData) -> Int64 {
   self.metrics_hori_advance
 }
 
+// --- BitmapGlyphData getters ---
+
+///|
+pub fn BitmapGlyphData::slot_data(self : BitmapGlyphData) -> GlyphSlotData {
+  self.slot_data
+}
+
+///|
+pub fn BitmapGlyphData::bitmap(self : BitmapGlyphData) -> @types.Bitmap {
+  self.bitmap
+}
+
+///|
+pub fn BitmapGlyphData::bitmap_left(self : BitmapGlyphData) -> Int {
+  self.bitmap_left
+}
+
+///|
+pub fn BitmapGlyphData::bitmap_top(self : BitmapGlyphData) -> Int {
+  self.bitmap_top
+}
+
 // --- SfntOps getters ---
 
 ///|
@@ -794,6 +857,15 @@ pub fn SfntOps::raw_data(self : SfntOps) -> Bytes {
   self.raw_data
 }
 
+// --- BitmapOps getters ---
+
+///|
+pub fn BitmapOps::load_glyph(
+  self : BitmapOps,
+) -> (UInt, Int) -> BitmapGlyphData raise @error.FTError {
+  self.load_glyph
+}
+
 // --- Type1Ops getters ---
 
 ///|
@@ -806,6 +878,13 @@ pub fn Type1Ops::load_glyph(
   self : Type1Ops,
 ) -> (UInt, Int) -> (GlyphSlotData, @types.Outline) raise @error.FTError {
   self.load_glyph
+}
+
+///|
+pub fn Type1Ops::apply_hints(
+  self : Type1Ops,
+) -> (@types.Outline, @fixed.Fixed) -> Bool {
+  self.apply_hints
 }
 
 // --- SubGlyph getters ---

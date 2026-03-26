@@ -3,6 +3,7 @@ package "bikallem/freetype/type1"
 
 import {
   "bikallem/freetype/error",
+  "bikallem/freetype/psaux",
   "bikallem/freetype/types",
 }
 
@@ -13,6 +14,10 @@ pub fn eexec_decrypt(Bytes, key? : UInt) -> Bytes
 
 pub fn load_type1_glyph(Type1Font, String) -> @types.Outline raise @error.FTError
 
+pub fn load_type1_glyph_data(Type1Font, String) -> (@types.Outline, Int64) raise @error.FTError
+
+pub fn load_type1_glyph_full_data(Type1Font, String) -> (@types.Outline, Int64, Array[@psaux.StemHint], Array[@psaux.StemHint]) raise @error.FTError
+
 pub fn parse_type1_pfb(Bytes) -> Type1Font raise @error.FTError
 
 // Errors
@@ -22,8 +27,10 @@ type Type1Font
 pub fn Type1Font::blue_values(Self) -> Array[Int]
 pub fn Type1Font::charstrings(Self) -> Map[String, Bytes]
 pub fn Type1Font::encoding(Self) -> Array[String]
+pub fn Type1Font::family_name(Self) -> String
 pub fn Type1Font::font_bbox(Self) -> Array[Int]
 pub fn Type1Font::font_name(Self) -> String
+pub fn Type1Font::glyph_order(Self) -> Array[String]
 pub fn Type1Font::len_iv(Self) -> Int
 pub fn Type1Font::new() -> Self
 pub fn Type1Font::other_blues(Self) -> Array[Int]
@@ -31,6 +38,8 @@ pub fn Type1Font::paint_type(Self) -> Int
 pub fn Type1Font::std_hw(Self) -> Int
 pub fn Type1Font::std_vw(Self) -> Int
 pub fn Type1Font::subrs(Self) -> Array[Bytes]
+pub fn Type1Font::underline_position(Self) -> Int
+pub fn Type1Font::underline_thickness(Self) -> Int
 pub fn Type1Font::units_per_em(Self) -> Int
 pub impl Show for Type1Font
 

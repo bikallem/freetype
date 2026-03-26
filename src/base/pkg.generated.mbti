@@ -101,6 +101,19 @@ pub fn outline_translate(@types.Outline, Int64, Int64) -> Unit
 // Errors
 
 // Types and methods
+type BitmapGlyphData
+pub fn BitmapGlyphData::bitmap(Self) -> @types.Bitmap
+pub fn BitmapGlyphData::bitmap_left(Self) -> Int
+pub fn BitmapGlyphData::bitmap_top(Self) -> Int
+pub fn BitmapGlyphData::new(GlyphSlotData, @types.Bitmap, Int, Int) -> Self
+pub fn BitmapGlyphData::slot_data(Self) -> GlyphSlotData
+pub impl Show for BitmapGlyphData
+
+type BitmapOps
+pub fn BitmapOps::load_glyph(Self) -> (UInt, Int) -> BitmapGlyphData raise @error.FTError
+pub fn BitmapOps::new(load_glyph~ : (UInt, Int) -> BitmapGlyphData raise @error.FTError) -> Self
+pub impl Show for BitmapOps
+
 type BitmapSize
 pub fn BitmapSize::new(Int, Int, Int64, Int64, Int64) -> Self
 pub impl Eq for BitmapSize
@@ -117,6 +130,7 @@ pub impl Show for CharMapRec
 pub(all) enum DriverData {
   Empty
   SfntDriver(SfntOps)
+  BitmapOps(BitmapOps)
   Type1Ops(Type1Ops)
 }
 pub impl Show for DriverData
@@ -300,9 +314,10 @@ pub fn SubGlyph::transform(Self) -> @fixed.Matrix
 pub impl Show for SubGlyph
 
 type Type1Ops
+pub fn Type1Ops::apply_hints(Self) -> (@types.Outline, @fixed.Fixed) -> Bool
 pub fn Type1Ops::char_index(Self) -> (UInt) -> UInt
 pub fn Type1Ops::load_glyph(Self) -> (UInt, Int) -> (GlyphSlotData, @types.Outline) raise @error.FTError
-pub fn Type1Ops::new(char_index~ : (UInt) -> UInt, load_glyph~ : (UInt, Int) -> (GlyphSlotData, @types.Outline) raise @error.FTError) -> Self
+pub fn Type1Ops::new(char_index~ : (UInt) -> UInt, load_glyph~ : (UInt, Int) -> (GlyphSlotData, @types.Outline) raise @error.FTError, apply_hints~ : (@types.Outline, @fixed.Fixed) -> Bool) -> Self
 pub impl Show for Type1Ops
 
 // Type aliases

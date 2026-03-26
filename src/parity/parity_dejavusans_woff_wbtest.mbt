@@ -28,12 +28,7 @@ test "parity/DejaVuSans.woff: metadata" {
   inspect(f.ascender(), content="1901")
   inspect(f.descender(), content="-483")
   inspect(f.height(), content="2384")
-  inspect(
-    f.underline_position(),
-    content=(
-      #|-130
-    ),
-  )
+  inspect(f.underline_position(), content="-175")
   inspect(f.underline_thickness(), content="90")
 }
 
@@ -221,12 +216,7 @@ test "parity/DejaVuSans.woff: glyph metrics at 16ppem" {
   guard r1 is Ok(_) else { return }
   let r2 = try? @freetype.load_glyph(f, 4U)
   guard r2 is Ok(_) else { return }
-  inspect(
-    f.glyph().metrics().hori_advance(),
-    content=(
-      #|411
-    ),
-  )
+  inspect(f.glyph().metrics().hori_advance(), content="384")
 }
 
 ///|
@@ -262,24 +252,9 @@ test "parity/DejaVuSans.woff: hinted outline DEFAULT 16ppem" {
   let r2 = try? @freetype.load_glyph(f, 4U)
   guard r2 is Ok(_) else { return }
   inspect(f.glyph().outline().n_points(), content="10")
-  inspect(
-    f.glyph().metrics().width(),
-    content=(
-      #|102
-    ),
-  )
-  inspect(
-    f.glyph().metrics().height(),
-    content=(
-      #|747
-    ),
-  )
-  inspect(
-    f.glyph().metrics().hori_advance(),
-    content=(
-      #|411
-    ),
-  )
+  inspect(f.glyph().metrics().width(), content="128")
+  inspect(f.glyph().metrics().height(), content="768")
+  inspect(f.glyph().metrics().hori_advance(), content="384")
 }
 
 ///|
@@ -303,10 +278,5 @@ test "parity/DejaVuSans.woff: outline FORCE_AUTOHINT 16ppem" {
     load_flags=@base.LOAD_FORCE_AUTOHINT,
   )
   guard r2 is Ok(_) else { return }
-  inspect(
-    f.glyph().metrics().hori_advance(),
-    content=(
-      #|411
-    ),
-  )
+  inspect(f.glyph().metrics().hori_advance(), content="384")
 }

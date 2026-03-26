@@ -212,6 +212,19 @@ fn load_sfnt(
       false
     }
   }
+  if has_cff {
+    match ensure_cff() {
+      Some(cff) => {
+        if cff.top_dict().underline_position() != 0 {
+          face.set_underline_position(cff.top_dict().underline_position())
+        }
+        if cff.top_dict().underline_thickness() != 0 {
+          face.set_underline_thickness(cff.top_dict().underline_thickness())
+        }
+      }
+      None => ()
+    }
+  }
   let tt_hint_fn : (@types.Outline, Bytes, @fixed.Fixed, @fixed.Fixed, UInt) -> Bool = fn(
     outline,
     instructions,

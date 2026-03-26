@@ -31,12 +31,7 @@ test "parity/SourceCodePro-Regular.woff: metadata" {
   inspect(f.ascender(), content="984")
   inspect(f.descender(), content="-273")
   inspect(f.height(), content="1257")
-  inspect(
-    f.underline_position(),
-    content=(
-      #|-50
-    ),
-  )
+  inspect(f.underline_position(), content="-75")
   inspect(f.underline_thickness(), content="50")
 }
 
@@ -148,12 +143,7 @@ test "parity/SourceCodePro-Regular.woff: glyph 918 outline NO_SCALE" {
   let f = @freetype.from_bytes(load_sourcecodepro_regular_woff())
   let r = try? @freetype.load_glyph(f, 918U, load_flags=@base.LOAD_NO_SCALE)
   guard r is Ok(_) else { return }
-  inspect(
-    f.glyph().outline().n_points(),
-    content=(
-      #|19
-    ),
-  )
+  inspect(f.glyph().outline().n_points(), content="18")
   inspect(f.glyph().outline().n_contours(), content="2")
   inspect(f.glyph().outline().points()[0].x(), content="272")
   inspect(f.glyph().outline().points()[0].y(), content="232")
@@ -233,12 +223,7 @@ test "parity/SourceCodePro-Regular.woff: glyph metrics at 16ppem" {
   guard r1 is Ok(_) else { return }
   let r2 = try? @freetype.load_glyph(f, 918U)
   guard r2 is Ok(_) else { return }
-  inspect(
-    f.glyph().metrics().hori_advance(),
-    content=(
-      #|614
-    ),
-  )
+  inspect(f.glyph().metrics().hori_advance(), content="640")
 }
 
 ///|
@@ -248,30 +233,10 @@ test "parity/SourceCodePro-Regular.woff: hinted outline DEFAULT 16ppem" {
   guard r1 is Ok(_) else { return }
   let r2 = try? @freetype.load_glyph(f, 918U)
   guard r2 is Ok(_) else { return }
-  inspect(
-    f.glyph().outline().n_points(),
-    content=(
-      #|19
-    ),
-  )
-  inspect(
-    f.glyph().metrics().width(),
-    content=(
-      #|150
-    ),
-  )
-  inspect(
-    f.glyph().metrics().height(),
-    content=(
-      #|698
-    ),
-  )
-  inspect(
-    f.glyph().metrics().hori_advance(),
-    content=(
-      #|614
-    ),
-  )
+  inspect(f.glyph().outline().n_points(), content="18")
+  inspect(f.glyph().metrics().width(), content="192")
+  inspect(f.glyph().metrics().height(), content="704")
+  inspect(f.glyph().metrics().hori_advance(), content="640")
 }
 
 ///|
@@ -295,10 +260,5 @@ test "parity/SourceCodePro-Regular.woff: outline FORCE_AUTOHINT 16ppem" {
     load_flags=@base.LOAD_FORCE_AUTOHINT,
   )
   guard r2 is Ok(_) else { return }
-  inspect(
-    f.glyph().metrics().hori_advance(),
-    content=(
-      #|614
-    ),
-  )
+  inspect(f.glyph().metrics().hori_advance(), content="640")
 }

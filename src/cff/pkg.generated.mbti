@@ -60,6 +60,8 @@ pub fn CffTopDict::is_cid(Self) -> Bool
 pub fn CffTopDict::new() -> Self
 pub fn CffTopDict::private_offset(Self) -> UInt
 pub fn CffTopDict::private_size(Self) -> UInt
+pub fn CffTopDict::underline_position(Self) -> Int
+pub fn CffTopDict::underline_thickness(Self) -> Int
 pub impl Show for CffTopDict
 
 // Type aliases

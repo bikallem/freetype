@@ -31,12 +31,7 @@ test "parity/NotoSansJP-Regular.otf: metadata" {
   inspect(f.ascender(), content="1160")
   inspect(f.descender(), content="-288")
   inspect(f.height(), content="1448")
-  inspect(
-    f.underline_position(),
-    content=(
-      #|-125
-    ),
-  )
+  inspect(f.underline_position(), content="-150")
   inspect(f.underline_thickness(), content="50")
 }
 
@@ -61,12 +56,7 @@ test "parity/NotoSansJP-Regular.otf: flags" {
 ///|
 test "parity/NotoSansJP-Regular.otf: charmaps" {
   let f = @freetype.from_bytes(load_notosansjp_regular_otf())
-  inspect(
-    f.charmaps().length(),
-    content=(
-      #|7
-    ),
-  )
+  inspect(f.charmaps().length(), content="6")
   if f.charmaps().length() > 0 {
     inspect(f.charmaps()[0].platform_id(), content="0")
     inspect(f.charmaps()[0].encoding_id(), content="3")
@@ -153,114 +143,24 @@ test "parity/NotoSansJP-Regular.otf: glyph 2 outline NO_SCALE" {
   let f = @freetype.from_bytes(load_notosansjp_regular_otf())
   let r = try? @freetype.load_glyph(f, 2U, load_flags=@base.LOAD_NO_SCALE)
   guard r is Ok(_) else { return }
-  inspect(
-    f.glyph().outline().n_points(),
-    content=(
-      #|13
-    ),
-  )
-  inspect(
-    f.glyph().outline().n_contours(),
-    content=(
-      #|1
-    ),
-  )
-  inspect(
-    f.glyph().outline().points()[0].x(),
-    content=(
-      #|44
-    ),
-  )
-  inspect(
-    f.glyph().outline().points()[0].y(),
-    content=(
-      #|-658
-    ),
-  )
-  inspect(
-    f.glyph().outline().points()[1].x(),
-    content=(
-      #|81
-    ),
-  )
-  inspect(
-    f.glyph().outline().points()[1].y(),
-    content=(
-      #|-658
-    ),
-  )
-  inspect(
-    f.glyph().outline().points()[2].x(),
-    content=(
-      #|110
-    ),
-  )
-  inspect(
-    f.glyph().outline().points()[2].y(),
-    content=(
-      #|-630
-    ),
-  )
-  inspect(
-    f.glyph().outline().points()[3].x(),
-    content=(
-      #|110
-    ),
-  )
-  inspect(
-    f.glyph().outline().points()[3].y(),
-    content=(
-      #|-589
-    ),
-  )
-  inspect(
-    f.glyph().outline().points()[4].x(),
-    content=(
-      #|110
-    ),
-  )
-  inspect(
-    f.glyph().outline().points()[4].y(),
-    content=(
-      #|-547
-    ),
-  )
-  inspect(
-    f.glyph().outline().points()[5].x(),
-    content=(
-      #|81
-    ),
-  )
-  inspect(
-    f.glyph().outline().points()[5].y(),
-    content=(
-      #|-519
-    ),
-  )
-  inspect(
-    f.glyph().outline().points()[6].x(),
-    content=(
-      #|44
-    ),
-  )
-  inspect(
-    f.glyph().outline().points()[6].y(),
-    content=(
-      #|-519
-    ),
-  )
-  inspect(
-    f.glyph().outline().points()[7].x(),
-    content=(
-      #|8
-    ),
-  )
-  inspect(
-    f.glyph().outline().points()[7].y(),
-    content=(
-      #|-519
-    ),
-  )
+  inspect(f.glyph().outline().n_points(), content="18")
+  inspect(f.glyph().outline().n_contours(), content="2")
+  inspect(f.glyph().outline().points()[0].x(), content="130")
+  inspect(f.glyph().outline().points()[0].y(), content="221")
+  inspect(f.glyph().outline().points()[1].x(), content="193")
+  inspect(f.glyph().outline().points()[1].y(), content="221")
+  inspect(f.glyph().outline().points()[2].x(), content="205")
+  inspect(f.glyph().outline().points()[2].y(), content="645")
+  inspect(f.glyph().outline().points()[3].x(), content="207")
+  inspect(f.glyph().outline().points()[3].y(), content="749")
+  inspect(f.glyph().outline().points()[4].x(), content="115")
+  inspect(f.glyph().outline().points()[4].y(), content="749")
+  inspect(f.glyph().outline().points()[5].x(), content="117")
+  inspect(f.glyph().outline().points()[5].y(), content="645")
+  inspect(f.glyph().outline().points()[6].x(), content="161")
+  inspect(f.glyph().outline().points()[6].y(), content="-13")
+  inspect(f.glyph().outline().points()[7].x(), content="198")
+  inspect(f.glyph().outline().points()[7].y(), content="-13")
   inspect(f.glyph().metrics().hori_advance(), content="323")
 }
 
@@ -323,12 +223,7 @@ test "parity/NotoSansJP-Regular.otf: glyph metrics at 16ppem" {
   guard r1 is Ok(_) else { return }
   let r2 = try? @freetype.load_glyph(f, 2U)
   guard r2 is Ok(_) else { return }
-  inspect(
-    f.glyph().metrics().hori_advance(),
-    content=(
-      #|331
-    ),
-  )
+  inspect(f.glyph().metrics().hori_advance(), content="320")
 }
 
 ///|
@@ -338,30 +233,10 @@ test "parity/NotoSansJP-Regular.otf: hinted outline DEFAULT 16ppem" {
   guard r1 is Ok(_) else { return }
   let r2 = try? @freetype.load_glyph(f, 2U)
   guard r2 is Ok(_) else { return }
-  inspect(
-    f.glyph().outline().n_points(),
-    content=(
-      #|13
-    ),
-  )
-  inspect(
-    f.glyph().metrics().width(),
-    content=(
-      #|135
-    ),
-  )
-  inspect(
-    f.glyph().metrics().height(),
-    content=(
-      #|142
-    ),
-  )
-  inspect(
-    f.glyph().metrics().hori_advance(),
-    content=(
-      #|331
-    ),
-  )
+  inspect(f.glyph().outline().n_points(), content="18")
+  inspect(f.glyph().metrics().width(), content="192")
+  inspect(f.glyph().metrics().height(), content="832")
+  inspect(f.glyph().metrics().hori_advance(), content="320")
 }
 
 ///|
@@ -385,10 +260,5 @@ test "parity/NotoSansJP-Regular.otf: outline FORCE_AUTOHINT 16ppem" {
     load_flags=@base.LOAD_FORCE_AUTOHINT,
   )
   guard r2 is Ok(_) else { return }
-  inspect(
-    f.glyph().metrics().hori_advance(),
-    content=(
-      #|331
-    ),
-  )
+  inspect(f.glyph().metrics().hori_advance(), content="384")
 }

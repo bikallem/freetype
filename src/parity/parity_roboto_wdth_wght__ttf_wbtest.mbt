@@ -32,12 +32,7 @@ test "parity/Roboto[wdth,wght].ttf: metadata" {
   inspect(f.ascender(), content="1900")
   inspect(f.descender(), content="-500")
   inspect(f.height(), content="2400")
-  inspect(
-    f.underline_position(),
-    content=(
-      #|-150
-    ),
-  )
+  inspect(f.underline_position(), content="-200")
   inspect(f.underline_thickness(), content="100")
 }
 
@@ -213,12 +208,7 @@ test "parity/Roboto[wdth,wght].ttf: glyph metrics at 16ppem" {
   guard r1 is Ok(_) else { return }
   let r2 = try? @freetype.load_glyph(f, 5U)
   guard r2 is Ok(_) else { return }
-  inspect(
-    f.glyph().metrics().hori_advance(),
-    content=(
-      #|264
-    ),
-  )
+  inspect(f.glyph().metrics().hori_advance(), content="256")
 }
 
 ///|
@@ -229,24 +219,9 @@ test "parity/Roboto[wdth,wght].ttf: hinted outline DEFAULT 16ppem" {
   let r2 = try? @freetype.load_glyph(f, 5U)
   guard r2 is Ok(_) else { return }
   inspect(f.glyph().outline().n_points(), content="16")
-  inspect(
-    f.glyph().metrics().width(),
-    content=(
-      #|110
-    ),
-  )
-  inspect(
-    f.glyph().metrics().height(),
-    content=(
-      #|734
-    ),
-  )
-  inspect(
-    f.glyph().metrics().hori_advance(),
-    content=(
-      #|264
-    ),
-  )
+  inspect(f.glyph().metrics().width(), content="128")
+  inspect(f.glyph().metrics().height(), content="768")
+  inspect(f.glyph().metrics().hori_advance(), content="256")
 }
 
 ///|
@@ -270,10 +245,5 @@ test "parity/Roboto[wdth,wght].ttf: outline FORCE_AUTOHINT 16ppem" {
     load_flags=@base.LOAD_FORCE_AUTOHINT,
   )
   guard r2 is Ok(_) else { return }
-  inspect(
-    f.glyph().metrics().hori_advance(),
-    content=(
-      #|264
-    ),
-  )
+  inspect(f.glyph().metrics().hori_advance(), content="320")
 }

@@ -15,16 +15,7 @@ pub fn from_bytes(
       from_bytes(decompressed, face_index~)
     }
     Type1Pfb | Type1Pfa => load_type1_pfb(data)
-    Bdf => {
-      let font = @bdf.parse_bdf_header(data)
-      let face = @base.FaceRec::new()
-      face.set_family_name(font.font_name())
-      face.set_face_flags(
-        @base.FACE_FLAG_FIXED_SIZES | @base.FACE_FLAG_HORIZONTAL,
-      )
-      face.set_num_glyphs((font.num_chars() + 1).to_int64())
-      face
-    }
+    Bdf => load_bdf(data)
     Pcf => {
       let face = @base.FaceRec::new()
       face.set_face_flags(

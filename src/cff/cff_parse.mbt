@@ -152,6 +152,8 @@ fn apply_top_dict_op2(
   op : Int,
 ) -> Unit {
   match op {
+    3 => if stack.length() > 0 { dict.underline_position = stack[0].to_int() }
+    4 => if stack.length() > 0 { dict.underline_thickness = stack[0].to_int() }
     30 =>
       // ROS (CID)
       if stack.length() >= 3 {

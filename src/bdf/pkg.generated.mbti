@@ -27,6 +27,13 @@ pub fn BdfFont::y_resolution(Self) -> Int
 pub impl Show for BdfFont
 
 type BdfGlyph
+pub fn BdfGlyph::bbx_height(Self) -> Int
+pub fn BdfGlyph::bbx_width(Self) -> Int
+pub fn BdfGlyph::bbx_x_offset(Self) -> Int
+pub fn BdfGlyph::bbx_y_offset(Self) -> Int
+pub fn BdfGlyph::bitmap(Self) -> Bytes
+pub fn BdfGlyph::encoding(Self) -> Int
+pub fn BdfGlyph::name(Self) -> String
 pub fn BdfGlyph::new() -> Self
 pub impl Show for BdfGlyph
 

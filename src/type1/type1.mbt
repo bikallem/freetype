@@ -6,9 +6,11 @@
 /// Type 1 font representation.
 struct Type1Font {
   mut font_name : String
+  mut family_name : String
   mut units_per_em : Int // default 1000 for Type 1
   mut encoding : Array[String] // glyph name per encoding slot (256 entries)
   mut charstrings : Map[String, Bytes] // glyph_name -> charstring data
+  mut glyph_order : Array[String] // glyph order as stored in /CharStrings
   subrs : Array[Bytes] // subroutine array
   // Private dict values
   blue_values : Array[Int] // BlueValues alignment zones
@@ -21,6 +23,8 @@ struct Type1Font {
   paint_type : Int // PaintType (0 = fill, 2 = stroke)
   font_matrix : Array[Double] // FontMatrix (6 elements)
   mut font_bbox : Array[Int] // FontBBox [llx lly urx ury]
+  mut underline_position : Int
+  mut underline_thickness : Int
   unique_id : Int // UniqueID
 } derive(Show)
 
@@ -29,9 +33,11 @@ struct Type1Font {
 pub fn Type1Font::new() -> Type1Font {
   {
     font_name: "",
+    family_name: "",
     units_per_em: 1000,
     encoding: [],
     charstrings: {},
+    glyph_order: [],
     subrs: [],
     blue_values: [],
     other_blues: [],
@@ -43,6 +49,8 @@ pub fn Type1Font::new() -> Type1Font {
     paint_type: 0,
     font_matrix: [0.001, 0.0, 0.0, 0.001, 0.0, 0.0],
     font_bbox: [0, 0, 0, 0],
+    underline_position: 0,
+    underline_thickness: 0,
     unique_id: 0,
   }
 }
@@ -141,7 +149,16 @@ pub fn parse_type1_pfb(data : Bytes) -> Type1Font raise @error.FTError {
   // Extract font name and FontBBox from ASCII segment if available
   if ascii_parts.length() > 0 {
     font.font_name = extract_font_name(ascii_parts[0])
+    font.family_name = extract_family_name(ascii_parts[0])
     font.font_bbox = extract_font_bbox(ascii_parts[0])
+    font.underline_position = extract_named_int(
+      ascii_parts[0],
+      "UnderlinePosition",
+    )
+    font.underline_thickness = extract_named_int(
+      ascii_parts[0],
+      "UnderlineThickness",
+    )
     // Parse encoding from ASCII segment
     font.encoding = parse_encoding(ascii_parts[0])
   }
@@ -151,7 +168,9 @@ pub fn parse_type1_pfb(data : Bytes) -> Type1Font raise @error.FTError {
     // Parse /lenIV from decrypted data
     font.len_iv = extract_len_iv(decrypted)
     // Parse /CharStrings dict from decrypted data
-    font.charstrings = extract_charstrings(decrypted)
+    let (charstrings, glyph_order) = extract_charstrings(decrypted)
+    font.charstrings = charstrings
+    font.glyph_order = glyph_order
   }
   font.units_per_em = 1000
   font
@@ -164,7 +183,10 @@ fn parse_type1_pfa(data : Bytes) -> Type1Font {
   let font = Type1Font::new()
   // The whole file is ASCII
   font.font_name = extract_font_name(data)
+  font.family_name = extract_family_name(data)
   font.font_bbox = extract_font_bbox(data)
+  font.underline_position = extract_named_int(data, "UnderlinePosition")
+  font.underline_thickness = extract_named_int(data, "UnderlineThickness")
   font.encoding = parse_encoding(data)
   // Find "eexec" keyword — everything after it is hex-encoded encrypted data
   let text_len = data.length()
@@ -204,10 +226,18 @@ fn parse_type1_pfa(data : Bytes) -> Type1Font {
         break // end of hex data (e.g., cleartomark)
       }
     }
-    let binary_data = Bytes::from_array(binary[:])
+    let binary_data = if binary.length() > 0 {
+      Bytes::from_array(binary[:])
+    } else {
+      // Some real-world Type 1 files ship an ASCII prolog followed by raw
+      // binary eexec data without the 0x80 PFB segment headers.
+      data[eexec_pos:text_len].to_bytes()
+    }
     let decrypted = eexec_decrypt(binary_data)
     font.len_iv = extract_len_iv(decrypted)
-    font.charstrings = extract_charstrings(decrypted)
+    let (charstrings, glyph_order) = extract_charstrings(decrypted)
+    font.charstrings = charstrings
+    font.glyph_order = glyph_order
   }
   font.units_per_em = 1000
   font
@@ -260,6 +290,81 @@ fn extract_font_name(ascii_data : Bytes) -> String {
     continue i + 1
   }
   ""
+}
+
+///|
+/// Extract the family name from the ASCII segment of a Type 1 font.
+fn extract_family_name(ascii_data : Bytes) -> String {
+  // Look for /FamilyName (Name) pattern
+  let len = ascii_data.length()
+  for i = 0; i + 11 < len; {
+    if ascii_data[i] == b'/' &&
+      ascii_data[i + 1] == b'F' &&
+      ascii_data[i + 2] == b'a' &&
+      ascii_data[i + 3] == b'm' &&
+      ascii_data[i + 4] == b'i' &&
+      ascii_data[i + 5] == b'l' &&
+      ascii_data[i + 6] == b'y' &&
+      ascii_data[i + 7] == b'N' &&
+      ascii_data[i + 8] == b'a' &&
+      ascii_data[i + 9] == b'm' &&
+      ascii_data[i + 10] == b'e' {
+      let mut j = i + 11
+      while j < len && (ascii_data[j] == b' ' || ascii_data[j] == b'\t') {
+        j += 1
+      }
+      if j < len && ascii_data[j] == b'(' {
+        j += 1
+        let start = j
+        while j < len && ascii_data[j] != b')' {
+          j += 1
+        }
+        let name_bytes = ascii_data[start:j].to_bytes()
+        let buf = StringBuilder::new()
+        for _, b in name_bytes {
+          buf.write_char(Int::unsafe_to_char(b.to_int()))
+        }
+        return buf.to_string()
+      }
+    }
+    continue i + 1
+  }
+  ""
+}
+
+///|
+fn extract_named_int(ascii_data : Bytes, key : String) -> Int {
+  let len = ascii_data.length()
+  for i in 0..<(len - key.length()) {
+    let mut match_ = true
+    if ascii_data[i] != b'/' {
+      continue
+    }
+    for j in 0..<key.length() {
+      if ascii_data[i + 1 + j] != key[j].to_byte() {
+        match_ = false
+        break
+      }
+    }
+    if match_ {
+      let mut pos = i + key.length() + 1
+      while pos < len && (ascii_data[pos] == b' ' || ascii_data[pos] == b'\t') {
+        pos += 1
+      }
+      let mut sign = 1
+      if pos < len && ascii_data[pos] == b'-' {
+        sign = -1
+        pos += 1
+      }
+      let mut value = 0
+      while pos < len && ascii_data[pos] >= b'0' && ascii_data[pos] <= b'9' {
+        value = value * 10 + (ascii_data[pos].to_int() - b'0'.to_int())
+        pos += 1
+      }
+      return sign * value
+    }
+  }
+  0
 }
 
 ///|
@@ -500,8 +605,9 @@ fn extract_len_iv(data : Bytes) -> Int {
 ///|
 /// Extract charstrings from decrypted eexec data.
 /// Looks for /CharStrings dict and parses "/name N RD ..." entries.
-fn extract_charstrings(data : Bytes) -> Map[String, Bytes] {
+fn extract_charstrings(data : Bytes) -> (Map[String, Bytes], Array[String]) {
   let charstrings : Map[String, Bytes] = {}
+  let glyph_order : Array[String] = []
   let len = data.length()
   // Find /CharStrings
   let keyword = "/CharStrings"
@@ -520,7 +626,7 @@ fn extract_charstrings(data : Bytes) -> Map[String, Bytes] {
     }
   }
   if cs_start < 0 {
-    return charstrings
+    return (charstrings, glyph_order)
   }
   // Skip to after "begin" or past the dict size
   let begin_kw = "begin"
@@ -619,6 +725,7 @@ fn extract_charstrings(data : Bytes) -> Map[String, Bytes] {
     if pos + cs_len <= len {
       let cs_data = data[pos:pos + cs_len].to_bytes()
       charstrings[name] = cs_data
+      glyph_order.push(name)
       pos += cs_len
     } else {
       break
@@ -628,7 +735,33 @@ fn extract_charstrings(data : Bytes) -> Map[String, Bytes] {
       pos += 1
     }
   }
-  charstrings
+  (charstrings, glyph_order)
+}
+
+///|
+/// Load a glyph from a Type 1 font by name.
+/// Looks up the charstring, decrypts it, and executes it via the PS interpreter.
+pub fn load_type1_glyph_full_data(
+  font : Type1Font,
+  glyph_name : String,
+) -> (@types.Outline, Int64, Array[@psaux.StemHint], Array[@psaux.StemHint]) raise @error.FTError {
+  let charstring = match font.charstrings.get(glyph_name) {
+    Some(cs) => cs
+    None => raise @error.FTError::InvalidGlyphIndex
+  }
+  let decrypted = charstring_decrypt(charstring, len_iv=font.len_iv)
+  @psaux.execute_type1(decrypted, font.subrs, font.default_width_x)
+}
+
+///|
+/// Load a glyph from a Type 1 font by name.
+/// Looks up the charstring, decrypts it, and executes it via the PS interpreter.
+pub fn load_type1_glyph_data(
+  font : Type1Font,
+  glyph_name : String,
+) -> (@types.Outline, Int64) raise @error.FTError {
+  let (outline, width, _, _) = load_type1_glyph_full_data(font, glyph_name)
+  (outline, width)
 }
 
 ///|
@@ -638,22 +771,18 @@ pub fn load_type1_glyph(
   font : Type1Font,
   glyph_name : String,
 ) -> @types.Outline raise @error.FTError {
-  let charstring = match font.charstrings.get(glyph_name) {
-    Some(cs) => cs
-    None => raise @error.FTError::InvalidGlyphIndex
-  }
-  let decrypted = charstring_decrypt(charstring, len_iv=font.len_iv)
-  let (outline, _width, _, _) = @psaux.execute_type1(
-    decrypted,
-    font.subrs,
-    font.default_width_x,
-  )
+  let (outline, _width) = load_type1_glyph_data(font, glyph_name)
   outline
 }
 
 ///|
 pub fn Type1Font::font_name(self : Type1Font) -> String {
   self.font_name
+}
+
+///|
+pub fn Type1Font::family_name(self : Type1Font) -> String {
+  self.family_name
 }
 
 ///|
@@ -669,6 +798,11 @@ pub fn Type1Font::charstrings(self : Type1Font) -> Map[String, Bytes] {
 }
 
 ///|
+pub fn Type1Font::glyph_order(self : Type1Font) -> Array[String] {
+  self.glyph_order
+}
+
+///|
 pub fn Type1Font::encoding(self : Type1Font) -> Array[String] {
   self.encoding
 }
@@ -681,6 +815,16 @@ pub fn Type1Font::subrs(self : Type1Font) -> Array[Bytes] {
 ///|
 pub fn Type1Font::units_per_em(self : Type1Font) -> Int {
   self.units_per_em
+}
+
+///|
+pub fn Type1Font::underline_position(self : Type1Font) -> Int {
+  self.underline_position
+}
+
+///|
+pub fn Type1Font::underline_thickness(self : Type1Font) -> Int {
+  self.underline_thickness
 }
 
 ///|

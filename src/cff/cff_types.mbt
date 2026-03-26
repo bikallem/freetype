@@ -44,6 +44,8 @@ struct CffTopDict {
   mut is_cid : Bool
   mut font_matrix : Array[Int64] // 6 values
   mut font_bbox : Array[Int64] // 4 values
+  mut underline_position : Int
+  mut underline_thickness : Int
 } derive(Show)
 
 ///|
@@ -60,6 +62,8 @@ pub fn CffTopDict::new() -> CffTopDict {
     is_cid: false,
     font_matrix: [],
     font_bbox: [],
+    underline_position: 0,
+    underline_thickness: 0,
   }
 }
 
@@ -193,6 +197,16 @@ pub fn CffTopDict::private_offset(self : CffTopDict) -> UInt {
 ///|
 pub fn CffTopDict::font_bbox(self : CffTopDict) -> Array[Int64] {
   self.font_bbox
+}
+
+///|
+pub fn CffTopDict::underline_position(self : CffTopDict) -> Int {
+  self.underline_position
+}
+
+///|
+pub fn CffTopDict::underline_thickness(self : CffTopDict) -> Int {
+  self.underline_thickness
 }
 
 ///|

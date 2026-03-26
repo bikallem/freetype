@@ -9,6 +9,49 @@ pub fn get_char_index(face : @base.FaceRec, charcode : UInt) -> UInt {
 // ─── Public API: glyph loading ───────────────────────────────────────
 
 ///|
+fn set_slot_metrics(
+  slot : @base.GlyphSlot,
+  slot_data : @base.GlyphSlotData,
+) -> Unit {
+  slot.metrics().set_width(slot_data.metrics_width())
+  slot.metrics().set_height(slot_data.metrics_height())
+  slot.metrics().set_hori_bearing_x(slot_data.metrics_hori_bearing_x())
+  slot.metrics().set_hori_bearing_y(slot_data.metrics_hori_bearing_y())
+  slot.metrics().set_hori_advance(slot_data.metrics_hori_advance())
+}
+
+///|
+fn set_slot_metrics_from_bbox(
+  slot : @base.GlyphSlot,
+  bbox : @types.BBox,
+) -> Unit {
+  slot.metrics().set_width(bbox.x_max() - bbox.x_min())
+  slot.metrics().set_height(bbox.y_max() - bbox.y_min())
+  slot.metrics().set_hori_bearing_x(bbox.x_min())
+  slot.metrics().set_hori_bearing_y(bbox.y_max())
+}
+
+///|
+fn load_bitmap_glyph(
+  face : @base.FaceRec,
+  glyph_index : UInt,
+  load_flags : Int,
+  ops : @base.BitmapOps,
+) -> Unit raise @error.FTError {
+  let glyph = ops.load_glyph()(glyph_index, load_flags)
+  let slot = face.glyph()
+  let slot_data = glyph.slot_data()
+  slot.set_glyph_index(glyph_index)
+  slot.set_format(@types.GlyphFormat::Bitmap)
+  slot.set_bitmap(glyph.bitmap())
+  slot.set_bitmap_left(glyph.bitmap_left())
+  slot.set_bitmap_top(glyph.bitmap_top())
+  slot.set_outline(@types.Outline::new())
+  set_slot_metrics(slot, slot_data)
+  slot.set_advance(@types.Vector::new(slot_data.metrics_hori_advance(), 0L))
+}
+
+///|
 /// Load a glyph into face.glyph(). After this call, face.glyph().outline()
 /// and face.glyph().metrics() are populated.
 pub fn load_glyph(
@@ -16,6 +59,13 @@ pub fn load_glyph(
   glyph_index : UInt,
   load_flags? : Int = 0,
 ) -> Unit raise @error.FTError {
+  match face.driver_data() {
+    BitmapOps(ops) => {
+      load_bitmap_glyph(face, glyph_index, load_flags, ops)
+      return
+    }
+    _ => ()
+  }
   let (slot_data, outline, tt_instructions) = match face.driver_data() {
     SfntDriver(ops) => ops.load_glyph()(glyph_index, load_flags)
     Type1Ops(ops) => {
@@ -23,6 +73,7 @@ pub fn load_glyph(
       (sd, ol, b"")
     }
     Empty => raise @error.FTError::InvalidFaceHandle
+    BitmapOps(_) => raise @error.FTError::InvalidFaceHandle
   }
   // If NO_SCALE, return font units directly
   let no_scale = (load_flags & @base.LOAD_NO_SCALE) != 0
@@ -30,17 +81,7 @@ pub fn load_glyph(
   face.glyph().set_format(@types.GlyphFormat::Outline)
   face.glyph().set_outline(outline)
   if no_scale {
-    face.glyph().metrics().set_width(slot_data.metrics_width())
-    face.glyph().metrics().set_height(slot_data.metrics_height())
-    face
-    .glyph()
-    .metrics()
-    .set_hori_bearing_x(slot_data.metrics_hori_bearing_x())
-    face
-    .glyph()
-    .metrics()
-    .set_hori_bearing_y(slot_data.metrics_hori_bearing_y())
-    face.glyph().metrics().set_hori_advance(slot_data.metrics_hori_advance())
+    set_slot_metrics(face.glyph(), slot_data)
   } else {
     // Scale to 26.6 pixels using face.size().metrics()
     let x_scale = face.size().metrics().x_scale()
@@ -110,11 +151,13 @@ pub fn load_glyph(
               // Fall back to PS hinting (for CFF/OpenType glyphs)
               ops.apply_hints()(face.glyph().outline(), y_scale)
             }
+          Type1Ops(ops) => ops.apply_hints()(face.glyph().outline(), y_scale)
           _ => false
         }
       } else {
         false
       }
+      let mut use_outline_metrics = did_hint
       if not(did_hint) {
         // Plain scaling: scale outline points
         for i in 0..<face.glyph().outline().n_points() {
@@ -134,21 +177,28 @@ pub fn load_glyph(
           metrics.set_scale(x_scale)
           // Apply auto-hinting to the already-scaled outline
           @autofit.auto_hint_outline(face.glyph().outline(), metrics)
+          use_outline_metrics = true
+        }
+      }
+      if use_outline_metrics {
+        let bbox = @base.outline_get_bbox(face.glyph().outline())
+        set_slot_metrics_from_bbox(face.glyph(), bbox)
+        face
+        .glyph()
+        .metrics()
+        .set_hori_advance(
+          @fixed.F26Dot6::from_raw(face.glyph().metrics().hori_advance())
+          .round()
+          .val(),
+        )
+        if face.glyph().outline().n_points() == 0 {
+          face.glyph().metrics().set_hori_bearing_x(0L)
+          face.glyph().metrics().set_hori_bearing_y(0L)
         }
       }
     } else {
       // No scale set — return font units
-      face.glyph().metrics().set_width(slot_data.metrics_width())
-      face.glyph().metrics().set_height(slot_data.metrics_height())
-      face
-      .glyph()
-      .metrics()
-      .set_hori_bearing_x(slot_data.metrics_hori_bearing_x())
-      face
-      .glyph()
-      .metrics()
-      .set_hori_bearing_y(slot_data.metrics_hori_bearing_y())
-      face.glyph().metrics().set_hori_advance(slot_data.metrics_hori_advance())
+      set_slot_metrics(face.glyph(), slot_data)
     }
   }
 }
@@ -289,6 +339,6 @@ pub fn get_kerning(
       let x = ops.get_kerning()(left_glyph, right_glyph)
       (x.to_int64(), 0L)
     }
-    Empty | Type1Ops(_) => (0L, 0L)
+    Empty | BitmapOps(_) | Type1Ops(_) => (0L, 0L)
   }
 }
