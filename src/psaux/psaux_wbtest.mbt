@@ -169,3 +169,116 @@ test "Type2: hstem width does not corrupt hints" {
   inspect(hh[0].position(), content="10")
   inspect(hh[0].width(), content="20")
 }
+
+///|
+test "Type1: seac composes outlines and shifts hints" {
+  let cs : Bytes = [
+    189, 248, 136, 13, // hsbw(50, 500)
+     139, 247, 12, 169, 204, 205, 12, 6,
+  ] // seac(asb=0, adx=120, ady=30, 'A', 'B')
+  let load_seac_component : (String) -> (
+    @types.Outline,
+    Int64,
+    Array[StemHint],
+    Array[StemHint],
+  ) raise @error.FTError = fn(name) raise @error.FTError {
+    let outline = if name == "A" {
+      @types.Outline::create(
+        [
+          @types.Vector::new(0L, 0L),
+          @types.Vector::new(100L, 0L),
+          @types.Vector::new(100L, 100L),
+        ],
+        [@types.CURVE_TAG_ON, @types.CURVE_TAG_ON, @types.CURVE_TAG_ON],
+        [2U],
+      )
+    } else if name == "B" {
+      @types.Outline::create(
+        [
+          @types.Vector::new(0L, 0L),
+          @types.Vector::new(20L, 0L),
+          @types.Vector::new(20L, 20L),
+        ],
+        [@types.CURVE_TAG_ON, @types.CURVE_TAG_ON, @types.CURVE_TAG_ON],
+        [2U],
+      )
+    } else {
+      raise @error.FTError::InvalidGlyphIndex
+    }
+    let hh = if name == "A" {
+      [{ position: 10L, width: 5L }]
+    } else {
+      [{ position: 3L, width: 2L }]
+    }
+    let hv = if name == "A" {
+      [{ position: 20L, width: 7L }]
+    } else {
+      [{ position: 4L, width: 3L }]
+    }
+    (outline, if name == "A" { 300L } else { 200L }, hh, hv)
+  }
+  let (outline, width, hh, hv) = execute_type1(cs, [], 0L, load_seac_component)
+  inspect(width, content="500")
+  inspect(outline.n_points(), content="6")
+  inspect(outline.n_contours(), content="2")
+  inspect(outline.points()[3].x(), content="170")
+  inspect(outline.points()[3].y(), content="30")
+  inspect(outline.points()[5].x(), content="190")
+  inspect(outline.points()[5].y(), content="50")
+  inspect(hh.length(), content="2")
+  inspect(hh[0].position(), content="10")
+  inspect(hh[1].position(), content="33")
+  inspect(hv.length(), content="2")
+  inspect(hv[0].position(), content="20")
+  inspect(hv[1].position(), content="174")
+}
+
+///|
+test "Type2: flex operators produce two curves" {
+  let flex : Bytes = [
+    139, 139, 21, // rmoveto(0, 0)
+     149, 149, 149, 149, 149, 139, 149, 149, 149, 149, 149, 139, 139, 12, 35, // flex
+     14,
+  ]
+  let (flex_outline, _, _, _) = execute_type2(flex, 0L, 0L)
+  inspect(flex_outline.n_points(), content="7")
+  inspect(flex_outline.points()[6].x(), content="60")
+  inspect(flex_outline.points()[6].y(), content="40")
+
+  let hflex1 : Bytes = [
+    139, 139, 21, // rmoveto(0, 0)
+     149, 149, 149, 149, 149, 149, 149, 149, 149, 12, 36, // hflex1
+     14,
+  ]
+  let (hflex1_outline, _, _, _) = execute_type2(hflex1, 0L, 0L)
+  inspect(hflex1_outline.n_points(), content="7")
+  inspect(hflex1_outline.points()[6].x(), content="60")
+  inspect(hflex1_outline.points()[6].y(), content="0")
+
+  let flex1 : Bytes = [
+    139, 139, 21, // rmoveto(0, 0)
+     149, 149, 149, 149, 149, 149, 149, 149, 149, 149, 149, 12, 37, // flex1
+     14,
+  ]
+  let (flex1_outline, _, _, _) = execute_type2(flex1, 0L, 0L)
+  inspect(flex1_outline.n_points(), content="7")
+  inspect(flex1_outline.points()[6].x(), content="0")
+  inspect(flex1_outline.points()[6].y(), content="60")
+}
+
+///|
+test "Type2: stack operators work" {
+  let cs : Bytes = [
+    149, 149, 12, 24, // mul(10, 10) -> 100
+     139, 12, 20, // put(100, 0)
+     139, 12, 21, // get(0)
+     140, 12, 29, // index(1) -> 100
+     247, 42, 12, 10, // add(100, 150) -> 250
+     22, // hmoveto(250)
+     14,
+  ]
+  let (outline, _, _, _) = execute_type2(cs, 0L, 0L)
+  inspect(outline.n_points(), content="1")
+  inspect(outline.points()[0].x(), content="250")
+  inspect(outline.points()[0].y(), content="0")
+}

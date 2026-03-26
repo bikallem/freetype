@@ -57,6 +57,9 @@ pub fn CffIndex::new(count~ : UInt, off_size~ : Int, offsets~ : Array[UInt], dat
 pub impl Show for CffIndex
 
 type CffPrivateDict
+pub fn CffPrivateDict::blue_fuzz(Self) -> Int?
+pub fn CffPrivateDict::blue_scale(Self) -> Double?
+pub fn CffPrivateDict::blue_shift(Self) -> Int?
 pub fn CffPrivateDict::blue_values(Self) -> Array[Int64]
 pub fn CffPrivateDict::default_width_x(Self) -> Int64
 pub fn CffPrivateDict::new() -> Self
@@ -69,6 +72,7 @@ pub impl Show for CffPrivateDict
 type CffTopDict
 pub fn CffTopDict::charset_offset(Self) -> UInt
 pub fn CffTopDict::font_bbox(Self) -> Array[Int64]
+pub fn CffTopDict::font_matrix(Self) -> Array[Double]
 pub fn CffTopDict::is_cid(Self) -> Bool
 pub fn CffTopDict::new() -> Self
 pub fn CffTopDict::private_offset(Self) -> UInt

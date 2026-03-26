@@ -16,13 +16,7 @@ pub fn from_bytes(
     }
     Type1Pfb | Type1Pfa => load_type1_pfb(data)
     Bdf => load_bdf(data)
-    Pcf => {
-      let face = @base.FaceRec::new()
-      face.set_face_flags(
-        @base.FACE_FLAG_FIXED_SIZES | @base.FACE_FLAG_HORIZONTAL,
-      )
-      face
-    }
+    Pcf => load_pcf(data)
     Woff2 => {
       let decompressed = @sfnt.decompress_woff2(data)
       from_bytes(decompressed, face_index~)

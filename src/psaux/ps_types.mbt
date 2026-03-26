@@ -4,12 +4,15 @@
 struct PsInterp {
   // Operand stack
   mut stack : Array[Int64]
+  transient : Array[Int64]
   // Path state
   points : Array[@types.Vector]
   tags : Array[Byte]
   contours : Array[UInt]
   mut current_x : Int64 // current point
   mut current_y : Int64
+  mut left_bearing_x : Int64
+  mut left_bearing_y : Int64
   mut path_started : Bool
   // Hint state
   hints_h : Array[StemHint] // horizontal stem hints
@@ -54,11 +57,14 @@ struct CallFrame {
 pub fn PsInterp::new() -> PsInterp {
   {
     stack: [],
+    transient: Array::make(32, 0L),
     points: [],
     tags: [],
     contours: [],
     current_x: 0L,
     current_y: 0L,
+    left_bearing_x: 0L,
+    left_bearing_y: 0L,
     path_started: false,
     hints_h: [],
     hints_v: [],
@@ -147,6 +153,35 @@ fn PsInterp::curve_to(
   self.tags.push(@types.CURVE_TAG_ON)
   self.current_x = x3
   self.current_y = y3
+}
+
+///|
+fn PsInterp::append_outline(
+  self : PsInterp,
+  outline : @types.Outline,
+  dx? : Int64 = 0L,
+  dy? : Int64 = 0L,
+) -> Unit {
+  if self.path_started {
+    self.close_current_contour()
+    self.path_started = false
+  }
+  let point_offset = self.points.length()
+  for i in 0..<outline.n_points() {
+    let p = outline.points()[i]
+    self.points.push(@types.Vector::new(p.x() + dx, p.y() + dy))
+    self.tags.push(outline.tags()[i])
+  }
+  for i in 0..<outline.n_contours() {
+    self.contours.push(
+      (outline.contours()[i].reinterpret_as_int() + point_offset).reinterpret_as_uint(),
+    )
+  }
+  if outline.n_points() > 0 {
+    let last = outline.points()[outline.n_points() - 1]
+    self.current_x = last.x() + dx
+    self.current_y = last.y() + dy
+  }
 }
 
 ///|

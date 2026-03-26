@@ -46,7 +46,7 @@ struct CffTopDict {
   mut fd_select_offset : UInt
   mut ros : (UInt, UInt, UInt) // Registry, Ordering, Supplement (CID fonts)
   mut is_cid : Bool
-  mut font_matrix : Array[Int64] // 6 values
+  mut font_matrix : Array[Double] // 6 values
   mut font_bbox : Array[Int64] // 4 values
   mut underline_position : Int
   mut underline_thickness : Int
@@ -85,6 +85,9 @@ struct CffPrivateDict {
   mut other_blues : Array[Int64]
   mut std_hw : Int64
   mut std_vw : Int64
+  mut blue_scale : Double?
+  mut blue_shift : Int?
+  mut blue_fuzz : Int?
 } derive(Show)
 
 ///|
@@ -97,6 +100,9 @@ pub fn CffPrivateDict::new() -> CffPrivateDict {
     other_blues: [],
     std_hw: 0L,
     std_vw: 0L,
+    blue_scale: None,
+    blue_shift: None,
+    blue_fuzz: None,
   }
 }
 
@@ -312,6 +318,11 @@ pub fn CffTopDict::font_bbox(self : CffTopDict) -> Array[Int64] {
 }
 
 ///|
+pub fn CffTopDict::font_matrix(self : CffTopDict) -> Array[Double] {
+  self.font_matrix
+}
+
+///|
 pub fn CffTopDict::underline_position(self : CffTopDict) -> Int {
   self.underline_position
 }
@@ -334,4 +345,19 @@ pub fn CffPrivateDict::std_hw(self : CffPrivateDict) -> Int64 {
 ///|
 pub fn CffPrivateDict::std_vw(self : CffPrivateDict) -> Int64 {
   self.std_vw
+}
+
+///|
+pub fn CffPrivateDict::blue_scale(self : CffPrivateDict) -> Double? {
+  self.blue_scale
+}
+
+///|
+pub fn CffPrivateDict::blue_shift(self : CffPrivateDict) -> Int? {
+  self.blue_shift
+}
+
+///|
+pub fn CffPrivateDict::blue_fuzz(self : CffPrivateDict) -> Int? {
+  self.blue_fuzz
 }

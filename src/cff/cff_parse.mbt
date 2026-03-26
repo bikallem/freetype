@@ -52,43 +52,76 @@ pub fn CffIndex::get_item(self : CffIndex, index : Int) -> Bytes {
 ///|
 /// Parse a CFF DICT operand (number) from the byte stream.
 /// Returns (value, bytes consumed).
-fn parse_dict_operand(data : Bytes, pos : Int) -> (Int64, Int) {
+fn parse_dict_real_operand(data : Bytes, pos : Int) -> (Double, Int) {
+  let buf = StringBuilder::new()
+  let mut p = pos + 1
+  let mut done = false
+  while p < data.length() && not(done) {
+    let nibble_byte = data[p].to_int()
+    for nibble in [nibble_byte >> 4, nibble_byte & 0x0F] {
+      match nibble {
+        0x0F => {
+          done = true
+          break
+        }
+        0x0A => buf.write_char('.')
+        0x0B => buf.write_char('E')
+        0x0C => {
+          buf.write_char('E')
+          buf.write_char('-')
+        }
+        0x0E => buf.write_char('-')
+        digit if digit >= 0 && digit <= 9 =>
+          buf.write_char((digit + '0'.to_int()).unsafe_to_char())
+        _ => ()
+      }
+    }
+    p += 1
+  }
+  let text = buf.to_string()
+  let value = if text == "" ||
+    text == "-" ||
+    text == "." ||
+    text == "E" ||
+    text == "E-" {
+    0.0
+  } else {
+    @strconv.parse_double(text) catch {
+      _ => 0.0
+    }
+  }
+  (value, p - pos)
+}
+
+///|
+/// Parse a CFF DICT operand (number) from the byte stream.
+/// Returns (value, bytes consumed).
+fn parse_dict_operand(data : Bytes, pos : Int) -> (Double, Int) {
   let b0 = data[pos].to_int()
   if b0 >= 32 && b0 <= 246 {
-    ((b0 - 139).to_int64(), 1)
+    ((b0 - 139).to_double(), 1)
   } else if b0 >= 247 && b0 <= 250 {
     let b1 = data[pos + 1].to_int()
-    (((b0 - 247) * 256 + b1 + 108).to_int64(), 2)
+    (((b0 - 247) * 256 + b1 + 108).to_double(), 2)
   } else if b0 >= 251 && b0 <= 254 {
     let b1 = data[pos + 1].to_int()
-    ((-((b0 - 251) * 256 + b1 + 108)).to_int64(), 2)
+    ((-((b0 - 251) * 256 + b1 + 108)).to_double(), 2)
   } else if b0 == 28 {
     let hi = data[pos + 1].to_int()
     let lo = data[pos + 2].to_int()
     let val = (hi << 8) | lo
     let signed_val = if val >= 0x8000 { val - 0x10000 } else { val }
-    (signed_val.to_int64(), 3)
+    (signed_val.to_double(), 3)
   } else if b0 == 29 {
     let val = (data[pos + 1].to_int() << 24) |
       (data[pos + 2].to_int() << 16) |
       (data[pos + 3].to_int() << 8) |
       data[pos + 4].to_int()
-    (val.to_int64(), 5)
+    (val.to_double(), 5)
   } else if b0 == 30 {
-    // Real number (BCD encoded) — simplified: skip it and return 0
-    let mut p = pos + 1
-    while p < data.length() {
-      let nibble_byte = data[p].to_int()
-      let hi_nib = nibble_byte >> 4
-      let lo_nib = nibble_byte & 0x0F
-      if hi_nib == 0x0F || lo_nib == 0x0F {
-        break
-      }
-      p += 1
-    }
-    (0L, p - pos + 1)
+    parse_dict_real_operand(data, pos)
   } else {
-    (0L, 1)
+    (0.0, 1)
   }
 }
 
@@ -96,7 +129,7 @@ fn parse_dict_operand(data : Bytes, pos : Int) -> (Int64, Int) {
 /// Parse a CFF Top DICT from raw DICT data bytes.
 pub fn parse_top_dict(data : Bytes) -> CffTopDict {
   let dict = CffTopDict::new()
-  let stack : Array[Int64] = []
+  let stack : Array[Double] = []
   let mut pos = 0
   let len = data.length()
   while pos < len {
@@ -125,7 +158,11 @@ pub fn parse_top_dict(data : Bytes) -> CffTopDict {
 }
 
 ///|
-fn apply_top_dict_op(dict : CffTopDict, stack : Array[Int64], op : Int) -> Unit {
+fn apply_top_dict_op(
+  dict : CffTopDict,
+  stack : Array[Double],
+  op : Int,
+) -> Unit {
   match op {
     2 =>
       if stack.length() > 0 {
@@ -151,7 +188,12 @@ fn apply_top_dict_op(dict : CffTopDict, stack : Array[Int64], op : Int) -> Unit 
     5 =>
       // FontBBox
       if stack.length() >= 4 {
-        dict.font_bbox = [stack[0], stack[1], stack[2], stack[3]]
+        dict.font_bbox = [
+          stack[0].to_int64(),
+          stack[1].to_int64(),
+          stack[2].to_int64(),
+          stack[3].to_int64(),
+        ]
       }
     _ => () // Other operators: ignore for now
   }
@@ -160,7 +202,7 @@ fn apply_top_dict_op(dict : CffTopDict, stack : Array[Int64], op : Int) -> Unit 
 ///|
 fn apply_top_dict_op2(
   dict : CffTopDict,
-  stack : Array[Int64],
+  stack : Array[Double],
   op : Int,
 ) -> Unit {
   match op {
@@ -199,7 +241,7 @@ fn apply_top_dict_op2(
 /// Parse a CFF Private DICT from raw DICT data bytes.
 pub fn parse_private_dict(data : Bytes) -> CffPrivateDict {
   let dict = CffPrivateDict::new()
-  let stack : Array[Int64] = []
+  let stack : Array[Double] = []
   let mut pos = 0
   let len = data.length()
   while pos < len {
@@ -207,24 +249,37 @@ pub fn parse_private_dict(data : Bytes) -> CffPrivateDict {
     if b0 >= 0 && b0 <= 21 {
       if b0 == 12 {
         pos += 1
-        // Two-byte operator: ignore for now
+        if pos < len {
+          match data[pos].to_int() {
+            9 => if stack.length() > 0 { dict.blue_scale = Some(stack[0]) }
+            10 =>
+              if stack.length() > 0 {
+                dict.blue_shift = Some(stack[0].to_int())
+              }
+            11 =>
+              if stack.length() > 0 {
+                dict.blue_fuzz = Some(stack[0].to_int())
+              }
+            _ => ()
+          }
+        }
       } else {
         match b0 {
           6 =>
             // BlueValues
-            dict.blue_values = stack.copy()
+            dict.blue_values = stack.map(fn(v) { v.to_int64() })
           7 =>
             // OtherBlues
-            dict.other_blues = stack.copy()
+            dict.other_blues = stack.map(fn(v) { v.to_int64() })
           10 =>
             // StdHW
             if stack.length() > 0 {
-              dict.std_hw = stack[0]
+              dict.std_hw = stack[0].to_int64()
             }
           11 =>
             // StdVW
             if stack.length() > 0 {
-              dict.std_vw = stack[0]
+              dict.std_vw = stack[0].to_int64()
             }
           19 =>
             // Subrs (offset relative to start of Private DICT)
@@ -234,12 +289,12 @@ pub fn parse_private_dict(data : Bytes) -> CffPrivateDict {
           20 =>
             // defaultWidthX
             if stack.length() > 0 {
-              dict.default_width_x = stack[0]
+              dict.default_width_x = stack[0].to_int64()
             }
           21 =>
             // nominalWidthX
             if stack.length() > 0 {
-              dict.nominal_width_x = stack[0]
+              dict.nominal_width_x = stack[0].to_int64()
             }
           _ => ()
         }
@@ -253,6 +308,25 @@ pub fn parse_private_dict(data : Bytes) -> CffPrivateDict {
     }
   }
   dict
+}
+
+///|
+fn resolve_units_per_em(top_dict : CffTopDict) -> UInt {
+  let matrix = top_dict.font_matrix
+  if matrix.length() < 4 {
+    return 1000U
+  }
+  let scale = if matrix[3] != 0.0 { matrix[3] } else { matrix[1] }
+  let abs_scale = if scale < 0.0 { -scale } else { scale }
+  if abs_scale <= 0.0 {
+    return 1000U
+  }
+  let upm = (1.0 / abs_scale).round().to_int()
+  if upm <= 0 {
+    1000U
+  } else {
+    upm.reinterpret_as_uint()
+  }
 }
 
 ///|
@@ -293,7 +367,7 @@ pub fn load_cff(data : Bytes, offset : Int) -> CffFont raise @error.FTError {
     sid_to_string(top_dict.weight_sid, custom_strings)
   }
   let style_name = style_name_from_ps_name(name, weight)
-  let units_per_em = 1000U
+  let units_per_em = resolve_units_per_em(top_dict)
   // Parse Global Subr INDEX
   let global_subrs = parse_cff_index(reader)
   // Parse Charstrings INDEX

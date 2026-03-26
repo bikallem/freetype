@@ -16,7 +16,7 @@ pub fn load_type1_glyph(Type1Font, String) -> @types.Outline raise @error.FTErro
 
 pub fn load_type1_glyph_data(Type1Font, String) -> (@types.Outline, Int64) raise @error.FTError
 
-pub fn load_type1_glyph_full_data(Type1Font, String) -> (@types.Outline, Int64, Array[@psaux.StemHint], Array[@psaux.StemHint]) raise @error.FTError
+pub fn load_type1_glyph_full_data(Type1Font, String, allow_seac? : Bool) -> (@types.Outline, Int64, Array[@psaux.StemHint], Array[@psaux.StemHint]) raise @error.FTError
 
 pub fn parse_type1_pfb(Bytes) -> Type1Font raise @error.FTError
 

@@ -146,18 +146,7 @@ fn load_sfnt(
         hint_v_hints.val = hv
         hint_has_hints.val = hh.length() > 0 || hv.length() > 0
         let pd = cff.private_dict_for_glyph(glyph_index)
-        let defaults = @pshinter.PsGlobals::new()
-        hint_globals_ref.val = Some(
-          @pshinter.build_ps_globals(
-            pd.blue_values().map(fn(v) { v.to_int() }),
-            pd.other_blues().map(fn(v) { v.to_int() }),
-            pd.std_hw().to_int(),
-            pd.std_vw().to_int(),
-            defaults.blue_scale(),
-            defaults.blue_shift().to_int(),
-            defaults.blue_fuzz().to_int(),
-          ),
-        )
+        hint_globals_ref.val = Some(build_ps_globals_from_cff_private(pd))
       }
       (o, b"", @types.BBox::empty())
     } else {
@@ -236,6 +225,7 @@ fn load_sfnt(
           max_stack=256,
         )
         init_ctx.set_ppem(ppem.reinterpret_as_int())
+        init_ctx.set_cvt_scale(y_scale)
         // Scale CVT
         for i in 0..<init_ctx.cvt().length() {
           let font_units = init_ctx.cvt()[i] >> 6
@@ -304,6 +294,7 @@ fn load_sfnt(
       }
       // Reset context for this glyph
       ctx.set_cvt(cached_cvt.copy())
+      ctx.set_cvt_scale(y_scale)
       ctx.set_ppem(ppem.reinterpret_as_int())
       ctx.set_func_defs(cached_funcs)
       ctx.reset_sp()
@@ -332,6 +323,7 @@ fn load_sfnt(
         @blit.fill_bytes(ctx.zone1_touch(), 0, b'\x00', total_points)
         ctx.set_zone1_points(ctx.zone1_cur())
       }
+      ctx.set_zone1_contours(outline.contours())
       let z1_org = ctx.zone1_org()
       let z1_cur = ctx.zone1_cur()
       let z1_tags = ctx.zone1_tags()

@@ -38,11 +38,25 @@ type PcfEncodings
 pub impl Show for PcfEncodings
 
 type PcfFont
+pub fn PcfFont::bitmap_for_glyph(Self, Int) -> Bytes
+pub fn PcfFont::bitmaps_format(Self) -> UInt
+pub fn PcfFont::default_glyph_index(Self) -> Int
+pub fn PcfFont::font_name(Self) -> String
 pub fn PcfFont::get_glyph(Self, Int) -> PcfMetric?
+pub fn PcfFont::glyph_index(Self, Int) -> Int
+pub fn PcfFont::metric(Self, Int) -> PcfMetric?
 pub fn PcfFont::new() -> Self
+pub fn PcfFont::num_glyphs(Self) -> Int
+pub fn PcfFont::property_int(Self, String) -> Int?
+pub fn PcfFont::property_string(Self, String) -> String?
 pub impl Show for PcfFont
 
 type PcfMetric
+pub fn PcfMetric::ascent(Self) -> Int
+pub fn PcfMetric::descent(Self) -> Int
+pub fn PcfMetric::left_bearing(Self) -> Int
+pub fn PcfMetric::right_bearing(Self) -> Int
+pub fn PcfMetric::width(Self) -> Int
 pub impl Eq for PcfMetric
 pub impl Show for PcfMetric
 

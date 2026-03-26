@@ -744,13 +744,30 @@ fn extract_charstrings(data : Bytes) -> (Map[String, Bytes], Array[String]) {
 pub fn load_type1_glyph_full_data(
   font : Type1Font,
   glyph_name : String,
+  allow_seac? : Bool = true,
 ) -> (@types.Outline, Int64, Array[@psaux.StemHint], Array[@psaux.StemHint]) raise @error.FTError {
   let charstring = match font.charstrings.get(glyph_name) {
     Some(cs) => cs
     None => raise @error.FTError::InvalidGlyphIndex
   }
   let decrypted = charstring_decrypt(charstring, len_iv=font.len_iv)
-  @psaux.execute_type1(decrypted, font.subrs, font.default_width_x)
+  let load_seac_component : (String) -> (
+    @types.Outline,
+    Int64,
+    Array[@psaux.StemHint],
+    Array[@psaux.StemHint],
+  ) raise @error.FTError = fn(component_name) raise @error.FTError {
+    if not(allow_seac) {
+      raise @error.FTError::SyntaxError
+    }
+    load_type1_glyph_full_data(font, component_name, allow_seac=false)
+  }
+  @psaux.execute_type1(
+    decrypted,
+    font.subrs,
+    font.default_width_x,
+    load_seac_component,
+  )
 }
 
 ///|

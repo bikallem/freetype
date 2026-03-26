@@ -78,6 +78,211 @@ priv struct Woff2TableEntry {
 }
 
 ///|
+fn find_woff2_entry(
+  entries : Array[Woff2TableEntry],
+  tag : UInt,
+) -> Woff2TableEntry? {
+  for _, entry in entries {
+    if entry.tag == tag {
+      return Some(entry)
+    }
+  }
+  None
+}
+
+///|
+fn read_u16_be_from_bytes(data : Bytes, offset : Int) -> Int {
+  data.unsafe_read_uint16_be(offset).to_int()
+}
+
+///|
+fn read_i16_be_from_bytes(data : Bytes, offset : Int) -> Int {
+  let value = read_u16_be_from_bytes(data, offset)
+  if value >= 0x8000 {
+    value - 0x10000
+  } else {
+    value
+  }
+}
+
+///|
+fn read_u32_be_from_bytes(data : Bytes, offset : Int) -> UInt {
+  data.unsafe_read_uint32_be(offset)
+}
+
+///|
+fn woff2_table_bytes(
+  uncompressed : Bytes,
+  entry : Woff2TableEntry,
+) -> Bytes raise @error.FTError {
+  let start = entry.src_offset
+  let length = entry.transform_length.reinterpret_as_int()
+  if start < 0 || start + length > uncompressed.length() {
+    raise @error.FTError::InvalidTable
+  }
+  uncompressed[start:start + length].to_bytes()
+}
+
+///|
+fn loca_glyph_offset(
+  loca_data : Bytes,
+  index_format : Int,
+  glyph_index : Int,
+) -> Int raise @error.FTError {
+  if index_format != 0 {
+    let offset = glyph_index * 4
+    if offset + 4 > loca_data.length() {
+      raise @error.FTError::InvalidTable
+    }
+    read_u32_be_from_bytes(loca_data, offset).reinterpret_as_int()
+  } else {
+    let offset = glyph_index * 2
+    if offset + 2 > loca_data.length() {
+      raise @error.FTError::InvalidTable
+    }
+    read_u16_be_from_bytes(loca_data, offset) << 1
+  }
+}
+
+///|
+fn collect_glyf_x_mins(
+  glyf_data : Bytes,
+  loca_data : Bytes,
+  index_format : Int,
+  num_glyphs : Int,
+) -> Array[Int] raise @error.FTError {
+  let x_mins : Array[Int] = Array::new(capacity=num_glyphs)
+  for glyph_index in 0..<num_glyphs {
+    let offset = loca_glyph_offset(loca_data, index_format, glyph_index)
+    let next_offset = loca_glyph_offset(
+      loca_data,
+      index_format,
+      glyph_index + 1,
+    )
+    if next_offset < offset || next_offset > glyf_data.length() {
+      raise @error.FTError::InvalidTable
+    }
+    if offset == next_offset {
+      x_mins.push(0)
+    } else {
+      if offset + 4 > glyf_data.length() {
+        raise @error.FTError::InvalidTable
+      }
+      x_mins.push(read_i16_be_from_bytes(glyf_data, offset + 2))
+    }
+  }
+  x_mins
+}
+
+///|
+fn reconstruct_hmtx_table(
+  transformed_hmtx : Bytes,
+  num_glyphs : Int,
+  num_hmetrics : Int,
+  x_mins : Array[Int],
+) -> Bytes raise @error.FTError {
+  if num_hmetrics < 1 ||
+    num_hmetrics > num_glyphs ||
+    x_mins.length() < num_glyphs {
+    raise @error.FTError::InvalidTable
+  }
+  let reader = @stream.ByteReader::new(transformed_hmtx)
+  let hmtx_flags = reader.read_byte().to_int()
+  let has_proportional_lsbs = (hmtx_flags & 1) == 0
+  let has_monospace_lsbs = (hmtx_flags & 2) == 0
+  if (hmtx_flags & 0xFC) != 0 || (has_proportional_lsbs && has_monospace_lsbs) {
+    raise @error.FTError::InvalidTable
+  }
+  let advance_widths : Array[UInt] = Array::new(capacity=num_hmetrics)
+  let lsbs : Array[Int] = Array::make(num_glyphs, 0)
+  for _ in 0..<num_hmetrics {
+    advance_widths.push(reader.read_u16_be())
+  }
+  for i in 0..<num_hmetrics {
+    lsbs[i] = if has_proportional_lsbs {
+      reader.read_i16_be()
+    } else {
+      x_mins[i]
+    }
+  }
+  for i in num_hmetrics..<num_glyphs {
+    lsbs[i] = if has_monospace_lsbs { reader.read_i16_be() } else { x_mins[i] }
+  }
+  let hmtx = FixedArray::make(2 * num_hmetrics + 2 * num_glyphs, b'\x00')
+  let mut offset = 0
+  for i in 0..<num_glyphs {
+    if i < num_hmetrics {
+      write_u16_be(hmtx, offset, advance_widths[i])
+      offset += 2
+    }
+    write_i16_be(hmtx, offset, lsbs[i])
+    offset += 2
+  }
+  Bytes::from_array(hmtx[:])
+}
+
+///|
+fn reconstruct_transformed_hmtx(
+  entries : Array[Woff2TableEntry],
+  uncompressed : Bytes,
+  glyf_loca_data : (Bytes, Bytes)?,
+) -> Bytes? raise @error.FTError {
+  let hmtx_entry = match find_woff2_entry(entries, @types.TAG_HMTX) {
+    Some(entry) => entry
+    None => return None
+  }
+  if (hmtx_entry.flags & 0x100U) == 0U {
+    return None
+  }
+  let maxp_entry = match find_woff2_entry(entries, @types.TAG_MAXP) {
+    Some(entry) => entry
+    None => raise @error.FTError::InvalidTable
+  }
+  let hhea_entry = match find_woff2_entry(entries, @types.TAG_HHEA) {
+    Some(entry) => entry
+    None => raise @error.FTError::InvalidTable
+  }
+  let maxp = woff2_table_bytes(uncompressed, maxp_entry)
+  let hhea = woff2_table_bytes(uncompressed, hhea_entry)
+  if maxp.length() < 6 || hhea.length() < 36 {
+    raise @error.FTError::InvalidTable
+  }
+  let num_glyphs = read_u16_be_from_bytes(maxp, 4)
+  let num_hmetrics = read_u16_be_from_bytes(hhea, 34)
+  let x_mins = match glyf_loca_data {
+    Some((glyf_data, loca_data)) => {
+      let expected_long = (num_glyphs + 1) * 4
+      let index_format = if loca_data.length() == expected_long { 1 } else { 0 }
+      collect_glyf_x_mins(glyf_data, loca_data, index_format, num_glyphs)
+    }
+    None => {
+      let head_entry = match find_woff2_entry(entries, @types.TAG_HEAD) {
+        Some(entry) => entry
+        None => raise @error.FTError::InvalidTable
+      }
+      let glyf_entry = match find_woff2_entry(entries, @types.TAG_GLYF) {
+        Some(entry) => entry
+        None => raise @error.FTError::InvalidTable
+      }
+      let loca_entry = match find_woff2_entry(entries, @types.TAG_LOCA) {
+        Some(entry) => entry
+        None => raise @error.FTError::InvalidTable
+      }
+      let head = woff2_table_bytes(uncompressed, head_entry)
+      let glyf = woff2_table_bytes(uncompressed, glyf_entry)
+      let loca = woff2_table_bytes(uncompressed, loca_entry)
+      if head.length() < 52 {
+        raise @error.FTError::InvalidTable
+      }
+      let index_format = read_i16_be_from_bytes(head, 50)
+      collect_glyf_x_mins(glyf, loca, index_format, num_glyphs)
+    }
+  }
+  let transformed = woff2_table_bytes(uncompressed, hmtx_entry)
+  Some(reconstruct_hmtx_table(transformed, num_glyphs, num_hmetrics, x_mins))
+}
+
+///|
 /// Read a WOFF2 UIntBase128 value.
 fn read_base128(reader : @stream.ByteReader) -> UInt raise @error.FTError {
   let mut result = 0U
@@ -229,6 +434,9 @@ pub fn decompress_woff2(data : Bytes) -> Bytes raise @error.FTError {
   } else {
     None
   }
+  let transformed_hmtx_data = reconstruct_transformed_hmtx(
+    entries, uncompressed, glyf_loca_data,
+  )
   // Build SFNT: use a two-pass approach
   // Pass 1: compute table sizes and offsets
   let sfnt_header_size = 12 + num_tables * 16
@@ -246,6 +454,11 @@ pub fn decompress_woff2(data : Bytes) -> Bytes raise @error.FTError {
     } else if glyf_is_transformed && entry.tag == @types.TAG_LOCA {
       match glyf_loca_data {
         Some((_, loca_data)) => loca_data.length()
+        None => entry.orig_length.reinterpret_as_int()
+      }
+    } else if entry.tag == @types.TAG_HMTX {
+      match transformed_hmtx_data {
+        Some(hmtx) => hmtx.length()
         None => entry.orig_length.reinterpret_as_int()
       }
     } else {
@@ -292,8 +505,16 @@ pub fn decompress_woff2(data : Bytes) -> Bytes raise @error.FTError {
           }
         None => ()
       }
+    } else if is_transformed && entry.tag == @types.TAG_HMTX {
+      match transformed_hmtx_data {
+        Some(hmtx) =>
+          for j in 0..<actual_length {
+            sfnt[table_offset + j] = hmtx[j]
+          }
+        None => raise @error.FTError::InvalidTable
+      }
     } else if is_transformed {
-      // Other transformed tables (hmtx) — not yet supported
+      // Other transformed tables are not yet supported.
       raise @error.FTError::UnimplementedFeature
     } else {
       // Non-transformed: copy from uncompressed stream

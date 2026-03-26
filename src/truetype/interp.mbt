@@ -9,6 +9,7 @@ struct InterpContext {
   mut ip : Int // instruction pointer
   // Control Value Table
   mut cvt : Array[Int64] // 26.6 values
+  mut cvt_scale : @fixed.Fixed
   // Storage area
   mut storage : Array[Int64]
   // Graphics state
@@ -27,6 +28,7 @@ struct InterpContext {
   mut zone1_points : FixedArray[@types.Vector] // alias for zone1_cur
   mut zone1_tags : FixedArray[Byte]
   mut zone1_touch : FixedArray[Byte] // touch flags per point (bit 0 = x touched, bit 1 = y touched)
+  mut zone1_contours : FixedArray[UInt]
   // Current pixels per em
   mut ppem : Int
   // Error state
@@ -111,6 +113,7 @@ pub fn InterpContext::new(
     code: b"",
     ip: 0,
     cvt,
+    cvt_scale: @fixed.Fixed::one(),
     storage: Array::make(storage_size, 0L),
     gs: GraphicsState::default(),
     func_defs: {},
@@ -124,6 +127,7 @@ pub fn InterpContext::new(
     zone1_points: FixedArray::default(),
     zone1_tags: FixedArray::default(),
     zone1_touch: FixedArray::default(),
+    zone1_contours: FixedArray::default(),
     ppem: 0,
     error: false,
   }
@@ -157,6 +161,14 @@ pub fn InterpContext::set_func_defs(
 ///|
 pub fn InterpContext::set_cvt(self : InterpContext, v : Array[Int64]) -> Unit {
   self.cvt = v
+}
+
+///|
+pub fn InterpContext::set_cvt_scale(
+  self : InterpContext,
+  v : @fixed.Fixed,
+) -> Unit {
+  self.cvt_scale = v
 }
 
 ///|
@@ -228,6 +240,14 @@ pub fn InterpContext::set_zone1_touch(
   v : FixedArray[Byte],
 ) -> Unit {
   self.zone1_touch = v
+}
+
+///|
+pub fn InterpContext::set_zone1_contours(
+  self : InterpContext,
+  v : FixedArray[UInt],
+) -> Unit {
+  self.zone1_contours = v
 }
 
 ///|
@@ -374,6 +394,15 @@ fn InterpContext::round_value(self : InterpContext, distance : Int64) -> Int64 {
     _ => (d + 32L) & -64L // default: round to grid
   }
   sign * result
+}
+
+///|
+fn InterpContext::scale_font_units(
+  self : InterpContext,
+  value : Int64,
+) -> Int64 {
+  let ab = self.cvt_scale.val() * value
+  (ab + 0x8000L + (ab >> 63)) >> 16
 }
 
 ///|
@@ -1099,8 +1128,7 @@ fn InterpContext::op_wcvtf(self : InterpContext) -> Unit {
   let val = self.pop()
   let idx = self.pop().to_int()
   if idx >= 0 && idx < self.cvt.length() {
-    // Convert from font units to 26.6 (simplified: assume 1:1 for now)
-    self.cvt.unsafe_set(idx, val)
+    self.cvt.unsafe_set(idx, self.scale_font_units(val))
   }
 }
 
@@ -1437,7 +1465,7 @@ fn InterpContext::op_shp(self : InterpContext, flag : Int) -> Unit {
 ///|
 /// SHC[a] - Shift Contour.
 fn InterpContext::op_shc(self : InterpContext, flag : Int) -> Unit {
-  let _contour = self.pop().to_int()
+  let contour = self.pop().to_int()
   // Get reference point delta
   let (rp_zone, rp_idx) = if flag == 0 {
     (self.gs.zp1, self.gs.rp2)
@@ -1447,14 +1475,25 @@ fn InterpContext::op_shc(self : InterpContext, flag : Int) -> Unit {
   let (rx, ry) = self.get_zone_point(rp_zone, rp_idx)
   let (rox, roy) = self.get_zone_org(rp_zone, rp_idx)
   let delta = self.project(rx, ry) - self.project(rox, roy)
-  // Move all points in zone2 by delta (simplified: we don't track contour boundaries here)
-  let n = if self.gs.zp2 == 0 {
-    self.zone0_cur.length()
+  if self.gs.zp2 == 1 && contour >= 0 && contour < self.zone1_contours.length() {
+    let start = if contour == 0 {
+      0
+    } else {
+      self.zone1_contours[contour - 1].reinterpret_as_int() + 1
+    }
+    let end_ = self.zone1_contours[contour].reinterpret_as_int()
+    for i in start..<=end_ {
+      self.move_point(self.gs.zp2, i, delta)
+    }
   } else {
-    self.zone1_cur.length()
-  }
-  for i in 0..<n {
-    self.move_point(self.gs.zp2, i, delta)
+    let n = if self.gs.zp2 == 0 {
+      self.zone0_cur.length()
+    } else {
+      self.zone1_cur.length()
+    }
+    for i in 0..<n {
+      self.move_point(self.gs.zp2, i, delta)
+    }
   }
 }
 
@@ -1856,5 +1895,6 @@ pub fn InterpContext::zone1_touch(self : InterpContext) -> FixedArray[Byte] {
 }
 
 ///|
-
-///|
+pub fn InterpContext::zone1_contours(self : InterpContext) -> FixedArray[UInt] {
+  self.zone1_contours
+}

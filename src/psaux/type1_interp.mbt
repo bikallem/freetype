@@ -2,13 +2,14 @@
 /// Mutable state specific to Type 1 charstring interpretation.
 priv struct Type1State {
   mut in_flex : Bool
+  mut in_seac : Bool
   flex_points : Array[(Int64, Int64)]
   othersubr_results : Array[Int64]
 }
 
 ///|
 fn Type1State::new() -> Type1State {
-  { in_flex: false, flex_points: [], othersubr_results: [] }
+  { in_flex: false, in_seac: false, flex_points: [], othersubr_results: [] }
 }
 
 ///|
@@ -18,12 +19,18 @@ pub fn execute_type1(
   charstring : Bytes,
   subrs : Array[Bytes],
   default_width : Int64,
+  load_seac_component : (String) -> (
+    @types.Outline,
+    Int64,
+    Array[StemHint],
+    Array[StemHint],
+  ) raise @error.FTError,
 ) -> (@types.Outline, Int64, Array[StemHint], Array[StemHint]) raise @error.FTError {
   let interp = PsInterp::new()
   interp.width = default_width
   interp.local_subrs = subrs
   let state = Type1State::new()
-  exec_type1_code(interp, charstring, state)
+  exec_type1_code(interp, charstring, state, load_seac_component)
   let outline = interp.finalize()
   (outline, interp.width, interp.hints_h, interp.hints_v)
 }
@@ -34,6 +41,12 @@ fn exec_type1_code(
   interp : PsInterp,
   code : Bytes,
   state : Type1State,
+  load_seac_component : (String) -> (
+    @types.Outline,
+    Int64,
+    Array[StemHint],
+    Array[StemHint],
+  ) raise @error.FTError,
 ) -> Unit raise @error.FTError {
   let len = code.length()
   for ip = 0; ip < len; {
@@ -42,7 +55,9 @@ fn exec_type1_code(
     match b0 {
       n if n >= 0 && n <= 11 =>
         // Operator
-        next_ip = exec_type1_op(interp, code, next_ip, b0, state)
+        next_ip = exec_type1_op(
+          interp, code, next_ip, b0, state, load_seac_component,
+        )
       12 => {
         // Two-byte operator
         if next_ip >= len {
@@ -50,11 +65,15 @@ fn exec_type1_code(
         }
         let b1 = code[next_ip].to_int()
         next_ip += 1
-        next_ip = exec_type1_op2(interp, code, next_ip, b1, state)
+        next_ip = exec_type1_op2(
+          interp, code, next_ip, b1, state, load_seac_component,
+        )
       }
       n if n >= 13 && n <= 31 =>
         // Operator
-        next_ip = exec_type1_op(interp, code, next_ip, b0, state)
+        next_ip = exec_type1_op(
+          interp, code, next_ip, b0, state, load_seac_component,
+        )
       n if n >= 32 && n <= 246 => interp.push((b0 - 139).to_int64())
       n if n >= 247 && n <= 250 => {
         if next_ip >= len {
@@ -109,6 +128,12 @@ fn exec_type1_op(
   ip : Int,
   op : Int,
   state : Type1State,
+  load_seac_component : (String) -> (
+    @types.Outline,
+    Int64,
+    Array[StemHint],
+    Array[StemHint],
+  ) raise @error.FTError,
 ) -> Int raise @error.FTError {
   ignore(code)
   match op {
@@ -195,7 +220,12 @@ fn exec_type1_op(
       // Type 1 uses direct index (no bias)
       if subr_idx >= 0 && subr_idx < interp.local_subrs.length() {
         interp.call_stack.push({ code, ip })
-        exec_type1_code(interp, interp.local_subrs[subr_idx], state)
+        exec_type1_code(
+          interp,
+          interp.local_subrs[subr_idx],
+          state,
+          load_seac_component,
+        )
         match interp.call_stack.pop() {
           Some(_) => ()
           None => ()
@@ -213,6 +243,8 @@ fn exec_type1_op(
       interp.width = wx
       interp.width_set = true
       // Set the initial position to the sidebearing
+      interp.left_bearing_x = sbx
+      interp.left_bearing_y = 0L
       interp.current_x = sbx
       interp.current_y = 0L
       ip
@@ -295,7 +327,13 @@ fn exec_type1_op2(
   ip : Int,
   op : Int,
   state : Type1State,
-) -> Int {
+  load_seac_component : (String) -> (
+    @types.Outline,
+    Int64,
+    Array[StemHint],
+    Array[StemHint],
+  ) raise @error.FTError,
+) -> Int raise @error.FTError {
   ignore(code)
   match op {
     0 =>
@@ -327,8 +365,42 @@ fn exec_type1_op2(
     }
     6 => {
       // seac (asb adx ady bchar achar) — accented character composite
-      // For now, skip seac and return empty outline
+      if state.in_seac || interp.stack.length() < 5 {
+        raise @error.FTError::SyntaxError
+      }
+      let asb = interp.stack[0]
+      let adx = interp.stack[1] + interp.left_bearing_x
+      let ady = interp.stack[2]
+      let bchar = interp.stack[3].to_int()
+      let achar = interp.stack[4].to_int()
       interp.stack = []
+      let base_name = match lookup_standard_seac_name(bchar) {
+        Some(name) => name
+        None => raise @error.FTError::SyntaxError
+      }
+      let accent_name = match lookup_standard_seac_name(achar) {
+        Some(name) => name
+        None => raise @error.FTError::SyntaxError
+      }
+      state.in_seac = true
+      let (base_outline, base_width, base_h, base_v) = load_seac_component(
+        base_name,
+      )
+      let (accent_outline, _, accent_h, accent_v) = load_seac_component(
+        accent_name,
+      )
+      state.in_seac = false
+      if not(interp.width_set) {
+        interp.width = base_width
+        interp.width_set = true
+      }
+      interp.append_outline(base_outline)
+      append_shifted_hints(interp.hints_h, base_h, 0L)
+      append_shifted_hints(interp.hints_v, base_v, 0L)
+      let accent_dx = adx - asb
+      interp.append_outline(accent_outline, dx=accent_dx, dy=ady)
+      append_shifted_hints(interp.hints_h, accent_h, ady)
+      append_shifted_hints(interp.hints_v, accent_v, accent_dx)
       ip + code.length() // stop execution
     }
     7 => {
@@ -340,6 +412,8 @@ fn exec_type1_op2(
         // wy = interp.stack[3] // ignored for horizontal writing
         interp.width = wx
         interp.width_set = true
+        interp.left_bearing_x = sbx
+        interp.left_bearing_y = sby
         interp.current_x = sbx
         interp.current_y = sby
       }
@@ -434,5 +508,25 @@ fn exec_type1_op2(
       interp.stack = []
       ip
     }
+  }
+}
+
+///|
+fn lookup_standard_seac_name(charcode : Int) -> String? {
+  if charcode < 0 || charcode > 255 {
+    return None
+  }
+  let sid = @psnames.standard_encoding_sid(charcode.reinterpret_as_uint())
+  @psnames.standard_string(sid.reinterpret_as_uint())
+}
+
+///|
+fn append_shifted_hints(
+  dst : Array[StemHint],
+  src : Array[StemHint],
+  delta : Int64,
+) -> Unit {
+  for hint in src {
+    dst.push({ position: hint.position() + delta, width: hint.width() })
   }
 }

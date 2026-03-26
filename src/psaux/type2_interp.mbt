@@ -46,6 +46,115 @@ fn consume_width(interp : PsInterp, has_width : Bool) -> Unit {
 }
 
 ///|
+fn abs_i64(v : Int64) -> Int64 {
+  if v < 0L {
+    -v
+  } else {
+    v
+  }
+}
+
+///|
+fn integer_sqrt(v : Int64) -> Int64 {
+  if v <= 0L {
+    return 0L
+  }
+  let mut r = v
+  let mut prev = 0L
+  while r != prev {
+    prev = r
+    r = (r + v / r) >> 1
+  }
+  r
+}
+
+///|
+fn roll_stack(interp : PsInterp, count : Int, shift : Int) -> Unit {
+  if count <= 0 || count > interp.stack.length() {
+    return
+  }
+  let mut amount = shift % count
+  if amount < 0 {
+    amount += count
+  }
+  if amount == 0 {
+    return
+  }
+  let base = interp.stack.length() - count
+  let segment : Array[Int64] = []
+  for i in 0..<count {
+    segment.push(interp.stack[base + i])
+  }
+  for i in 0..<count {
+    interp.stack[base + (i + amount) % count] = segment[i]
+  }
+}
+
+///|
+fn do_flex(
+  interp : PsInterp,
+  read_from_stack : Array[Bool],
+  conditional_last : Bool,
+) -> Unit {
+  let vals = Array::make(14, 0L)
+  vals[0] = interp.current_x
+  vals[1] = interp.current_y
+  let mut idx = 0
+  let is_hflex = not(read_from_stack[9])
+  let top = if is_hflex { 9 } else { 10 }
+  for i in 0..<top {
+    vals[i + 2] = vals[i]
+    if read_from_stack[i] && idx < interp.stack.length() {
+      vals[i + 2] = vals[i + 2] + interp.stack[idx]
+      idx += 1
+    }
+  }
+  if is_hflex {
+    vals[11] = interp.current_y
+  }
+  if conditional_last {
+    let last_val = if idx < interp.stack.length() {
+      interp.stack[idx]
+    } else {
+      0L
+    }
+    let last_is_x = abs_i64(vals[10] - interp.current_x) >
+      abs_i64(vals[11] - interp.current_y)
+    if last_is_x {
+      vals[12] = vals[10] + last_val
+      vals[13] = interp.current_y
+    } else {
+      vals[12] = interp.current_x
+      vals[13] = vals[11] + last_val
+    }
+  } else {
+    vals[12] = if read_from_stack[10] && idx < interp.stack.length() {
+      let out = vals[10] + interp.stack[idx]
+      idx += 1
+      out
+    } else {
+      interp.current_x
+    }
+    vals[13] = if read_from_stack[11] && idx < interp.stack.length() {
+      vals[11] + interp.stack[idx]
+    } else {
+      interp.current_y
+    }
+  }
+  for j in 0..<2 {
+    interp.curve_to(
+      vals[j * 6 + 2],
+      vals[j * 6 + 3],
+      vals[j * 6 + 4],
+      vals[j * 6 + 5],
+      vals[j * 6 + 6],
+      vals[j * 6 + 7],
+    )
+  }
+  interp.stack = []
+}
+
+///|
 /// Execute Type 2 charstring bytecode.
 fn exec_type2_code(
   interp : PsInterp,
@@ -383,32 +492,165 @@ fn exec_type2_op2(interp : PsInterp, code : Bytes, ip : Int, op : Int) -> Int {
   ignore(code)
   match op {
     0 => ip // dotsection (deprecated, no-op)
+    3 => {
+      let b = interp.pop()
+      let a = interp.pop()
+      interp.push(if a != 0L && b != 0L { 1L } else { 0L })
+      ip
+    }
+    4 => {
+      let b = interp.pop()
+      let a = interp.pop()
+      interp.push(if a != 0L || b != 0L { 1L } else { 0L })
+      ip
+    }
+    5 => {
+      let a = interp.pop()
+      interp.push(if a == 0L { 1L } else { 0L })
+      ip
+    }
+    9 => {
+      interp.push(abs_i64(interp.pop()))
+      ip
+    }
+    10 => {
+      let b = interp.pop()
+      let a = interp.pop()
+      interp.push(a + b)
+      ip
+    }
+    11 => {
+      let b = interp.pop()
+      let a = interp.pop()
+      interp.push(a - b)
+      ip
+    }
+    12 => {
+      let b = interp.pop()
+      let a = interp.pop()
+      interp.push(if b != 0L { a / b } else { 0L })
+      ip
+    }
+    14 => {
+      interp.push(-interp.pop())
+      ip
+    }
+    15 => {
+      let b = interp.pop()
+      let a = interp.pop()
+      interp.push(if a == b { 1L } else { 0L })
+      ip
+    }
+    18 => {
+      ignore(interp.pop())
+      ip
+    }
+    20 => {
+      let idx = interp.pop().to_int()
+      let val = interp.pop()
+      if idx >= 0 && idx < interp.transient.length() {
+        interp.transient[idx] = val
+      }
+      ip
+    }
+    21 => {
+      let idx = interp.pop().to_int()
+      if idx >= 0 && idx < interp.transient.length() {
+        interp.push(interp.transient[idx])
+      }
+      ip
+    }
+    22 => {
+      let cond2 = interp.pop()
+      let cond1 = interp.pop()
+      let arg2 = interp.pop()
+      let arg1 = interp.pop()
+      interp.push(if cond1 <= cond2 { arg1 } else { arg2 })
+      ip
+    }
+    23 => {
+      // The interpreter stores integer design units instead of full 16.16
+      // reals, so use a deterministic non-zero placeholder for `random`.
+      interp.push(1L)
+      ip
+    }
+    24 => {
+      let b = interp.pop()
+      let a = interp.pop()
+      interp.push(a * b)
+      ip
+    }
+    26 => {
+      interp.push(integer_sqrt(interp.pop()))
+      ip
+    }
+    27 => {
+      let a = interp.pop()
+      interp.push(a)
+      interp.push(a)
+      ip
+    }
+    28 => {
+      let b = interp.pop()
+      let a = interp.pop()
+      interp.push(b)
+      interp.push(a)
+      ip
+    }
+    29 => {
+      let idx = interp.pop().to_int()
+      let size = interp.stack.length()
+      if size > 0 {
+        let actual_idx = if idx < 0 {
+          size - 1
+        } else if idx >= size {
+          0
+        } else {
+          size - 1 - idx
+        }
+        interp.push(interp.stack[actual_idx])
+      }
+      ip
+    }
+    30 => {
+      let shift = interp.pop().to_int()
+      let count = interp.pop().to_int()
+      roll_stack(interp, count, shift)
+      ip
+    }
     34 => {
       // hflex
-      if interp.stack.length() >= 7 {
-        let dx1 = interp.stack[0]
-        let dx2 = interp.stack[1]
-        let dy2 = interp.stack[2]
-        let dx3 = interp.stack[3]
-        let dx4 = interp.stack[4]
-        let dx5 = interp.stack[5]
-        let dx6 = interp.stack[6]
-        let x1 = interp.current_x + dx1
-        let y1 = interp.current_y
-        let x2 = x1 + dx2
-        let y2 = y1 + dy2
-        let x3 = x2 + dx3
-        let y3 = y2
-        interp.curve_to(x1, y1, x2, y2, x3, y3)
-        let x4 = x3 + dx4
-        let y4 = y3
-        let x5 = x4 + dx5
-        let y5 = y4 - dy2
-        let x6 = x5 + dx6
-        let y6 = interp.current_y
-        interp.curve_to(x4, y4, x5, y5, x6, y6)
-      }
-      interp.stack = []
+      do_flex(
+        interp,
+        [
+          true, false, true, true, true, false, true, false, true, false, true, false,
+        ],
+        false,
+      )
+      ip
+    }
+    35 => {
+      do_flex(interp, Array::make(12, true), false)
+      ip
+    }
+    36 => {
+      do_flex(
+        interp,
+        [
+          true, true, true, true, true, false, true, false, true, true, true, false,
+        ],
+        false,
+      )
+      ip
+    }
+    37 => {
+      do_flex(
+        interp,
+        [
+          true, true, true, true, true, true, true, true, true, true, false, false,
+        ],
+        true,
+      )
       ip
     }
     _ => {

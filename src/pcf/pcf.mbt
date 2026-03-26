@@ -92,6 +92,7 @@ struct PcfFont {
   mut encodings : PcfEncodings?
   mut bitmap_offsets : Array[Int]
   mut bitmap_data : Bytes
+  mut bitmaps_format : UInt
 } derive(Show)
 
 ///|
@@ -105,17 +106,16 @@ pub fn PcfFont::new() -> PcfFont {
     encodings: None,
     bitmap_offsets: [],
     bitmap_data: Bytes::new(0),
+    bitmaps_format: 0U,
   }
 }
 
 ///|
-/// Look up a glyph by encoding value.
-pub fn PcfFont::get_glyph(self : PcfFont, encoding : Int) -> PcfMetric? {
+fn PcfFont::lookup_glyph_index(self : PcfFont, encoding : Int) -> Int {
   match self.encodings {
-    None => None
-    Some(enc) => {
-      // For single-byte encodings (min_byte1 == 0, max_byte1 == 0)
-      let index = if enc.min_byte1 == 0 && enc.max_byte1 == 0 {
+    None => -1
+    Some(enc) =>
+      if enc.min_byte1 == 0 && enc.max_byte1 == 0 {
         if encoding < enc.min_char_or_byte2 || encoding > enc.max_char_or_byte2 {
           -1
         } else {
@@ -127,7 +127,6 @@ pub fn PcfFont::get_glyph(self : PcfFont, encoding : Int) -> PcfMetric? {
           }
         }
       } else {
-        // Two-byte encoding
         let byte1 = encoding >> 8
         let byte2 = encoding & 0xFF
         if byte1 < enc.min_byte1 ||
@@ -146,10 +145,169 @@ pub fn PcfFont::get_glyph(self : PcfFont, encoding : Int) -> PcfMetric? {
           }
         }
       }
+  }
+}
+
+///|
+pub fn PcfFont::glyph_index(self : PcfFont, encoding : Int) -> Int {
+  self.lookup_glyph_index(encoding)
+}
+
+///|
+pub fn PcfFont::default_glyph_index(self : PcfFont) -> Int {
+  match self.encodings {
+    Some(enc) => {
+      let index = self.lookup_glyph_index(enc.default_char)
       if index >= 0 && index < self.metrics.length() {
-        Some(self.metrics[index])
+        index
+      } else if self.metrics.length() > 0 {
+        0
       } else {
-        None
+        -1
+      }
+    }
+    None => if self.metrics.length() > 0 { 0 } else { -1 }
+  }
+}
+
+///|
+pub fn PcfFont::metric(self : PcfFont, glyph_index : Int) -> PcfMetric? {
+  if glyph_index >= 0 && glyph_index < self.metrics.length() {
+    Some(self.metrics[glyph_index])
+  } else {
+    None
+  }
+}
+
+///|
+/// Look up a glyph by encoding value.
+pub fn PcfFont::get_glyph(self : PcfFont, encoding : Int) -> PcfMetric? {
+  self.metric(self.lookup_glyph_index(encoding))
+}
+
+///|
+pub fn PcfFont::property_string(self : PcfFont, name : String) -> String? {
+  for _, property in self.properties {
+    if property.name == name && property.is_string {
+      return Some(property.string_value)
+    }
+  }
+  None
+}
+
+///|
+pub fn PcfFont::property_int(self : PcfFont, name : String) -> Int? {
+  for _, property in self.properties {
+    if property.name == name && not(property.is_string) {
+      return Some(property.int_value)
+    }
+  }
+  None
+}
+
+///|
+pub fn PcfFont::font_name(self : PcfFont) -> String {
+  self.font_name
+}
+
+///|
+pub fn PcfFont::num_glyphs(self : PcfFont) -> Int {
+  self.num_glyphs
+}
+
+///|
+pub fn PcfFont::bitmaps_format(self : PcfFont) -> UInt {
+  self.bitmaps_format
+}
+
+///|
+pub fn PcfMetric::left_bearing(self : PcfMetric) -> Int {
+  self.left_bearing
+}
+
+///|
+pub fn PcfMetric::right_bearing(self : PcfMetric) -> Int {
+  self.right_bearing
+}
+
+///|
+pub fn PcfMetric::width(self : PcfMetric) -> Int {
+  self.width
+}
+
+///|
+pub fn PcfMetric::ascent(self : PcfMetric) -> Int {
+  self.ascent
+}
+
+///|
+pub fn PcfMetric::descent(self : PcfMetric) -> Int {
+  self.descent
+}
+
+///|
+fn reverse_byte_bits(byte : Byte) -> Byte {
+  let mut value = byte.to_int()
+  value = ((value & 0xF0) >> 4) | ((value & 0x0F) << 4)
+  value = ((value & 0xCC) >> 2) | ((value & 0x33) << 2)
+  value = ((value & 0xAA) >> 1) | ((value & 0x55) << 1)
+  value.to_byte()
+}
+
+///|
+pub fn PcfFont::bitmap_for_glyph(self : PcfFont, glyph_index : Int) -> Bytes {
+  if glyph_index < 0 || glyph_index >= self.bitmap_offsets.length() {
+    b""
+  } else {
+    let start = self.bitmap_offsets[glyph_index]
+    let end_ = if glyph_index + 1 < self.bitmap_offsets.length() {
+      self.bitmap_offsets[glyph_index + 1]
+    } else {
+      self.bitmap_data.length()
+    }
+    if start < 0 || end_ < start || end_ > self.bitmap_data.length() {
+      b""
+    } else {
+      let raw = self.bitmap_data[start:end_].to_bytes()
+      let format = self.bitmaps_format
+      let need_bit_invert = (format & 8U) == 0U
+      let byte_order_is_msb = (format & 4U) != 0U
+      let bit_order_is_msb = (format & 8U) != 0U
+      let scan_unit = 1 << ((format >> 4) & 3U).reinterpret_as_int()
+      if not(need_bit_invert) && byte_order_is_msb == bit_order_is_msb {
+        raw
+      } else {
+        let transformed = FixedArray::make(raw.length(), b'\x00')
+        for i in 0..<raw.length() {
+          transformed[i] = if need_bit_invert {
+            reverse_byte_bits(raw[i])
+          } else {
+            raw[i]
+          }
+        }
+        if byte_order_is_msb != bit_order_is_msb {
+          match scan_unit {
+            2 =>
+              for i = 0; i + 1 < transformed.length(); {
+                let tmp = transformed[i]
+                transformed[i] = transformed[i + 1]
+                transformed[i + 1] = tmp
+                continue i + 2
+              }
+            4 =>
+              for i = 0; i + 3 < transformed.length(); {
+                let a = transformed[i]
+                let b = transformed[i + 1]
+                transformed[i] = transformed[i + 3]
+                transformed[i + 1] = transformed[i + 2]
+                transformed[i + 2] = b
+                transformed[i + 3] = a
+                continue i + 4
+              }
+            _ => ()
+          }
+        }
+        Bytes::from_array(transformed[:])
       }
     }
   }
@@ -445,6 +603,7 @@ pub fn parse_pcf_font(data : Bytes) -> PcfFont raise @error.FTError {
       let (offsets, bdata) = parse_bitmaps(reader, entry)
       font.bitmap_offsets = offsets
       font.bitmap_data = bdata
+      font.bitmaps_format = entry.format
     }
     None => ()
   }

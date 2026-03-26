@@ -72,6 +72,52 @@ test "parse_private_dict: defaultWidthX" {
 }
 
 ///|
+test "parse_top_dict: FontMatrix real numbers" {
+  let data : Bytes = [
+    30, 0x0A, 0x00, 0x2F, // 0.002
+     139, // 0
+     139, // 0
+     30, 0x0A, 0x00, 0x2F, // 0.002
+     139, // 0
+     139, // 0
+     12, 7, // FontMatrix
+  ]
+  let dict = parse_top_dict(data)
+  inspect(dict.font_matrix().length(), content="6")
+  inspect((1.0 / dict.font_matrix()[0]).round().to_int(), content="500")
+}
+
+///|
+test "parse_private_dict: BlueScale, BlueShift, BlueFuzz" {
+  let data : Bytes = [
+    30, 0x0A, 0x25, 0xFF, 12, 9, // BlueScale = 0.25
+     146, 12, 10, // BlueShift = 7
+     140, 12, 11,
+  ] // BlueFuzz = 1
+  let dict = parse_private_dict(data)
+  inspect(dict.blue_scale(), content="Some(0.25)")
+  inspect(dict.blue_shift(), content="Some(7)")
+  inspect(dict.blue_fuzz(), content="Some(1)")
+}
+
+///|
+fn load_scaled_fontmatrix_cff() -> Bytes {
+  [
+    1, 0, 4, 1, 0, 1, 1, 1, 18, 87, 105, 100, 116, 104, 84, 101, 115, 116, 45, 82,
+    101, 103, 117, 108, 97, 114, 0, 1, 1, 1, 22, 30, 10, 0, 47, 139, 139, 30, 10,
+    0, 47, 139, 139, 12, 7, 195, 15, 200, 17, 145, 225, 18, 0, 0, 0, 0, 0, 0, 1,
+    0, 34, 0, 3, 1, 1, 2, 4, 19, 14, 189, 14, 247, 92, 189, 22, 247, 92, 249, 80,
+    5, 247, 92, 253, 80, 5, 14, 248, 136, 20, 248, 36, 21,
+  ]
+}
+
+///|
+test "load_cff: non-default FontMatrix adjusts units_per_em" {
+  let cff = load_cff(load_scaled_fontmatrix_cff(), 0)
+  inspect(cff.units_per_em(), content="500")
+}
+
+///|
 test "CffIndex::get_item out of range" {
   let idx = CffIndex::new(
     count=1U,

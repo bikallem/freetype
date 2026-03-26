@@ -144,6 +144,35 @@ test "HmtxTable::get_metrics" {
 }
 
 ///|
+test "reconstruct_hmtx_table: mixed explicit and inferred lsbs" {
+  let transformed : Bytes = [
+    0x02, // proportional lsbs present, monospace lsbs inferred from xMin
+     0x01, 0xF4, // advance width 500
+     0x02, 0x58, // advance width 600
+     0x00, 0x0A, // lsb 10
+     0x00, 0x14, // lsb 20
+  ]
+  let hmtx = reconstruct_hmtx_table(transformed, 3, 2, [10, 20, 30])
+  inspect(hmtx.length(), content="10")
+  inspect(hmtx.unsafe_read_uint16_be(0), content="500")
+  inspect(hmtx.unsafe_read_uint16_be(4), content="600")
+  inspect(hmtx.unsafe_read_uint16_be(8), content="30")
+}
+
+///|
+test "reconstruct_hmtx_table: all lsbs inferred from xMin" {
+  let transformed : Bytes = [
+    0x03, // all lsbs omitted
+     0x01, 0xF4, // advance width 500
+     0x02, 0x58,
+  ] // advance width 600
+  let hmtx = reconstruct_hmtx_table(transformed, 3, 2, [11, 22, 33])
+  inspect(hmtx.unsafe_read_uint16_be(2), content="11")
+  inspect(hmtx.unsafe_read_uint16_be(6), content="22")
+  inspect(hmtx.unsafe_read_uint16_be(8), content="33")
+}
+
+///|
 test "decode_utf16_be" {
   // "AB" in UTF-16 BE = 0x00 0x41 0x00 0x42
   let data : Bytes = [0x00, 0x41, 0x00, 0x42]

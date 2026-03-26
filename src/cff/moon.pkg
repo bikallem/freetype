@@ -4,4 +4,5 @@ import {
   "bikallem/freetype/stream",
   "bikallem/freetype/psnames",
   "bikallem/freetype/psaux",
+  "moonbitlang/core/strconv",
 }

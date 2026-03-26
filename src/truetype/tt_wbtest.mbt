@@ -151,6 +151,16 @@ test "InterpContext: RCVT/WCVTP" {
 }
 
 ///|
+test "InterpContext: WCVTF scales font units" {
+  let ctx = InterpContext::new(cvt=[0L, 0L, 0L])
+  ctx.set_cvt_scale(@fixed.Fixed::from_raw(0x20000L))
+  // PUSHB[1] 1 32 WCVTF — scale 32 font units by 2x -> 64
+  // PUSHB[0] 1 RCVT
+  ctx.execute(b"\xB1\x01\x20\x70\xB0\x01\x44")
+  inspect(ctx.stack[0], content="64")
+}
+
+///|
 test "InterpContext: FDEF/CALL" {
   let ctx = InterpContext::new()
   // FDEF 0: PUSHB[0] 77 ENDF
@@ -271,4 +281,36 @@ test "load_simple_glyph: triangle" {
   inspect(outline.points()[1].y(), content="0")
   inspect(outline.points()[2].x(), content="150")
   inspect(outline.points()[2].y(), content="100")
+}
+
+///|
+test "InterpContext: SHC moves only the selected contour" {
+  let ctx = InterpContext::new()
+  let zero_tags = FixedArray::make(4, b'\x00')
+  let zero_touch = FixedArray::make(4, b'\x00')
+  let org = FixedArray::make(4, @types.Vector::new(0L, 0L))
+  let cur = FixedArray::make(4, @types.Vector::new(0L, 0L))
+  org[0] = @types.Vector::new(0L, 0L)
+  org[1] = @types.Vector::new(32L, 0L)
+  org[2] = @types.Vector::new(64L, 0L)
+  org[3] = @types.Vector::new(96L, 0L)
+  cur[0] = @types.Vector::new(64L, 0L)
+  cur[1] = @types.Vector::new(32L, 0L)
+  cur[2] = @types.Vector::new(64L, 0L)
+  cur[3] = @types.Vector::new(96L, 0L)
+  ctx.set_zone1_org(org)
+  ctx.set_zone1_cur(cur)
+  ctx.set_zone1_points(cur)
+  ctx.set_zone1_tags(zero_tags)
+  ctx.set_zone1_touch(zero_touch)
+  ctx.set_zone1_contours([1U, 3U])
+  let gs = GraphicsState::default()
+  gs.rp2 = 0
+  ctx.set_gs(gs)
+  // PUSHB[0] 1 SHC[0] — shift contour 1 by rp2 delta (64 along x)
+  ctx.execute(b"\xB0\x01\x34")
+  inspect(ctx.zone1_cur()[0].x(), content="64")
+  inspect(ctx.zone1_cur()[1].x(), content="32")
+  inspect(ctx.zone1_cur()[2].x(), content="128")
+  inspect(ctx.zone1_cur()[3].x(), content="160")
 }

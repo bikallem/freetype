@@ -19,6 +19,17 @@ fn load_variable_width_standalone_cff() -> Bytes {
 }
 
 ///|
+fn load_scaled_fontmatrix_standalone_cff() -> Bytes {
+  [
+    1, 0, 4, 1, 0, 1, 1, 1, 18, 87, 105, 100, 116, 104, 84, 101, 115, 116, 45, 82,
+    101, 103, 117, 108, 97, 114, 0, 1, 1, 1, 22, 30, 10, 0, 47, 139, 139, 30, 10,
+    0, 47, 139, 139, 12, 7, 195, 15, 200, 17, 145, 225, 18, 0, 0, 0, 0, 0, 0, 1,
+    0, 34, 0, 3, 1, 1, 2, 4, 19, 14, 189, 14, 247, 92, 189, 22, 247, 92, 249, 80,
+    5, 247, 92, 253, 80, 5, 14, 248, 136, 20, 248, 36, 21,
+  ]
+}
+
+///|
 test "standalone CFF: format detection" {
   inspect(
     @base.detect_format(load_minimal_standalone_cff()),
@@ -142,4 +153,11 @@ test "standalone CFF: charstring widths vary per glyph" {
   guard r2 is Ok(_) else { return }
   inspect(f.glyph().metrics().hori_advance(), content="600")
   inspect(f.glyph().outline().n_points(), content="3")
+}
+
+///|
+test "standalone CFF: non-default FontMatrix updates metadata" {
+  let f = @freetype.from_bytes(load_scaled_fontmatrix_standalone_cff())
+  inspect(f.units_per_em(), content="500")
+  inspect(f.height(), content="600")
 }

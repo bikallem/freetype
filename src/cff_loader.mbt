@@ -102,18 +102,7 @@ fn load_cff_standalone(data : Bytes) -> @base.FaceRec raise @error.FTError {
       hint_v_hints.val = hv
       hint_has_hints.val = hh.length() > 0 || hv.length() > 0
       let pd = cff.private_dict_for_glyph(glyph_index)
-      let defaults = @pshinter.PsGlobals::new()
-      hint_globals_ref.val = Some(
-        @pshinter.build_ps_globals(
-          pd.blue_values().map(fn(v) { v.to_int() }),
-          pd.other_blues().map(fn(v) { v.to_int() }),
-          pd.std_hw().to_int(),
-          pd.std_vw().to_int(),
-          defaults.blue_scale(),
-          defaults.blue_shift().to_int(),
-          defaults.blue_fuzz().to_int(),
-        ),
-      )
+      hint_globals_ref.val = Some(build_ps_globals_from_cff_private(pd))
     }
     let bb = @base.outline_get_bbox(outline)
     let slot_data = @base.GlyphSlotData::new(

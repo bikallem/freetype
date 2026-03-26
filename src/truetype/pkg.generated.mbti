@@ -92,6 +92,7 @@ pub fn InterpContext::func_defs(Self) -> Map[Int, FuncDef]
 pub fn InterpContext::new(cvt? : Array[Int64], storage_size? : Int, max_stack? : Int) -> Self
 pub fn InterpContext::reset_sp(Self) -> Unit
 pub fn InterpContext::set_cvt(Self, Array[Int64]) -> Unit
+pub fn InterpContext::set_cvt_scale(Self, @fixed.Fixed) -> Unit
 pub fn InterpContext::set_func_defs(Self, Map[Int, FuncDef]) -> Unit
 pub fn InterpContext::set_gs(Self, GraphicsState) -> Unit
 pub fn InterpContext::set_ppem(Self, Int) -> Unit
@@ -99,6 +100,7 @@ pub fn InterpContext::set_zone0_cur(Self, FixedArray[@types.Vector]) -> Unit
 pub fn InterpContext::set_zone0_org(Self, FixedArray[@types.Vector]) -> Unit
 pub fn InterpContext::set_zone0_points(Self, FixedArray[@types.Vector]) -> Unit
 pub fn InterpContext::set_zone0_tags(Self, FixedArray[Byte]) -> Unit
+pub fn InterpContext::set_zone1_contours(Self, FixedArray[UInt]) -> Unit
 pub fn InterpContext::set_zone1_cur(Self, FixedArray[@types.Vector]) -> Unit
 pub fn InterpContext::set_zone1_org(Self, FixedArray[@types.Vector]) -> Unit
 pub fn InterpContext::set_zone1_points(Self, FixedArray[@types.Vector]) -> Unit
@@ -108,6 +110,7 @@ pub fn InterpContext::zone0_cur(Self) -> FixedArray[@types.Vector]
 pub fn InterpContext::zone0_org(Self) -> FixedArray[@types.Vector]
 pub fn InterpContext::zone0_points(Self) -> FixedArray[@types.Vector]
 pub fn InterpContext::zone0_tags(Self) -> FixedArray[Byte]
+pub fn InterpContext::zone1_contours(Self) -> FixedArray[UInt]
 pub fn InterpContext::zone1_cur(Self) -> FixedArray[@types.Vector]
 pub fn InterpContext::zone1_org(Self) -> FixedArray[@types.Vector]
 pub fn InterpContext::zone1_points(Self) -> FixedArray[@types.Vector]
