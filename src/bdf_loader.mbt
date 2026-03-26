@@ -77,7 +77,7 @@ fn load_bdf(data : Bytes) -> @base.FaceRec raise @error.FTError {
 
   let cmap : Map[UInt, UInt] = {}
   let use_dense_unicode_map = glyphs.length() != num_chars
-  if not(use_dense_unicode_map) {
+  if !use_dense_unicode_map {
     for i, glyph in glyphs {
       let encoding = glyph.encoding()
       if encoding >= 0 {

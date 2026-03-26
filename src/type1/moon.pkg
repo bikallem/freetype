@@ -5,3 +5,5 @@ import {
   "bikallem/freetype/psaux",
   "bikallem/freetype/psnames",
 }
+
+warnings = "-20"

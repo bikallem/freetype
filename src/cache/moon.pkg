@@ -2,3 +2,5 @@ import {
   "bikallem/freetype/types",
   "moonbitlang/core/int",
 }
+
+warnings = "-20"

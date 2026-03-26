@@ -241,7 +241,7 @@ pub fn CffFont::private_dict_for_glyph(
   self : CffFont,
   glyph_index : UInt,
 ) -> CffPrivateDict {
-  if not(self.top_dict.is_cid) || self.fd_private_dicts.length() == 0 {
+  if !self.top_dict.is_cid || self.fd_private_dicts.length() == 0 {
     self.private_dict
   } else {
     let fd_idx = self.fd_index_for_glyph(glyph_index)
@@ -258,7 +258,7 @@ pub fn CffFont::cached_local_subrs_for_glyph(
   self : CffFont,
   glyph_index : UInt,
 ) -> Array[Bytes] {
-  if not(self.top_dict.is_cid) || self.fd_local_subrs.length() == 0 {
+  if !self.top_dict.is_cid || self.fd_local_subrs.length() == 0 {
     self.cached_local_subrs
   } else {
     let fd_idx = self.fd_index_for_glyph(glyph_index)

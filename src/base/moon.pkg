@@ -4,4 +4,4 @@ import {
   "bikallem/freetype/types",
 }
 
-warnings = "-15"
+warnings = "-15-20"

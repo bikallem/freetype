@@ -5,3 +5,5 @@ import {
 import {
   "moonbitlang/core/encoding/utf8" @utf8,
 } for "wbtest"
+
+warnings = "-20"

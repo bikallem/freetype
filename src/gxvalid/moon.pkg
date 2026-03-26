@@ -3,3 +3,5 @@ import {
   "bikallem/freetype/types",
   "bikallem/freetype/stream",
 }
+
+warnings = "-20"

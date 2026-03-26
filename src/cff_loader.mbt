@@ -42,7 +42,7 @@ fn load_cff_standalone(data : Bytes) -> @base.FaceRec raise @error.FTError {
   }
   let unicode_cmap = @psnames.build_unicode_map(cff.glyph_names())
   let encoding_glyphs = cff.encoding_glyphs()
-  let has_unicode = not(unicode_cmap.is_empty())
+  let has_unicode = !unicode_cmap.is_empty()
   let mut has_encoding = false
   for _, glyph in encoding_glyphs {
     if glyph != 0U {
@@ -103,6 +103,7 @@ fn load_cff_standalone(data : Bytes) -> @base.FaceRec raise @error.FTError {
     @base.GlyphSlotData,
     @types.Outline,
     Bytes,
+    Array[@types.Vector],
   ) raise @error.FTError = fn(glyph_index, load_flags) raise @error.FTError {
     let no_hinting = (load_flags & @base.LOAD_NO_HINTING) != 0
     let (outline, width, hh, hv) = @cff.load_cff_glyph(cff, glyph_index)
@@ -124,7 +125,7 @@ fn load_cff_standalone(data : Bytes) -> @base.FaceRec raise @error.FTError {
       bb.y_max(),
       width,
     )
-    (slot_data, outline, b"")
+    (slot_data, outline, b"", [])
   }
   let apply_hints_fn : (@types.Outline, @fixed.Fixed) -> Bool = fn(
     outline,
@@ -158,9 +159,17 @@ fn load_cff_standalone(data : Bytes) -> @base.FaceRec raise @error.FTError {
   let no_variant_selectors : () -> Array[UInt] = fn() { [] }
   let no_variants_of_char : (UInt) -> Array[UInt] = fn(_charcode) { [] }
   let no_chars_of_variant : (UInt) -> Array[UInt] = fn(_selector) { [] }
-  let no_tt_hint : (@types.Outline, Bytes, @fixed.Fixed, @fixed.Fixed, UInt) -> Bool = fn(
+  let no_tt_hint : (
+    @types.Outline,
+    Bytes,
+    Array[@types.Vector],
+    @fixed.Fixed,
+    @fixed.Fixed,
+    UInt,
+  ) -> Bool = fn(
     _outline,
     _instructions,
+    _phantoms,
     _x_scale,
     _y_scale,
     _ppem,

@@ -4,6 +4,7 @@ import {
   "bikallem/freetype/types",
   "bikallem/freetype/stream",
   "bikallem/freetype/base",
+  "bikallem/freetype/smooth",
   "bikallem/freetype/sfnt",
   "bikallem/freetype/truetype",
   "bikallem/freetype/cff",
@@ -16,3 +17,9 @@ import {
   "bikallem/freetype/autofit",
   "bikallem/blit" @blit,
 }
+
+import {
+  "moonbitlang/x/fs" @fs,
+} for "wbtest"
+
+warnings = "-20"

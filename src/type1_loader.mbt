@@ -77,7 +77,7 @@ fn load_type1_pfb(data : Bytes) -> @base.FaceRec raise @error.FTError {
       }
     }
   }
-  let has_unicode = not(unicode_cmap.is_empty())
+  let has_unicode = !unicode_cmap.is_empty()
   if has_unicode {
     face.charmaps().push(@base.CharMapRec::new(@base.Encoding::Unicode, 3U, 1U))
   }

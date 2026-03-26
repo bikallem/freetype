@@ -8,12 +8,19 @@ fn load_generated_roboto_wdth_wght__ttf() -> Bytes {
 
 ///|
 test "parity/Roboto[wdth,wght].ttf: format" {
-  inspect(@base.detect_format(load_generated_roboto_wdth_wght__ttf()) is (TrueType | TrueTypeCollection), content="true")
+  inspect(
+    @base.detect_format(load_generated_roboto_wdth_wght__ttf())
+    is (TrueType | TrueTypeCollection),
+    content="true",
+  )
 }
 
 ///|
 test "parity/Roboto[wdth,wght].ttf: loads" {
-  inspect((try? @freetype.from_bytes(load_generated_roboto_wdth_wght__ttf())) is Ok(_), content="true")
+  inspect(
+    (try? @freetype.from_bytes(load_generated_roboto_wdth_wght__ttf())) is Ok(_),
+    content="true",
+  )
 }
 
 ///|
@@ -205,6 +212,272 @@ test "parity/Roboto[wdth,wght].ttf: glyph metrics at 16ppem" {
 }
 
 ///|
+test "parity/Roboto[wdth,wght].ttf: rendered glyph 4 char 32" {
+  let f = @freetype.from_bytes(load_generated_roboto_wdth_wght__ttf())
+  try! @freetype.set_pixel_sizes(f, 0U, 16U)
+  let gid = @freetype.get_char_index(f, 32U)
+  inspect(gid, content="4")
+  try! @freetype.load_glyph(f, gid, load_flags=@base.LOAD_NO_HINTING)
+  try! @freetype.render_glyph(f)
+  inspect(f.glyph().format(), content="Bitmap")
+  inspect(f.glyph().bitmap().width(), content="0")
+  inspect(f.glyph().bitmap().rows(), content="0")
+  inspect(f.glyph().bitmap().pitch(), content="0")
+  inspect(f.glyph().bitmap().num_grays(), content="256")
+  inspect(f.glyph().bitmap_left(), content="0")
+  inspect(f.glyph().bitmap_top(), content="0")
+  inspect(f.glyph().bitmap().buffer().length(), content="0")
+}
+
+///|
+test "parity/Roboto[wdth,wght].ttf: rendered glyph 37 char 65" {
+  let f = @freetype.from_bytes(load_generated_roboto_wdth_wght__ttf())
+  try! @freetype.set_pixel_sizes(f, 0U, 16U)
+  let gid = @freetype.get_char_index(f, 65U)
+  inspect(gid, content="37")
+  try! @freetype.load_glyph(f, gid, load_flags=@base.LOAD_NO_HINTING)
+  try! @freetype.render_glyph(f)
+  inspect(f.glyph().format(), content="Bitmap")
+  inspect(f.glyph().bitmap().width(), content="11")
+  inspect(f.glyph().bitmap().rows(), content="12")
+  inspect(f.glyph().bitmap().pitch(), content="11")
+  inspect(f.glyph().bitmap().num_grays(), content="256")
+  inspect(f.glyph().bitmap_left(), content="0")
+  inspect(f.glyph().bitmap_top(), content="12")
+  inspect(f.glyph().bitmap().buffer().length(), content="132")
+  inspect(f.glyph().bitmap().buffer()[0].to_int(), content="0")
+  inspect(f.glyph().bitmap().buffer()[1].to_int(), content="0")
+  inspect(f.glyph().bitmap().buffer()[2].to_int(), content="0")
+  inspect(f.glyph().bitmap().buffer()[3].to_int(), content="0")
+  inspect(f.glyph().bitmap().buffer()[4].to_int(), content="59")
+  inspect(f.glyph().bitmap().buffer()[5].to_int(), content="145")
+  inspect(f.glyph().bitmap().buffer()[6].to_int(), content="0")
+  inspect(f.glyph().bitmap().buffer()[7].to_int(), content="0")
+  inspect(f.glyph().bitmap().buffer()[8].to_int(), content="0")
+  inspect(f.glyph().bitmap().buffer()[9].to_int(), content="0")
+  inspect(f.glyph().bitmap().buffer()[10].to_int(), content="0")
+  inspect(f.glyph().bitmap().buffer()[11].to_int(), content="0")
+  inspect(f.glyph().bitmap().buffer()[12].to_int(), content="0")
+  inspect(f.glyph().bitmap().buffer()[13].to_int(), content="0")
+  inspect(f.glyph().bitmap().buffer()[14].to_int(), content="0")
+  inspect(f.glyph().bitmap().buffer()[15].to_int(), content="214")
+  inspect(f.glyph().bitmap().buffer()[16].to_int(), content="255")
+  inspect(f.glyph().bitmap().buffer()[17].to_int(), content="57")
+  inspect(f.glyph().bitmap().buffer()[18].to_int(), content="0")
+  inspect(f.glyph().bitmap().buffer()[19].to_int(), content="0")
+  inspect(f.glyph().bitmap().buffer()[20].to_int(), content="0")
+  inspect(f.glyph().bitmap().buffer()[21].to_int(), content="0")
+  inspect(f.glyph().bitmap().buffer()[22].to_int(), content="0")
+  inspect(f.glyph().bitmap().buffer()[23].to_int(), content="0")
+  inspect(f.glyph().bitmap().buffer()[24].to_int(), content="0")
+  inspect(f.glyph().bitmap().buffer()[25].to_int(), content="39")
+  inspect(f.glyph().bitmap().buffer()[26].to_int(), content="255")
+  inspect(f.glyph().bitmap().buffer()[27].to_int(), content="250")
+  inspect(f.glyph().bitmap().buffer()[28].to_int(), content="155")
+  inspect(f.glyph().bitmap().buffer()[29].to_int(), content="0")
+  inspect(f.glyph().bitmap().buffer()[30].to_int(), content="0")
+  inspect(f.glyph().bitmap().buffer()[31].to_int(), content="0")
+  inspect(f.glyph().bitmap().buffer()[32].to_int(), content="0")
+  inspect(f.glyph().bitmap().buffer()[33].to_int(), content="0")
+  inspect(f.glyph().bitmap().buffer()[34].to_int(), content="0")
+  inspect(f.glyph().bitmap().buffer()[35].to_int(), content="0")
+  inspect(f.glyph().bitmap().buffer()[36].to_int(), content="136")
+  inspect(f.glyph().bitmap().buffer()[37].to_int(), content="217")
+  inspect(f.glyph().bitmap().buffer()[38].to_int(), content="102")
+  inspect(f.glyph().bitmap().buffer()[39].to_int(), content="242")
+  inspect(f.glyph().bitmap().buffer()[40].to_int(), content="10")
+  inspect(f.glyph().bitmap().buffer()[41].to_int(), content="0")
+  inspect(f.glyph().bitmap().buffer()[42].to_int(), content="0")
+  inspect(f.glyph().bitmap().buffer()[43].to_int(), content="0")
+  inspect(f.glyph().bitmap().buffer()[44].to_int(), content="0")
+  inspect(f.glyph().bitmap().buffer()[45].to_int(), content="0")
+  inspect(f.glyph().bitmap().buffer()[46].to_int(), content="3")
+  inspect(f.glyph().bitmap().buffer()[47].to_int(), content="229")
+  inspect(f.glyph().bitmap().buffer()[48].to_int(), content="124")
+  inspect(f.glyph().bitmap().buffer()[49].to_int(), content="16")
+  inspect(f.glyph().bitmap().buffer()[50].to_int(), content="248")
+  inspect(f.glyph().bitmap().buffer()[51].to_int(), content="94")
+  inspect(f.glyph().bitmap().buffer()[52].to_int(), content="0")
+  inspect(f.glyph().bitmap().buffer()[53].to_int(), content="0")
+  inspect(f.glyph().bitmap().buffer()[54].to_int(), content="0")
+  inspect(f.glyph().bitmap().buffer()[55].to_int(), content="0")
+  inspect(f.glyph().bitmap().buffer()[56].to_int(), content="0")
+  inspect(f.glyph().bitmap().buffer()[57].to_int(), content="75")
+  inspect(f.glyph().bitmap().buffer()[58].to_int(), content="254")
+  inspect(f.glyph().bitmap().buffer()[59].to_int(), content="33")
+  inspect(f.glyph().bitmap().buffer()[60].to_int(), content="0")
+  inspect(f.glyph().bitmap().buffer()[61].to_int(), content="172")
+  inspect(f.glyph().bitmap().buffer()[62].to_int(), content="192")
+  inspect(f.glyph().bitmap().buffer()[63].to_int(), content="0")
+  inspect(f.glyph().bitmap().buffer()[64].to_int(), content="0")
+  inspect(f.glyph().bitmap().buffer()[65].to_int(), content="0")
+  inspect(f.glyph().bitmap().buffer()[66].to_int(), content="0")
+  inspect(f.glyph().bitmap().buffer()[67].to_int(), content="0")
+  inspect(f.glyph().bitmap().buffer()[68].to_int(), content="172")
+  inspect(f.glyph().bitmap().buffer()[69].to_int(), content="194")
+  inspect(f.glyph().bitmap().buffer()[70].to_int(), content="0")
+  inspect(f.glyph().bitmap().buffer()[71].to_int(), content="0")
+  inspect(f.glyph().bitmap().buffer()[72].to_int(), content="79")
+  inspect(f.glyph().bitmap().buffer()[73].to_int(), content="254")
+  inspect(f.glyph().bitmap().buffer()[74].to_int(), content="35")
+  inspect(f.glyph().bitmap().buffer()[75].to_int(), content="0")
+  inspect(f.glyph().bitmap().buffer()[76].to_int(), content="0")
+  inspect(f.glyph().bitmap().buffer()[77].to_int(), content="0")
+  inspect(f.glyph().bitmap().buffer()[78].to_int(), content="20")
+  inspect(f.glyph().bitmap().buffer()[79].to_int(), content="255")
+  inspect(f.glyph().bitmap().buffer()[80].to_int(), content="157")
+  inspect(f.glyph().bitmap().buffer()[81].to_int(), content="56")
+  inspect(f.glyph().bitmap().buffer()[82].to_int(), content="56")
+  inspect(f.glyph().bitmap().buffer()[83].to_int(), content="61")
+  inspect(f.glyph().bitmap().buffer()[84].to_int(), content="255")
+  inspect(f.glyph().bitmap().buffer()[85].to_int(), content="159")
+  inspect(f.glyph().bitmap().buffer()[86].to_int(), content="0")
+  inspect(f.glyph().bitmap().buffer()[87].to_int(), content="0")
+  inspect(f.glyph().bitmap().buffer()[88].to_int(), content="0")
+  inspect(f.glyph().bitmap().buffer()[89].to_int(), content="111")
+  inspect(f.glyph().bitmap().buffer()[90].to_int(), content="255")
+  inspect(f.glyph().bitmap().buffer()[91].to_int(), content="255")
+  inspect(f.glyph().bitmap().buffer()[92].to_int(), content="255")
+  inspect(f.glyph().bitmap().buffer()[93].to_int(), content="255")
+  inspect(f.glyph().bitmap().buffer()[94].to_int(), content="255")
+  inspect(f.glyph().bitmap().buffer()[95].to_int(), content="255")
+  inspect(f.glyph().bitmap().buffer()[96].to_int(), content="255")
+  inspect(f.glyph().bitmap().buffer()[97].to_int(), content="2")
+  inspect(f.glyph().bitmap().buffer()[98].to_int(), content="0")
+  inspect(f.glyph().bitmap().buffer()[99].to_int(), content="0")
+  inspect(f.glyph().bitmap().buffer()[100].to_int(), content="208")
+  inspect(f.glyph().bitmap().buffer()[101].to_int(), content="175")
+  inspect(f.glyph().bitmap().buffer()[102].to_int(), content="4")
+  inspect(f.glyph().bitmap().buffer()[103].to_int(), content="4")
+  inspect(f.glyph().bitmap().buffer()[104].to_int(), content="4")
+  inspect(f.glyph().bitmap().buffer()[105].to_int(), content="4")
+  inspect(f.glyph().bitmap().buffer()[106].to_int(), content="60")
+  inspect(f.glyph().bitmap().buffer()[107].to_int(), content="255")
+  inspect(f.glyph().bitmap().buffer()[108].to_int(), content="71")
+  inspect(f.glyph().bitmap().buffer()[109].to_int(), content="0")
+  inspect(f.glyph().bitmap().buffer()[110].to_int(), content="50")
+  inspect(f.glyph().bitmap().buffer()[111].to_int(), content="255")
+  inspect(f.glyph().bitmap().buffer()[112].to_int(), content="78")
+  inspect(f.glyph().bitmap().buffer()[113].to_int(), content="0")
+  inspect(f.glyph().bitmap().buffer()[114].to_int(), content="0")
+  inspect(f.glyph().bitmap().buffer()[115].to_int(), content="0")
+  inspect(f.glyph().bitmap().buffer()[116].to_int(), content="0")
+  inspect(f.glyph().bitmap().buffer()[117].to_int(), content="0")
+  inspect(f.glyph().bitmap().buffer()[118].to_int(), content="219")
+  inspect(f.glyph().bitmap().buffer()[119].to_int(), content="169")
+  inspect(f.glyph().bitmap().buffer()[120].to_int(), content="0")
+  inspect(f.glyph().bitmap().buffer()[121].to_int(), content="147")
+  inspect(f.glyph().bitmap().buffer()[122].to_int(), content="236")
+  inspect(f.glyph().bitmap().buffer()[123].to_int(), content="5")
+  inspect(f.glyph().bitmap().buffer()[124].to_int(), content="0")
+  inspect(f.glyph().bitmap().buffer()[125].to_int(), content="0")
+  inspect(f.glyph().bitmap().buffer()[126].to_int(), content="0")
+  inspect(f.glyph().bitmap().buffer()[127].to_int(), content="0")
+  inspect(f.glyph().bitmap().buffer()[128].to_int(), content="0")
+  inspect(f.glyph().bitmap().buffer()[129].to_int(), content="126")
+  inspect(f.glyph().bitmap().buffer()[130].to_int(), content="248")
+  inspect(f.glyph().bitmap().buffer()[131].to_int(), content="18")
+}
+
+///|
+test "parity/Roboto[wdth,wght].ttf: rendered glyph 69 char 97" {
+  let f = @freetype.from_bytes(load_generated_roboto_wdth_wght__ttf())
+  try! @freetype.set_pixel_sizes(f, 0U, 16U)
+  let gid = @freetype.get_char_index(f, 97U)
+  inspect(gid, content="69")
+  try! @freetype.load_glyph(f, gid, load_flags=@base.LOAD_NO_HINTING)
+  try! @freetype.render_glyph(f)
+  inspect(f.glyph().format(), content="Bitmap")
+  inspect(f.glyph().bitmap().width(), content="8")
+  inspect(f.glyph().bitmap().rows(), content="10")
+  inspect(f.glyph().bitmap().pitch(), content="8")
+  inspect(f.glyph().bitmap().num_grays(), content="256")
+  inspect(f.glyph().bitmap_left(), content="0")
+  inspect(f.glyph().bitmap_top(), content="9")
+  inspect(f.glyph().bitmap().buffer().length(), content="80")
+  inspect(f.glyph().bitmap().buffer()[0].to_int(), content="0")
+  inspect(f.glyph().bitmap().buffer()[1].to_int(), content="0")
+  inspect(f.glyph().bitmap().buffer()[2].to_int(), content="35")
+  inspect(f.glyph().bitmap().buffer()[3].to_int(), content="120")
+  inspect(f.glyph().bitmap().buffer()[4].to_int(), content="148")
+  inspect(f.glyph().bitmap().buffer()[5].to_int(), content="114")
+  inspect(f.glyph().bitmap().buffer()[6].to_int(), content="19")
+  inspect(f.glyph().bitmap().buffer()[7].to_int(), content="0")
+  inspect(f.glyph().bitmap().buffer()[8].to_int(), content="0")
+  inspect(f.glyph().bitmap().buffer()[9].to_int(), content="83")
+  inspect(f.glyph().bitmap().buffer()[10].to_int(), content="250")
+  inspect(f.glyph().bitmap().buffer()[11].to_int(), content="189")
+  inspect(f.glyph().bitmap().buffer()[12].to_int(), content="155")
+  inspect(f.glyph().bitmap().buffer()[13].to_int(), content="227")
+  inspect(f.glyph().bitmap().buffer()[14].to_int(), content="227")
+  inspect(f.glyph().bitmap().buffer()[15].to_int(), content="20")
+  inspect(f.glyph().bitmap().buffer()[16].to_int(), content="0")
+  inspect(f.glyph().bitmap().buffer()[17].to_int(), content="194")
+  inspect(f.glyph().bitmap().buffer()[18].to_int(), content="150")
+  inspect(f.glyph().bitmap().buffer()[19].to_int(), content="0")
+  inspect(f.glyph().bitmap().buffer()[20].to_int(), content="0")
+  inspect(f.glyph().bitmap().buffer()[21].to_int(), content="30")
+  inspect(f.glyph().bitmap().buffer()[22].to_int(), content="254")
+  inspect(f.glyph().bitmap().buffer()[23].to_int(), content="109")
+  inspect(f.glyph().bitmap().buffer()[24].to_int(), content="0")
+  inspect(f.glyph().bitmap().buffer()[25].to_int(), content="0")
+  inspect(f.glyph().bitmap().buffer()[26].to_int(), content="0")
+  inspect(f.glyph().bitmap().buffer()[27].to_int(), content="2")
+  inspect(f.glyph().bitmap().buffer()[28].to_int(), content="25")
+  inspect(f.glyph().bitmap().buffer()[29].to_int(), content="32")
+  inspect(f.glyph().bitmap().buffer()[30].to_int(), content="244")
+  inspect(f.glyph().bitmap().buffer()[31].to_int(), content="135")
+  inspect(f.glyph().bitmap().buffer()[32].to_int(), content="0")
+  inspect(f.glyph().bitmap().buffer()[33].to_int(), content="32")
+  inspect(f.glyph().bitmap().buffer()[34].to_int(), content="174")
+  inspect(f.glyph().bitmap().buffer()[35].to_int(), content="248")
+  inspect(f.glyph().bitmap().buffer()[36].to_int(), content="236")
+  inspect(f.glyph().bitmap().buffer()[37].to_int(), content="228")
+  inspect(f.glyph().bitmap().buffer()[38].to_int(), content="255")
+  inspect(f.glyph().bitmap().buffer()[39].to_int(), content="136")
+  inspect(f.glyph().bitmap().buffer()[40].to_int(), content="1")
+  inspect(f.glyph().bitmap().buffer()[41].to_int(), content="212")
+  inspect(f.glyph().bitmap().buffer()[42].to_int(), content="190")
+  inspect(f.glyph().bitmap().buffer()[43].to_int(), content="26")
+  inspect(f.glyph().bitmap().buffer()[44].to_int(), content="0")
+  inspect(f.glyph().bitmap().buffer()[45].to_int(), content="0")
+  inspect(f.glyph().bitmap().buffer()[46].to_int(), content="232")
+  inspect(f.glyph().bitmap().buffer()[47].to_int(), content="136")
+  inspect(f.glyph().bitmap().buffer()[48].to_int(), content="28")
+  inspect(f.glyph().bitmap().buffer()[49].to_int(), content="255")
+  inspect(f.glyph().bitmap().buffer()[50].to_int(), content="95")
+  inspect(f.glyph().bitmap().buffer()[51].to_int(), content="0")
+  inspect(f.glyph().bitmap().buffer()[52].to_int(), content="0")
+  inspect(f.glyph().bitmap().buffer()[53].to_int(), content="4")
+  inspect(f.glyph().bitmap().buffer()[54].to_int(), content="255")
+  inspect(f.glyph().bitmap().buffer()[55].to_int(), content="136")
+  inspect(f.glyph().bitmap().buffer()[56].to_int(), content="7")
+  inspect(f.glyph().bitmap().buffer()[57].to_int(), content="238")
+  inspect(f.glyph().bitmap().buffer()[58].to_int(), content="199")
+  inspect(f.glyph().bitmap().buffer()[59].to_int(), content="51")
+  inspect(f.glyph().bitmap().buffer()[60].to_int(), content="51")
+  inspect(f.glyph().bitmap().buffer()[61].to_int(), content="184")
+  inspect(f.glyph().bitmap().buffer()[62].to_int(), content="255")
+  inspect(f.glyph().bitmap().buffer()[63].to_int(), content="143")
+  inspect(f.glyph().bitmap().buffer()[64].to_int(), content="0")
+  inspect(f.glyph().bitmap().buffer()[65].to_int(), content="72")
+  inspect(f.glyph().bitmap().buffer()[66].to_int(), content="232")
+  inspect(f.glyph().bitmap().buffer()[67].to_int(), content="255")
+  inspect(f.glyph().bitmap().buffer()[68].to_int(), content="250")
+  inspect(f.glyph().bitmap().buffer()[69].to_int(), content="146")
+  inspect(f.glyph().bitmap().buffer()[70].to_int(), content="206")
+  inspect(f.glyph().bitmap().buffer()[71].to_int(), content="185")
+  inspect(f.glyph().bitmap().buffer()[72].to_int(), content="0")
+  inspect(f.glyph().bitmap().buffer()[73].to_int(), content="0")
+  inspect(f.glyph().bitmap().buffer()[74].to_int(), content="3")
+  inspect(f.glyph().bitmap().buffer()[75].to_int(), content="31")
+  inspect(f.glyph().bitmap().buffer()[76].to_int(), content="7")
+  inspect(f.glyph().bitmap().buffer()[77].to_int(), content="0")
+  inspect(f.glyph().bitmap().buffer()[78].to_int(), content="0")
+  inspect(f.glyph().bitmap().buffer()[79].to_int(), content="0")
+}
+
+///|
 test "parity/Roboto[wdth,wght].ttf: hinted outline DEFAULT 16ppem" {
   let f = @freetype.from_bytes(load_generated_roboto_wdth_wght__ttf())
   let r1 = try? @freetype.set_pixel_sizes(f, 0U, 16U)
@@ -232,7 +505,11 @@ test "parity/Roboto[wdth,wght].ttf: outline FORCE_AUTOHINT 16ppem" {
   let f = @freetype.from_bytes(load_generated_roboto_wdth_wght__ttf())
   let r1 = try? @freetype.set_pixel_sizes(f, 0U, 16U)
   guard r1 is Ok(_) else { return }
-  let r2 = try? @freetype.load_glyph(f, 5U, load_flags=@base.LOAD_FORCE_AUTOHINT)
+  let r2 = try? @freetype.load_glyph(
+    f,
+    5U,
+    load_flags=@base.LOAD_FORCE_AUTOHINT,
+  )
   guard r2 is Ok(_) else { return }
   inspect(f.glyph().metrics().hori_advance(), content="320")
 }
@@ -242,26 +519,20 @@ test "parity/Roboto[wdth,wght].ttf: variation state" {
   let f = @freetype.from_bytes(load_generated_roboto_wdth_wght__ttf())
   inspect(f.has_multiple_masters(), content="true")
   inspect(f.is_variation(), content="false")
-  try! @freetype.set_var_design_coordinates(
-    f,
-    [
-      (@fixed.Fixed::from_raw(58982400L), 0x77676874U),
-      (@fixed.Fixed::from_raw(4915200L), 0x77647468U),
-    ],
-  )
+  try! @freetype.set_var_design_coordinates(f, [
+    (@fixed.Fixed::from_raw(58982400L), 0x77676874U),
+    (@fixed.Fixed::from_raw(4915200L), 0x77647468U),
+  ])
   inspect(f.is_variation(), content="true")
 }
 
 ///|
 test "parity/Roboto[wdth,wght].ttf: varied 65 outline NO_SCALE" {
   let f = @freetype.from_bytes(load_generated_roboto_wdth_wght__ttf())
-  try! @freetype.set_var_design_coordinates(
-    f,
-    [
-      (@fixed.Fixed::from_raw(58982400L), 0x77676874U),
-      (@fixed.Fixed::from_raw(4915200L), 0x77647468U),
-    ],
-  )
+  try! @freetype.set_var_design_coordinates(f, [
+    (@fixed.Fixed::from_raw(58982400L), 0x77676874U),
+    (@fixed.Fixed::from_raw(4915200L), 0x77647468U),
+  ])
   let gid = @freetype.get_char_index(f, 65U)
   let r = try? @freetype.load_glyph(f, gid, load_flags=@base.LOAD_NO_SCALE)
   guard r is Ok(_) else { return }
@@ -284,13 +555,10 @@ test "parity/Roboto[wdth,wght].ttf: varied 65 outline NO_SCALE" {
 ///|
 test "parity/Roboto[wdth,wght].ttf: varied 97 outline NO_SCALE" {
   let f = @freetype.from_bytes(load_generated_roboto_wdth_wght__ttf())
-  try! @freetype.set_var_design_coordinates(
-    f,
-    [
-      (@fixed.Fixed::from_raw(58982400L), 0x77676874U),
-      (@fixed.Fixed::from_raw(4915200L), 0x77647468U),
-    ],
-  )
+  try! @freetype.set_var_design_coordinates(f, [
+    (@fixed.Fixed::from_raw(58982400L), 0x77676874U),
+    (@fixed.Fixed::from_raw(4915200L), 0x77647468U),
+  ])
   let gid = @freetype.get_char_index(f, 97U)
   let r = try? @freetype.load_glyph(f, gid, load_flags=@base.LOAD_NO_SCALE)
   guard r is Ok(_) else { return }
@@ -313,13 +581,10 @@ test "parity/Roboto[wdth,wght].ttf: varied 97 outline NO_SCALE" {
 ///|
 test "parity/Roboto[wdth,wght].ttf: varied outline NO_HINTING 16ppem" {
   let f = @freetype.from_bytes(load_generated_roboto_wdth_wght__ttf())
-  try! @freetype.set_var_design_coordinates(
-    f,
-    [
-      (@fixed.Fixed::from_raw(58982400L), 0x77676874U),
-      (@fixed.Fixed::from_raw(4915200L), 0x77647468U),
-    ],
-  )
+  try! @freetype.set_var_design_coordinates(f, [
+    (@fixed.Fixed::from_raw(58982400L), 0x77676874U),
+    (@fixed.Fixed::from_raw(4915200L), 0x77647468U),
+  ])
   let gid = @freetype.get_char_index(f, 65U)
   let r1 = try? @freetype.set_pixel_sizes(f, 0U, 16U)
   guard r1 is Ok(_) else { return }
@@ -337,13 +602,10 @@ test "parity/Roboto[wdth,wght].ttf: varied outline NO_HINTING 16ppem" {
 ///|
 test "parity/Roboto[wdth,wght].ttf: varied hinted outline DEFAULT 16ppem" {
   let f = @freetype.from_bytes(load_generated_roboto_wdth_wght__ttf())
-  try! @freetype.set_var_design_coordinates(
-    f,
-    [
-      (@fixed.Fixed::from_raw(58982400L), 0x77676874U),
-      (@fixed.Fixed::from_raw(4915200L), 0x77647468U),
-    ],
-  )
+  try! @freetype.set_var_design_coordinates(f, [
+    (@fixed.Fixed::from_raw(58982400L), 0x77676874U),
+    (@fixed.Fixed::from_raw(4915200L), 0x77647468U),
+  ])
   let gid = @freetype.get_char_index(f, 65U)
   let r1 = try? @freetype.set_pixel_sizes(f, 0U, 16U)
   guard r1 is Ok(_) else { return }
@@ -359,18 +621,18 @@ test "parity/Roboto[wdth,wght].ttf: varied hinted outline DEFAULT 16ppem" {
 ///|
 test "parity/Roboto[wdth,wght].ttf: varied outline FORCE_AUTOHINT 16ppem" {
   let f = @freetype.from_bytes(load_generated_roboto_wdth_wght__ttf())
-  try! @freetype.set_var_design_coordinates(
-    f,
-    [
-      (@fixed.Fixed::from_raw(58982400L), 0x77676874U),
-      (@fixed.Fixed::from_raw(4915200L), 0x77647468U),
-    ],
-  )
+  try! @freetype.set_var_design_coordinates(f, [
+    (@fixed.Fixed::from_raw(58982400L), 0x77676874U),
+    (@fixed.Fixed::from_raw(4915200L), 0x77647468U),
+  ])
   let gid = @freetype.get_char_index(f, 65U)
   let r1 = try? @freetype.set_pixel_sizes(f, 0U, 16U)
   guard r1 is Ok(_) else { return }
-  let r2 = try? @freetype.load_glyph(f, gid, load_flags=@base.LOAD_FORCE_AUTOHINT)
+  let r2 = try? @freetype.load_glyph(
+    f,
+    gid,
+    load_flags=@base.LOAD_FORCE_AUTOHINT,
+  )
   guard r2 is Ok(_) else { return }
   inspect(f.glyph().metrics().hori_advance(), content="640")
 }
-

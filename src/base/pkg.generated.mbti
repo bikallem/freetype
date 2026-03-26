@@ -284,11 +284,11 @@ pub fn SfntOps::char_variant_index(Self) -> (UInt, UInt) -> UInt
 pub fn SfntOps::char_variant_is_default(Self) -> (UInt, UInt) -> Int
 pub fn SfntOps::chars_of_variant(Self) -> (UInt) -> Array[UInt]
 pub fn SfntOps::get_kerning(Self) -> (UInt, UInt) -> Int
-pub fn SfntOps::load_glyph(Self) -> (UInt, Int) -> (GlyphSlotData, @types.Outline, Bytes) raise @error.FTError
-pub fn SfntOps::new(char_index~ : (UInt) -> UInt, char_variant_index~ : (UInt, UInt) -> UInt, char_variant_is_default~ : (UInt, UInt) -> Int, variant_selectors~ : () -> Array[UInt], variants_of_char~ : (UInt) -> Array[UInt], chars_of_variant~ : (UInt) -> Array[UInt], load_glyph~ : (UInt, Int) -> (GlyphSlotData, @types.Outline, Bytes) raise @error.FTError, get_kerning~ : (UInt, UInt) -> Int, apply_hints~ : (@types.Outline, @fixed.Fixed) -> Bool, tt_hint~ : (@types.Outline, Bytes, @fixed.Fixed, @fixed.Fixed, UInt) -> Bool, num_glyphs~ : UInt, raw_data~ : Bytes) -> Self
+pub fn SfntOps::load_glyph(Self) -> (UInt, Int) -> (GlyphSlotData, @types.Outline, Bytes, Array[@types.Vector]) raise @error.FTError
+pub fn SfntOps::new(char_index~ : (UInt) -> UInt, char_variant_index~ : (UInt, UInt) -> UInt, char_variant_is_default~ : (UInt, UInt) -> Int, variant_selectors~ : () -> Array[UInt], variants_of_char~ : (UInt) -> Array[UInt], chars_of_variant~ : (UInt) -> Array[UInt], load_glyph~ : (UInt, Int) -> (GlyphSlotData, @types.Outline, Bytes, Array[@types.Vector]) raise @error.FTError, get_kerning~ : (UInt, UInt) -> Int, apply_hints~ : (@types.Outline, @fixed.Fixed) -> Bool, tt_hint~ : (@types.Outline, Bytes, Array[@types.Vector], @fixed.Fixed, @fixed.Fixed, UInt) -> Bool, num_glyphs~ : UInt, raw_data~ : Bytes) -> Self
 pub fn SfntOps::num_glyphs(Self) -> UInt
 pub fn SfntOps::raw_data(Self) -> Bytes
-pub fn SfntOps::tt_hint(Self) -> (@types.Outline, Bytes, @fixed.Fixed, @fixed.Fixed, UInt) -> Bool
+pub fn SfntOps::tt_hint(Self) -> (@types.Outline, Bytes, Array[@types.Vector], @fixed.Fixed, @fixed.Fixed, UInt) -> Bool
 pub fn SfntOps::variant_selectors(Self) -> () -> Array[UInt]
 pub fn SfntOps::variants_of_char(Self) -> (UInt) -> Array[UInt]
 pub impl Show for SfntOps

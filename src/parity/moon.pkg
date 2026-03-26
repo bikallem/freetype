@@ -4,3 +4,5 @@ import {
   "bikallem/freetype/fixed",
   "moonbitlang/x/fs" @fs,
 } for "wbtest"
+
+warnings = "-20"

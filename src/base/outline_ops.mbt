@@ -161,7 +161,7 @@ pub fn outline_decompose(
     (funcs.move_to)(start_pt)
     let mut i = if start == last { first } else { start + 1 }
     let mut done = false
-    while not(done) {
+    while !done {
       let pt = apply(outline.points()[i])
       match @types.CurveTag::from_byte(outline.tags()[i]) {
         On => (funcs.line_to)(pt)

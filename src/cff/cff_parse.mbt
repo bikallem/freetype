@@ -56,7 +56,7 @@ fn parse_dict_real_operand(data : Bytes, pos : Int) -> (Double, Int) {
   let buf = StringBuilder::new()
   let mut p = pos + 1
   let mut done = false
-  while p < data.length() && not(done) {
+  while p < data.length() && !done {
     let nibble_byte = data[p].to_int()
     for nibble in [nibble_byte >> 4, nibble_byte & 0x0F] {
       match nibble {
@@ -86,7 +86,7 @@ fn parse_dict_real_operand(data : Bytes, pos : Int) -> (Double, Int) {
     text == "E-" {
     0.0
   } else {
-    @strconv.parse_double(text) catch {
+    @string.parse_double(text) catch {
       _ => 0.0
     }
   }

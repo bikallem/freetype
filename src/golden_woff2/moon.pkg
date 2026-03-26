@@ -4,6 +4,8 @@ import {
   "moonbitlang/x/fs" @fs,
 }
 
+warnings = "-20"
+
 options(
   "is-main": true,
 )

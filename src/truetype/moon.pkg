@@ -8,4 +8,4 @@ import {
   "bikallem/blit" @blit,
 }
 
-warnings = "-15"
+warnings = "-15-20"

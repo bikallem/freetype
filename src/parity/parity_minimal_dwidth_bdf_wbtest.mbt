@@ -8,12 +8,18 @@ fn load_generated_minimal_dwidth_bdf() -> Bytes {
 
 ///|
 test "parity/minimal_dwidth.bdf: format" {
-  inspect(@base.detect_format(load_generated_minimal_dwidth_bdf()), content="Bdf")
+  inspect(
+    @base.detect_format(load_generated_minimal_dwidth_bdf()),
+    content="Bdf",
+  )
 }
 
 ///|
 test "parity/minimal_dwidth.bdf: loads" {
-  inspect((try? @freetype.from_bytes(load_generated_minimal_dwidth_bdf())) is Ok(_), content="true")
+  inspect(
+    (try? @freetype.from_bytes(load_generated_minimal_dwidth_bdf())) is Ok(_),
+    content="true",
+  )
 }
 
 ///|
@@ -48,4 +54,3 @@ test "parity/minimal_dwidth.bdf: charmap entries" {
   inspect(@freetype.get_char_index(f, 32U), content="1")
   inspect(@freetype.get_char_index(f, 65U), content="2")
 }
-

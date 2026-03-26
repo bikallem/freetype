@@ -198,7 +198,7 @@ pub fn PcfFont::property_string(self : PcfFont, name : String) -> String? {
 ///|
 pub fn PcfFont::property_int(self : PcfFont, name : String) -> Int? {
   for _, property in self.properties {
-    if property.name == name && not(property.is_string) {
+    if property.name == name && !property.is_string {
       return Some(property.int_value)
     }
   }
@@ -274,7 +274,7 @@ pub fn PcfFont::bitmap_for_glyph(self : PcfFont, glyph_index : Int) -> Bytes {
       let byte_order_is_msb = (format & 4U) != 0U
       let bit_order_is_msb = (format & 8U) != 0U
       let scan_unit = 1 << ((format >> 4) & 3U).reinterpret_as_int()
-      if not(need_bit_invert) && byte_order_is_msb == bit_order_is_msb {
+      if !need_bit_invert && byte_order_is_msb == bit_order_is_msb {
         raw
       } else {
         let transformed = FixedArray::make(raw.length(), b'\x00')

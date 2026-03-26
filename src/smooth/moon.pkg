@@ -1,6 +1,6 @@
 import {
-  "bikallem/freetype/fixed",
-  "bikallem/freetype/psaux",
+  "bikallem/freetype/error",
+  "bikallem/freetype/base",
   "bikallem/freetype/types",
 }
 

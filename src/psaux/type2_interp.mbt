@@ -74,7 +74,7 @@ fn pop_first_arg(interp : PsInterp) -> Int64 {
 /// Consume the optional Type 2 width operand from the first eligible operator.
 /// When present, the charstring stores `width - nominalWidthX`.
 fn consume_width(interp : PsInterp, has_width : Bool) -> Unit {
-  if not(interp.width_set) {
+  if !interp.width_set {
     if has_width {
       interp.width = interp.nominal_width + pop_first_arg(interp)
     }
@@ -123,7 +123,7 @@ fn do_flex(
   vals[0] = interp.current_x
   vals[1] = interp.current_y
   let mut idx = 0
-  let is_hflex = not(read_from_stack[9])
+  let is_hflex = !read_from_stack[9]
   let top = if is_hflex { 9 } else { 10 }
   for i in 0..<top {
     vals[i + 2] = vals[i]
@@ -332,7 +332,7 @@ fn exec_type2_op(
         } else {
           interp.line_to(interp.current_x, interp.current_y + d)
         }
-        horizontal = not(horizontal)
+        horizontal = !horizontal
       }
       interp.stack = []
       ip
@@ -348,7 +348,7 @@ fn exec_type2_op(
         } else {
           interp.line_to(interp.current_x, interp.current_y + d)
         }
-        horizontal = not(horizontal)
+        horizontal = !horizontal
       }
       interp.stack = []
       ip

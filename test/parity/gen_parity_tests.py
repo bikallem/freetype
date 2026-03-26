@@ -80,6 +80,12 @@ def representative_charmap_entries(entries, limit=50):
     return selected
 
 
+def hex_bytes(text):
+    if not text:
+        return []
+    return list(bytes.fromhex(text))
+
+
 FMT = {".ttf": "TrueType", ".otf": "CffOpenType", ".ttc": "TrueTypeCollection",
        ".woff": "Woff1", ".woff2": "Woff2", ".pfb": "Type1Pfb", ".bdf": "Bdf",
        ".pcf": "Pcf", ".cff": "CffStandalone"}
@@ -131,6 +137,7 @@ def gen_font_tests(ff, golden):
     meta = golden["metadata"]
     charmaps = golden["charmaps"]
     glyphs = golden["glyphs"]
+    rendered_glyphs = golden.get("rendered_glyphs", [])
     kerning = golden["kerning"]
     variations = golden.get("variations", [])
     ext = os.path.splitext(ff)[1].lower()
@@ -270,6 +277,37 @@ def gen_font_tests(ff, golden):
                   f"  guard r2 is Ok(_) else {{ return }}",
                   f'  inspect(f.glyph().metrics().hori_advance(), content="{m["horiAdvance"]}")',
                   "}", ""]
+            tc += 1
+
+    # T9b: rendered bitmap parity
+    if rendered_glyphs and should_emit_render_tests(ff):
+        for g in rendered_glyphs[:4]:
+            bitmap = g["bitmap"]
+            expected = hex_bytes(bitmap.get("buffer_hex", ""))
+            render_load_flags = g.get("load_flags", "DEFAULT")
+            load_flag_expr = {
+                "NO_HINTING": "@base.LOAD_NO_HINTING",
+                "DEFAULT": "0",
+            }.get(render_load_flags, "0")
+            L += [f"///|",
+                  f'test "parity/{ff}: rendered glyph {g["glyph_index"]} char {g["charcode"]}" {{',
+                  f"  let f = @freetype.from_bytes({loader_fn}())",
+                  f"  try! @freetype.set_pixel_sizes(f, 0U, {g['size_ppem']}U)",
+                  f"  let gid = @freetype.get_char_index(f, {g['charcode']}U)",
+                  f'  inspect(gid, content="{g["glyph_index"]}")',
+                  f"  try! @freetype.load_glyph(f, gid, load_flags={load_flag_expr})",
+                  f"  try! @freetype.render_glyph(f)",
+                  f'  inspect(f.glyph().format(), content="Bitmap")',
+                  f'  inspect(f.glyph().bitmap().width(), content="{bitmap["width"]}")',
+                  f'  inspect(f.glyph().bitmap().rows(), content="{bitmap["rows"]}")',
+                  f'  inspect(f.glyph().bitmap().pitch(), content="{bitmap["pitch"]}")',
+                  f'  inspect(f.glyph().bitmap().num_grays(), content="{bitmap["num_grays"]}")',
+                  f'  inspect(f.glyph().bitmap_left(), content="{bitmap["left"]}")',
+                  f'  inspect(f.glyph().bitmap_top(), content="{bitmap["top"]}")',
+                  f'  inspect(f.glyph().bitmap().buffer().length(), content="{len(expected)}")']
+            for i, byte in enumerate(expected):
+                L += [f'  inspect(f.glyph().bitmap().buffer()[{i}].to_int(), content="{byte}")']
+            L += ["}", ""]
             tc += 1
 
     # T10: multi-face collections
@@ -447,6 +485,24 @@ def gen_font_tests(ff, golden):
             tc += 1
 
     return L, tc
+
+
+def should_emit_render_tests(ff):
+    name = os.path.basename(ff)
+    return name in {
+        "DejaVuSans.ttc",
+        "DejaVuSans.ttf",
+        "DejaVuSans.woff",
+        "DejaVuSans.woff2",
+        "NimbusSans-Regular.pfb",
+        "Roboto[wdth,wght].ttf",
+        "minimal.woff2",
+        "minimal_collection.woff2",
+        "minimal_hmtx.woff2",
+        "minimal_standalone.cff",
+        "mvar.ttf",
+        "uvs.ttf",
+    }
 
 
 def main():

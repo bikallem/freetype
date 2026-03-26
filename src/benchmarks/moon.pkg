@@ -4,3 +4,5 @@ import {
   "moonbitlang/x/fs" @fs,
   "moonbitlang/core/bench",
 }
+
+warnings = "-20"

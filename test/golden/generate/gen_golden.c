@@ -57,6 +57,9 @@ static const FT_ULong test_charcodes[] = {
 static const FT_ULong variation_test_charcodes[] = { 'A', 'a' };
 #define NUM_VARIATION_TEST_CHARS (sizeof(variation_test_charcodes) / sizeof(variation_test_charcodes[0]))
 
+static const FT_ULong render_test_charcodes[] = { ' ', 'A', 'a', 0x4E00 };
+#define NUM_RENDER_TEST_CHARS (sizeof(render_test_charcodes) / sizeof(render_test_charcodes[0]))
+
 static void dump_face_metadata(FILE *fp, FT_Face face) {
     fprintf(fp, "  \"metadata\": {\n");
     fprintf(fp, "    \"family_name\": \"%s\",\n", face->family_name ? face->family_name : "");
@@ -200,6 +203,74 @@ static void dump_glyphs(FILE *fp, FT_Face face) {
     fprintf(fp, "\n  ]");
 }
 
+static void dump_hex_bytes(FILE *fp, const unsigned char *data, size_t length) {
+    fprintf(fp, "\"");
+    for (size_t i = 0; i < length; i++) {
+        fprintf(fp, "%02x", data[i]);
+    }
+    fprintf(fp, "\"");
+}
+
+static void dump_one_rendered_glyph(
+    FILE *fp,
+    FT_Face face,
+    FT_ULong charcode,
+    int size_ppem,
+    int *first_glyph
+) {
+    FT_Set_Pixel_Sizes(face, 0, size_ppem);
+
+    FT_UInt gindex = FT_Get_Char_Index(face, charcode);
+    if (gindex == 0) return;
+
+    FT_Error err = FT_Load_Glyph(face, gindex, FT_LOAD_NO_HINTING);
+    if (err) return;
+    err = FT_Render_Glyph(face->glyph, FT_RENDER_MODE_NORMAL);
+    if (err) return;
+    if (face->glyph->format != FT_GLYPH_FORMAT_BITMAP) return;
+
+    if (!*first_glyph) fprintf(fp, ",\n");
+    *first_glyph = 0;
+
+    FT_Bitmap *bitmap = &face->glyph->bitmap;
+    size_t pitch = (size_t)(bitmap->pitch < 0 ? -bitmap->pitch : bitmap->pitch);
+    size_t buffer_len = (size_t)bitmap->rows * pitch;
+
+    fprintf(fp, "    {\n");
+    fprintf(fp, "      \"glyph_index\": %u,\n", gindex);
+    fprintf(fp, "      \"charcode\": %lu,\n", charcode);
+    fprintf(fp, "      \"size_ppem\": %d,\n", size_ppem);
+    fprintf(fp, "      \"load_flags\": \"NO_HINTING\",\n");
+    fprintf(fp, "      \"render_mode\": \"NORMAL\",\n");
+    fprintf(fp, "      \"bitmap\": {\n");
+    fprintf(fp, "        \"width\": %u,\n", bitmap->width);
+    fprintf(fp, "        \"rows\": %u,\n", bitmap->rows);
+    fprintf(fp, "        \"pitch\": %d,\n", bitmap->pitch);
+    fprintf(fp, "        \"pixel_mode\": %u,\n", bitmap->pixel_mode);
+    fprintf(fp, "        \"num_grays\": %u,\n", bitmap->num_grays);
+    fprintf(fp, "        \"left\": %d,\n", face->glyph->bitmap_left);
+    fprintf(fp, "        \"top\": %d,\n", face->glyph->bitmap_top);
+    fprintf(fp, "        \"buffer_hex\": ");
+    dump_hex_bytes(fp, bitmap->buffer, buffer_len);
+    fprintf(fp, "\n");
+    fprintf(fp, "      }\n");
+    fprintf(fp, "    }");
+}
+
+static void dump_rendered_glyphs(FILE *fp, FT_Face face) {
+    fprintf(fp, "  \"rendered_glyphs\": [\n");
+    if (!(face->face_flags & FT_FACE_FLAG_SCALABLE)) {
+        fprintf(fp, "  ]");
+        return;
+    }
+
+    int first_glyph = 1;
+    for (unsigned c = 0; c < NUM_RENDER_TEST_CHARS; c++) {
+        dump_one_rendered_glyph(fp, face, render_test_charcodes[c], 16, &first_glyph);
+    }
+    fprintf(fp, "\n  ]");
+}
+
 static void dump_kerning(FILE *fp, FT_Face face) {
     fprintf(fp, "  \"kerning\": [");
     if (!FT_HAS_KERNING(face)) {
@@ -332,6 +403,8 @@ static void process_font(FT_Library library, const char *font_path, const char *
     dump_charmaps(fp, face);
     fprintf(fp, ",\n");
     dump_glyphs(fp, face);
+    fprintf(fp, ",\n");
+    dump_rendered_glyphs(fp, face);
     fprintf(fp, ",\n");
     dump_kerning(fp, face);
     fprintf(fp, ",\n");

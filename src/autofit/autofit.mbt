@@ -452,7 +452,7 @@ pub fn fit_edges(
   }
   // Fit unlinked (non-stem) edges: round to nearest pixel
   for _, edge in edges {
-    if edge.linked_edge < 0 && not(edge.blue_edge) {
+    if edge.linked_edge < 0 && !edge.blue_edge {
       let scaled = @fixed.mul_fix(scale, @fixed.Fixed::from_raw(edge.position)).val()
       edge.fitted_position = (scaled + 32L) & -64L
     }

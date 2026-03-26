@@ -280,7 +280,7 @@ fn interpolate_coord(
       below_cur = ecur
       found_below = true
     }
-    if eorg >= org_coord && not(found_above) {
+    if eorg >= org_coord && !found_above {
       above_org = eorg
       above_cur = ecur
       found_above = true

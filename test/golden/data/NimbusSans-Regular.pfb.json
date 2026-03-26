@@ -38030,6 +38030,59 @@
       }
     }
   ],
+  "rendered_glyphs": [
+    {
+      "glyph_index": 381,
+      "charcode": 32,
+      "size_ppem": 16,
+      "load_flags": "NO_HINTING",
+      "render_mode": "NORMAL",
+      "bitmap": {
+        "width": 0,
+        "rows": 0,
+        "pitch": 0,
+        "pixel_mode": 2,
+        "num_grays": 256,
+        "left": 0,
+        "top": 0,
+        "buffer_hex": ""
+      }
+    },
+    {
+      "glyph_index": 854,
+      "charcode": 65,
+      "size_ppem": 16,
+      "load_flags": "NO_HINTING",
+      "render_mode": "NORMAL",
+      "bitmap": {
+        "width": 11,
+        "rows": 12,
+        "pitch": 11,
+        "pixel_mode": 2,
+        "num_grays": 256,
+        "left": 0,
+        "top": 12,
+        "buffer_hex": "0000000072a74f0000000000000008f1ffc30000000000000055ff9bfe1e000000000000b1ce1bfe76000000000012fa7100c2d0000000000068fc19006bff2b00000000c4b8000018fd8400000020fedfbfbfbff7de0000007bfd837f7f7fabff380000d7bc0000000017fc920032ff620000000000bce9038ef810000000000064ff46"
+      }
+    },
+    {
+      "glyph_index": 113,
+      "charcode": 97,
+      "size_ppem": 16,
+      "load_flags": "NO_HINTING",
+      "render_mode": "NORMAL",
+      "bitmap": {
+        "width": 9,
+        "rows": 10,
+        "pitch": 9,
+        "pixel_mode": 2,
+        "num_grays": 256,
+        "left": 0,
+        "top": 9,
+        "buffer_hex": "0000337a977e270000006afcd4ade3f8310000ddae00000dec800000160900000de78b00000975aed1f6fa8b0003cedb724115c78b0038ff28000000d28b0036ff60000273ff930001aeffe0eeaaa3f76f0000385428000b4d26"
+      }
+    }
+  ],
   "kerning": [],
   "variations": []
 }

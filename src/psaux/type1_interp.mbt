@@ -390,7 +390,7 @@ fn exec_type1_op2(
         accent_name,
       )
       state.in_seac = false
-      if not(interp.width_set) {
+      if !interp.width_set {
         interp.width = base_width
         interp.width_set = true
       }

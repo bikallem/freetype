@@ -26,6 +26,8 @@ pub fn get_variants_of_char(@base.FaceRec, UInt) -> Array[UInt]
 
 pub fn load_glyph(@base.FaceRec, UInt, load_flags? : Int) -> Unit raise @error.FTError
 
+pub fn render_glyph(@base.FaceRec, mode? : RenderMode) -> Unit raise @error.FTError
+
 pub fn set_pixel_sizes(@base.FaceRec, UInt, UInt) -> Unit raise @error.FTError
 
 pub fn set_var_design_coordinates(@base.FaceRec, Array[(@fixed.Fixed, UInt)]) -> Unit raise @error.FTError
@@ -33,6 +35,13 @@ pub fn set_var_design_coordinates(@base.FaceRec, Array[(@fixed.Fixed, UInt)]) ->
 // Errors
 
 // Types and methods
+pub(all) enum RenderMode {
+  Normal
+  Light
+  Mono
+  Lcd
+  LcdV
+} derive(Eq, Show)
 
 // Type aliases
 

@@ -9,3 +9,5 @@ import {
   "bikallem/compress/brotli" @brotli,
   "bikallem/blit" @blit,
 }
+
+warnings = "-20"

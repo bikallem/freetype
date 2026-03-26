@@ -20,6 +20,7 @@ Pure MoonBit port of the [FreeType](https://freetype.org/) font library.
 - Font loading from `Bytes` (in-memory, no file I/O)
 - Character-to-glyph mapping (cmap formats 0, 2, 4, 6, 8, 10, 12, 13)
 - Glyph outline loading (TrueType simple/composite, CFF charstrings)
+- Grayscale glyph rendering (`render_glyph`, `LOAD_RENDER`, smooth rasterizer)
 - Pixel size scaling with proper 16.16 fixed-point math
 - Kerning pair lookup
 - TrueType bytecode hinting (~160 opcodes: point movement, zones, projection vectors, rounding, deltas)
@@ -58,7 +59,7 @@ The following FreeType subsystems are **excluded** from this port:
 
 | Subsystem | Reason |
 |-----------|--------|
-| **Rendering/rasterization** (`src/smooth/`, `src/raster/`, `src/sdf/`) | Out of scope — this library produces outlines, not pixels |
+| **Rendering/rasterization** | Grayscale `render_glyph` / `LOAD_RENDER` is implemented via `src/smooth/`; monochrome, LCD, and SDF rasterizers are not ported |
 | **File I/O** (`ftsystem.c` file operations) | Accepts `Bytes` instead of file paths; no I/O or OS dependency |
 | **SVG rendering** | Requires external SVG renderer |
 | **FT_Library global state** | Eliminated — API is stateless, no initialization needed |
@@ -104,6 +105,21 @@ println(outline.points()[0].x())  // first point x coordinate
 @freetype.set_pixel_sizes(face, 0U, 16U)  // 16 ppem
 @freetype.load_glyph(face, glyph_index)
 println(face.glyph().metrics().hori_advance())  // advance width in 26.6
+```
+
+### Render grayscale bitmaps
+
+```moonbit
+@freetype.set_pixel_sizes(face, 0U, 16U)
+@freetype.load_glyph(face, glyph_index, load_flags=@base.LOAD_RENDER)
+println(face.glyph().bitmap().width())
+println(face.glyph().bitmap().rows())
+
+// Or render after a separate load_glyph call.
+@freetype.load_glyph(face, glyph_index, load_flags=@base.LOAD_NO_HINTING)
+@freetype.render_glyph(face)
+println(face.glyph().bitmap_left())
+println(face.glyph().bitmap_top())
 ```
 
 ### Kerning

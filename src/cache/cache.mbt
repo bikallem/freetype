@@ -80,10 +80,9 @@ pub fn GlyphCache::insert(
 ) -> Unit {
   let key = make_glyph_key(face_id, glyph_index)
   // Evict LRU entry if at capacity
-  if self.entries.length() >= self.max_entries &&
-    not(self.entries.contains(key)) {
+  if self.entries.length() >= self.max_entries && !self.entries.contains(key) {
     let mut oldest_key : UInt64 = 0UL
-    let mut oldest_time = @int.max_value
+    let mut oldest_time = @int.MAX_VALUE
     self.entries.each(fn(k, entry) {
       if entry.access_time < oldest_time {
         oldest_time = entry.access_time
@@ -124,13 +123,12 @@ pub fn CmapCache::insert(
   glyph_index : UInt,
 ) -> Unit {
   let key = make_glyph_key(face_id, charcode)
-  if self.entries.length() >= self.max_entries &&
-    not(self.entries.contains(key)) {
+  if self.entries.length() >= self.max_entries && !self.entries.contains(key) {
     // Evict first entry found
     let mut evict_key : UInt64 = 0UL
     let mut found = false
     self.entries.each(fn(k, _v) {
-      if not(found) {
+      if !found {
         evict_key = k
         found = true
       }

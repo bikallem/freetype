@@ -214,7 +214,7 @@ fn insert_unicode_mapping(
         Some(flag) => flag
         None => false
       }
-      if existing_is_variant && not(is_variant) {
+      if existing_is_variant && !is_variant {
         unicode_cmap[charcode] = glyph_index
         unicode_is_variant[charcode] = false
       }

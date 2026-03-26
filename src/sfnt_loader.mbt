@@ -354,6 +354,7 @@ fn load_sfnt(
     @base.GlyphSlotData,
     @types.Outline,
     Bytes,
+    Array[@types.Vector],
   ) raise @error.FTError = fn(glyph_index, load_flags) raise @error.FTError {
     let no_hinting = (load_flags & @base.LOAD_NO_HINTING) != 0
     let hmtx = ensure_hmtx()
@@ -449,7 +450,7 @@ fn load_sfnt(
       metrics_vert_bearing_y=vert_top_bearing,
       metrics_vert_advance=vert_advance,
     )
-    (slot_data, outline, tt_instructions)
+    (slot_data, outline, tt_instructions, tt_phantoms)
   }
   let apply_hints_fn : (@types.Outline, @fixed.Fixed) -> Bool = fn(
     outline,
@@ -483,13 +484,14 @@ fn load_sfnt(
       None => ()
     }
   }
-  let tt_hint_fn : (@types.Outline, Bytes, @fixed.Fixed, @fixed.Fixed, UInt) -> Bool = fn(
-    outline,
-    instructions,
-    x_scale,
-    y_scale,
-    ppem,
-  ) {
+  let tt_hint_fn : (
+    @types.Outline,
+    Bytes,
+    Array[@types.Vector],
+    @fixed.Fixed,
+    @fixed.Fixed,
+    UInt,
+  ) -> Bool = fn(outline, instructions, phantoms, x_scale, y_scale, ppem) {
     let tt_result = try? ensure_tt()
     let tt_data = match tt_result {
       Ok(d) => d
@@ -616,29 +618,66 @@ fn load_sfnt(
       let o_tags = outline.tags()
       let xs = x_scale.val()
       let ys = y_scale.val()
-      for i in 0..<n_points {
-        let p = o_pts.unsafe_get(i)
-        // Inline mul_fix: (a * b + 0x8000 + (a*b >> 63)) >> 16
-        let abx = xs * p.x()
+      fn scale_point(point : @types.Vector) -> @types.Vector {
+        let abx = xs * point.x()
         let sx = (abx + 0x8000L + (abx >> 63)) >> 16
-        let aby = ys * p.y()
+        let aby = ys * point.y()
         let sy = (aby + 0x8000L + (aby >> 63)) >> 16
-        let v = @types.Vector::new(sx, sy)
+        @types.Vector::new(sx, sy)
+      }
+      for i in 0..<n_points {
+        let v = scale_point(o_pts.unsafe_get(i))
         z1_org.unsafe_set(i, v)
         z1_cur.unsafe_set(i, v)
         z1_tags.unsafe_set(i, o_tags.unsafe_get(i))
       }
+      for i in 0..<4 {
+        let v = if i < phantoms.length() {
+          scale_point(phantoms[i])
+        } else {
+          zero_vec
+        }
+        z1_org.unsafe_set(n_points + i, v)
+        z1_cur.unsafe_set(n_points + i, v)
+        z1_tags.unsafe_set(n_points + i, @types.CURVE_TAG_ON)
+      }
+      z1_cur[n_points] = @types.Vector::new(
+        @fixed.F26Dot6::from_raw(z1_cur[n_points].x()).round().val(),
+        z1_cur[n_points].y(),
+      )
+      z1_cur[n_points + 1] = @types.Vector::new(
+        @fixed.F26Dot6::from_raw(z1_cur[n_points + 1].x()).round().val(),
+        z1_cur[n_points + 1].y(),
+      )
+      z1_cur[n_points + 2] = @types.Vector::new(
+        z1_cur[n_points + 2].x(),
+        @fixed.F26Dot6::from_raw(z1_cur[n_points + 2].y()).round().val(),
+      )
+      z1_cur[n_points + 3] = @types.Vector::new(
+        z1_cur[n_points + 3].x(),
+        @fixed.F26Dot6::from_raw(z1_cur[n_points + 3].y()).round().val(),
+      )
       // Run glyph instructions only (fpgm+prep already cached)
       ctx.set_gs(@truetype.GraphicsState::default())
       let glyph_result = try? ctx.execute(instructions)
       if glyph_result is Err(_) {
         return false
       }
+      let hinted_shift_x = z1_cur[n_points].x()
       for i in 0..<n_points {
         o_pts.unsafe_set(
           i,
-          @types.Vector::new(z1_cur.unsafe_get(i).x(), z1_cur.unsafe_get(i).y()),
+          @types.Vector::new(
+            z1_cur.unsafe_get(i).x() - hinted_shift_x,
+            z1_cur.unsafe_get(i).y(),
+          ),
         )
+      }
+      if phantoms.length() >= 4 {
+        phantoms[0] = z1_cur[n_points]
+        phantoms[1] = z1_cur[n_points + 1]
+        phantoms[2] = z1_cur[n_points + 2]
+        phantoms[3] = z1_cur[n_points + 3]
       }
       true
     } else {
@@ -649,7 +688,7 @@ fn load_sfnt(
   let kern_ref : Ref[@sfnt.KernTable?] = Ref::new(None)
   let kern_parsed : Ref[Bool] = Ref::new(false)
   let kern_fn : (UInt, UInt) -> Int = fn(left, right) {
-    if not(kern_parsed.val) {
+    if !kern_parsed.val {
       kern_parsed.val = true
       let kern_result = match
         sfnt_data.table_dir().find_table(@types.TAG_KERN) {
@@ -713,7 +752,7 @@ fn load_sfnt(
   if has_cff {
     match ensure_cff() {
       Some(cff) =>
-        if not(cff.top_dict().is_cid()) {
+        if !cff.top_dict().is_cid() {
           synthetic_adobe_charmap_index.val = face.charmaps().length()
           face
           .charmaps()

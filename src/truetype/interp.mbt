@@ -1023,7 +1023,7 @@ fn InterpContext::op_call(self : InterpContext) -> Unit {
       // Switch to the code array where this function was defined
       self.code = def.code
       self.ip = def.start
-      while self.ip < def.end_ && not(self.error) {
+      while self.ip < def.end_ && !self.error {
         let op = self.code[self.ip].to_int()
         self.ip += 1
         self.exec_opcode(op)

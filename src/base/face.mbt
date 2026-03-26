@@ -182,10 +182,22 @@ struct SfntOps {
   variant_selectors : () -> Array[UInt]
   variants_of_char : (UInt) -> Array[UInt]
   chars_of_variant : (UInt) -> Array[UInt]
-  load_glyph : (UInt, Int) -> (GlyphSlotData, @types.Outline, Bytes) raise @error.FTError // (glyph_index, load_flags) → (slot data, outline, tt instructions)
+  load_glyph : (UInt, Int) -> (
+    GlyphSlotData,
+    @types.Outline,
+    Bytes,
+    Array[@types.Vector],
+  ) raise @error.FTError // (glyph_index, load_flags) → (slot data, outline, tt instructions, tt phantoms)
   get_kerning : (UInt, UInt) -> Int // (left, right) → kern value
   apply_hints : (@types.Outline, @fixed.Fixed) -> Bool // (outline, y_scale) → true if PS hints were applied
-  tt_hint : (@types.Outline, Bytes, @fixed.Fixed, @fixed.Fixed, UInt) -> Bool // (outline, instructions, x_scale, y_scale, ppem) → true if TT hints were applied
+  tt_hint : (
+    @types.Outline,
+    Bytes,
+    Array[@types.Vector],
+    @fixed.Fixed,
+    @fixed.Fixed,
+    UInt,
+  ) -> Bool // (outline, instructions, tt phantoms, x_scale, y_scale, ppem) → true if TT hints were applied
   num_glyphs : UInt
   raw_data : Bytes // font file bytes (for re-parsing if needed)
 }
@@ -198,10 +210,22 @@ pub fn SfntOps::new(
   variant_selectors~ : () -> Array[UInt],
   variants_of_char~ : (UInt) -> Array[UInt],
   chars_of_variant~ : (UInt) -> Array[UInt],
-  load_glyph~ : (UInt, Int) -> (GlyphSlotData, @types.Outline, Bytes) raise @error.FTError,
+  load_glyph~ : (UInt, Int) -> (
+    GlyphSlotData,
+    @types.Outline,
+    Bytes,
+    Array[@types.Vector],
+  ) raise @error.FTError,
   get_kerning~ : (UInt, UInt) -> Int,
   apply_hints~ : (@types.Outline, @fixed.Fixed) -> Bool,
-  tt_hint~ : (@types.Outline, Bytes, @fixed.Fixed, @fixed.Fixed, UInt) -> Bool,
+  tt_hint~ : (
+    @types.Outline,
+    Bytes,
+    Array[@types.Vector],
+    @fixed.Fixed,
+    @fixed.Fixed,
+    UInt,
+  ) -> Bool,
   num_glyphs~ : UInt,
   raw_data~ : Bytes,
 ) -> SfntOps {
@@ -862,7 +886,7 @@ pub fn SfntOps::char_index(self : SfntOps) -> (UInt) -> UInt {
 ///|
 pub fn SfntOps::load_glyph(
   self : SfntOps,
-) -> (UInt, Int) -> (GlyphSlotData, @types.Outline, Bytes) raise @error.FTError {
+) -> (UInt, Int) -> (GlyphSlotData, @types.Outline, Bytes, Array[@types.Vector]) raise @error.FTError {
   self.load_glyph
 }
 
@@ -906,7 +930,14 @@ pub fn SfntOps::apply_hints(
 ///|
 pub fn SfntOps::tt_hint(
   self : SfntOps,
-) -> (@types.Outline, Bytes, @fixed.Fixed, @fixed.Fixed, UInt) -> Bool {
+) -> (
+  @types.Outline,
+  Bytes,
+  Array[@types.Vector],
+  @fixed.Fixed,
+  @fixed.Fixed,
+  UInt,
+) -> Bool {
   self.tt_hint
 }
 

@@ -200,7 +200,7 @@ fn set_slot_linear_advances(
   } else {
     face.height().to_int64()
   }
-  if not(face.is_scalable()) || (load_flags & @base.LOAD_LINEAR_DESIGN) != 0 {
+  if !face.is_scalable() || (load_flags & @base.LOAD_LINEAR_DESIGN) != 0 {
     face
     .glyph()
     .set_linear_hori_advance(@fixed.Fixed::from_raw(raw_hori_advance))
@@ -247,6 +247,47 @@ fn set_slot_advance_vector(face : @base.FaceRec, load_flags : Int) -> Unit {
 }
 
 ///|
+fn clear_slot_bitmap(slot : @base.GlyphSlot) -> Unit {
+  slot.set_bitmap(@types.Bitmap::new())
+  slot.set_bitmap_left(0)
+  slot.set_bitmap_top(0)
+}
+
+///|
+fn render_slot_bitmap(
+  face : @base.FaceRec,
+  mode : RenderMode,
+) -> Unit raise @error.FTError {
+  let slot = face.glyph()
+  match slot.format() {
+    Bitmap =>
+      match mode {
+        Normal | Light => ()
+        Mono | Lcd | LcdV => raise @error.FTError::CannotRenderGlyph
+      }
+    Outline => {
+      let (bitmap, left, top) = match mode {
+        Normal | Light => @smooth.render_outline_normal(slot.outline())
+        Mono | Lcd | LcdV => raise @error.FTError::CannotRenderGlyph
+      }
+      slot.set_bitmap(bitmap)
+      slot.set_bitmap_left(left)
+      slot.set_bitmap_top(top)
+      slot.set_format(@types.GlyphFormat::Bitmap)
+    }
+    None | Composite | Plotter | Svg => raise @error.FTError::InvalidGlyphFormat
+  }
+}
+
+///|
+pub fn render_glyph(
+  face : @base.FaceRec,
+  mode? : RenderMode = Normal,
+) -> Unit raise @error.FTError {
+  render_slot_bitmap(face, mode)
+}
+
+///|
 fn load_bitmap_glyph(
   face : @base.FaceRec,
   glyph_index : UInt,
@@ -283,11 +324,12 @@ pub fn load_glyph(
     }
     _ => ()
   }
-  let (slot_data, outline, tt_instructions) = match face.driver_data() {
+  let (slot_data, outline, tt_instructions, tt_phantoms) = match
+    face.driver_data() {
     SfntDriver(ops) => ops.load_glyph()(glyph_index, load_flags)
     Type1Ops(ops) => {
       let (sd, ol) = ops.load_glyph()(glyph_index, load_flags)
-      (sd, ol, b"")
+      (sd, ol, b"", [])
     }
     Empty => raise @error.FTError::InvalidFaceHandle
     BitmapOps(_) => raise @error.FTError::InvalidFaceHandle
@@ -296,6 +338,7 @@ pub fn load_glyph(
   let no_scale = (load_flags & @base.LOAD_NO_SCALE) != 0
   let vertical_layout = (load_flags & @base.LOAD_VERTICAL_LAYOUT) != 0
   face.glyph().set_glyph_index(glyph_index)
+  clear_slot_bitmap(face.glyph())
   face.glyph().set_format(@types.GlyphFormat::Outline)
   face.glyph().set_outline(outline)
   if no_scale {
@@ -388,7 +431,7 @@ pub fn load_glyph(
       let no_hinting = (load_flags & @base.LOAD_NO_HINTING) != 0
       let force_autohint = (load_flags & @base.LOAD_FORCE_AUTOHINT) != 0
       let mut did_autohint = false
-      let did_hint = if not(no_hinting) && not(force_autohint) {
+      let did_hint = if !no_hinting && !force_autohint {
         match face.driver_data() {
           SfntDriver(ops) =>
             // Try TT bytecode hinting first (for TrueType glyphs with instructions)
@@ -396,6 +439,7 @@ pub fn load_glyph(
               ops.tt_hint()(
                 face.glyph().outline(),
                 tt_instructions,
+                tt_phantoms,
                 x_scale,
                 y_scale,
                 face.size().metrics().y_ppem(),
@@ -411,7 +455,7 @@ pub fn load_glyph(
         false
       }
       let mut use_outline_metrics = did_hint
-      if not(did_hint) {
+      if !did_hint {
         // Plain scaling: scale outline points
         for i in 0..<face.glyph().outline().n_points() {
           let p = face.glyph().outline().points().unsafe_get(i)
@@ -422,8 +466,8 @@ pub fn load_glyph(
         // Check if auto-hinting should be applied
         let has_native_hints = (face.face_flags() & @base.FACE_FLAG_HINTER) !=
           0L
-        let should_autohint = force_autohint || not(has_native_hints)
-        if should_autohint && not(no_hinting) {
+        let should_autohint = force_autohint || !has_native_hints
+        if should_autohint && !no_hinting {
           // Build script metrics for auto-hinting
           let metrics = @autofit.ScriptMetrics::new()
           metrics.set_scale(x_scale)
@@ -432,14 +476,14 @@ pub fn load_glyph(
           did_autohint = true
           use_outline_metrics = true
         }
-        if not(no_hinting) {
+        if !no_hinting {
           use_outline_metrics = true
         }
       }
       if use_outline_metrics {
         let bbox = @base.outline_get_bbox(face.glyph().outline())
         if vertical_layout &&
-          not(no_hinting) &&
+          !no_hinting &&
           slot_data.metrics_vert_advance() != 0L {
           face.glyph().metrics().set_width(bbox.x_max() - bbox.x_min())
           face.glyph().metrics().set_height(bbox.y_max() - bbox.y_min())
@@ -453,12 +497,12 @@ pub fn load_glyph(
           face.glyph().metrics().set_vert_bearing_y(scaled_vert_bearing_y)
           face.glyph().metrics().set_vert_advance(scaled_vert_advance)
           grid_fit_vertical_metrics(face.glyph())
-        } else if not(no_hinting) {
+        } else if !no_hinting {
           set_slot_metrics_from_hinted_bbox(face.glyph(), bbox)
         } else {
           set_slot_metrics_from_snapped_bbox(face.glyph(), bbox)
         }
-        if not(vertical_layout) {
+        if !vertical_layout {
           face
           .glyph()
           .metrics()
@@ -527,7 +571,7 @@ pub fn load_glyph(
           )
         }
         if face.glyph().outline().n_points() == 0 {
-          if not(vertical_layout) {
+          if !vertical_layout {
             face.glyph().metrics().set_hori_bearing_x(0L)
             face.glyph().metrics().set_hori_bearing_y(0L)
           }
@@ -542,6 +586,9 @@ pub fn load_glyph(
   }
   set_slot_linear_advances(face, slot_data, load_flags)
   set_slot_advance_vector(face, load_flags)
+  if (load_flags & @base.LOAD_RENDER) != 0 && !no_scale {
+    render_slot_bitmap(face, render_mode_from_load_flags(load_flags))
+  }
 }
 
 // ─── Public API: size management ─────────────────────────────────────
@@ -620,7 +667,7 @@ pub fn set_var_design_coordinates(
   coordinates : Array[(@fixed.Fixed, UInt)],
 ) -> Unit raise @error.FTError {
   // Face must be an SFNT with fvar data (multiple masters flag)
-  if not(face.has_multiple_masters()) {
+  if !face.has_multiple_masters() {
     raise @error.FTError::InvalidArgument
   }
   // Retrieve fvar axes from the raw font data
@@ -663,7 +710,7 @@ pub fn set_var_design_coordinates(
         break
       }
     }
-    if not(found) {
+    if !found {
       design_coords.push(axis.default_value())
     }
   }

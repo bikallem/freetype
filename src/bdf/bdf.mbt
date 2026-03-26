@@ -283,7 +283,7 @@ pub fn parse_bdf_header(data : Bytes) -> BdfFont raise @error.FTError {
       pos = pos + 1
     }
   }
-  if not(found_startfont) {
+  if !found_startfont {
     raise @error.FTError::MissingStartfontField
   }
   // --- Parse glyph blocks ---

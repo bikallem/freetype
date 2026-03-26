@@ -2,4 +2,4 @@ import {
   "bikallem/freetype/fixed",
 }
 
-warnings = "-15"
+warnings = "-15-20"

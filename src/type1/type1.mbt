@@ -469,7 +469,7 @@ fn parse_encoding(ascii_data : Bytes) -> Array[String] {
   let has_enc = bytes_find(ascii_data, len, pat_enc) >= 0
   let has_enc256 = bytes_find(ascii_data, len, pat_enc256) >= 0
   // Check for StandardEncoding
-  if has_std && has_enc && not(has_enc256) {
+  if has_std && has_enc && !has_enc256 {
     // Use standard encoding: map code -> SID -> glyph name
     for i in 0..<256 {
       let sid = @psnames.standard_encoding_sid(i.reinterpret_as_uint())
@@ -698,7 +698,7 @@ fn extract_charstrings(data : Bytes) -> (Map[String, Bytes], Array[String]) {
       found_digit = true
       pos += 1
     }
-    if not(found_digit) {
+    if !found_digit {
       // Not a charstring entry, skip line
       while pos < len && data[pos] != b'\n' && data[pos] != b'\r' {
         pos += 1
@@ -757,7 +757,7 @@ pub fn load_type1_glyph_full_data(
     Array[@psaux.StemHint],
     Array[@psaux.StemHint],
   ) raise @error.FTError = fn(component_name) raise @error.FTError {
-    if not(allow_seac) {
+    if !allow_seac {
       raise @error.FTError::SyntaxError
     }
     load_type1_glyph_full_data(font, component_name, allow_seac=false)
