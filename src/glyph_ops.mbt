@@ -32,6 +32,21 @@ fn set_slot_metrics_from_bbox(
 }
 
 ///|
+fn set_slot_metrics_from_snapped_bbox(
+  slot : @base.GlyphSlot,
+  bbox : @types.BBox,
+) -> Unit {
+  let x_min = @fixed.F26Dot6::from_raw(bbox.x_min()).floor().val()
+  let y_min = @fixed.F26Dot6::from_raw(bbox.y_min()).floor().val()
+  let x_max = @fixed.F26Dot6::from_raw(bbox.x_max()).ceil().val()
+  let y_max = @fixed.F26Dot6::from_raw(bbox.y_max()).ceil().val()
+  slot.metrics().set_width(x_max - x_min)
+  slot.metrics().set_height(y_max - y_min)
+  slot.metrics().set_hori_bearing_x(x_min)
+  slot.metrics().set_hori_bearing_y(y_max)
+}
+
+///|
 fn load_bitmap_glyph(
   face : @base.FaceRec,
   glyph_index : UInt,
@@ -179,10 +194,17 @@ pub fn load_glyph(
           @autofit.auto_hint_outline(face.glyph().outline(), metrics)
           use_outline_metrics = true
         }
+        if not(no_hinting) {
+          use_outline_metrics = true
+        }
       }
       if use_outline_metrics {
         let bbox = @base.outline_get_bbox(face.glyph().outline())
-        set_slot_metrics_from_bbox(face.glyph(), bbox)
+        if did_hint {
+          set_slot_metrics_from_bbox(face.glyph(), bbox)
+        } else {
+          set_slot_metrics_from_snapped_bbox(face.glyph(), bbox)
+        }
         face
         .glyph()
         .metrics()

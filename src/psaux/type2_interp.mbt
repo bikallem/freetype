@@ -123,9 +123,14 @@ fn exec_type2_code(
           (code[next_ip + 1].to_int() << 16) |
           (code[next_ip + 2].to_int() << 8) |
           code[next_ip + 3].to_int()
-        // CFF spec: this is a 16.16 fixed-point value
-        // For outline coords, we convert to integer by >> 16
-        interp.push(val.to_int64())
+        let signed_val = if val >= 0x80000000 {
+          val.to_int64() - 0x100000000L
+        } else {
+          val.to_int64()
+        }
+        // CFF operands use 16.16 fixed-point here; the interpreter keeps
+        // integer design units, so drop the fractional bits.
+        interp.push(signed_val >> 16)
         next_ip += 4
       }
       _ => ()

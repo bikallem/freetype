@@ -431,9 +431,17 @@ fn load_sfnt(
       ),
     ),
   )
-  // Add synthetic charmap for CFF fonts
+  // Add synthetic Adobe charmap for non-CID CFF fonts.
   if has_cff {
-    face.charmaps().push(@base.CharMapRec::new(@base.Encoding::Unicode, 7U, 0U))
+    match ensure_cff() {
+      Some(cff) =>
+        if not(cff.top_dict().is_cid()) {
+          face
+          .charmaps()
+          .push(@base.CharMapRec::new(@base.Encoding::Unicode, 7U, 0U))
+        }
+      None => ()
+    }
   }
   face
 }
