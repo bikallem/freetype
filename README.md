@@ -18,7 +18,7 @@ Pure MoonBit port of the [FreeType](https://freetype.org/) font library.
 ## Overview
 
 - Font loading from `Bytes` (in-memory, no file I/O)
-- Character-to-glyph mapping (cmap formats 0, 4, 6, 12)
+- Character-to-glyph mapping (cmap formats 0, 2, 4, 6, 8, 10, 12, 13)
 - Glyph outline loading (TrueType simple/composite, CFF charstrings)
 - Pixel size scaling with proper 16.16 fixed-point math
 - Kerning pair lookup
@@ -27,7 +27,7 @@ Pure MoonBit port of the [FreeType](https://freetype.org/) font library.
 - Auto-hinter (script-aware segment/edge/stem detection, pixel grid fitting)
 - PostScript Type 2 charstring interpreter (path operators, hints, subroutines, flex)
 - PostScript Type 1 charstring interpreter (hsbw, closepath, callothersubr/Flex, seac)
-- Font variations API (`set_var_design_coordinates`, fvar/avar parsing, axis normalization)
+- Font variations API (`set_var_design_coordinates`, `fvar`/`avar`/`gvar`/`HVAR`)
 - WOFF1 decompression (zlib via `bikallem/compress`)
 - WOFF2 decompression (Brotli via `bikallem/compress`) with glyf/loca and hmtx transform reconstruction, including collections
 - Standalone CFF font loading (bare CFF without SFNT container)
@@ -64,7 +64,7 @@ The following FreeType subsystems are **excluded** from this port:
 | **FT_Library global state** | Eliminated — API is stateless, no initialization needed |
 | **Memory allocator** (`FT_ALLOC`/`FT_FREE`/`FT_Memory`) | Eliminated — GC handles memory |
 | **FT_Generic** (user data hooks) | Omitted — users wrap `Face` in their own struct |
-| **Font variations (gvar)** | `fvar`/`avar` parsed, axis normalization works; `gvar` delta interpolation not yet implemented |
+| **CFF2 / non-TrueType variations** | TrueType/OpenType variation tables (`fvar`/`avar`/`gvar`/`HVAR`) are supported; CFF2 variation support is not ported |
 
 ## API
 

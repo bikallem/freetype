@@ -41,8 +41,10 @@ pub fn parse_cmap_header(
 /// Each cmap format implements this.
 pub(all) enum CmapLookup {
   Format0(CmapFormat0)
+  Format2(CmapFormat2)
   Format4(CmapFormat4)
   Format6(CmapFormat6)
+  Format8(CmapFormat8)
   Format10(CmapFormat10)
   Format12(CmapFormat12)
   Format13(CmapFormat13)
@@ -53,8 +55,10 @@ pub(all) enum CmapLookup {
 pub fn CmapLookup::char_index(self : CmapLookup, charcode : UInt) -> UInt {
   match self {
     Format0(t) => t.char_index(charcode)
+    Format2(t) => t.char_index(charcode)
     Format4(t) => t.char_index(charcode)
     Format6(t) => t.char_index(charcode)
+    Format8(t) => t.char_index(charcode)
     Format10(t) => t.char_index(charcode)
     Format12(t) => t.char_index(charcode)
     Format13(t) => t.char_index(charcode)
@@ -75,8 +79,13 @@ pub fn parse_cmap_subtable(
   let format = reader.read_u16_be()
   match format {
     0U => Format0(parse_cmap_format0(reader, abs_offset))
+    2U => Format2(parse_cmap_format2(reader, abs_offset))
     4U => Format4(parse_cmap_format4(reader, abs_offset))
     6U => Format6(parse_cmap_format6(reader, abs_offset))
+    8U => {
+      ignore(reader.read_u16_be())
+      Format8(parse_cmap_format8(reader, abs_offset))
+    }
     10U => {
       // Format 10 has a different header: format(u16), reserved(u16), length(u32), language(u32)
       // We already read format. Read reserved u16.
@@ -135,6 +144,124 @@ pub fn CmapFormat0::char_index(self : CmapFormat0, charcode : UInt) -> UInt {
     return 0U
   }
   self.glyph_ids.unsafe_get(charcode.reinterpret_as_int()).to_uint()
+}
+
+// ---------------------------------------------------------------------------
+// Format 2: High byte mapping through table
+// ---------------------------------------------------------------------------
+
+///|
+struct CmapFormat2SubHeader {
+  first_code : UInt
+  entry_count : UInt
+  id_delta : Int
+  glyph_array_index : Int
+} derive(Show)
+
+///|
+pub fn CmapFormat2SubHeader::new(
+  first_code~ : UInt,
+  entry_count~ : UInt,
+  id_delta~ : Int,
+  glyph_array_index~ : Int,
+) -> CmapFormat2SubHeader {
+  { first_code, entry_count, id_delta, glyph_array_index }
+}
+
+///|
+struct CmapFormat2 {
+  sub_header_keys : FixedArray[Int]
+  sub_headers : Array[CmapFormat2SubHeader]
+  glyph_ids : Array[UInt]
+} derive(Show)
+
+///|
+pub fn CmapFormat2::new(
+  sub_header_keys~ : FixedArray[Int],
+  sub_headers~ : Array[CmapFormat2SubHeader],
+  glyph_ids~ : Array[UInt],
+) -> CmapFormat2 {
+  { sub_header_keys, sub_headers, glyph_ids }
+}
+
+///|
+fn parse_cmap_format2(
+  reader : @stream.ByteReader,
+  abs_offset : Int,
+) -> CmapFormat2 raise @error.FTError {
+  reader.seek(abs_offset + 2)
+  let length = reader.read_u16_be().reinterpret_as_int()
+  let _language = reader.read_u16_be()
+  let sub_header_keys = FixedArray::make(256, 0)
+  let mut max_sub_header_index = 0
+  for i in 0..<256 {
+    let key = reader.read_u16_be().reinterpret_as_int()
+    let sub_header_index = key / 8
+    sub_header_keys[i] = sub_header_index
+    if sub_header_index > max_sub_header_index {
+      max_sub_header_index = sub_header_index
+    }
+  }
+  let sub_headers_start = reader.position()
+  let num_sub_headers = max_sub_header_index + 1
+  let glyph_array_start = sub_headers_start + num_sub_headers * 8
+  let sub_headers : Array[CmapFormat2SubHeader] = Array::new(
+    capacity=num_sub_headers,
+  )
+  for i in 0..<num_sub_headers {
+    let sub_header_offset = sub_headers_start + i * 8
+    reader.seek(sub_header_offset)
+    let first_code = reader.read_u16_be()
+    let entry_count = reader.read_u16_be()
+    let id_delta = reader.read_i16_be()
+    let id_range_offset = reader.read_u16_be().reinterpret_as_int()
+    let glyph_word_offset = sub_header_offset + 6 + id_range_offset
+    let glyph_array_index = (glyph_word_offset - glyph_array_start) / 2
+    sub_headers.push({ first_code, entry_count, id_delta, glyph_array_index })
+  }
+  let glyph_ids : Array[UInt] = []
+  let glyph_count = (abs_offset + length - glyph_array_start) / 2
+  if glyph_count < 0 {
+    raise @error.FTError::InvalidCharMapFormat
+  }
+  reader.seek(glyph_array_start)
+  for _ in 0..<glyph_count {
+    glyph_ids.push(reader.read_u16_be())
+  }
+  { sub_header_keys, sub_headers, glyph_ids }
+}
+
+///|
+pub fn CmapFormat2::char_index(self : CmapFormat2, charcode : UInt) -> UInt {
+  if charcode > 0xFFFFU {
+    return 0U
+  }
+  let high_byte = if charcode > 0xFFU {
+    ((charcode >> 8) & 0xFFU).reinterpret_as_int()
+  } else {
+    0
+  }
+  let low_byte = (charcode & 0xFFU).reinterpret_as_int()
+  let sub_header_index = self.sub_header_keys[high_byte]
+  if sub_header_index < 0 || sub_header_index >= self.sub_headers.length() {
+    return 0U
+  }
+  let sub = self.sub_headers.unsafe_get(sub_header_index)
+  let first_code = sub.first_code.reinterpret_as_int()
+  let entry_count = sub.entry_count.reinterpret_as_int()
+  if low_byte < first_code || low_byte >= first_code + entry_count {
+    return 0U
+  }
+  let glyph_index = sub.glyph_array_index + (low_byte - first_code)
+  if glyph_index < 0 || glyph_index >= self.glyph_ids.length() {
+    return 0U
+  }
+  let glyph_id = self.glyph_ids.unsafe_get(glyph_index)
+  if glyph_id == 0U {
+    return 0U
+  }
+  let adjusted = (glyph_id.reinterpret_as_int() + sub.id_delta) & 0xFFFF
+  adjusted.reinterpret_as_uint()
 }
 
 // ---------------------------------------------------------------------------
@@ -298,6 +425,51 @@ pub fn CmapFormat6::char_index(self : CmapFormat6, charcode : UInt) -> UInt {
   } else {
     0U
   }
+}
+
+// ---------------------------------------------------------------------------
+// Format 8: Mixed 16-bit and 32-bit coverage
+// ---------------------------------------------------------------------------
+
+///|
+struct CmapFormat8 {
+  groups : Array[CmapFormat12Group]
+} derive(Show)
+
+///|
+pub fn CmapFormat8::new(groups~ : Array[CmapFormat12Group]) -> CmapFormat8 {
+  { groups, }
+}
+
+///|
+fn parse_cmap_format8(
+  reader : @stream.ByteReader,
+  abs_offset : Int,
+) -> CmapFormat8 raise @error.FTError {
+  // format(2) and reserved(2) already read
+  let _length = reader.read_u32_be()
+  let _language = reader.read_u32_be()
+  // is32[8192] describes the original UTF-16 stream encoding. Lookups in this
+  // port are scalar-value based, so the mapping groups below are sufficient.
+  reader.seek(reader.position() + 8192)
+  let num_groups = reader.read_u32_be().reinterpret_as_int()
+  ignore(abs_offset)
+  let groups : Array[CmapFormat12Group] = Array::new(capacity=num_groups)
+  for _ in 0..<num_groups {
+    groups.push(
+      CmapFormat12Group::new(
+        start_char_code=reader.read_u32_be(),
+        end_char_code=reader.read_u32_be(),
+        start_glyph_id=reader.read_u32_be(),
+      ),
+    )
+  }
+  { groups, }
+}
+
+///|
+pub fn CmapFormat8::char_index(self : CmapFormat8, charcode : UInt) -> UInt {
+  CmapFormat12::new(groups=self.groups).char_index(charcode)
 }
 
 // ---------------------------------------------------------------------------

@@ -83,6 +83,13 @@ pub fn CmapFormat13::new(groups~ : Array[CmapFormat13Group]) -> Self
 type CmapFormat13Group derive(Eq, Show)
 pub fn CmapFormat13Group::new(start_char_code~ : UInt, end_char_code~ : UInt, glyph_id~ : UInt) -> Self
 
+type CmapFormat2 derive(Show)
+pub fn CmapFormat2::char_index(Self, UInt) -> UInt
+pub fn CmapFormat2::new(sub_header_keys~ : FixedArray[Int], sub_headers~ : Array[CmapFormat2SubHeader], glyph_ids~ : Array[UInt]) -> Self
+
+type CmapFormat2SubHeader derive(Show)
+pub fn CmapFormat2SubHeader::new(first_code~ : UInt, entry_count~ : UInt, id_delta~ : Int, glyph_array_index~ : Int) -> Self
+
 type CmapFormat4 derive(Show)
 pub fn CmapFormat4::char_index(Self, UInt) -> UInt
 
@@ -90,10 +97,16 @@ type CmapFormat6 derive(Show)
 pub fn CmapFormat6::char_index(Self, UInt) -> UInt
 pub fn CmapFormat6::new(first_code~ : UInt, entry_count~ : UInt, glyph_ids~ : Array[UInt]) -> Self
 
+type CmapFormat8 derive(Show)
+pub fn CmapFormat8::char_index(Self, UInt) -> UInt
+pub fn CmapFormat8::new(groups~ : Array[CmapFormat12Group]) -> Self
+
 pub(all) enum CmapLookup {
   Format0(CmapFormat0)
+  Format2(CmapFormat2)
   Format4(CmapFormat4)
   Format6(CmapFormat6)
+  Format8(CmapFormat8)
   Format10(CmapFormat10)
   Format12(CmapFormat12)
   Format13(CmapFormat13)

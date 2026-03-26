@@ -74,6 +74,35 @@ test "CmapFormat0::char_index" {
 }
 
 ///|
+test "CmapFormat2::char_index" {
+  let sub_header_keys = FixedArray::make(256, 0)
+  sub_header_keys[0x81] = 1
+  let cmap = CmapFormat2::new(
+    sub_header_keys~,
+    sub_headers=[
+      CmapFormat2SubHeader::new(
+        first_code=32U,
+        entry_count=1U,
+        id_delta=0,
+        glyph_array_index=0,
+      ),
+      CmapFormat2SubHeader::new(
+        first_code=0x40U,
+        entry_count=2U,
+        id_delta=0,
+        glyph_array_index=1,
+      ),
+    ],
+    glyph_ids=[5U, 700U, 701U],
+  )
+  inspect(cmap.char_index(32U), content="5")
+  inspect(cmap.char_index(0x8140U), content="700")
+  inspect(cmap.char_index(0x8141U), content="701")
+  inspect(cmap.char_index(0x813FU), content="0")
+  inspect(cmap.char_index(0x110000U), content="0")
+}
+
+///|
 test "CmapFormat6::char_index" {
   let cmap = CmapFormat6::new(first_code=32U, entry_count=3U, glyph_ids=[
     10U, 11U, 12U,
@@ -83,6 +112,21 @@ test "CmapFormat6::char_index" {
   inspect(cmap.char_index(34U), content="12")
   inspect(cmap.char_index(31U), content="0") // below range
   inspect(cmap.char_index(35U), content="0") // above range
+}
+
+///|
+test "CmapFormat8::char_index" {
+  let cmap = CmapFormat8::new(groups=[
+    CmapFormat12Group::new(
+      start_char_code=0x10000U,
+      end_char_code=0x10002U,
+      start_glyph_id=700U,
+    ),
+  ])
+  inspect(cmap.char_index(0x10000U), content="700")
+  inspect(cmap.char_index(0x10001U), content="701")
+  inspect(cmap.char_index(0x10002U), content="702")
+  inspect(cmap.char_index(0xFFFFU), content="0")
 }
 
 ///|
@@ -155,6 +199,63 @@ test "parse_cmap_subtable: format 10" {
   let lookup = parse_cmap_subtable(reader, 0U, 0U)
   let gid = match lookup {
     Format10(t) => t.char_index(0x10001U)
+    _ => 0xFFFFFFFFU
+  }
+  assert_eq(gid, 701U)
+}
+
+///|
+test "parse_cmap_subtable: format 2" {
+  let data : Bytes = [
+    0x00, 0x02, // format
+     0x02, 0x1C, // length = 540
+     0x00, 0x00, // language
+  ] + Bytes::from_array({
+    let keys = FixedArray::make(512, b'\x00')
+    keys[0x81 * 2 + 1] = b'\x08' // subHeader index 1
+    keys
+  }[:]) + [
+    0x00, 0x20, // subHeader 0 firstCode
+     0x00, 0x01, // entryCount
+     0x00, 0x00, // idDelta
+     0x00, 0x0A, // idRangeOffset -> first glyph word
+     0x00, 0x40, // subHeader 1 firstCode
+     0x00, 0x02, // entryCount
+     0x00, 0x00, // idDelta
+     0x00, 0x04, // idRangeOffset -> second glyph word
+     0x00, 0x05, // glyphIdArray[0]
+     0x02, 0xBC, // glyphIdArray[1] = 700
+     0x02, 0xBD, // glyphIdArray[2] = 701
+  ]
+  let reader = @stream.ByteReader::new(data)
+  let lookup = parse_cmap_subtable(reader, 0U, 0U)
+  let gid = match lookup {
+    Format2(t) => t.char_index(0x8141U)
+    _ => 0xFFFFFFFFU
+  }
+  assert_eq(gid, 701U)
+}
+
+///|
+test "parse_cmap_subtable: format 8" {
+  let header : Bytes = [
+    0x00, 0x08, // format
+     0x00, 0x00, // reserved
+     0x00, 0x00, 0x20, 0x1C, // length = 8204
+     0x00, 0x00, 0x00, 0x00, // language
+  ]
+  let is32 = FixedArray::make(8192, b'\x00')
+  let groups : Bytes = [
+    0x00, 0x00, 0x00, 0x01, // numGroups = 1
+     0x00, 0x01, 0x00, 0x00, // startCharCode = 0x10000
+     0x00, 0x01, 0x00, 0x02, // endCharCode = 0x10002
+     0x00, 0x00, 0x02, 0xBC, // startGlyphId = 700
+  ]
+  let data = header + Bytes::from_array(is32[:]) + groups
+  let reader = @stream.ByteReader::new(data)
+  let lookup = parse_cmap_subtable(reader, 0U, 0U)
+  let gid = match lookup {
+    Format8(t) => t.char_index(0x10001U)
     _ => 0xFFFFFFFFU
   }
   assert_eq(gid, 701U)
