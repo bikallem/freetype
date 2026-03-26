@@ -24,6 +24,7 @@ struct PsInterp {
   // Subroutines
   mut local_subrs : Array[Bytes]
   mut global_subrs : Array[Bytes]
+  mut random_state : Int64
   // Call stack for subroutine returns
   call_stack : Array[CallFrame]
 } derive(Show)
@@ -73,6 +74,7 @@ pub fn PsInterp::new() -> PsInterp {
     width_set: false,
     local_subrs: [],
     global_subrs: [],
+    random_state: 0x7384L,
     call_stack: [],
   }
 }

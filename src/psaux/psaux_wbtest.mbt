@@ -282,3 +282,33 @@ test "Type2: stack operators work" {
   inspect(outline.points()[0].x(), content="250")
   inspect(outline.points()[0].y(), content="0")
 }
+
+///|
+test "Type2: fixed-point div survives transient storage" {
+  let cs : Bytes = [
+    140, 141, 12, 12, // div(1, 2) -> 0.5
+     139, 12, 20, // put(0.5, 0)
+     139, 12, 21, // get(0)
+     143, 12, 24, // mul(0.5, 4) -> 2
+     22, // hmoveto(2)
+     14,
+  ]
+  let (outline, _, _, _) = execute_type2(cs, 0L, 0L)
+  inspect(outline.n_points(), content="1")
+  inspect(outline.points()[0].x(), content="2")
+  inspect(outline.points()[0].y(), content="0")
+}
+
+///|
+test "Type2: random returns fixed-point fractions" {
+  let cs : Bytes = [
+    12, 23, // random()
+     143, 12, 24, // mul(random, 4)
+     22, // hmoveto
+     14,
+  ]
+  let (outline, _, _, _) = execute_type2(cs, 0L, 0L)
+  inspect(outline.n_points(), content="1")
+  inspect(outline.points()[0].x(), content="3")
+  inspect(outline.points()[0].y(), content="0")
+}

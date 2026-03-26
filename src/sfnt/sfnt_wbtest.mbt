@@ -86,6 +86,18 @@ test "CmapFormat6::char_index" {
 }
 
 ///|
+test "CmapFormat10::char_index" {
+  let cmap = CmapFormat10::new(start_char_code=0x10000U, num_chars=3U, glyph_ids=[
+    700U, 701U, 702U,
+  ])
+  inspect(cmap.char_index(0x10000U), content="700")
+  inspect(cmap.char_index(0x10001U), content="701")
+  inspect(cmap.char_index(0x10002U), content="702")
+  inspect(cmap.char_index(0xFFFFU), content="0")
+  inspect(cmap.char_index(0x10003U), content="0")
+}
+
+///|
 test "CmapFormat12::char_index" {
   let cmap = CmapFormat12::new(groups=[
     CmapFormat12Group::new(
@@ -108,6 +120,65 @@ test "CmapFormat12::char_index" {
   // Not in any range
   inspect(cmap.char_index(0U), content="0")
   inspect(cmap.char_index(200U), content="0")
+}
+
+///|
+test "CmapFormat13::char_index" {
+  let cmap = CmapFormat13::new(groups=[
+    CmapFormat13Group::new(start_char_code=32U, end_char_code=126U, glyph_id=3U),
+    CmapFormat13Group::new(
+      start_char_code=0x1F600U,
+      end_char_code=0x1F64FU,
+      glyph_id=900U,
+    ),
+  ])
+  inspect(cmap.char_index(65U), content="3")
+  inspect(cmap.char_index(90U), content="3")
+  inspect(cmap.char_index(0x1F600U), content="900")
+  inspect(cmap.char_index(0x1F602U), content="900")
+  inspect(cmap.char_index(0U), content="0")
+}
+
+///|
+test "parse_cmap_subtable: format 10" {
+  let data : Bytes = [
+    0x00, 0x0A, // format
+     0x00, 0x00, // reserved
+     0x00, 0x00, 0x00, 0x18, // length
+     0x00, 0x00, 0x00, 0x00, // language
+     0x00, 0x01, 0x00, 0x00, // startCharCode = 0x10000
+     0x00, 0x00, 0x00, 0x02, // numChars = 2
+     0x02, 0xBC, // glyph 700
+     0x02, 0xBD, // glyph 701
+  ]
+  let reader = @stream.ByteReader::new(data)
+  let lookup = parse_cmap_subtable(reader, 0U, 0U)
+  let gid = match lookup {
+    Format10(t) => t.char_index(0x10001U)
+    _ => 0xFFFFFFFFU
+  }
+  assert_eq(gid, 701U)
+}
+
+///|
+test "parse_cmap_subtable: format 13" {
+  let data : Bytes = [
+    0x00, 0x0D, // format
+     0x00, 0x00, // reserved
+     0x00, 0x00, 0x00, 0x1C, // length
+     0x00, 0x00, 0x00, 0x00, // language
+     0x00, 0x00, 0x00, 0x01, // numGroups = 1
+     0x00, 0x01, 0xF6, 0x00, // startCharCode = 0x1F600
+     0x00, 0x01, 0xF6, 0x02, // endCharCode = 0x1F602
+     0x00, 0x00, 0x03, 0x84, // glyphId = 900
+  ]
+  let reader = @stream.ByteReader::new(data)
+  let lookup = parse_cmap_subtable(reader, 0U, 0U)
+  let gid = match lookup {
+    Format13(t) => t.char_index(0x1F601U)
+    _ => 0xFFFFFFFFU
+  }
+  assert_eq(gid, 900U)
 }
 
 ///|

@@ -61,50 +61,54 @@ pub fn reconstruct_glyf(Bytes, Int, Int, Int) -> (Bytes, Bytes, Array[Int]) rais
 // Errors
 
 // Types and methods
-type CmapFormat0
+type CmapFormat0 derive(Show)
 pub fn CmapFormat0::char_index(Self, UInt) -> UInt
 pub fn CmapFormat0::new(glyph_ids~ : FixedArray[Byte]) -> Self
-pub impl Show for CmapFormat0
 
-type CmapFormat12
+type CmapFormat10 derive(Show)
+pub fn CmapFormat10::char_index(Self, UInt) -> UInt
+pub fn CmapFormat10::new(start_char_code~ : UInt, num_chars~ : UInt, glyph_ids~ : Array[UInt]) -> Self
+
+type CmapFormat12 derive(Show)
 pub fn CmapFormat12::char_index(Self, UInt) -> UInt
 pub fn CmapFormat12::new(groups~ : Array[CmapFormat12Group]) -> Self
-pub impl Show for CmapFormat12
 
-type CmapFormat12Group
+type CmapFormat12Group derive(Eq, Show)
 pub fn CmapFormat12Group::new(start_char_code~ : UInt, end_char_code~ : UInt, start_glyph_id~ : UInt) -> Self
-pub impl Eq for CmapFormat12Group
-pub impl Show for CmapFormat12Group
 
-type CmapFormat4
+type CmapFormat13 derive(Show)
+pub fn CmapFormat13::char_index(Self, UInt) -> UInt
+pub fn CmapFormat13::new(groups~ : Array[CmapFormat13Group]) -> Self
+
+type CmapFormat13Group derive(Eq, Show)
+pub fn CmapFormat13Group::new(start_char_code~ : UInt, end_char_code~ : UInt, glyph_id~ : UInt) -> Self
+
+type CmapFormat4 derive(Show)
 pub fn CmapFormat4::char_index(Self, UInt) -> UInt
-pub impl Show for CmapFormat4
 
-type CmapFormat6
+type CmapFormat6 derive(Show)
 pub fn CmapFormat6::char_index(Self, UInt) -> UInt
 pub fn CmapFormat6::new(first_code~ : UInt, entry_count~ : UInt, glyph_ids~ : Array[UInt]) -> Self
-pub impl Show for CmapFormat6
 
 pub(all) enum CmapLookup {
   Format0(CmapFormat0)
   Format4(CmapFormat4)
   Format6(CmapFormat6)
+  Format10(CmapFormat10)
   Format12(CmapFormat12)
+  Format13(CmapFormat13)
 }
 pub fn CmapLookup::char_index(Self, UInt) -> UInt
 
-type CmapSubtable
+type CmapSubtable derive(Eq, Show)
 pub fn CmapSubtable::encoding_id(Self) -> UInt
 pub fn CmapSubtable::offset(Self) -> UInt
 pub fn CmapSubtable::platform_id(Self) -> UInt
-pub impl Eq for CmapSubtable
-pub impl Show for CmapSubtable
 
-type CmapTable
+type CmapTable derive(Show)
 pub fn CmapTable::subtables(Self) -> Array[CmapSubtable]
-pub impl Show for CmapTable
 
-type HeadTable
+type HeadTable derive(Show)
 pub fn HeadTable::flags(Self) -> UInt
 pub fn HeadTable::index_to_loc_format(Self) -> Int
 pub fn HeadTable::mac_style(Self) -> UInt
@@ -113,33 +117,25 @@ pub fn HeadTable::x_max(Self) -> Int
 pub fn HeadTable::x_min(Self) -> Int
 pub fn HeadTable::y_max(Self) -> Int
 pub fn HeadTable::y_min(Self) -> Int
-pub impl Show for HeadTable
 
-type HheaTable
+type HheaTable derive(Show)
 pub fn HheaTable::number_of_h_metrics(Self) -> UInt
-pub impl Show for HheaTable
 
-type HmtxTable
+type HmtxTable derive(Show)
 pub fn HmtxTable::get_metrics(Self, UInt) -> (UInt, Int)
 pub fn HmtxTable::new(metrics~ : Array[LongHorMetric], left_side_bearings~ : Array[Int]) -> Self
-pub impl Show for HmtxTable
 
-type KernPair
+type KernPair derive(Eq, Show)
 pub fn KernPair::new(left~ : UInt, right~ : UInt, value~ : Int) -> Self
-pub impl Eq for KernPair
-pub impl Show for KernPair
 
-type KernTable
+type KernTable derive(Show)
 pub fn KernTable::get_kerning(Self, UInt, UInt) -> Int
 pub fn KernTable::new(pairs~ : Array[KernPair]) -> Self
-pub impl Show for KernTable
 
-type LongHorMetric
+type LongHorMetric derive(Eq, Show)
 pub fn LongHorMetric::new(advance_width~ : UInt, lsb~ : Int) -> Self
-pub impl Eq for LongHorMetric
-pub impl Show for LongHorMetric
 
-type MaxpTable
+type MaxpTable derive(Show)
 pub fn MaxpTable::max_contours(Self) -> UInt
 pub fn MaxpTable::max_function_defs(Self) -> UInt
 pub fn MaxpTable::max_instruction_defs(Self) -> UInt
@@ -149,51 +145,41 @@ pub fn MaxpTable::max_storage(Self) -> UInt
 pub fn MaxpTable::max_twilight_points(Self) -> UInt
 pub fn MaxpTable::max_zones(Self) -> UInt
 pub fn MaxpTable::num_glyphs(Self) -> UInt
-pub impl Show for MaxpTable
 
-type NameRecord
+type NameRecord derive(Show)
 pub fn NameRecord::new(platform_id~ : UInt, encoding_id~ : UInt, language_id~ : UInt, name_id~ : UInt, length~ : UInt, offset~ : UInt) -> Self
-pub impl Show for NameRecord
 
-type NameTable
+type NameTable derive(Show)
 pub fn NameTable::get_name(Self, UInt) -> String?
 pub fn NameTable::new(format~ : UInt, count~ : UInt, string_offset~ : UInt, records~ : Array[NameRecord], string_data~ : Bytes) -> Self
-pub impl Show for NameTable
 
-type Os2Table
-pub impl Show for Os2Table
+type Os2Table derive(Show)
 
-type PostTable
-pub impl Show for PostTable
+type PostTable derive(Show)
 
-type SfntData
+type SfntData derive(Show)
 pub fn SfntData::cmap(Self) -> CmapTable?
 pub fn SfntData::head(Self) -> HeadTable
 pub fn SfntData::hhea(Self) -> HheaTable
 pub fn SfntData::maxp(Self) -> MaxpTable
 pub fn SfntData::raw_data(Self) -> Bytes
 pub fn SfntData::table_dir(Self) -> TableDirectory
-pub impl Show for SfntData
 
-type TableDirectory
+type TableDirectory derive(Show)
 pub fn TableDirectory::find_table(Self, UInt) -> TableRecord?
 pub fn TableDirectory::new(sfnt_version~ : UInt, num_tables~ : UInt, search_range~ : UInt, entry_selector~ : UInt, range_shift~ : UInt, tables~ : Array[TableRecord]) -> Self
 pub fn TableDirectory::num_tables(Self) -> UInt
 pub fn TableDirectory::sfnt_version(Self) -> UInt
 pub fn TableDirectory::tables(Self) -> Array[TableRecord]
-pub impl Show for TableDirectory
 
-type TableRecord
+type TableRecord derive(Eq, Show)
 pub fn TableRecord::checksum(Self) -> UInt
 pub fn TableRecord::length(Self) -> UInt
 pub fn TableRecord::new(tag~ : UInt, checksum~ : UInt, offset~ : UInt, length~ : UInt) -> Self
 pub fn TableRecord::offset(Self) -> UInt
 pub fn TableRecord::tag(Self) -> UInt
-pub impl Eq for TableRecord
-pub impl Show for TableRecord
 
-type TtcHeader
-pub impl Show for TtcHeader
+type TtcHeader derive(Show)
 
 // Type aliases
 

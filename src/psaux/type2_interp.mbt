@@ -1,4 +1,41 @@
 ///|
+let type2_fixed_one : Int64 = 0x10000L
+
+///|
+fn type2_int_to_fixed(v : Int64) -> Int64 {
+  v << 16
+}
+
+///|
+fn type2_fixed_to_int(v : Int64) -> Int64 {
+  v >> 16
+}
+
+///|
+fn type2_stack_value(interp : PsInterp, idx : Int) -> Int64 {
+  type2_fixed_to_int(interp.stack[idx])
+}
+
+///|
+fn type2_fixed_mul(a : Int64, b : Int64) -> Int64 {
+  @fixed.mul_fix(@fixed.Fixed::from_raw(a), @fixed.Fixed::from_raw(b)).val()
+}
+
+///|
+fn type2_fixed_div(a : Int64, b : Int64) -> Int64 {
+  @fixed.div_fix(a, b).val()
+}
+
+///|
+fn type2_fixed_sqrt(v : Int64) -> Int64 {
+  if v <= 0L {
+    0L
+  } else {
+    @fixed.sqrt_fixed(v.reinterpret_as_uint64()).to_int64()
+  }
+}
+
+///|
 /// Execute a Type 2 (CFF) charstring.
 /// Returns the resulting outline and advance width.
 pub fn execute_type2(
@@ -24,7 +61,7 @@ fn pop_first_arg(interp : PsInterp) -> Int64 {
   if interp.stack.length() == 0 {
     return 0L
   }
-  let first = interp.stack[0]
+  let first = type2_fixed_to_int(interp.stack[0])
   let rest : Array[Int64] = []
   for i in 1..<interp.stack.length() {
     rest.push(interp.stack[i])
@@ -52,20 +89,6 @@ fn abs_i64(v : Int64) -> Int64 {
   } else {
     v
   }
-}
-
-///|
-fn integer_sqrt(v : Int64) -> Int64 {
-  if v <= 0L {
-    return 0L
-  }
-  let mut r = v
-  let mut prev = 0L
-  while r != prev {
-    prev = r
-    r = (r + v / r) >> 1
-  }
-  r
 }
 
 ///|
@@ -105,7 +128,7 @@ fn do_flex(
   for i in 0..<top {
     vals[i + 2] = vals[i]
     if read_from_stack[i] && idx < interp.stack.length() {
-      vals[i + 2] = vals[i + 2] + interp.stack[idx]
+      vals[i + 2] = vals[i + 2] + type2_stack_value(interp, idx)
       idx += 1
     }
   }
@@ -114,7 +137,7 @@ fn do_flex(
   }
   if conditional_last {
     let last_val = if idx < interp.stack.length() {
-      interp.stack[idx]
+      type2_stack_value(interp, idx)
     } else {
       0L
     }
@@ -129,14 +152,14 @@ fn do_flex(
     }
   } else {
     vals[12] = if read_from_stack[10] && idx < interp.stack.length() {
-      let out = vals[10] + interp.stack[idx]
+      let out = vals[10] + type2_stack_value(interp, idx)
       idx += 1
       out
     } else {
       interp.current_x
     }
     vals[13] = if read_from_stack[11] && idx < interp.stack.length() {
-      vals[11] + interp.stack[idx]
+      vals[11] + type2_stack_value(interp, idx)
     } else {
       interp.current_y
     }
@@ -201,19 +224,22 @@ fn exec_type2_code(
         let lo = code[next_ip + 1].to_int()
         let val = (hi << 8) | lo
         let signed_val = if val >= 0x8000 { val - 0x10000 } else { val }
-        interp.push(signed_val.to_int64())
+        interp.push(type2_int_to_fixed(signed_val.to_int64()))
         next_ip += 2
       }
       n if n >= 21 && n <= 31 =>
         next_ip = exec_type2_op(interp, code, next_ip, b0)
-      n if n >= 32 && n <= 246 => interp.push((b0 - 139).to_int64())
+      n if n >= 32 && n <= 246 =>
+        interp.push(type2_int_to_fixed((b0 - 139).to_int64()))
       n if n >= 247 && n <= 250 => {
         if next_ip >= len {
           raise @error.FTError::SyntaxError
         }
         let b1 = code[next_ip].to_int()
         next_ip += 1
-        interp.push(((b0 - 247) * 256 + b1 + 108).to_int64())
+        interp.push(
+          type2_int_to_fixed(((b0 - 247) * 256 + b1 + 108).to_int64()),
+        )
       }
       n if n >= 251 && n <= 254 => {
         if next_ip >= len {
@@ -221,7 +247,9 @@ fn exec_type2_code(
         }
         let b1 = code[next_ip].to_int()
         next_ip += 1
-        interp.push((-((b0 - 251) * 256 + b1 + 108)).to_int64())
+        interp.push(
+          type2_int_to_fixed((-((b0 - 251) * 256 + b1 + 108)).to_int64()),
+        )
       }
       255 => {
         // 32-bit fixed point (16.16)
@@ -237,9 +265,7 @@ fn exec_type2_code(
         } else {
           val.to_int64()
         }
-        // CFF operands use 16.16 fixed-point here; the interpreter keeps
-        // integer design units, so drop the fractional bits.
-        interp.push(signed_val >> 16)
+        interp.push(signed_val)
         next_ip += 4
       }
       _ => ()
@@ -265,8 +291,8 @@ fn exec_type2_op(
       let hints = if op == 1 { interp.hints_h } else { interp.hints_v }
       let mut pos = 0L
       for i in 0..<pairs {
-        let d1 = interp.stack[i * 2]
-        let d2 = interp.stack[i * 2 + 1]
+        let d1 = type2_stack_value(interp, i * 2)
+        let d2 = type2_stack_value(interp, i * 2 + 1)
         pos += d1
         hints.push({ position: pos, width: d2 })
         pos += d2
@@ -280,15 +306,15 @@ fn exec_type2_op(
         interp,
         interp.stack.length() > 0 && interp.stack.length() % 2 == 0,
       )
-      let dy = interp.pop()
+      let dy = type2_fixed_to_int(interp.pop())
       interp.move_to(interp.current_x, interp.current_y + dy)
       ip
     }
     5 => {
       // rlineto
       for i = 0; i + 1 < interp.stack.length(); {
-        let dx = interp.stack[i]
-        let dy = interp.stack[i + 1]
+        let dx = type2_stack_value(interp, i)
+        let dy = type2_stack_value(interp, i + 1)
         interp.line_to(interp.current_x + dx, interp.current_y + dy)
         continue i + 2
       }
@@ -300,7 +326,7 @@ fn exec_type2_op(
       let sp = interp.stack.length()
       let mut horizontal = true
       for i in 0..<sp {
-        let d = interp.stack[i]
+        let d = type2_stack_value(interp, i)
         if horizontal {
           interp.line_to(interp.current_x + d, interp.current_y)
         } else {
@@ -316,7 +342,7 @@ fn exec_type2_op(
       let sp = interp.stack.length()
       let mut horizontal = false
       for i in 0..<sp {
-        let d = interp.stack[i]
+        let d = type2_stack_value(interp, i)
         if horizontal {
           interp.line_to(interp.current_x + d, interp.current_y)
         } else {
@@ -330,12 +356,12 @@ fn exec_type2_op(
     8 => {
       // rrcurveto: dx1 dy1 dx2 dy2 dx3 dy3 {dxa dya dxb dyb dxc dyc}*
       for i = 0; i + 5 < interp.stack.length(); {
-        let x1 = interp.current_x + interp.stack[i]
-        let y1 = interp.current_y + interp.stack[i + 1]
-        let x2 = x1 + interp.stack[i + 2]
-        let y2 = y1 + interp.stack[i + 3]
-        let x3 = x2 + interp.stack[i + 4]
-        let y3 = y2 + interp.stack[i + 5]
+        let x1 = interp.current_x + type2_stack_value(interp, i)
+        let y1 = interp.current_y + type2_stack_value(interp, i + 1)
+        let x2 = x1 + type2_stack_value(interp, i + 2)
+        let y2 = y1 + type2_stack_value(interp, i + 3)
+        let x3 = x2 + type2_stack_value(interp, i + 4)
+        let y3 = y2 + type2_stack_value(interp, i + 5)
         interp.curve_to(x1, y1, x2, y2, x3, y3)
         continue i + 6
       }
@@ -344,7 +370,7 @@ fn exec_type2_op(
     }
     10 => {
       // callsubr
-      let subr_idx = interp.pop().to_int()
+      let subr_idx = type2_fixed_to_int(interp.pop()).to_int()
       let bias = calc_subr_bias(interp.local_subrs.length())
       let actual_idx = subr_idx + bias
       if actual_idx >= 0 && actual_idx < interp.local_subrs.length() {
@@ -372,8 +398,8 @@ fn exec_type2_op(
       let pairs = interp.stack.length() / 2
       let mut pos = 0L
       for i in 0..<pairs {
-        let d1 = interp.stack[i * 2]
-        let d2 = interp.stack[i * 2 + 1]
+        let d1 = type2_stack_value(interp, i * 2)
+        let d2 = type2_stack_value(interp, i * 2 + 1)
         pos += d1
         interp.hints_h.push({ position: pos, width: d2 })
         pos += d2
@@ -384,8 +410,8 @@ fn exec_type2_op(
     21 => {
       // rmoveto
       consume_width(interp, interp.stack.length() % 2 == 1)
-      let dy = interp.pop()
-      let dx = interp.pop()
+      let dy = type2_fixed_to_int(interp.pop())
+      let dx = type2_fixed_to_int(interp.pop())
       interp.move_to(interp.current_x + dx, interp.current_y + dy)
       ip
     }
@@ -395,7 +421,7 @@ fn exec_type2_op(
         interp,
         interp.stack.length() > 0 && interp.stack.length() % 2 == 0,
       )
-      let dx = interp.pop()
+      let dx = type2_fixed_to_int(interp.pop())
       interp.move_to(interp.current_x + dx, interp.current_y)
       ip
     }
@@ -405,8 +431,8 @@ fn exec_type2_op(
       let pairs = interp.stack.length() / 2
       let mut pos = 0L
       for i in 0..<pairs {
-        let d1 = interp.stack[i * 2]
-        let d2 = interp.stack[i * 2 + 1]
+        let d1 = type2_stack_value(interp, i * 2)
+        let d2 = type2_stack_value(interp, i * 2 + 1)
         pos += d1
         interp.hints_v.push({ position: pos, width: d2 })
         pos += d2
@@ -418,18 +444,18 @@ fn exec_type2_op(
       // rcurveline: curves then line
       let sp = interp.stack.length()
       for i = 0; i + 7 < sp; {
-        let x1 = interp.current_x + interp.stack[i]
-        let y1 = interp.current_y + interp.stack[i + 1]
-        let x2 = x1 + interp.stack[i + 2]
-        let y2 = y1 + interp.stack[i + 3]
-        let x3 = x2 + interp.stack[i + 4]
-        let y3 = y2 + interp.stack[i + 5]
+        let x1 = interp.current_x + type2_stack_value(interp, i)
+        let y1 = interp.current_y + type2_stack_value(interp, i + 1)
+        let x2 = x1 + type2_stack_value(interp, i + 2)
+        let y2 = y1 + type2_stack_value(interp, i + 3)
+        let x3 = x2 + type2_stack_value(interp, i + 4)
+        let y3 = y2 + type2_stack_value(interp, i + 5)
         interp.curve_to(x1, y1, x2, y2, x3, y3)
         continue i + 6
       }
       if sp >= 2 {
-        let dx = interp.stack[sp - 2]
-        let dy = interp.stack[sp - 1]
+        let dx = type2_stack_value(interp, sp - 2)
+        let dy = type2_stack_value(interp, sp - 1)
         interp.line_to(interp.current_x + dx, interp.current_y + dy)
       }
       interp.stack = []
@@ -440,18 +466,18 @@ fn exec_type2_op(
       let sp = interp.stack.length()
       let curve_start = sp - 6
       for i = 0; i + 7 < sp; {
-        let dx = interp.stack[i]
-        let dy = interp.stack[i + 1]
+        let dx = type2_stack_value(interp, i)
+        let dy = type2_stack_value(interp, i + 1)
         interp.line_to(interp.current_x + dx, interp.current_y + dy)
         continue i + 2
       }
       if sp >= 6 {
-        let x1 = interp.current_x + interp.stack[curve_start]
-        let y1 = interp.current_y + interp.stack[curve_start + 1]
-        let x2 = x1 + interp.stack[curve_start + 2]
-        let y2 = y1 + interp.stack[curve_start + 3]
-        let x3 = x2 + interp.stack[curve_start + 4]
-        let y3 = y2 + interp.stack[curve_start + 5]
+        let x1 = interp.current_x + type2_stack_value(interp, curve_start)
+        let y1 = interp.current_y + type2_stack_value(interp, curve_start + 1)
+        let x2 = x1 + type2_stack_value(interp, curve_start + 2)
+        let y2 = y1 + type2_stack_value(interp, curve_start + 3)
+        let x3 = x2 + type2_stack_value(interp, curve_start + 4)
+        let y3 = y2 + type2_stack_value(interp, curve_start + 5)
         interp.curve_to(x1, y1, x2, y2, x3, y3)
       }
       interp.stack = []
@@ -459,7 +485,7 @@ fn exec_type2_op(
     }
     29 => {
       // callgsubr
-      let subr_idx = interp.pop().to_int()
+      let subr_idx = type2_fixed_to_int(interp.pop()).to_int()
       let bias = calc_subr_bias(interp.global_subrs.length())
       let actual_idx = subr_idx + bias
       if actual_idx >= 0 && actual_idx < interp.global_subrs.length() {
@@ -495,18 +521,18 @@ fn exec_type2_op2(interp : PsInterp, code : Bytes, ip : Int, op : Int) -> Int {
     3 => {
       let b = interp.pop()
       let a = interp.pop()
-      interp.push(if a != 0L && b != 0L { 1L } else { 0L })
+      interp.push(if a != 0L && b != 0L { type2_fixed_one } else { 0L })
       ip
     }
     4 => {
       let b = interp.pop()
       let a = interp.pop()
-      interp.push(if a != 0L || b != 0L { 1L } else { 0L })
+      interp.push(if a != 0L || b != 0L { type2_fixed_one } else { 0L })
       ip
     }
     5 => {
       let a = interp.pop()
-      interp.push(if a == 0L { 1L } else { 0L })
+      interp.push(if a == 0L { type2_fixed_one } else { 0L })
       ip
     }
     9 => {
@@ -528,7 +554,7 @@ fn exec_type2_op2(interp : PsInterp, code : Bytes, ip : Int, op : Int) -> Int {
     12 => {
       let b = interp.pop()
       let a = interp.pop()
-      interp.push(if b != 0L { a / b } else { 0L })
+      interp.push(if b != 0L { type2_fixed_div(a, b) } else { 0L })
       ip
     }
     14 => {
@@ -538,7 +564,7 @@ fn exec_type2_op2(interp : PsInterp, code : Bytes, ip : Int, op : Int) -> Int {
     15 => {
       let b = interp.pop()
       let a = interp.pop()
-      interp.push(if a == b { 1L } else { 0L })
+      interp.push(if a == b { type2_fixed_one } else { 0L })
       ip
     }
     18 => {
@@ -546,7 +572,7 @@ fn exec_type2_op2(interp : PsInterp, code : Bytes, ip : Int, op : Int) -> Int {
       ip
     }
     20 => {
-      let idx = interp.pop().to_int()
+      let idx = type2_fixed_to_int(interp.pop()).to_int()
       let val = interp.pop()
       if idx >= 0 && idx < interp.transient.length() {
         interp.transient[idx] = val
@@ -554,7 +580,7 @@ fn exec_type2_op2(interp : PsInterp, code : Bytes, ip : Int, op : Int) -> Int {
       ip
     }
     21 => {
-      let idx = interp.pop().to_int()
+      let idx = type2_fixed_to_int(interp.pop()).to_int()
       if idx >= 0 && idx < interp.transient.length() {
         interp.push(interp.transient[idx])
       }
@@ -569,19 +595,19 @@ fn exec_type2_op2(interp : PsInterp, code : Bytes, ip : Int, op : Int) -> Int {
       ip
     }
     23 => {
-      // The interpreter stores integer design units instead of full 16.16
-      // reals, so use a deterministic non-zero placeholder for `random`.
-      interp.push(1L)
+      interp.random_state = (interp.random_state * 1103515245L + 12345L) &
+        0xFFFF_FFFFL
+      interp.push((interp.random_state >> 16) & 0xFFFFL)
       ip
     }
     24 => {
       let b = interp.pop()
       let a = interp.pop()
-      interp.push(a * b)
+      interp.push(type2_fixed_mul(a, b))
       ip
     }
     26 => {
-      interp.push(integer_sqrt(interp.pop()))
+      interp.push(type2_fixed_sqrt(interp.pop()))
       ip
     }
     27 => {
@@ -598,7 +624,7 @@ fn exec_type2_op2(interp : PsInterp, code : Bytes, ip : Int, op : Int) -> Int {
       ip
     }
     29 => {
-      let idx = interp.pop().to_int()
+      let idx = type2_fixed_to_int(interp.pop()).to_int()
       let size = interp.stack.length()
       if size > 0 {
         let actual_idx = if idx < 0 {
@@ -613,8 +639,8 @@ fn exec_type2_op2(interp : PsInterp, code : Bytes, ip : Int, op : Int) -> Int {
       ip
     }
     30 => {
-      let shift = interp.pop().to_int()
-      let count = interp.pop().to_int()
+      let shift = type2_fixed_to_int(interp.pop()).to_int()
+      let count = type2_fixed_to_int(interp.pop()).to_int()
       roll_stack(interp, count, shift)
       ip
     }
@@ -667,31 +693,39 @@ fn op_vhcurveto(interp : PsInterp) -> Unit {
   for i = 0, phase = 0; i + 3 < sp; {
     if phase == 0 {
       // Vertical start: dy1 dx2 dy2 dx3 [dy3]
-      let dy1 = interp.stack[i]
-      let dx2 = interp.stack[i + 1]
-      let dy2 = interp.stack[i + 2]
-      let dx3 = interp.stack[i + 3]
+      let dy1 = type2_stack_value(interp, i)
+      let dx2 = type2_stack_value(interp, i + 1)
+      let dy2 = type2_stack_value(interp, i + 2)
+      let dx3 = type2_stack_value(interp, i + 3)
       let x1 = interp.current_x
       let y1 = interp.current_y + dy1
       let x2 = x1 + dx2
       let y2 = y1 + dy2
       let x3 = x2 + dx3
-      let dy3 = if i + 4 == sp - 1 { interp.stack[i + 4] } else { 0L }
+      let dy3 = if i + 4 == sp - 1 {
+        type2_stack_value(interp, i + 4)
+      } else {
+        0L
+      }
       let y3 = y2 + dy3
       interp.curve_to(x1, y1, x2, y2, x3, y3)
       let step = if dy3 != 0L { 5 } else { 4 }
       continue i + step, 1 - phase
     } else {
       // Horizontal start: dx1 dx2 dy2 dy3 [dx3]
-      let dx1 = interp.stack[i]
-      let dx2 = interp.stack[i + 1]
-      let dy2 = interp.stack[i + 2]
-      let dy3 = interp.stack[i + 3]
+      let dx1 = type2_stack_value(interp, i)
+      let dx2 = type2_stack_value(interp, i + 1)
+      let dy2 = type2_stack_value(interp, i + 2)
+      let dy3 = type2_stack_value(interp, i + 3)
       let x1 = interp.current_x + dx1
       let y1 = interp.current_y
       let x2 = x1 + dx2
       let y2 = y1 + dy2
-      let dx3 = if i + 4 == sp - 1 { interp.stack[i + 4] } else { 0L }
+      let dx3 = if i + 4 == sp - 1 {
+        type2_stack_value(interp, i + 4)
+      } else {
+        0L
+      }
       let x3 = x2 + dx3
       let y3 = y2 + dy3
       interp.curve_to(x1, y1, x2, y2, x3, y3)
@@ -708,31 +742,39 @@ fn op_hvcurveto(interp : PsInterp) -> Unit {
   let sp = interp.stack.length()
   for i = 0, phase = 1; i + 3 < sp; {
     if phase == 1 {
-      let dx1 = interp.stack[i]
-      let dx2 = interp.stack[i + 1]
-      let dy2 = interp.stack[i + 2]
-      let dy3 = interp.stack[i + 3]
+      let dx1 = type2_stack_value(interp, i)
+      let dx2 = type2_stack_value(interp, i + 1)
+      let dy2 = type2_stack_value(interp, i + 2)
+      let dy3 = type2_stack_value(interp, i + 3)
       let x1 = interp.current_x + dx1
       let y1 = interp.current_y
       let x2 = x1 + dx2
       let y2 = y1 + dy2
-      let dx3 = if i + 4 == sp - 1 { interp.stack[i + 4] } else { 0L }
+      let dx3 = if i + 4 == sp - 1 {
+        type2_stack_value(interp, i + 4)
+      } else {
+        0L
+      }
       let x3 = x2 + dx3
       let y3 = y2 + dy3
       interp.curve_to(x1, y1, x2, y2, x3, y3)
       let step = if dx3 != 0L { 5 } else { 4 }
       continue i + step, 1 - phase
     } else {
-      let dy1 = interp.stack[i]
-      let dx2 = interp.stack[i + 1]
-      let dy2 = interp.stack[i + 2]
-      let dx3 = interp.stack[i + 3]
+      let dy1 = type2_stack_value(interp, i)
+      let dx2 = type2_stack_value(interp, i + 1)
+      let dy2 = type2_stack_value(interp, i + 2)
+      let dx3 = type2_stack_value(interp, i + 3)
       let x1 = interp.current_x
       let y1 = interp.current_y + dy1
       let x2 = x1 + dx2
       let y2 = y1 + dy2
       let x3 = x2 + dx3
-      let dy3 = if i + 4 == sp - 1 { interp.stack[i + 4] } else { 0L }
+      let dy3 = if i + 4 == sp - 1 {
+        type2_stack_value(interp, i + 4)
+      } else {
+        0L
+      }
       let y3 = y2 + dy3
       interp.curve_to(x1, y1, x2, y2, x3, y3)
       let step = if dy3 != 0L { 5 } else { 4 }

@@ -43,7 +43,9 @@ pub(all) enum CmapLookup {
   Format0(CmapFormat0)
   Format4(CmapFormat4)
   Format6(CmapFormat6)
+  Format10(CmapFormat10)
   Format12(CmapFormat12)
+  Format13(CmapFormat13)
 }
 
 ///|
@@ -53,7 +55,9 @@ pub fn CmapLookup::char_index(self : CmapLookup, charcode : UInt) -> UInt {
     Format0(t) => t.char_index(charcode)
     Format4(t) => t.char_index(charcode)
     Format6(t) => t.char_index(charcode)
+    Format10(t) => t.char_index(charcode)
     Format12(t) => t.char_index(charcode)
+    Format13(t) => t.char_index(charcode)
   }
 }
 
@@ -73,11 +77,22 @@ pub fn parse_cmap_subtable(
     0U => Format0(parse_cmap_format0(reader, abs_offset))
     4U => Format4(parse_cmap_format4(reader, abs_offset))
     6U => Format6(parse_cmap_format6(reader, abs_offset))
+    10U => {
+      // Format 10 has a different header: format(u16), reserved(u16), length(u32), language(u32)
+      // We already read format. Read reserved u16.
+      ignore(reader.read_u16_be())
+      Format10(parse_cmap_format10(reader, abs_offset))
+    }
     12U => {
       // Format 12 has a different header: format(u16), reserved(u16), length(u32), language(u32)
       // We already read format. Read reserved u16.
       ignore(reader.read_u16_be())
       Format12(parse_cmap_format12(reader, abs_offset))
+    }
+    13U => {
+      // Format 13 shares the format 12 header and group layout.
+      ignore(reader.read_u16_be())
+      Format13(parse_cmap_format13(reader, abs_offset))
     }
     _ => raise @error.FTError::InvalidCharMapFormat
   }
@@ -286,6 +301,60 @@ pub fn CmapFormat6::char_index(self : CmapFormat6, charcode : UInt) -> UInt {
 }
 
 // ---------------------------------------------------------------------------
+// Format 10: Trimmed array with 32-bit character codes
+// ---------------------------------------------------------------------------
+
+///|
+struct CmapFormat10 {
+  start_char_code : UInt
+  num_chars : UInt
+  glyph_ids : Array[UInt]
+} derive(Show)
+
+///|
+pub fn CmapFormat10::new(
+  start_char_code~ : UInt,
+  num_chars~ : UInt,
+  glyph_ids~ : Array[UInt],
+) -> CmapFormat10 {
+  { start_char_code, num_chars, glyph_ids }
+}
+
+///|
+fn parse_cmap_format10(
+  reader : @stream.ByteReader,
+  abs_offset : Int,
+) -> CmapFormat10 raise @error.FTError {
+  // format(2) and reserved(2) already read
+  // Read length(4), language(4), startCharCode(4), numChars(4)
+  let _length = reader.read_u32_be()
+  let _language = reader.read_u32_be()
+  let start_char_code = reader.read_u32_be()
+  let num_chars = reader.read_u32_be()
+  ignore(abs_offset)
+  let glyph_ids : Array[UInt] = Array::new(
+    capacity=num_chars.reinterpret_as_int(),
+  )
+  for _ in 0..<num_chars.reinterpret_as_int() {
+    glyph_ids.push(reader.read_u16_be())
+  }
+  { start_char_code, num_chars, glyph_ids }
+}
+
+///|
+pub fn CmapFormat10::char_index(self : CmapFormat10, charcode : UInt) -> UInt {
+  if charcode < self.start_char_code {
+    return 0U
+  }
+  let idx = (charcode - self.start_char_code).reinterpret_as_int()
+  if idx < self.glyph_ids.length() {
+    self.glyph_ids.unsafe_get(idx)
+  } else {
+    0U
+  }
+}
+
+// ---------------------------------------------------------------------------
 // Format 12: Segmented coverage (full Unicode)
 // ---------------------------------------------------------------------------
 
@@ -348,6 +417,75 @@ pub fn CmapFormat12::char_index(self : CmapFormat12, charcode : UInt) -> UInt {
       continue lo, mid - 1
     } else {
       return g.start_glyph_id + (charcode - g.start_char_code)
+    }
+  } nobreak {
+    0U
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Format 13: Many-to-one segmented coverage
+// ---------------------------------------------------------------------------
+
+///|
+struct CmapFormat13Group {
+  start_char_code : UInt
+  end_char_code : UInt
+  glyph_id : UInt
+} derive(Eq, Show)
+
+///|
+pub fn CmapFormat13Group::new(
+  start_char_code~ : UInt,
+  end_char_code~ : UInt,
+  glyph_id~ : UInt,
+) -> CmapFormat13Group {
+  { start_char_code, end_char_code, glyph_id }
+}
+
+///|
+struct CmapFormat13 {
+  groups : Array[CmapFormat13Group]
+} derive(Show)
+
+///|
+pub fn CmapFormat13::new(groups~ : Array[CmapFormat13Group]) -> CmapFormat13 {
+  { groups, }
+}
+
+///|
+fn parse_cmap_format13(
+  reader : @stream.ByteReader,
+  abs_offset : Int,
+) -> CmapFormat13 raise @error.FTError {
+  // format(2) and reserved(2) already read
+  // Read length(4), language(4), numGroups(4)
+  let _length = reader.read_u32_be()
+  let _language = reader.read_u32_be()
+  let num_groups = reader.read_u32_be().reinterpret_as_int()
+  ignore(abs_offset)
+  let groups : Array[CmapFormat13Group] = Array::new(capacity=num_groups)
+  for _ in 0..<num_groups {
+    let start_char_code = reader.read_u32_be()
+    let end_char_code = reader.read_u32_be()
+    let glyph_id = reader.read_u32_be()
+    groups.push({ start_char_code, end_char_code, glyph_id })
+  }
+  { groups, }
+}
+
+///|
+pub fn CmapFormat13::char_index(self : CmapFormat13, charcode : UInt) -> UInt {
+  // Binary search — mid is always in [0, groups.length()) so unsafe_get is safe
+  for lo = 0, hi = self.groups.length() - 1; lo <= hi; {
+    let mid = (lo + hi) / 2
+    let g = self.groups.unsafe_get(mid)
+    if charcode > g.end_char_code {
+      continue mid + 1, hi
+    } else if charcode < g.start_char_code {
+      continue lo, mid - 1
+    } else {
+      return g.glyph_id
     }
   } nobreak {
     0U

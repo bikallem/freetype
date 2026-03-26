@@ -109,7 +109,9 @@ fn load_sfnt(
       Some(@sfnt.CmapLookup::Format0(t)) => fn(c) { t.char_index(c) }
       Some(@sfnt.CmapLookup::Format4(t)) => fn(c) { t.char_index(c) }
       Some(@sfnt.CmapLookup::Format6(t)) => fn(c) { t.char_index(c) }
+      Some(@sfnt.CmapLookup::Format10(t)) => fn(c) { t.char_index(c) }
       Some(@sfnt.CmapLookup::Format12(t)) => fn(c) { t.char_index(c) }
+      Some(@sfnt.CmapLookup::Format13(t)) => fn(c) { t.char_index(c) }
       None => fn(_c) { 0U }
     }
     // Replace face's char_index_fn directly — no Ref on subsequent calls
