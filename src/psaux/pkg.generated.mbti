@@ -16,19 +16,15 @@ pub fn execute_type2(Bytes, Int64, Int64, local_subrs? : Array[Bytes], global_su
 // Errors
 
 // Types and methods
-type CallFrame
-pub impl Show for CallFrame
+type CallFrame derive(Show)
 
-type PsInterp
+type PsInterp derive(Show)
 pub fn PsInterp::finalize(Self) -> @types.Outline
 pub fn PsInterp::new() -> Self
-pub impl Show for PsInterp
 
-type StemHint
+type StemHint derive(Eq, Show)
 pub fn StemHint::position(Self) -> Int64
 pub fn StemHint::width(Self) -> Int64
-pub impl Eq for StemHint
-pub impl Show for StemHint
 
 // Type aliases
 

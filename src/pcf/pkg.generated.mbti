@@ -34,10 +34,9 @@ pub fn parse_pcf_header(@stream.ByteReader) -> Array[PcfTableEntry] raise @error
 // Errors
 
 // Types and methods
-type PcfEncodings
-pub impl Show for PcfEncodings
+type PcfEncodings derive(Show)
 
-type PcfFont
+type PcfFont derive(Show)
 pub fn PcfFont::bitmap_for_glyph(Self, Int) -> Bytes
 pub fn PcfFont::bitmaps_format(Self) -> UInt
 pub fn PcfFont::default_glyph_index(Self) -> Int
@@ -49,24 +48,17 @@ pub fn PcfFont::new() -> Self
 pub fn PcfFont::num_glyphs(Self) -> Int
 pub fn PcfFont::property_int(Self, String) -> Int?
 pub fn PcfFont::property_string(Self, String) -> String?
-pub impl Show for PcfFont
 
-type PcfMetric
+type PcfMetric derive(Eq, Show)
 pub fn PcfMetric::ascent(Self) -> Int
 pub fn PcfMetric::descent(Self) -> Int
 pub fn PcfMetric::left_bearing(Self) -> Int
 pub fn PcfMetric::right_bearing(Self) -> Int
 pub fn PcfMetric::width(Self) -> Int
-pub impl Eq for PcfMetric
-pub impl Show for PcfMetric
 
-type PcfProperty
-pub impl Eq for PcfProperty
-pub impl Show for PcfProperty
+type PcfProperty derive(Eq, Show)
 
-type PcfTableEntry
-pub impl Eq for PcfTableEntry
-pub impl Show for PcfTableEntry
+type PcfTableEntry derive(Eq, Show)
 
 // Type aliases
 

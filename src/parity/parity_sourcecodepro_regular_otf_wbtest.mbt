@@ -8,12 +8,19 @@ fn load_generated_sourcecodepro_regular_otf() -> Bytes {
 
 ///|
 test "parity/SourceCodePro-Regular.otf: format" {
-  inspect(@base.detect_format(load_generated_sourcecodepro_regular_otf()), content="CffOpenType")
+  inspect(
+    @base.detect_format(load_generated_sourcecodepro_regular_otf()),
+    content="CffOpenType",
+  )
 }
 
 ///|
 test "parity/SourceCodePro-Regular.otf: loads" {
-  inspect((try? @freetype.from_bytes(load_generated_sourcecodepro_regular_otf())) is Ok(_), content="true")
+  inspect(
+    (try? @freetype.from_bytes(load_generated_sourcecodepro_regular_otf()))
+    is Ok(_),
+    content="true",
+  )
 }
 
 ///|
@@ -249,8 +256,11 @@ test "parity/SourceCodePro-Regular.otf: outline FORCE_AUTOHINT 16ppem" {
   let f = @freetype.from_bytes(load_generated_sourcecodepro_regular_otf())
   let r1 = try? @freetype.set_pixel_sizes(f, 0U, 16U)
   guard r1 is Ok(_) else { return }
-  let r2 = try? @freetype.load_glyph(f, 918U, load_flags=@base.LOAD_FORCE_AUTOHINT)
+  let r2 = try? @freetype.load_glyph(
+    f,
+    918U,
+    load_flags=@base.LOAD_FORCE_AUTOHINT,
+  )
   guard r2 is Ok(_) else { return }
   inspect(f.glyph().metrics().hori_advance(), content="640")
 }
-

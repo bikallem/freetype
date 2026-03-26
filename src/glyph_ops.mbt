@@ -337,7 +337,7 @@ pub fn set_pixel_sizes(
 ///|
 /// Set variation design coordinates on a face.
 /// Validates and normalizes the coordinates, storing them for use during
-/// glyph loading. Actual gvar delta application is not yet implemented.
+/// glyph loading.
 pub fn set_var_design_coordinates(
   face : @base.FaceRec,
   coordinates : Array[(@fixed.Fixed, UInt)],
@@ -390,9 +390,30 @@ pub fn set_var_design_coordinates(
       design_coords.push(axis.default_value())
     }
   }
-  // Normalize and store
-  face.set_var_coords(
-    @truetype.normalize_coordinates(fvar.axes(), design_coords, avar),
+  let normalized = @truetype.normalize_coordinates(
+    fvar.axes(),
+    design_coords,
+    avar,
+  )
+  face.set_var_coords(normalized)
+  let mut has_non_default = false
+  for _, coord in normalized {
+    if coord != 0 {
+      has_non_default = true
+      break
+    }
+  }
+  let base_flags = if (face.face_flags() & @base.FACE_FLAG_VARIATION) != 0L {
+    face.face_flags() - @base.FACE_FLAG_VARIATION
+  } else {
+    face.face_flags()
+  }
+  face.set_face_flags(
+    if has_non_default {
+      base_flags | @base.FACE_FLAG_VARIATION
+    } else {
+      base_flags
+    },
   )
 }
 

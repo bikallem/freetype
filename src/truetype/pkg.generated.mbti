@@ -41,6 +41,8 @@ pub fn load_simple_glyph(Bytes, Int, Int, GlyphBufs) -> (@types.Outline, Int, In
 
 pub fn load_tt_glyph(Bytes, Array[UInt], UInt, UInt, GlyphBufs, depth? : Int) -> (@types.Outline, Int, Int, @types.BBox) raise @error.FTError
 
+pub fn load_tt_glyph_with_phantoms(Bytes, Array[UInt], UInt, UInt, GlyphBufs, hmtx? : @sfnt.HmtxTable?, gvar? : GvarTable?, var_coords? : Array[Int], depth? : Int) -> (@types.Outline, Int, Int, @types.BBox, Array[@types.Vector]) raise @error.FTError
+
 pub fn normalize_axis(@fixed.Fixed, VarAxis) -> Int
 
 pub fn normalize_coordinates(Array[VarAxis], Array[@fixed.Fixed], AvarTable?) -> Array[Int]
@@ -49,27 +51,30 @@ pub fn parse_avar(@stream.ByteReader, UInt, UInt, Int) -> AvarTable raise @error
 
 pub fn parse_fvar(@stream.ByteReader, UInt, UInt) -> FvarTable raise @error.FTError
 
+pub fn parse_gvar(@stream.ByteReader, UInt, UInt, UInt) -> GvarTable raise @error.FTError
+
+pub fn parse_hvar(@stream.ByteReader, UInt, UInt) -> HvarTable raise @error.FTError
+
 pub fn parse_loca(@stream.ByteReader, UInt, UInt, UInt, Int) -> Array[UInt] raise @error.FTError
 
 // Errors
 
 // Types and methods
-type AvarSegment
-pub impl Show for AvarSegment
+type AvarSegment derive(Show)
 
-type AvarTable
-pub impl Show for AvarTable
+type AvarTable derive(Show)
 
-type CompositeComponent
-pub impl Show for CompositeComponent
+type CompositeComponent derive(Show)
 
-type FuncDef
-pub impl Show for FuncDef
+type DeltaSetIndexMap derive(Show)
 
-type FvarTable
+type DeltaSetIndexMapEntry derive(Show)
+
+type FuncDef derive(Show)
+
+type FvarTable derive(Show)
 pub fn FvarTable::axes(Self) -> Array[VarAxis]
 pub fn FvarTable::instances(Self) -> Array[NamedInstance]
-pub impl Show for FvarTable
 
 pub struct GlyphBufs {
   mut flags : FixedArray[Byte]
@@ -77,15 +82,31 @@ pub struct GlyphBufs {
   mut points : FixedArray[@types.Vector]
   mut tags : FixedArray[Byte]
   mut contours : FixedArray[UInt]
-}
+} derive(Show)
 pub fn GlyphBufs::new() -> Self
-pub impl Show for GlyphBufs
 
-type GraphicsState
+type GraphicsState derive(Show)
 pub fn GraphicsState::default() -> Self
-pub impl Show for GraphicsState
 
-type InterpContext
+pub struct GvarTable {
+  table_offset : UInt
+  data_offset : UInt
+  axis_count : Int
+  shared_tuples : Array[Array[Int]]
+  glyph_offsets : Array[UInt]
+} derive(Show)
+pub fn GvarTable::axis_count(Self) -> Int
+
+type GvarTupleData derive(Show)
+
+pub struct HvarTable {
+  regions : Array[Array[RegionAxisCoordinates]]
+  item_data : Array[ItemVariationData?]
+  advance_width_map : DeltaSetIndexMap?
+} derive(Show)
+pub fn HvarTable::advance_width_delta(Self, UInt, Array[Int]) -> Int64
+
+type InterpContext derive(Show)
 pub fn InterpContext::cvt(Self) -> Array[Int64]
 pub fn InterpContext::execute(Self, Bytes) -> Unit raise @error.FTError
 pub fn InterpContext::func_defs(Self) -> Map[Int, FuncDef]
@@ -96,6 +117,7 @@ pub fn InterpContext::set_cvt_scale(Self, @fixed.Fixed) -> Unit
 pub fn InterpContext::set_func_defs(Self, Map[Int, FuncDef]) -> Unit
 pub fn InterpContext::set_gs(Self, GraphicsState) -> Unit
 pub fn InterpContext::set_ppem(Self, Int) -> Unit
+pub fn InterpContext::set_var_coords(Self, Array[Int]) -> Unit
 pub fn InterpContext::set_zone0_cur(Self, FixedArray[@types.Vector]) -> Unit
 pub fn InterpContext::set_zone0_org(Self, FixedArray[@types.Vector]) -> Unit
 pub fn InterpContext::set_zone0_points(Self, FixedArray[@types.Vector]) -> Unit
@@ -116,12 +138,14 @@ pub fn InterpContext::zone1_org(Self) -> FixedArray[@types.Vector]
 pub fn InterpContext::zone1_points(Self) -> FixedArray[@types.Vector]
 pub fn InterpContext::zone1_tags(Self) -> FixedArray[Byte]
 pub fn InterpContext::zone1_touch(Self) -> FixedArray[Byte]
-pub impl Show for InterpContext
 
-type NamedInstance
-pub impl Show for NamedInstance
+type ItemVariationData derive(Show)
 
-type TtFaceData
+type NamedInstance derive(Show)
+
+type RegionAxisCoordinates derive(Show)
+
+type TtFaceData derive(Show)
 pub fn TtFaceData::cvt(Self) -> Array[Int64]
 pub fn TtFaceData::fpgm(Self) -> Bytes
 pub fn TtFaceData::glyf_length(Self) -> UInt
@@ -129,15 +153,13 @@ pub fn TtFaceData::glyf_offset(Self) -> UInt
 pub fn TtFaceData::glyph_offsets(Self) -> Array[UInt]
 pub fn TtFaceData::prep(Self) -> Bytes
 pub fn TtFaceData::sfnt(Self) -> @sfnt.SfntData
-pub impl Show for TtFaceData
 
-type VarAxis
+type VarAxis derive(Show)
 pub fn VarAxis::default_value(Self) -> @fixed.Fixed
 pub fn VarAxis::max_value(Self) -> @fixed.Fixed
 pub fn VarAxis::min_value(Self) -> @fixed.Fixed
 pub fn VarAxis::name_id(Self) -> UInt
 pub fn VarAxis::tag(Self) -> UInt
-pub impl Show for VarAxis
 
 // Type aliases
 

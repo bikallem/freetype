@@ -26,56 +26,38 @@ pub fn interpolate_points(@types.Outline, Array[Edge], @fixed.Fixed, Bool) -> Un
 // Errors
 
 // Types and methods
-type AxisHints
+type AxisHints derive(Eq, Show)
 pub fn AxisHints::new() -> Self
-pub impl Eq for AxisHints
-pub impl Show for AxisHints
 
-type BlueZone
+type BlueZone derive(Eq, Show)
 pub fn BlueZone::new(Int64, Int64, Int64) -> Self
-pub impl Eq for BlueZone
-pub impl Show for BlueZone
 
-type Edge
+type Edge derive(Eq, Show)
 pub fn Edge::new(Int64) -> Self
-pub impl Eq for Edge
-pub impl Show for Edge
 
-type GlyphHints
+type GlyphHints derive(Eq, Show)
 pub fn GlyphHints::new() -> Self
-pub impl Eq for GlyphHints
-pub impl Show for GlyphHints
 
 pub(all) enum Script {
   Latin
   Cjk
   Indic
   Default
-}
-pub impl Eq for Script
-pub impl Show for Script
+} derive(Eq, Show)
 
-type ScriptMetrics
+type ScriptMetrics derive(Eq, Show)
 pub fn ScriptMetrics::new() -> Self
 pub fn ScriptMetrics::set_scale(Self, @fixed.Fixed) -> Unit
-pub impl Eq for ScriptMetrics
-pub impl Show for ScriptMetrics
 
-type Segment
+type Segment derive(Eq, Show)
 pub fn Segment::new(position~ : Int64, min_coord~ : Int64, max_coord~ : Int64, direction~ : SegmentDir, first_point~ : Int, last_point~ : Int, num_points~ : Int) -> Self
-pub impl Eq for Segment
-pub impl Show for Segment
 
 pub(all) enum SegmentDir {
   Horizontal
   Vertical
-}
-pub impl Eq for SegmentDir
-pub impl Show for SegmentDir
+} derive(Eq, Show)
 
-type Stem
-pub impl Eq for Stem
-pub impl Show for Stem
+type Stem derive(Eq, Show)
 
 // Type aliases
 

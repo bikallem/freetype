@@ -31,6 +31,8 @@ struct InterpContext {
   mut zone1_contours : FixedArray[UInt]
   // Current pixels per em
   mut ppem : Int
+  // Normalized variation coordinates (F2Dot14 values)
+  mut var_coords : Array[Int]
   // Error state
   mut error : Bool
 } derive(Show)
@@ -129,6 +131,7 @@ pub fn InterpContext::new(
     zone1_touch: FixedArray::default(),
     zone1_contours: FixedArray::default(),
     ppem: 0,
+    var_coords: [],
     error: false,
   }
 }
@@ -138,6 +141,14 @@ pub fn InterpContext::new(
 ///|
 pub fn InterpContext::set_ppem(self : InterpContext, v : Int) -> Unit {
   self.ppem = v
+}
+
+///|
+pub fn InterpContext::set_var_coords(
+  self : InterpContext,
+  v : Array[Int],
+) -> Unit {
+  self.var_coords = v
 }
 
 ///|
@@ -1147,8 +1158,14 @@ fn InterpContext::op_getinfo(self : InterpContext) -> Unit {
 
 ///|
 fn InterpContext::op_getvariation(self : InterpContext) -> Unit {
-  // Stub: push 0 (no variation)
-  self.push(0L)
+  let selector = self.pop()
+  if selector != 0L {
+    self.push(0L)
+    return
+  }
+  for _, coord in self.var_coords {
+    self.push(coord.to_int64())
+  }
 }
 
 // --- Vector opcodes ---

@@ -8,12 +8,18 @@ fn load_generated_dejavusans_woff2() -> Bytes {
 
 ///|
 test "parity/DejaVuSans.woff2: format" {
-  inspect(@base.detect_format(load_generated_dejavusans_woff2()), content="Woff2")
+  inspect(
+    @base.detect_format(load_generated_dejavusans_woff2()),
+    content="Woff2",
+  )
 }
 
 ///|
 test "parity/DejaVuSans.woff2: loads" {
-  inspect((try? @freetype.from_bytes(load_generated_dejavusans_woff2())) is Ok(_), content="true")
+  inspect(
+    (try? @freetype.from_bytes(load_generated_dejavusans_woff2())) is Ok(_),
+    content="true",
+  )
 }
 
 ///|
@@ -270,8 +276,11 @@ test "parity/DejaVuSans.woff2: outline FORCE_AUTOHINT 16ppem" {
   let f = @freetype.from_bytes(load_generated_dejavusans_woff2())
   let r1 = try? @freetype.set_pixel_sizes(f, 0U, 16U)
   guard r1 is Ok(_) else { return }
-  let r2 = try? @freetype.load_glyph(f, 4U, load_flags=@base.LOAD_FORCE_AUTOHINT)
+  let r2 = try? @freetype.load_glyph(
+    f,
+    4U,
+    load_flags=@base.LOAD_FORCE_AUTOHINT,
+  )
   guard r2 is Ok(_) else { return }
   inspect(f.glyph().metrics().hori_advance(), content="384")
 }
-

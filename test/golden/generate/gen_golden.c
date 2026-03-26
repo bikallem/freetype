@@ -54,6 +54,9 @@ static const FT_ULong test_charcodes[] = {
 };
 #define NUM_TEST_CHARS (sizeof(test_charcodes) / sizeof(test_charcodes[0]))
 
+static const FT_ULong variation_test_charcodes[] = { 'A', 'a' };
+#define NUM_VARIATION_TEST_CHARS (sizeof(variation_test_charcodes) / sizeof(variation_test_charcodes[0]))
+
 static void dump_face_metadata(FILE *fp, FT_Face face) {
     fprintf(fp, "  \"metadata\": {\n");
     fprintf(fp, "    \"family_name\": \"%s\",\n", face->family_name ? face->family_name : "");
@@ -129,6 +132,45 @@ static void dump_glyph_outline(FILE *fp, FT_GlyphSlot slot) {
     fprintf(fp, "      }");
 }
 
+static void dump_one_glyph(
+    FILE *fp,
+    FT_Face face,
+    FT_ULong charcode,
+    const char *flag_name,
+    FT_Int32 flags,
+    int size_ppem,
+    int *first_glyph
+) {
+    if (!(flags & FT_LOAD_NO_SCALE)) {
+        FT_Set_Pixel_Sizes(face, 0, size_ppem);
+    }
+
+    FT_UInt gindex = FT_Get_Char_Index(face, charcode);
+    if (gindex == 0) return;
+
+    FT_Error err = FT_Load_Glyph(face, gindex, flags);
+    if (err) return;
+    if (face->glyph->format != FT_GLYPH_FORMAT_OUTLINE) return;
+
+    if (!*first_glyph) fprintf(fp, ",\n");
+    *first_glyph = 0;
+
+    fprintf(fp, "    {\n");
+    fprintf(fp, "      \"glyph_index\": %u,\n", gindex);
+    fprintf(fp, "      \"charcode\": %lu,\n", charcode);
+    fprintf(fp, "      \"size_ppem\": %d,\n", size_ppem);
+    fprintf(fp, "      \"load_flags\": \"%s\",\n", flag_name);
+    fprintf(fp, "      \"metrics\": {\n");
+    fprintf(fp, "        \"width\": %ld,\n", face->glyph->metrics.width);
+    fprintf(fp, "        \"height\": %ld,\n", face->glyph->metrics.height);
+    fprintf(fp, "        \"horiBearingX\": %ld,\n", face->glyph->metrics.horiBearingX);
+    fprintf(fp, "        \"horiBearingY\": %ld,\n", face->glyph->metrics.horiBearingY);
+    fprintf(fp, "        \"horiAdvance\": %ld\n", face->glyph->metrics.horiAdvance);
+    fprintf(fp, "      },\n");
+    dump_glyph_outline(fp, face->glyph);
+    fprintf(fp, "\n    }");
+}
+
 static void dump_glyphs(FILE *fp, FT_Face face) {
     fprintf(fp, "  \"glyphs\": [\n");
     int first_glyph = 1;
@@ -143,30 +185,15 @@ static void dump_glyphs(FILE *fp, FT_Face face) {
             }
 
             for (unsigned c = 0; c < NUM_TEST_CHARS; c++) {
-                FT_UInt gindex = FT_Get_Char_Index(face, test_charcodes[c]);
-                if (gindex == 0) continue;
-
-                FT_Error err = FT_Load_Glyph(face, gindex, flags);
-                if (err) continue;
-                if (face->glyph->format != FT_GLYPH_FORMAT_OUTLINE) continue;
-
-                if (!first_glyph) fprintf(fp, ",\n");
-                first_glyph = 0;
-
-                fprintf(fp, "    {\n");
-                fprintf(fp, "      \"glyph_index\": %u,\n", gindex);
-                fprintf(fp, "      \"charcode\": %lu,\n", test_charcodes[c]);
-                fprintf(fp, "      \"size_ppem\": %d,\n", test_sizes[s]);
-                fprintf(fp, "      \"load_flags\": \"%s\",\n", flag_name);
-                fprintf(fp, "      \"metrics\": {\n");
-                fprintf(fp, "        \"width\": %ld,\n", face->glyph->metrics.width);
-                fprintf(fp, "        \"height\": %ld,\n", face->glyph->metrics.height);
-                fprintf(fp, "        \"horiBearingX\": %ld,\n", face->glyph->metrics.horiBearingX);
-                fprintf(fp, "        \"horiBearingY\": %ld,\n", face->glyph->metrics.horiBearingY);
-                fprintf(fp, "        \"horiAdvance\": %ld\n", face->glyph->metrics.horiAdvance);
-                fprintf(fp, "      },\n");
-                dump_glyph_outline(fp, face->glyph);
-                fprintf(fp, "\n    }");
+                dump_one_glyph(
+                    fp,
+                    face,
+                    test_charcodes[c],
+                    flag_name,
+                    flags,
+                    test_sizes[s],
+                    &first_glyph
+                );
             }
         }
     }
@@ -201,6 +228,81 @@ static void dump_kerning(FILE *fp, FT_Face face) {
     fprintf(fp, "\n  ]");
 }
 
+static void dump_variations(FILE *fp, FT_Library library, FT_Face face) {
+    FT_MM_Var *mmvar = NULL;
+    if (FT_Get_MM_Var(face, &mmvar) || !mmvar || mmvar->num_axis == 0) {
+        fprintf(fp, "  \"variations\": []");
+        return;
+    }
+
+    FT_Fixed *coords = (FT_Fixed *)calloc(mmvar->num_axis, sizeof(FT_Fixed));
+    FT_Fixed *defaults = (FT_Fixed *)calloc(mmvar->num_axis, sizeof(FT_Fixed));
+    int has_non_default = 0;
+    if (!coords || !defaults) {
+        free(coords);
+        free(defaults);
+        FT_Done_MM_Var(library, mmvar);
+        fprintf(fp, "  \"variations\": []");
+        return;
+    }
+
+    for (FT_UInt i = 0; i < mmvar->num_axis; i++) {
+        FT_Var_Axis axis = mmvar->axis[i];
+        FT_Fixed min_dist = axis.def - axis.minimum;
+        if (min_dist < 0) min_dist = -min_dist;
+        FT_Fixed max_dist = axis.maximum - axis.def;
+        if (max_dist < 0) max_dist = -max_dist;
+        defaults[i] = axis.def;
+        coords[i] = (max_dist > min_dist) ? axis.maximum : axis.minimum;
+        if (coords[i] != defaults[i]) has_non_default = 1;
+    }
+
+    fprintf(fp, "  \"variations\": [\n");
+    fprintf(fp, "    {\n");
+    fprintf(fp, "      \"coords\": [");
+    for (FT_UInt i = 0; i < mmvar->num_axis; i++) {
+        FT_Tag tag = mmvar->axis[i].tag;
+        if (i > 0) fprintf(fp, ",");
+        fprintf(
+            fp,
+            "[\"%c%c%c%c\",%ld]",
+            (char)((tag >> 24) & 0xFF),
+            (char)((tag >> 16) & 0xFF),
+            (char)((tag >> 8) & 0xFF),
+            (char)(tag & 0xFF),
+            (long)coords[i]
+        );
+    }
+    fprintf(fp, "],\n");
+    fprintf(fp, "      \"glyphs\": [\n");
+
+    int first_glyph = 1;
+    if (has_non_default && FT_Set_Var_Design_Coordinates(face, mmvar->num_axis, coords) == 0) {
+        for (unsigned c = 0; c < NUM_VARIATION_TEST_CHARS; c++) {
+            dump_one_glyph(
+                fp,
+                face,
+                variation_test_charcodes[c],
+                "NO_SCALE",
+                FT_LOAD_NO_SCALE,
+                0,
+                &first_glyph
+            );
+        }
+        dump_one_glyph(fp, face, 'A', "NO_HINTING", FT_LOAD_NO_HINTING, 16, &first_glyph);
+        dump_one_glyph(fp, face, 'A', "DEFAULT", FT_LOAD_DEFAULT, 16, &first_glyph);
+        dump_one_glyph(fp, face, 'A', "FORCE_AUTOHINT", FT_LOAD_FORCE_AUTOHINT, 16, &first_glyph);
+        FT_Set_Var_Design_Coordinates(face, mmvar->num_axis, defaults);
+    }
+    fprintf(fp, "\n      ]\n");
+    fprintf(fp, "    }\n");
+    fprintf(fp, "  ]");
+
+    free(coords);
+    free(defaults);
+    FT_Done_MM_Var(library, mmvar);
+}
+
 static void process_font(FT_Library library, const char *font_path, const char *output_dir) {
     FT_Face face;
     FT_Error err = FT_New_Face(library, font_path, 0, &face);
@@ -232,6 +334,8 @@ static void process_font(FT_Library library, const char *font_path, const char *
     dump_glyphs(fp, face);
     fprintf(fp, ",\n");
     dump_kerning(fp, face);
+    fprintf(fp, ",\n");
+    dump_variations(fp, library, face);
     fprintf(fp, "\n}\n");
 
     fclose(fp);

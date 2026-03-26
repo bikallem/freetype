@@ -23,7 +23,7 @@ pub fn parse_type1_pfb(Bytes) -> Type1Font raise @error.FTError
 // Errors
 
 // Types and methods
-type Type1Font
+type Type1Font derive(Show)
 pub fn Type1Font::blue_values(Self) -> Array[Int]
 pub fn Type1Font::charstrings(Self) -> Map[String, Bytes]
 pub fn Type1Font::encoding(Self) -> Array[String]
@@ -41,7 +41,6 @@ pub fn Type1Font::subrs(Self) -> Array[Bytes]
 pub fn Type1Font::underline_position(Self) -> Int
 pub fn Type1Font::underline_thickness(Self) -> Int
 pub fn Type1Font::units_per_em(Self) -> Int
-pub impl Show for Type1Font
 
 // Type aliases
 

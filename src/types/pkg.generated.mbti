@@ -199,18 +199,15 @@ pub fn make_tag(Byte, Byte, Byte, Byte) -> UInt
 // Errors
 
 // Types and methods
-type BBox
+type BBox derive(Eq, Show, ToJson)
 pub fn BBox::empty() -> Self
 pub fn BBox::new(Int64, Int64, Int64, Int64) -> Self
 pub fn BBox::x_max(Self) -> Int64
 pub fn BBox::x_min(Self) -> Int64
 pub fn BBox::y_max(Self) -> Int64
 pub fn BBox::y_min(Self) -> Int64
-pub impl Eq for BBox
-pub impl Show for BBox
-pub impl ToJson for BBox
 
-type Bitmap
+type Bitmap derive(Eq, Show)
 pub fn Bitmap::buffer(Self) -> Bytes
 pub fn Bitmap::new() -> Self
 pub fn Bitmap::num_grays(Self) -> UInt
@@ -224,17 +221,13 @@ pub fn Bitmap::set_pixel_mode(Self, PixelMode) -> Unit
 pub fn Bitmap::set_rows(Self, UInt) -> Unit
 pub fn Bitmap::set_width(Self, UInt) -> Unit
 pub fn Bitmap::width(Self) -> UInt
-pub impl Eq for Bitmap
-pub impl Show for Bitmap
 
 pub(all) enum CurveTag {
   On
   Conic
   Cubic
-}
+} derive(Eq, Show)
 pub fn CurveTag::from_byte(Byte) -> Self
-pub impl Eq for CurveTag
-pub impl Show for CurveTag
 
 pub(all) enum GlyphFormat {
   None
@@ -243,11 +236,9 @@ pub(all) enum GlyphFormat {
   Outline
   Plotter
   Svg
-}
-pub impl Eq for GlyphFormat
-pub impl Show for GlyphFormat
+} derive(Eq, Show)
 
-type GlyphMetrics
+type GlyphMetrics derive(Eq, Show, ToJson)
 pub fn GlyphMetrics::height(Self) -> Int64
 pub fn GlyphMetrics::hori_advance(Self) -> Int64
 pub fn GlyphMetrics::hori_bearing_x(Self) -> Int64
@@ -265,11 +256,8 @@ pub fn GlyphMetrics::vert_advance(Self) -> Int64
 pub fn GlyphMetrics::vert_bearing_x(Self) -> Int64
 pub fn GlyphMetrics::vert_bearing_y(Self) -> Int64
 pub fn GlyphMetrics::width(Self) -> Int64
-pub impl Eq for GlyphMetrics
-pub impl Show for GlyphMetrics
-pub impl ToJson for GlyphMetrics
 
-type Outline
+type Outline derive(Eq, Show)
 pub fn Outline::contours(Self) -> FixedArray[UInt]
 pub fn Outline::create(FixedArray[Vector], FixedArray[Byte], FixedArray[UInt], flags? : Int) -> Self
 pub fn Outline::create_with_counts(FixedArray[Vector], FixedArray[Byte], FixedArray[UInt], Int, Int) -> Self
@@ -283,8 +271,6 @@ pub fn Outline::set_flags(Self, Int) -> Unit
 pub fn Outline::set_points(Self, FixedArray[Vector]) -> Unit
 pub fn Outline::set_tags(Self, FixedArray[Byte]) -> Unit
 pub fn Outline::tags(Self) -> FixedArray[Byte]
-pub impl Eq for Outline
-pub impl Show for Outline
 
 pub(all) enum PixelMode {
   None
@@ -295,11 +281,9 @@ pub(all) enum PixelMode {
   Lcd
   LcdV
   Bgra
-}
-pub impl Eq for PixelMode
-pub impl Show for PixelMode
+} derive(Eq, Show)
 
-type SizeMetrics
+type SizeMetrics derive(Eq, Show)
 pub fn SizeMetrics::ascender(Self) -> Int64
 pub fn SizeMetrics::descender(Self) -> Int64
 pub fn SizeMetrics::height(Self) -> Int64
@@ -317,16 +301,11 @@ pub fn SizeMetrics::x_ppem(Self) -> UInt
 pub fn SizeMetrics::x_scale(Self) -> @fixed.Fixed
 pub fn SizeMetrics::y_ppem(Self) -> UInt
 pub fn SizeMetrics::y_scale(Self) -> @fixed.Fixed
-pub impl Eq for SizeMetrics
-pub impl Show for SizeMetrics
 
-type Vector
+type Vector derive(Eq, Show, ToJson)
 pub fn Vector::new(Int64, Int64) -> Self
 pub fn Vector::x(Self) -> Int64
 pub fn Vector::y(Self) -> Int64
-pub impl Eq for Vector
-pub impl Show for Vector
-pub impl ToJson for Vector
 
 // Type aliases
 

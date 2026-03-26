@@ -101,31 +101,26 @@ pub fn outline_translate(@types.Outline, Int64, Int64) -> Unit
 // Errors
 
 // Types and methods
-type BitmapGlyphData
+type BitmapGlyphData derive(Show)
 pub fn BitmapGlyphData::bitmap(Self) -> @types.Bitmap
 pub fn BitmapGlyphData::bitmap_left(Self) -> Int
 pub fn BitmapGlyphData::bitmap_top(Self) -> Int
 pub fn BitmapGlyphData::new(GlyphSlotData, @types.Bitmap, Int, Int) -> Self
 pub fn BitmapGlyphData::slot_data(Self) -> GlyphSlotData
-pub impl Show for BitmapGlyphData
 
 type BitmapOps
 pub fn BitmapOps::load_glyph(Self) -> (UInt, Int) -> BitmapGlyphData raise @error.FTError
 pub fn BitmapOps::new(load_glyph~ : (UInt, Int) -> BitmapGlyphData raise @error.FTError) -> Self
 pub impl Show for BitmapOps
 
-type BitmapSize
+type BitmapSize derive(Eq, Show)
 pub fn BitmapSize::new(Int, Int, Int64, Int64, Int64) -> Self
-pub impl Eq for BitmapSize
-pub impl Show for BitmapSize
 
-type CharMapRec
+type CharMapRec derive(Eq, Show)
 pub fn CharMapRec::encoding(Self) -> Encoding
 pub fn CharMapRec::encoding_id(Self) -> UInt
 pub fn CharMapRec::new(Encoding, UInt, UInt) -> Self
 pub fn CharMapRec::platform_id(Self) -> UInt
-pub impl Eq for CharMapRec
-pub impl Show for CharMapRec
 
 pub(all) enum DriverData {
   Empty
@@ -150,13 +145,11 @@ pub(all) enum Encoding {
   AdobeLatin1
   OldLatin2
   AppleRoman
-}
+} derive(Eq, Show)
 pub fn Encoding::from_tag(UInt) -> Self
 pub fn Encoding::to_tag(Self) -> UInt
-pub impl Eq for Encoding
-pub impl Show for Encoding
 
-type FaceRec
+type FaceRec derive(Show)
 pub fn FaceRec::active_charmap(Self) -> Int
 pub fn FaceRec::ascender(Self) -> Int
 pub fn FaceRec::available_sizes(Self) -> Array[BitmapSize]
@@ -212,7 +205,6 @@ pub fn FaceRec::underline_position(Self) -> Int
 pub fn FaceRec::underline_thickness(Self) -> Int
 pub fn FaceRec::units_per_em(Self) -> UInt
 pub fn FaceRec::var_coords(Self) -> Array[Int]
-pub impl Show for FaceRec
 
 pub(all) enum FontFormat {
   TrueType
@@ -229,11 +221,9 @@ pub(all) enum FontFormat {
   WindowsFnt
   Pfr
   Unknown
-}
-pub impl Eq for FontFormat
-pub impl Show for FontFormat
+} derive(Eq, Show)
 
-type GlyphLoader
+type GlyphLoader derive(Show)
 pub fn GlyphLoader::add(Self) -> Unit
 pub fn GlyphLoader::add_point(Self, Int64, Int64, Byte) -> Unit
 pub fn GlyphLoader::base_n_contours(Self) -> Int
@@ -242,9 +232,8 @@ pub fn GlyphLoader::end_contour(Self) -> Unit
 pub fn GlyphLoader::new() -> Self
 pub fn GlyphLoader::reset(Self) -> Unit
 pub fn GlyphLoader::to_outline(Self) -> @types.Outline
-pub impl Show for GlyphLoader
 
-type GlyphSlot
+type GlyphSlot derive(Show)
 pub fn GlyphSlot::advance(Self) -> @types.Vector
 pub fn GlyphSlot::bitmap(Self) -> @types.Bitmap
 pub fn GlyphSlot::bitmap_left(Self) -> Int
@@ -273,16 +262,14 @@ pub fn GlyphSlot::set_outline(Self, @types.Outline) -> Unit
 pub fn GlyphSlot::set_rsb_delta(Self, Int64) -> Unit
 pub fn GlyphSlot::set_subglyphs(Self, Array[SubGlyph]) -> Unit
 pub fn GlyphSlot::subglyphs(Self) -> Array[SubGlyph]
-pub impl Show for GlyphSlot
 
-type GlyphSlotData
+type GlyphSlotData derive(Show)
 pub fn GlyphSlotData::metrics_height(Self) -> Int64
 pub fn GlyphSlotData::metrics_hori_advance(Self) -> Int64
 pub fn GlyphSlotData::metrics_hori_bearing_x(Self) -> Int64
 pub fn GlyphSlotData::metrics_hori_bearing_y(Self) -> Int64
 pub fn GlyphSlotData::metrics_width(Self) -> Int64
 pub fn GlyphSlotData::new(Int64, Int64, Int64, Int64, Int64) -> Self
-pub impl Show for GlyphSlotData
 
 type OutlineFuncs
 pub fn OutlineFuncs::new(move_to~ : (@types.Vector) -> Unit raise @error.FTError, line_to~ : (@types.Vector) -> Unit raise @error.FTError, conic_to~ : (@types.Vector, @types.Vector) -> Unit raise @error.FTError, cubic_to~ : (@types.Vector, @types.Vector, @types.Vector) -> Unit raise @error.FTError, shift? : Int, delta? : Int64) -> Self
@@ -298,20 +285,18 @@ pub fn SfntOps::raw_data(Self) -> Bytes
 pub fn SfntOps::tt_hint(Self) -> (@types.Outline, Bytes, @fixed.Fixed, @fixed.Fixed, UInt) -> Bool
 pub impl Show for SfntOps
 
-type SizeRec
+type SizeRec derive(Show)
 pub fn SizeRec::metrics(Self) -> @types.SizeMetrics
 pub fn SizeRec::new() -> Self
 pub fn SizeRec::set_metrics(Self, @types.SizeMetrics) -> Unit
-pub impl Show for SizeRec
 
-type SubGlyph
+type SubGlyph derive(Show)
 pub fn SubGlyph::arg1(Self) -> Int
 pub fn SubGlyph::arg2(Self) -> Int
 pub fn SubGlyph::flags(Self) -> UInt
 pub fn SubGlyph::index(Self) -> UInt
 pub fn SubGlyph::new(UInt, UInt, Int, Int, @fixed.Matrix) -> Self
 pub fn SubGlyph::transform(Self) -> @fixed.Matrix
-pub impl Show for SubGlyph
 
 type Type1Ops
 pub fn Type1Ops::apply_hints(Self) -> (@types.Outline, @fixed.Fixed) -> Bool

@@ -76,6 +76,97 @@ fn read_i16(data : Bytes, pos : Int) -> Int {
 }
 
 ///|
+fn build_phantom_points(
+  bbox : @types.BBox,
+  advance_width : UInt,
+  lsb : Int,
+) -> Array[@types.Vector] {
+  let left = bbox.x_min() - lsb.to_int64()
+  let right = left + advance_width.reinterpret_as_int().to_int64()
+  [
+    @types.Vector::new(left, 0L),
+    @types.Vector::new(right, 0L),
+    @types.Vector::new(0L, bbox.y_max()),
+    @types.Vector::new(0L, bbox.y_min()),
+  ]
+}
+
+///|
+fn empty_phantom_points() -> Array[@types.Vector] {
+  [
+    @types.Vector::new(0L, 0L),
+    @types.Vector::new(0L, 0L),
+    @types.Vector::new(0L, 0L),
+    @types.Vector::new(0L, 0L),
+  ]
+}
+
+///|
+fn transform_tt_point(
+  point : @types.Vector,
+  component : CompositeComponent,
+) -> @types.Vector {
+  let has_transform = (component.flags & WE_HAVE_A_SCALE) != 0U ||
+    (component.flags & WE_HAVE_AN_X_AND_Y_SCALE) != 0U ||
+    (component.flags & WE_HAVE_A_TWO_BY_TWO) != 0U
+  let mut px = point.x()
+  let mut py = point.y()
+  if has_transform {
+    let matrix = @fixed.Matrix::new(
+      component.xx,
+      component.xy,
+      component.yx,
+      component.yy,
+    )
+    let (rx, ry) = matrix.transform(px, py)
+    px = rx
+    py = ry
+  }
+  if (component.flags & ARGS_ARE_XY_VALUES) != 0U {
+    px += component.arg1.to_int64()
+    py += component.arg2.to_int64()
+  }
+  @types.Vector::new(px, py)
+}
+
+///|
+fn apply_simple_gvar_to_outline(
+  outline : @types.Outline,
+  phantoms : Array[@types.Vector],
+  delta_x : Array[Int64],
+  delta_y : Array[Int64],
+) -> Unit {
+  for i in 0..<outline.n_points() {
+    let point = outline.points().unsafe_get(i)
+    outline.points()[i] = @types.Vector::new(
+      point.x() + delta_x[i],
+      point.y() + delta_y[i],
+    )
+  }
+  let base = outline.n_points()
+  if phantoms.length() >= 4 &&
+    delta_x.length() >= base + 4 &&
+    delta_y.length() >= base + 4 {
+    phantoms[0] = @types.Vector::new(
+      phantoms[0].x() + delta_x[base],
+      phantoms[0].y(),
+    )
+    phantoms[1] = @types.Vector::new(
+      phantoms[1].x() + delta_x[base + 1],
+      phantoms[1].y(),
+    )
+    phantoms[2] = @types.Vector::new(
+      phantoms[2].x(),
+      phantoms[2].y() + delta_y[base + 2],
+    )
+    phantoms[3] = @types.Vector::new(
+      phantoms[3].x(),
+      phantoms[3].y() + delta_y[base + 3],
+    )
+  }
+}
+
+///|
 /// Load a simple glyph from the 'glyf' table.
 /// Uses reusable buffers for flags and x_coords to avoid per-glyph allocation.
 /// Points, tags, and contours FixedArrays are still allocated per glyph
@@ -264,34 +355,65 @@ pub fn load_composite_glyph(
 }
 
 ///|
-/// Load a glyph from a TrueType font, returning the outline.
+/// Load a glyph from a TrueType font, returning the outline and phantom points.
 /// Handles both simple and composite glyphs (recursively).
-pub fn load_tt_glyph(
+pub fn load_tt_glyph_with_phantoms(
   data : Bytes,
   glyph_offsets : Array[UInt],
   glyf_offset : UInt,
   glyph_index : UInt,
   bufs : GlyphBufs,
+  hmtx? : @sfnt.HmtxTable? = None,
+  gvar? : GvarTable? = None,
+  var_coords? : Array[Int] = [],
   depth? : Int = 0,
-) -> (@types.Outline, Int, Int, @types.BBox) raise @error.FTError {
-  // Returns (outline, instr_offset, instr_length, bbox)
+) -> (@types.Outline, Int, Int, @types.BBox, Array[@types.Vector]) raise @error.FTError {
+  // Returns (outline, instr_offset, instr_length, bbox, phantom_points)
   // Caller copies instructions only when hinting is needed
   if depth > 32 {
     raise @error.FTError::InvalidComposite
   }
+  let default_phantoms = empty_phantom_points()
   let idx = glyph_index.reinterpret_as_int()
   if idx >= glyph_offsets.length() - 1 {
-    return (@types.Outline::new(), 0, 0, @types.BBox::empty())
+    return (@types.Outline::new(), 0, 0, @types.BBox::empty(), default_phantoms)
   }
   let glyph_start = glyf_offset + glyph_offsets.unsafe_get(idx)
   let glyph_end = glyf_offset + glyph_offsets.unsafe_get(idx + 1)
+  let (advance_width, lsb) = match hmtx {
+    Some(h) => h.get_metrics(glyph_index)
+    None => (0U, 0)
+  }
   if glyph_start == glyph_end {
-    return (@types.Outline::new(), 0, 0, @types.BBox::empty())
+    return (
+      @types.Outline::new(),
+      0,
+      0,
+      @types.BBox::empty(),
+      build_phantom_points(@types.BBox::empty(), advance_width, lsb),
+    )
   }
   let start = glyph_start.reinterpret_as_int()
   let num_contours = read_i16(data, start)
   if num_contours >= 0 {
-    load_simple_glyph(data, start + 2, num_contours, bufs)
+    let (outline, instr_offset, instruction_length, bbox) = load_simple_glyph(
+      data,
+      start + 2,
+      num_contours,
+      bufs,
+    )
+    let phantoms = build_phantom_points(bbox, advance_width, lsb)
+    match gvar {
+      Some(table) => {
+        let point_count = outline.n_points() + 4
+        let (delta_x, delta_y) = compute_gvar_deltas(
+          table, data, glyph_index, var_coords, point_count, outline, 0,
+        )
+        apply_simple_gvar_to_outline(outline, phantoms, delta_x, delta_y)
+      }
+      None => ()
+    }
+    (outline, instr_offset, instruction_length, bbox, phantoms)
   } else {
     // Composite glyph — read bbox from header
     let comp_bbox = @types.BBox::new(
@@ -304,39 +426,107 @@ pub fn load_tt_glyph(
     reader.seek(start + 2)
     let components = load_composite_glyph(reader)
     let loader = @base.GlyphLoader::new()
+    let phantoms = build_phantom_points(comp_bbox, advance_width, lsb)
+    match gvar {
+      Some(table) => {
+        let (delta_x, delta_y) = compute_gvar_deltas(
+          table,
+          data,
+          glyph_index,
+          var_coords,
+          components.length() + 4,
+          @types.Outline::new(),
+          components.length(),
+        )
+        let phantom_base = components.length()
+        if delta_x.length() >= phantom_base + 4 &&
+          delta_y.length() >= phantom_base + 4 {
+          phantoms[0] = @types.Vector::new(
+            phantoms[0].x() + delta_x[phantom_base],
+            phantoms[0].y(),
+          )
+          phantoms[1] = @types.Vector::new(
+            phantoms[1].x() + delta_x[phantom_base + 1],
+            phantoms[1].y(),
+          )
+          phantoms[2] = @types.Vector::new(
+            phantoms[2].x(),
+            phantoms[2].y() + delta_y[phantom_base + 2],
+          )
+          phantoms[3] = @types.Vector::new(
+            phantoms[3].x(),
+            phantoms[3].y() + delta_y[phantom_base + 3],
+          )
+        }
+        for i in 0..<components.length() {
+          if i < delta_x.length() &&
+            i < delta_y.length() &&
+            (components[i].flags & ARGS_ARE_XY_VALUES) != 0U {
+            let comp = components[i]
+            components[i] = {
+              flags: comp.flags,
+              glyph_index: comp.glyph_index,
+              arg1: comp.arg1 + delta_x[i].to_int(),
+              arg2: comp.arg2 + delta_y[i].to_int(),
+              xx: comp.xx,
+              xy: comp.xy,
+              yx: comp.yx,
+              yy: comp.yy,
+            }
+          }
+        }
+      }
+      None => ()
+    }
     for _, comp in components {
-      let (sub_outline, _sub_instr_off, _sub_instr_len, _sub_bbox) = load_tt_glyph(
+      let (sub_outline, _sub_instr_off, _sub_instr_len, _sub_bbox, sub_phantoms) = load_tt_glyph_with_phantoms(
         data,
         glyph_offsets,
         glyf_offset,
         comp.glyph_index,
         bufs,
+        hmtx~,
+        gvar~,
+        var_coords~,
         depth=depth + 1,
       )
-      let has_transform = (comp.flags & WE_HAVE_A_SCALE) != 0U ||
-        (comp.flags & WE_HAVE_AN_X_AND_Y_SCALE) != 0U ||
-        (comp.flags & WE_HAVE_A_TWO_BY_TWO) != 0U
       for j in 0..<sub_outline.n_points() {
-        let point = sub_outline.points().unsafe_get(j)
-        let mut px = point.x()
-        let mut py = point.y()
-        if has_transform {
-          let matrix = @fixed.Matrix::new(comp.xx, comp.xy, comp.yx, comp.yy)
-          let (rx, ry) = matrix.transform(px, py)
-          px = rx
-          py = ry
-        }
-        if (comp.flags & ARGS_ARE_XY_VALUES) != 0U {
-          px += comp.arg1.to_int64()
-          py += comp.arg2.to_int64()
-        }
-        loader.add_point(px, py, sub_outline.tags().unsafe_get(j))
+        let point = transform_tt_point(sub_outline.points().unsafe_get(j), comp)
+        loader.add_point(point.x(), point.y(), sub_outline.tags().unsafe_get(j))
       }
       for _ in 0..<sub_outline.n_contours() {
         loader.end_contour()
       }
       loader.add()
+      if (comp.flags & USE_MY_METRICS) != 0U && sub_phantoms.length() >= 4 {
+        phantoms[0] = transform_tt_point(sub_phantoms[0], comp)
+        phantoms[1] = transform_tt_point(sub_phantoms[1], comp)
+        phantoms[2] = transform_tt_point(sub_phantoms[2], comp)
+        phantoms[3] = transform_tt_point(sub_phantoms[3], comp)
+      }
     }
-    (loader.to_outline(), 0, 0, comp_bbox)
+    (loader.to_outline(), 0, 0, comp_bbox, phantoms)
   }
+}
+
+///|
+/// Load a glyph from a TrueType font, returning the outline.
+/// Handles both simple and composite glyphs (recursively).
+pub fn load_tt_glyph(
+  data : Bytes,
+  glyph_offsets : Array[UInt],
+  glyf_offset : UInt,
+  glyph_index : UInt,
+  bufs : GlyphBufs,
+  depth? : Int = 0,
+) -> (@types.Outline, Int, Int, @types.BBox) raise @error.FTError {
+  let (outline, instr_offset, instruction_length, bbox, _phantoms) = load_tt_glyph_with_phantoms(
+    data,
+    glyph_offsets,
+    glyf_offset,
+    glyph_index,
+    bufs,
+    depth~,
+  )
+  (outline, instr_offset, instruction_length, bbox)
 }

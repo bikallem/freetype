@@ -12,6 +12,8 @@ fn load_sfnt(
   let hmtx_ref : Ref[@sfnt.HmtxTable?] = Ref::new(None)
   let tt_ref : Ref[@truetype.TtFaceData??] = Ref::new(None)
   let cff_ref : Ref[@cff.CffFont??] = Ref::new(None)
+  let gvar_ref : Ref[@truetype.GvarTable??] = Ref::new(None)
+  let hvar_ref : Ref[@truetype.HvarTable??] = Ref::new(None)
   let hint_globals_ref : Ref[@pshinter.PsGlobals?] = Ref::new(None)
   // Check table presence (cheap O(1) lookups)
   let has_glyf = sfnt_data.table_dir().find_table(@types.TAG_GLYF) is Some(_)
@@ -81,13 +83,81 @@ fn load_sfnt(
       }
     }
   }
+  let ensure_gvar = fn() -> @truetype.GvarTable? raise @error.FTError {
+    match gvar_ref.val {
+      Some(result) => result
+      None => {
+        let result : @truetype.GvarTable? = match
+          sfnt_data.table_dir().find_table(@types.TAG_GVAR) {
+          Some(rec) =>
+            Some(
+              @truetype.parse_gvar(
+                @stream.ByteReader::new(data),
+                rec.offset(),
+                rec.length(),
+                sfnt_data.maxp().num_glyphs(),
+              ),
+            )
+          None => None
+        }
+        gvar_ref.val = Some(result)
+        result
+      }
+    }
+  }
+  let ensure_hvar = fn() -> @truetype.HvarTable? raise @error.FTError {
+    match hvar_ref.val {
+      Some(result) => result
+      None => {
+        let result : @truetype.HvarTable? = match
+          sfnt_data.table_dir().find_table(@types.TAG_HVAR) {
+          Some(rec) =>
+            Some(
+              @truetype.parse_hvar(
+                @stream.ByteReader::new(data),
+                rec.offset(),
+                rec.length(),
+              ),
+            )
+          None => None
+        }
+        hvar_ref.val = Some(result)
+        result
+      }
+    }
+  }
+  let has_active_variation = fn() -> Bool {
+    for _, coord in face.var_coords() {
+      if coord != 0 {
+        return true
+      }
+    }
+    false
+  }
   // Reusable glyph loading buffers (captured by load_glyph_fn closure)
   let glyph_bufs = @truetype.GlyphBufs::new()
   // Cached TT interpreter state: fpgm func_defs + prep-modified CVT + reusable context
   let tt_cached_funcs : Ref[Map[Int, @truetype.FuncDef]?] = Ref::new(None)
   let tt_cached_cvt : Ref[Array[Int64]?] = Ref::new(None)
   let tt_cached_ppem : Ref[UInt] = Ref::new(0U)
+  let tt_cached_var_coords : Ref[Array[Int]?] = Ref::new(None)
   let tt_cached_ok : Ref[Bool] = Ref::new(false)
+  let same_var_coords = fn(coords : Array[Int]) -> Bool {
+    match tt_cached_var_coords.val {
+      Some(cached) => {
+        if cached.length() != coords.length() {
+          return false
+        }
+        for i in 0..<coords.length() {
+          if cached[i] != coords[i] {
+            return false
+          }
+        }
+        true
+      }
+      None => false
+    }
+  }
   // Reusable interpreter context — avoid allocating new one per glyph
   let tt_reuse_ctx : Ref[@truetype.InterpContext?] = Ref::new(None)
   // Per-face hint state
@@ -124,15 +194,22 @@ fn load_sfnt(
     Bytes,
   ) raise @error.FTError = fn(glyph_index, load_flags) raise @error.FTError {
     let no_hinting = (load_flags & @base.LOAD_NO_HINTING) != 0
+    let hmtx = ensure_hmtx()
+    let has_variation = has_active_variation()
     let tt_data = ensure_tt()
-    let (outline, tt_instructions, tt_bbox) = if tt_data is Some(tt) {
+    let (outline, tt_instructions, tt_bbox, tt_phantoms) = if tt_data
+      is Some(tt) {
       hint_has_hints.val = false
-      let (o, instr_off, instr_len, bbox) = @truetype.load_tt_glyph(
+      let gvar = if has_variation { ensure_gvar() } else { None }
+      let (o, instr_off, instr_len, bbox, phantoms) = @truetype.load_tt_glyph_with_phantoms(
         data,
         tt.glyph_offsets(),
         tt.glyf_offset(),
         glyph_index,
         glyph_bufs,
+        hmtx=Some(hmtx),
+        gvar~,
+        var_coords=face.var_coords(),
       )
       // Only copy instructions when hinting is needed
       let instr = if !no_hinting && instr_len > 0 {
@@ -140,7 +217,7 @@ fn load_sfnt(
       } else {
         b""
       }
-      (o, instr, bbox)
+      (o, instr, bbox, phantoms)
     } else if ensure_cff() is Some(cff) {
       let (o, _w, hh, hv) = @cff.load_cff_glyph(cff, glyph_index)
       if no_hinting {
@@ -153,16 +230,31 @@ fn load_sfnt(
         let pd = cff.private_dict_for_glyph(glyph_index)
         hint_globals_ref.val = Some(build_ps_globals_from_cff_private(pd))
       }
-      (o, b"", @types.BBox::empty())
+      (o, b"", @types.BBox::empty(), [])
     } else {
       hint_has_hints.val = false
       hint_globals_ref.val = None
-      (@types.Outline::new(), b"", @types.BBox::empty())
+      (@types.Outline::new(), b"", @types.BBox::empty(), [])
     }
-    let hmtx = ensure_hmtx()
     let (advance_width, _lsb) = hmtx.get_metrics(glyph_index)
-    // Use glyf header bbox for TT glyphs (avoids scanning all points)
-    let bb = if tt_bbox.x_max() != 0L || tt_bbox.y_max() != 0L {
+    let varied_advance = if has_variation {
+      match ensure_hvar() {
+        Some(hvar) =>
+          advance_width.reinterpret_as_int().to_int64() +
+          hvar.advance_width_delta(glyph_index, face.var_coords())
+        None =>
+          if tt_phantoms.length() >= 2 {
+            tt_phantoms[1].x() - tt_phantoms[0].x()
+          } else {
+            advance_width.reinterpret_as_int().to_int64()
+          }
+      }
+    } else {
+      advance_width.reinterpret_as_int().to_int64()
+    }
+    // Use glyf header bbox for TT glyphs unless variation moved the outline.
+    let bb = if !has_variation &&
+      (tt_bbox.x_max() != 0L || tt_bbox.y_max() != 0L) {
       tt_bbox
     } else {
       @base.outline_get_bbox(outline)
@@ -172,7 +264,7 @@ fn load_sfnt(
       bb.y_max() - bb.y_min(),
       bb.x_min(),
       bb.y_max(),
-      advance_width.reinterpret_as_int().to_int64(),
+      varied_advance,
     )
     (slot_data, outline, tt_instructions)
   }
@@ -222,7 +314,9 @@ fn load_sfnt(
     }
     if tt_data is Some(tt) && instructions.length() > 0 {
       // Cache fpgm func_defs + prep-modified CVT per ppem
-      if tt_cached_ppem.val != ppem || tt_cached_funcs.val is None {
+      if tt_cached_ppem.val != ppem ||
+        tt_cached_funcs.val is None ||
+        !same_var_coords(face.var_coords()) {
         // Run fpgm + prep once, cache results
         let init_ctx = @truetype.InterpContext::new(
           cvt=tt.cvt().copy(),
@@ -267,10 +361,12 @@ fn load_sfnt(
             init_ok = false
           }
         }
+        init_ctx.set_var_coords(face.var_coords())
         // Cache func_defs and scaled CVT
         tt_cached_funcs.val = Some(init_ctx.func_defs())
         tt_cached_cvt.val = Some(init_ctx.cvt())
         tt_cached_ppem.val = ppem
+        tt_cached_var_coords.val = Some(face.var_coords())
         tt_cached_ok.val = init_ok
       }
       // If fpgm/prep failed, skip TT hinting (fall back to auto-hint)
@@ -302,6 +398,7 @@ fn load_sfnt(
       ctx.set_cvt_scale(y_scale)
       ctx.set_ppem(ppem.reinterpret_as_int())
       ctx.set_func_defs(cached_funcs)
+      ctx.set_var_coords(face.var_coords())
       ctx.reset_sp()
       // Reuse zone1 arrays if large enough, else reallocate
       let n_points = outline.n_points()

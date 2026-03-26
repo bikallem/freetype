@@ -14,9 +14,7 @@ pub fn validate_kern_apple(@stream.ByteReader, UInt, UInt) -> GxValidationResult
 // Errors
 
 // Types and methods
-type GxValidationResult
-pub impl Eq for GxValidationResult
-pub impl Show for GxValidationResult
+type GxValidationResult derive(Eq, Show)
 
 // Type aliases
 

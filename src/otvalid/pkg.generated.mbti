@@ -24,9 +24,7 @@ pub(all) enum ValidationLevel {
   Valid
   Warning(String)
   Error(String)
-}
-pub impl Eq for ValidationLevel
-pub impl Show for ValidationLevel
+} derive(Eq, Show)
 
 // Type aliases
 

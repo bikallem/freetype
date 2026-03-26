@@ -161,6 +161,17 @@ test "InterpContext: WCVTF scales font units" {
 }
 
 ///|
+test "InterpContext: GETVARIATION pushes normalized coords" {
+  let ctx = InterpContext::new()
+  ctx.set_var_coords([0x4000, -0x2000])
+  // PUSHB[0] 0 GETVARIATION
+  ctx.execute(b"\xB0\x00\x91")
+  inspect(ctx.sp, content="2")
+  inspect(ctx.stack[0], content="16384")
+  inspect(ctx.stack[1], content="-8192")
+}
+
+///|
 test "InterpContext: FDEF/CALL" {
   let ctx = InterpContext::new()
   // FDEF 0: PUSHB[0] 77 ENDF

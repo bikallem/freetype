@@ -83,6 +83,7 @@ priv struct Woff2FontEntry {
   table_indices : Array[Int]
 }
 
+///|
 fn sorted_font_table_indices(
   font : Woff2FontEntry,
   entries : Array[Woff2TableEntry],
@@ -295,7 +296,9 @@ fn reconstruct_transformed_hmtx(
   let num_hmetrics = read_u16_be_from_bytes(hhea, 34)
   let expected_long = (num_glyphs + 1) * 4
   let index_format = if loca_data.length() == expected_long { 1 } else { 0 }
-  let x_mins = collect_glyf_x_mins(glyf_data, loca_data, index_format, num_glyphs)
+  let x_mins = collect_glyf_x_mins(
+    glyf_data, loca_data, index_format, num_glyphs,
+  )
   let transformed = woff2_table_bytes(uncompressed, hmtx_entry)
   reconstruct_hmtx_table(transformed, num_glyphs, num_hmetrics, x_mins)
 }
@@ -600,10 +603,7 @@ pub fn decompress_woff2(data : Bytes) -> Bytes raise @error.FTError {
     let hhea_index = find_font_table_index(font, entries, @types.TAG_HHEA)
     let glyf_index = find_font_table_index(font, entries, @types.TAG_GLYF)
     let loca_index = find_font_table_index(font, entries, @types.TAG_LOCA)
-    if maxp_index < 0 ||
-      hhea_index < 0 ||
-      glyf_index < 0 ||
-      loca_index < 0 {
+    if maxp_index < 0 || hhea_index < 0 || glyf_index < 0 || loca_index < 0 {
       raise @error.FTError::InvalidTable
     }
     let maxp = if table_is_resolved[maxp_index] {
@@ -648,7 +648,9 @@ pub fn decompress_woff2(data : Bytes) -> Bytes raise @error.FTError {
     table_is_resolved[i] = true
   }
   if flavor == @types.TAG_TTCF {
-    build_ttc_font_collection(collection_version, fonts, entries, resolved_tables)
+    build_ttc_font_collection(
+      collection_version, fonts, entries, resolved_tables,
+    )
   } else {
     build_sfnt_font(fonts[0], entries, resolved_tables)
   }

@@ -134,7 +134,10 @@ test "WOFF2: transformed hmtx metrics match TTF source" {
 ///|
 test "WOFF2: collection face selection works" {
   let face0 = @freetype.from_bytes(load_minimal_collection_woff2())
-  let face1 = @freetype.from_bytes(load_minimal_collection_woff2(), face_index=1)
+  let face1 = @freetype.from_bytes(
+    load_minimal_collection_woff2(),
+    face_index=1,
+  )
   inspect(face0.num_faces(), content="2")
   inspect(face0.num_glyphs(), content="3")
   inspect(face1.num_glyphs(), content="3")

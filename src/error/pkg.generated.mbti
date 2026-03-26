@@ -99,9 +99,7 @@ pub(all) suberror FTError {
   BbxTooBig
   CorruptedFontHeader
   CorruptedFontGlyphs
-}
-pub impl Eq for FTError
-pub impl Show for FTError
+} derive(Eq, Show)
 
 // Types and methods
 

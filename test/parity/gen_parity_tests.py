@@ -41,6 +41,22 @@ def esc(s):
     return s.replace("\\", "\\\\").replace('"', '\\"')
 
 
+def tag_u32(tag):
+    return (
+        (ord(tag[0]) << 24)
+        | (ord(tag[1]) << 16)
+        | (ord(tag[2]) << 8)
+        | ord(tag[3])
+    )
+
+
+def emit_variation_setup(lines, coords):
+    lines += ["  try! @freetype.set_var_design_coordinates(", "    f,", "    ["]
+    for tag, raw_value in coords:
+        lines += [f"      (@fixed.Fixed::from_raw({int(raw_value)}L), 0x{tag_u32(tag):08X}U),"]
+    lines += ["    ],", "  )"]
+
+
 def choose_best_cmap(charmaps):
     for plat, enc in UNICODE_CMAP_PRIORITIES:
         for cm in charmaps:
@@ -114,6 +130,7 @@ def gen_font_tests(ff, golden):
     charmaps = golden["charmaps"]
     glyphs = golden["glyphs"]
     kerning = golden["kerning"]
+    variations = golden.get("variations", [])
     ext = os.path.splitext(ff)[1].lower()
     upe = meta.get("units_per_em", 0)
     path = font_path_expr(ff)
@@ -322,6 +339,106 @@ def gen_font_tests(ff, golden):
                   f"  let r1 = try? @freetype.set_pixel_sizes(f, 0U, 16U)",
                   f"  guard r1 is Ok(_) else {{ return }}",
                   f"  let r2 = try? @freetype.load_glyph(f, {g['glyph_index']}U, load_flags=@base.LOAD_FORCE_AUTOHINT)",
+                  f"  guard r2 is Ok(_) else {{ return }}",
+                  f'  inspect(f.glyph().metrics().hori_advance(), content="{g["metrics"]["horiAdvance"]}")',
+                  "}", ""]
+            tc += 1
+
+    # T15+: variable-instance coverage
+    variation = next((v for v in variations if v.get("glyphs")), None)
+    if variation:
+        coords = variation.get("coords", [])
+        vg = variation["glyphs"]
+
+        L += [f"///|", f'test "parity/{ff}: variation state" {{',
+              f"  let f = @freetype.from_bytes({loader_fn}())",
+              f'  inspect(f.has_multiple_masters(), content="true")',
+              f'  inspect(f.is_variation(), content="false")']
+        emit_variation_setup(L, coords)
+        L += [f'  inspect(f.is_variation(), content="true")', "}", ""]
+        tc += 1
+
+        var_noscale = [g for g in vg if g["load_flags"] == "NO_SCALE" and g["outline"]["n_points"] > 0]
+        for g in var_noscale[:2]:
+            o = g["outline"]
+            m = g["metrics"]
+            charcode = g["charcode"]
+            L += [f"///|",
+                  f'test "parity/{ff}: varied {charcode} outline NO_SCALE" {{',
+                  f"  let f = @freetype.from_bytes({loader_fn}())"]
+            emit_variation_setup(L, coords)
+            L += [f"  let gid = @freetype.get_char_index(f, {charcode}U)",
+                  f"  let r = try? @freetype.load_glyph(f, gid, load_flags=@base.LOAD_NO_SCALE)",
+                  f"  guard r is Ok(_) else {{ return }}",
+                  f'  inspect(gid, content="{g["glyph_index"]}")',
+                  f'  inspect(f.glyph().outline().n_points(), content="{o["n_points"]}")',
+                  f'  inspect(f.glyph().outline().n_contours(), content="{o["n_contours"]}")',
+                  f'  inspect(f.glyph().metrics().hori_advance(), content="{m["horiAdvance"]}")',
+                  f'  inspect(f.glyph().metrics().width(), content="{m["width"]}")',
+                  f'  inspect(f.glyph().metrics().hori_bearing_x(), content="{m["horiBearingX"]}")']
+            for pi, (px, py) in enumerate(o["points"][:4]):
+                L += [f'  inspect(f.glyph().outline().points()[{pi}].x(), content="{px}")',
+                      f'  inspect(f.glyph().outline().points()[{pi}].y(), content="{py}")']
+            L += ["}", ""]
+            tc += 1
+
+        var_nohint = [g for g in vg if g["load_flags"] == "NO_HINTING" and g["size_ppem"] == 16 and g["outline"]["n_points"] > 0]
+        if var_nohint:
+            g = var_nohint[0]
+            m = g["metrics"]
+            o = g["outline"]
+            L += [f"///|",
+                  f'test "parity/{ff}: varied outline NO_HINTING 16ppem" {{',
+                  f"  let f = @freetype.from_bytes({loader_fn}())"]
+            emit_variation_setup(L, coords)
+            L += [f"  let gid = @freetype.get_char_index(f, {g['charcode']}U)",
+                  f"  let r1 = try? @freetype.set_pixel_sizes(f, 0U, 16U)",
+                  f"  guard r1 is Ok(_) else {{ return }}",
+                  f"  let r2 = try? @freetype.load_glyph(f, gid, load_flags=@base.LOAD_NO_HINTING)",
+                  f"  guard r2 is Ok(_) else {{ return }}",
+                  f'  inspect(f.glyph().metrics().hori_advance(), content="{m["horiAdvance"]}")',
+                  f'  inspect(f.glyph().metrics().width(), content="{m["width"]}")',
+                  f'  inspect(f.glyph().metrics().height(), content="{m["height"]}")',
+                  f'  inspect(f.glyph().metrics().hori_bearing_x(), content="{m["horiBearingX"]}")',
+                  f'  inspect(f.glyph().metrics().hori_bearing_y(), content="{m["horiBearingY"]}")']
+            if o["points"]:
+                L += [f'  inspect(f.glyph().outline().points()[0].x(), content="{o["points"][0][0]}")',
+                      f'  inspect(f.glyph().outline().points()[0].y(), content="{o["points"][0][1]}")']
+            L += ["}", ""]
+            tc += 1
+
+        var_default = [g for g in vg if g["load_flags"] == "DEFAULT" and g["size_ppem"] == 16 and g["outline"]["n_points"] > 0]
+        if var_default:
+            g = var_default[0]
+            m = g["metrics"]
+            L += [f"///|",
+                  f'test "parity/{ff}: varied hinted outline DEFAULT 16ppem" {{',
+                  f"  let f = @freetype.from_bytes({loader_fn}())"]
+            emit_variation_setup(L, coords)
+            L += [f"  let gid = @freetype.get_char_index(f, {g['charcode']}U)",
+                  f"  let r1 = try? @freetype.set_pixel_sizes(f, 0U, 16U)",
+                  f"  guard r1 is Ok(_) else {{ return }}",
+                  f"  let r2 = try? @freetype.load_glyph(f, gid)",
+                  f"  guard r2 is Ok(_) else {{ return }}",
+                  f'  inspect(f.glyph().metrics().hori_advance(), content="{m["horiAdvance"]}")',
+                  f'  inspect(f.glyph().metrics().width(), content="{m["width"]}")',
+                  f'  inspect(f.glyph().metrics().height(), content="{m["height"]}")',
+                  f'  inspect(f.glyph().metrics().hori_bearing_x(), content="{m["horiBearingX"]}")',
+                  f'  inspect(f.glyph().metrics().hori_bearing_y(), content="{m["horiBearingY"]}")',
+                  "}", ""]
+            tc += 1
+
+        var_autohint = [g for g in vg if g["load_flags"] == "FORCE_AUTOHINT" and g["size_ppem"] == 16 and g["outline"]["n_points"] > 0]
+        if var_autohint:
+            g = var_autohint[0]
+            L += [f"///|",
+                  f'test "parity/{ff}: varied outline FORCE_AUTOHINT 16ppem" {{',
+                  f"  let f = @freetype.from_bytes({loader_fn}())"]
+            emit_variation_setup(L, coords)
+            L += [f"  let gid = @freetype.get_char_index(f, {g['charcode']}U)",
+                  f"  let r1 = try? @freetype.set_pixel_sizes(f, 0U, 16U)",
+                  f"  guard r1 is Ok(_) else {{ return }}",
+                  f"  let r2 = try? @freetype.load_glyph(f, gid, load_flags=@base.LOAD_FORCE_AUTOHINT)",
                   f"  guard r2 is Ok(_) else {{ return }}",
                   f'  inspect(f.glyph().metrics().hori_advance(), content="{g["metrics"]["horiAdvance"]}")',
                   "}", ""]

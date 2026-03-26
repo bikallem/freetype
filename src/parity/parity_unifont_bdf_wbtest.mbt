@@ -13,7 +13,10 @@ test "parity/unifont.bdf: format" {
 
 ///|
 test "parity/unifont.bdf: loads" {
-  inspect((try? @freetype.from_bytes(load_generated_unifont_bdf())) is Ok(_), content="true")
+  inspect(
+    (try? @freetype.from_bytes(load_generated_unifont_bdf())) is Ok(_),
+    content="true",
+  )
 }
 
 ///|
@@ -96,4 +99,3 @@ test "parity/unifont.bdf: charmap entries" {
   inspect(@freetype.get_char_index(f, 48U), content="49")
   inspect(@freetype.get_char_index(f, 49U), content="50")
 }
-

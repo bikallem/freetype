@@ -22,7 +22,7 @@ pub fn parse_top_dict(Bytes) -> CffTopDict
 // Errors
 
 // Types and methods
-type CffFont
+type CffFont derive(Show)
 pub fn CffFont::cached_global_subrs(Self) -> Array[Bytes]
 pub fn CffFont::cached_local_subrs(Self) -> Array[Bytes]
 pub fn CffFont::cached_local_subrs_for_glyph(Self, UInt) -> Array[Bytes]
@@ -45,18 +45,15 @@ pub fn CffFont::private_dict_for_glyph(Self, UInt) -> CffPrivateDict
 pub fn CffFont::style_name(Self) -> String
 pub fn CffFont::top_dict(Self) -> CffTopDict
 pub fn CffFont::units_per_em(Self) -> UInt
-pub impl Show for CffFont
 
-type CffHeader
-pub impl Show for CffHeader
+type CffHeader derive(Show)
 
-type CffIndex
+type CffIndex derive(Show)
 pub fn CffIndex::count(Self) -> UInt
 pub fn CffIndex::get_item(Self, Int) -> Bytes
 pub fn CffIndex::new(count~ : UInt, off_size~ : Int, offsets~ : Array[UInt], data_start~ : Int, data~ : Bytes) -> Self
-pub impl Show for CffIndex
 
-type CffPrivateDict
+type CffPrivateDict derive(Show)
 pub fn CffPrivateDict::blue_fuzz(Self) -> Int?
 pub fn CffPrivateDict::blue_scale(Self) -> Double?
 pub fn CffPrivateDict::blue_shift(Self) -> Int?
@@ -67,9 +64,8 @@ pub fn CffPrivateDict::nominal_width_x(Self) -> Int64
 pub fn CffPrivateDict::other_blues(Self) -> Array[Int64]
 pub fn CffPrivateDict::std_hw(Self) -> Int64
 pub fn CffPrivateDict::std_vw(Self) -> Int64
-pub impl Show for CffPrivateDict
 
-type CffTopDict
+type CffTopDict derive(Show)
 pub fn CffTopDict::charset_offset(Self) -> UInt
 pub fn CffTopDict::font_bbox(Self) -> Array[Int64]
 pub fn CffTopDict::font_matrix(Self) -> Array[Double]
@@ -79,7 +75,6 @@ pub fn CffTopDict::private_offset(Self) -> UInt
 pub fn CffTopDict::private_size(Self) -> UInt
 pub fn CffTopDict::underline_position(Self) -> Int
 pub fn CffTopDict::underline_thickness(Self) -> Int
-pub impl Show for CffTopDict
 
 // Type aliases
 

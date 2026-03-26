@@ -8,12 +8,19 @@ fn load_generated_minimal_collection_woff2() -> Bytes {
 
 ///|
 test "parity/minimal_collection.woff2: format" {
-  inspect(@base.detect_format(load_generated_minimal_collection_woff2()), content="Woff2")
+  inspect(
+    @base.detect_format(load_generated_minimal_collection_woff2()),
+    content="Woff2",
+  )
 }
 
 ///|
 test "parity/minimal_collection.woff2: loads" {
-  inspect((try? @freetype.from_bytes(load_generated_minimal_collection_woff2())) is Ok(_), content="true")
+  inspect(
+    (try? @freetype.from_bytes(load_generated_minimal_collection_woff2()))
+    is Ok(_),
+    content="true",
+  )
 }
 
 ///|
@@ -90,9 +97,15 @@ test "parity/minimal_collection.woff2: glyph metrics at 16ppem" {
 
 ///|
 test "parity/minimal_collection.woff2: multi-face" {
-  let f0 = @freetype.from_bytes(load_generated_minimal_collection_woff2(), face_index=0)
+  let f0 = @freetype.from_bytes(
+    load_generated_minimal_collection_woff2(),
+    face_index=0,
+  )
   inspect(f0.num_glyphs() > 0L, content="true")
-  let f1 = @freetype.from_bytes(load_generated_minimal_collection_woff2(), face_index=1)
+  let f1 = @freetype.from_bytes(
+    load_generated_minimal_collection_woff2(),
+    face_index=1,
+  )
   inspect(f1.num_glyphs() > 0L, content="true")
 }
 
@@ -111,8 +124,11 @@ test "parity/minimal_collection.woff2: outline FORCE_AUTOHINT 16ppem" {
   let f = @freetype.from_bytes(load_generated_minimal_collection_woff2())
   let r1 = try? @freetype.set_pixel_sizes(f, 0U, 16U)
   guard r1 is Ok(_) else { return }
-  let r2 = try? @freetype.load_glyph(f, 2U, load_flags=@base.LOAD_FORCE_AUTOHINT)
+  let r2 = try? @freetype.load_glyph(
+    f,
+    2U,
+    load_flags=@base.LOAD_FORCE_AUTOHINT,
+  )
   guard r2 is Ok(_) else { return }
   inspect(f.glyph().metrics().hori_advance(), content="512")
 }
-

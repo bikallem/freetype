@@ -10,24 +10,20 @@ import {
 // Errors
 
 // Types and methods
-type CacheEntry[V]
-pub impl[V : Show] Show for CacheEntry[V]
+type CacheEntry[V] derive(Show)
 
-type CachedGlyph
+type CachedGlyph derive(Show)
 pub fn CachedGlyph::new(outline~ : @types.Outline, metrics~ : @types.GlyphMetrics, advance_width~ : Int64) -> Self
-pub impl Show for CachedGlyph
 
-type CmapCache
+type CmapCache derive(Show)
 pub fn CmapCache::insert(Self, UInt, UInt, UInt) -> Unit
 pub fn CmapCache::lookup(Self, UInt, UInt) -> UInt?
 pub fn CmapCache::new(max_entries? : Int) -> Self
-pub impl Show for CmapCache
 
-type GlyphCache
+type GlyphCache derive(Show)
 pub fn GlyphCache::insert(Self, UInt, UInt, CachedGlyph) -> Unit
 pub fn GlyphCache::lookup(Self, UInt, UInt) -> CachedGlyph?
 pub fn GlyphCache::new(max_entries? : Int) -> Self
-pub impl Show for GlyphCache
 
 // Type aliases
 
