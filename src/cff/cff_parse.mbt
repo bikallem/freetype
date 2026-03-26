@@ -258,12 +258,7 @@ pub fn load_cff(data : Bytes, offset : Int) -> CffFont raise @error.FTError {
   // Parse Name INDEX
   let name_index = parse_cff_index(reader)
   let name = if name_index.count > 0U {
-    let name_bytes = name_index.get_item(0)
-    let buf = StringBuilder::new()
-    for _, b in name_bytes {
-      buf.write_char(Int::unsafe_to_char(b.to_int()))
-    }
-    buf.to_string()
+    decode_cff_string_bytes(name_index.get_item(0))
   } else {
     ""
   }
@@ -272,13 +267,29 @@ pub fn load_cff(data : Bytes, offset : Int) -> CffFont raise @error.FTError {
   let top_dict_data = top_dict_index.get_item(0)
   let top_dict = parse_top_dict(top_dict_data)
   // Parse String INDEX
-  let _string_index = parse_cff_index(reader)
+  let string_index = parse_cff_index(reader)
+  let custom_strings = parse_cff_string_index(string_index)
   // Parse Global Subr INDEX
   let global_subrs = parse_cff_index(reader)
   // Parse Charstrings INDEX
   reader.seek(offset + top_dict.charstrings_offset.reinterpret_as_int())
   let charstrings = parse_cff_index(reader)
   let num_glyphs = charstrings.count
+  let glyph_sids = if top_dict.is_cid {
+    []
+  } else {
+    parse_cff_charset(reader, offset, top_dict.charset_offset, num_glyphs)
+  }
+  let glyph_names = if glyph_sids.length() > 0 {
+    glyph_sids.map(fn(sid) { sid_to_string(sid, custom_strings) })
+  } else {
+    []
+  }
+  let encoding_glyphs = if glyph_sids.length() > 0 {
+    parse_cff_encoding(reader, offset, top_dict.encoding_offset, glyph_sids)
+  } else {
+    Array::make(256, 0U)
+  }
   // Parse Private DICT
   let private_dict = if top_dict.private_size > 0U {
     let priv_start = offset + top_dict.private_offset.reinterpret_as_int()
@@ -401,6 +412,9 @@ pub fn load_cff(data : Bytes, offset : Int) -> CffFont raise @error.FTError {
     global_subrs,
     local_subrs,
     num_glyphs,
+    custom_strings,
+    glyph_names,
+    encoding_glyphs,
     cached_local_subrs,
     fd_private_dicts,
     fd_local_subrs,

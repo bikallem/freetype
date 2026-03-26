@@ -4,7 +4,14 @@ fn load_cff_standalone(data : Bytes) -> @base.FaceRec raise @error.FTError {
   let cff = @cff.load_cff(data, 0)
   let face = @base.FaceRec::new()
   face.set_family_name(cff.name())
-  face.set_face_flags(@base.FACE_FLAG_SCALABLE | @base.FACE_FLAG_HORIZONTAL)
+  let has_glyph_names = cff.glyph_names().length() > 0
+  let mut face_flags = @base.FACE_FLAG_SCALABLE |
+    @base.FACE_FLAG_HORIZONTAL |
+    @base.FACE_FLAG_HINTER
+  if has_glyph_names {
+    face_flags = face_flags | @base.FACE_FLAG_GLYPH_NAMES
+  }
+  face.set_face_flags(face_flags)
   face.set_num_glyphs(cff.num_glyphs().reinterpret_as_int().to_int64())
   face.set_units_per_em(1000U)
   let bbox = cff.top_dict().font_bbox()
@@ -17,15 +24,46 @@ fn load_cff_standalone(data : Bytes) -> @base.FaceRec raise @error.FTError {
   if cff.top_dict().underline_thickness() != 0 {
     face.set_underline_thickness(cff.top_dict().underline_thickness())
   }
-  face.charmaps().push(@base.CharMapRec::new(@base.Encoding::Unicode, 7U, 0U))
+  let unicode_cmap = @psnames.build_unicode_map(cff.glyph_names())
+  let encoding_glyphs = cff.encoding_glyphs()
+  let has_unicode = not(unicode_cmap.is_empty())
+  let mut has_encoding = false
+  for _, glyph in encoding_glyphs {
+    if glyph != 0U {
+      has_encoding = true
+      break
+    }
+  }
+  if has_unicode {
+    face.charmaps().push(@base.CharMapRec::new(@base.Encoding::Unicode, 3U, 1U))
+  }
+  if has_encoding {
+    face
+    .charmaps()
+    .push(@base.CharMapRec::new(@base.Encoding::AdobeStandard, 7U, 0U))
+  }
   if face.charmaps().length() > 0 {
     face.set_active_charmap(0)
   }
-  let char_index_fn : (UInt) -> UInt = fn(charcode) {
-    if charcode >= cff.num_glyphs() {
-      0U
-    } else {
-      charcode
+  let char_index_fn : (UInt) -> UInt = if has_unicode {
+    fn(charcode) {
+      match unicode_cmap.get(charcode) {
+        Some(glyph_index) => glyph_index
+        None =>
+          if charcode < 256U {
+            encoding_glyphs[charcode.reinterpret_as_int()]
+          } else {
+            0U
+          }
+      }
+    }
+  } else {
+    fn(charcode) {
+      if charcode < 256U {
+        encoding_glyphs[charcode.reinterpret_as_int()]
+      } else {
+        0U
+      }
     }
   }
   // PS hint state (shared between load_glyph and apply_hints closures)

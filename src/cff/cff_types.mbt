@@ -103,6 +103,9 @@ struct CffFont {
   global_subrs : CffIndex // Global Subr INDEX
   local_subrs : CffIndex? // Local Subr INDEX (from Private DICT)
   num_glyphs : UInt
+  custom_strings : Array[String]
+  glyph_names : Array[String]
+  encoding_glyphs : Array[UInt]
   cached_local_subrs : Array[Bytes]
   fd_private_dicts : Array[CffPrivateDict]
   fd_local_subrs : Array[Array[Bytes]]
@@ -138,6 +141,21 @@ pub fn CffFont::local_subrs(self : CffFont) -> CffIndex? {
 ///|
 pub fn CffFont::num_glyphs(self : CffFont) -> UInt {
   self.num_glyphs
+}
+
+///|
+pub fn CffFont::custom_strings(self : CffFont) -> Array[String] {
+  self.custom_strings
+}
+
+///|
+pub fn CffFont::glyph_names(self : CffFont) -> Array[String] {
+  self.glyph_names
+}
+
+///|
+pub fn CffFont::encoding_glyphs(self : CffFont) -> Array[UInt] {
+  self.encoding_glyphs
 }
 
 ///|

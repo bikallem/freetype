@@ -64,31 +64,7 @@ fn load_type1_pfb(data : Bytes) -> @base.FaceRec raise @error.FTError {
     name_to_index[name] = i.reinterpret_as_uint()
   }
   // Build Unicode charmap from glyph names when possible.
-  let unicode_cmap : Map[UInt, UInt] = {}
-  let unicode_is_variant : Map[UInt, Bool] = {}
-  for i, name in glyph_names {
-    let unicode = @psnames.unicode_value(name)
-    let charcode = unicode & 0x7FFFFFFFU
-    let is_variant = (unicode & @psnames.VARIANT_BIT) != 0U
-    if charcode != 0U {
-      match unicode_cmap.get(charcode) {
-        Some(_) => {
-          let existing_is_variant = match unicode_is_variant.get(charcode) {
-            Some(flag) => flag
-            None => false
-          }
-          if existing_is_variant && not(is_variant) {
-            unicode_cmap[charcode] = i.reinterpret_as_uint()
-            unicode_is_variant[charcode] = false
-          }
-        }
-        None => {
-          unicode_cmap[charcode] = i.reinterpret_as_uint()
-          unicode_is_variant[charcode] = is_variant
-        }
-      }
-    }
-  }
+  let unicode_cmap = @psnames.build_unicode_map(glyph_names)
   // Pre-compute charcode -> glyph_index cache (256 entries)
   let cached_cmap : FixedArray[UInt] = FixedArray::make(256, 0U)
   let enc = font.encoding()

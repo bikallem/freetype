@@ -102,6 +102,53 @@ pub fn expert_encoding_sid(code : UInt) -> Int {
 }
 
 ///|
+/// Build a FreeType-style Unicode charmap from glyph names.
+///
+/// Base glyphs win over variant glyphs for the same character code. A small
+/// set of extra aliases used by FreeType's PostScript name service is added
+/// only if the font doesn't already contain a direct Unicode mapping for that
+/// code.
+pub fn build_unicode_map(glyph_names : Array[String]) -> Map[UInt, UInt] {
+  let unicode_cmap : Map[UInt, UInt] = {}
+  let unicode_is_variant : Map[UInt, Bool] = {}
+  let extra_candidates : Array[UInt] = Array::make(
+    extra_glyph_names.length(),
+    0U,
+  )
+  let extra_states : Array[Int] = Array::make(extra_glyph_names.length(), 0)
+  for i, name in glyph_names {
+    let glyph_index = i.reinterpret_as_uint()
+    match extra_glyph_index(name) {
+      Some(idx) =>
+        if extra_states[idx] == 0 {
+          extra_states[idx] = 1
+          extra_candidates[idx] = glyph_index
+        }
+      None => ()
+    }
+    let unicode = unicode_value(name)
+    let charcode = unicode & 0x7FFFFFFFU
+    let is_variant = (unicode & VARIANT_BIT) != 0U
+    if charcode != 0U {
+      disable_extra_alias(charcode, extra_states)
+      insert_unicode_mapping(
+        unicode_cmap, unicode_is_variant, charcode, glyph_index, is_variant,
+      )
+    }
+  }
+  for i in 0..<extra_glyph_names.length() {
+    if extra_states[i] == 1 {
+      let charcode = extra_glyph_unicodes[i]
+      match unicode_cmap.get(charcode) {
+        Some(_) => ()
+        None => unicode_cmap[charcode] = extra_candidates[i]
+      }
+    }
+  }
+  unicode_cmap
+}
+
+///|
 /// Find the position of '.' in a string, or -1 if not found.
 fn find_dot(s : String) -> Int {
   let len = s.length()
@@ -131,4 +178,50 @@ fn parse_uppercase_hex(s : String) -> UInt? {
     result = result * 16U + digit.reinterpret_as_uint()
   }
   Some(result)
+}
+
+///|
+fn extra_glyph_index(name : String) -> Int? {
+  for i in 0..<extra_glyph_names.length() {
+    if extra_glyph_names[i] == name {
+      return Some(i)
+    }
+  }
+  None
+}
+
+///|
+fn disable_extra_alias(charcode : UInt, extra_states : Array[Int]) -> Unit {
+  for i in 0..<extra_glyph_unicodes.length() {
+    if extra_glyph_unicodes[i] == charcode {
+      extra_states[i] = 2
+      return
+    }
+  }
+}
+
+///|
+fn insert_unicode_mapping(
+  unicode_cmap : Map[UInt, UInt],
+  unicode_is_variant : Map[UInt, Bool],
+  charcode : UInt,
+  glyph_index : UInt,
+  is_variant : Bool,
+) -> Unit {
+  match unicode_cmap.get(charcode) {
+    Some(_) => {
+      let existing_is_variant = match unicode_is_variant.get(charcode) {
+        Some(flag) => flag
+        None => false
+      }
+      if existing_is_variant && not(is_variant) {
+        unicode_cmap[charcode] = glyph_index
+        unicode_is_variant[charcode] = false
+      }
+    }
+    None => {
+      unicode_cmap[charcode] = glyph_index
+      unicode_is_variant[charcode] = is_variant
+    }
+  }
 }

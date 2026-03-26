@@ -276,6 +276,18 @@ let expert_encoding : FixedArray[Int] = [
 ]
 
 ///|
+let extra_glyph_unicodes : FixedArray[UInt] = [
+  0x0394U, 0x03A9U, 0x2215U, 0x00ADU, 0x02C9U, 0x03BCU, 0x2219U, 0x00A0U, 0x021AU,
+  0x021BU,
+]
+
+///|
+let extra_glyph_names : FixedArray[String] = [
+  "Delta", "Omega", "fraction", "hyphen", "macron", "mu", "periodcentered", "space",
+  "Tcommaaccent", "tcommaaccent",
+]
+
+///|
 /// Glyph name → Unicode value map for standard PostScript glyph names.
 /// Covers the SID names and Mac names that have defined Unicode values.
 fn build_glyph_unicode_map() -> Map[String, UInt] {

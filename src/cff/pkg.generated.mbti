@@ -27,11 +27,14 @@ pub fn CffFont::cached_global_subrs(Self) -> Array[Bytes]
 pub fn CffFont::cached_local_subrs(Self) -> Array[Bytes]
 pub fn CffFont::cached_local_subrs_for_glyph(Self, UInt) -> Array[Bytes]
 pub fn CffFont::charstrings(Self) -> CffIndex
+pub fn CffFont::custom_strings(Self) -> Array[String]
+pub fn CffFont::encoding_glyphs(Self) -> Array[UInt]
 pub fn CffFont::fd_index_for_glyph(Self, UInt) -> Int
 pub fn CffFont::fd_local_subrs(Self) -> Array[Array[Bytes]]
 pub fn CffFont::fd_private_dicts(Self) -> Array[CffPrivateDict]
 pub fn CffFont::fd_select(Self) -> Array[Int]
 pub fn CffFont::global_subrs(Self) -> CffIndex
+pub fn CffFont::glyph_names(Self) -> Array[String]
 pub fn CffFont::local_subrs(Self) -> CffIndex?
 pub fn CffFont::name(Self) -> String
 pub fn CffFont::num_glyphs(Self) -> UInt

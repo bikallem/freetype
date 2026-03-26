@@ -6,6 +6,8 @@ pub const VARIANT_BIT : UInt = 0x80000000
 
 pub fn adobe_glyph_index(String) -> UInt
 
+pub fn build_unicode_map(Array[String]) -> Map[UInt, UInt]
+
 pub fn expert_encoding_sid(UInt) -> Int
 
 pub fn macintosh_name(UInt) -> String

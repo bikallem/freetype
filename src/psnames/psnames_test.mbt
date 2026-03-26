@@ -144,3 +144,24 @@ test "adobe_glyph_index: unknown names" {
   assert_eq(adobe_glyph_index("nonexistent"), 0U)
   assert_eq(adobe_glyph_index(".notdef"), 0U)
 }
+
+///|
+test "build_unicode_map: extra aliases match FreeType behavior" {
+  let cmap = build_unicode_map([".notdef", "space", "Delta"])
+  assert_eq(cmap[0x0020U], 1U)
+  assert_eq(cmap[0x00A0U], 1U)
+  assert_eq(cmap[0x0394U], 2U)
+}
+
+///|
+test "build_unicode_map: direct glyph wins over extra alias" {
+  let cmap = build_unicode_map([".notdef", "space", "uni00A0"])
+  assert_eq(cmap[0x0020U], 1U)
+  assert_eq(cmap[0x00A0U], 2U)
+}
+
+///|
+test "build_unicode_map: base glyph wins over variant" {
+  let cmap = build_unicode_map(["A.swash", "A"])
+  assert_eq(cmap[0x0041U], 1U)
+}

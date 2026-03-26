@@ -44,6 +44,33 @@ test "standalone CFF: loads SourceCodePro" {
 }
 
 ///|
+test "standalone CFF: minimal charmaps match FreeType" {
+  let f = @freetype.from_bytes(load_minimal_standalone_cff())
+  inspect(f.charmaps().length(), content="2")
+  inspect(f.charmaps()[0].platform_id(), content="3")
+  inspect(f.charmaps()[0].encoding_id(), content="1")
+  inspect(f.charmaps()[1].platform_id(), content="7")
+  inspect(f.charmaps()[1].encoding_id(), content="0")
+  inspect(@freetype.get_char_index(f, 32U), content="1")
+  inspect(@freetype.get_char_index(f, 65U), content="2")
+  inspect(@freetype.get_char_index(f, 160U), content="1")
+}
+
+///|
+test "standalone CFF: SourceCodePro synthetic Unicode charmap" {
+  let f = @freetype.from_bytes(load_sourcecodepro_standalone_cff())
+  inspect(f.charmaps().length(), content="2")
+  inspect(f.charmaps()[0].platform_id(), content="3")
+  inspect(f.charmaps()[0].encoding_id(), content="1")
+  inspect(f.charmaps()[1].platform_id(), content="7")
+  inspect(f.charmaps()[1].encoding_id(), content="0")
+  inspect(@freetype.get_char_index(f, 39U), content="922")
+  inspect(@freetype.get_char_index(f, 65U), content="2")
+  inspect(@freetype.get_char_index(f, 160U), content="1391")
+  inspect(@freetype.get_char_index(f, 0x394U), content="609")
+}
+
+///|
 test "standalone CFF: glyph outline" {
   let f = @freetype.from_bytes(load_sourcecodepro_standalone_cff())
   // Glyph 2 should have outline data (glyph 0 is .notdef, 1 may be space)
