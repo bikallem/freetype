@@ -55,6 +55,7 @@ pub impl Show for CffPrivateDict
 
 type CffTopDict
 pub fn CffTopDict::charset_offset(Self) -> UInt
+pub fn CffTopDict::font_bbox(Self) -> Array[Int64]
 pub fn CffTopDict::is_cid(Self) -> Bool
 pub fn CffTopDict::new() -> Self
 pub fn CffTopDict::private_offset(Self) -> UInt

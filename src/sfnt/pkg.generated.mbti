@@ -28,6 +28,8 @@ pub const NAME_ID_VERSION_STRING : UInt = 5
 
 pub fn decompress_woff(Bytes) -> Bytes raise @error.FTError
 
+pub fn decompress_woff2(Bytes) -> Bytes raise @error.FTError
+
 pub fn load_sfnt_face(Bytes, Int64) -> (SfntData, @base.FaceRec) raise @error.FTError
 
 pub fn parse_cmap_header(@stream.ByteReader, UInt) -> CmapTable raise @error.FTError
@@ -53,6 +55,8 @@ pub fn parse_post(@stream.ByteReader, UInt, UInt, UInt, parse_names? : Bool) -> 
 pub fn parse_table_directory(@stream.ByteReader) -> TableDirectory raise @error.FTError
 
 pub fn parse_ttc_header(@stream.ByteReader) -> TtcHeader raise @error.FTError
+
+pub fn reconstruct_glyf(Bytes, Int, Int, Int) -> (Bytes, Bytes, Array[Int]) raise @error.FTError
 
 // Errors
 

@@ -5,47 +5,70 @@
 // Glyf point flags (TrueType spec)
 let glyf_on_curve : Byte = b'\x01'
 
+///|
 let glyf_x_short : Byte = b'\x02'
 
+///|
 let glyf_y_short : Byte = b'\x04'
 
+///|
 let glyf_repeat : Byte = b'\x08'
 
+///|
 let glyf_this_x_is_same : Byte = b'\x10'
 
+///|
 let glyf_this_y_is_same : Byte = b'\x20'
 
+///|
 let glyf_overlap_simple : Byte = b'\x40'
 
 // Composite glyph flags
+
+///|
 let flag_arg_1_and_2_are_words : Int = 1
 
+///|
 let flag_we_have_a_scale : Int = 1 << 3
 
+///|
 let flag_more_components : Int = 1 << 5
 
+///|
 let flag_we_have_an_x_and_y_scale : Int = 1 << 6
 
+///|
 let flag_we_have_a_two_by_two : Int = 1 << 7
 
+///|
 let flag_we_have_instructions : Int = 1 << 8
 
 // Substream indices
+
+///|
 let n_contour_stream : Int = 0
 
+///|
 let n_points_stream : Int = 1
 
+///|
 let flag_stream : Int = 2
 
+///|
 let glyph_stream : Int = 3
 
+///|
 let composite_stream : Int = 4
 
+///|
 let bbox_stream : Int = 5
 
+///|
 let instruction_stream : Int = 6
 
 // Offset to endPoint array in glyph buffer (after nContours + bbox = 2+8=10)
+
+///|
 let contour_offset_end_point : Int = 10
 
 ///|
@@ -79,7 +102,7 @@ fn triplet_decode(
   let mut triplet_index = 0
   for i in 0..<n_points {
     let flag = flags_buf[flags_offset + i].to_int()
-    let on_curve = (flag >> 7) == 0
+    let on_curve = flag >> 7 == 0
     let f = flag & 0x7F
     let data_bytes = if f < 84 {
       1
@@ -105,34 +128,22 @@ fn triplet_decode(
       let b1 = glyph_buf[base].to_int()
       let vx = 1 + (b0 & 0x30) + (b1 >> 4)
       let vy = 1 + ((b0 & 0x0C) << 2) + (b1 & 0x0F)
-      (
-        if (f & 1) != 0 { vx } else { -vx },
-        if (f & 2) != 0 { vy } else { -vy },
-      )
+      (if (f & 1) != 0 { vx } else { -vx }, if (f & 2) != 0 { vy } else { -vy })
     } else if f < 120 {
       let b0 = f - 84
       let vx = 1 + ((b0 / 12) << 8) + glyph_buf[base].to_int()
-      let vy = 1 + (((b0 % 12) >> 2) << 8) + glyph_buf[base + 1].to_int()
-      (
-        if (f & 1) != 0 { vx } else { -vx },
-        if (f & 2) != 0 { vy } else { -vy },
-      )
+      let vy = 1 + ((b0 % 12) >> 2 << 8) + glyph_buf[base + 1].to_int()
+      (if (f & 1) != 0 { vx } else { -vx }, if (f & 2) != 0 { vy } else { -vy })
     } else if f < 124 {
       let b2 = glyph_buf[base + 1].to_int()
       let vx = (glyph_buf[base].to_int() << 4) + (b2 >> 4)
       let vy = ((b2 & 0x0F) << 8) + glyph_buf[base + 2].to_int()
-      (
-        if (f & 1) != 0 { vx } else { -vx },
-        if (f & 2) != 0 { vy } else { -vy },
-      )
+      (if (f & 1) != 0 { vx } else { -vx }, if (f & 2) != 0 { vy } else { -vy })
     } else {
       let vx = (glyph_buf[base].to_int() << 8) + glyph_buf[base + 1].to_int()
       let vy = (glyph_buf[base + 2].to_int() << 8) +
         glyph_buf[base + 3].to_int()
-      (
-        if (f & 1) != 0 { vx } else { -vx },
-        if (f & 2) != 0 { vy } else { -vy },
-      )
+      (if (f & 1) != 0 { vx } else { -vx }, if (f & 2) != 0 { vy } else { -vy })
     }
     triplet_index += data_bytes
     x += dx
@@ -161,10 +172,18 @@ fn compute_bbox(
     y_max = points[0].y
     for i in 1..<points.length() {
       let p = points[i]
-      if p.x < x_min { x_min = p.x }
-      if p.y < y_min { y_min = p.y }
-      if p.x > x_max { x_max = p.x }
-      if p.y > y_max { y_max = p.y }
+      if p.x < x_min {
+        x_min = p.x
+      }
+      if p.y < y_min {
+        y_min = p.y
+      }
+      if p.x > x_max {
+        x_max = p.x
+      }
+      if p.y > y_max {
+        y_max = p.y
+      }
     }
   }
   let off = dst_offset + 2 // skip nContours
@@ -191,7 +210,7 @@ fn store_points(
   dst : FixedArray[Byte],
   dst_size : Int,
 ) -> Int raise @error.FTError {
-  let mut flag_offset = 10 + (2 * n_contours) + 2 + instruction_len
+  let mut flag_offset = 10 + 2 * n_contours + 2 + instruction_len
   let mut last_flag : Int = 0xFF
   let mut repeat_count = 0
   let mut last_x = 0
@@ -200,11 +219,7 @@ fn store_points(
   let mut y_bytes = 0
   // First pass: compute flags and count coordinate bytes
   for i, point in points {
-    let mut flag : Int = if point.on_curve {
-      glyf_on_curve.to_int()
-    } else {
-      0
-    }
+    let mut flag : Int = if point.on_curve { glyf_on_curve.to_int() } else { 0 }
     let dx = point.x - last_x
     let dy = point.y - last_y
     if i == 0 && have_overlap {
@@ -232,7 +247,7 @@ fn store_points(
     }
     if flag == last_flag && repeat_count != 255 {
       dst[flag_offset - 1] = (dst[flag_offset - 1].to_int() |
-        glyf_repeat.to_int()).to_byte()
+      glyf_repeat.to_int()).to_byte()
       repeat_count += 1
     } else {
       if repeat_count != 0 {
@@ -297,10 +312,7 @@ fn store_points(
 
 ///|
 /// Calculate composite glyph size by scanning component flags.
-fn composite_glyph_size(
-  data : Bytes,
-  offset : Int,
-) -> (Int, Bool) {
+fn composite_glyph_size(data : Bytes, offset : Int) -> (Int, Bool) {
   let mut pos = offset
   let mut have_instructions = false
   let mut flags = flag_more_components
@@ -353,14 +365,18 @@ pub fn reconstruct_glyf(
   // Read 7 substream sizes
   let num_substreams = 7
   let substreams : Array[Woff2Substream] = []
-  let header_size = 2 + 2 + 2 + 2 + (num_substreams * 4)
+  let header_size = 2 + 2 + 2 + 2 + num_substreams * 4
   let mut offset = header_size
   for _ in 0..<num_substreams {
     let size = reader.read_u32_be().reinterpret_as_int()
     if size > glyf_transform_length - offset {
       raise @error.FTError::InvalidTable
     }
-    substreams.push({ start: glyf_offset + offset, offset: glyf_offset + offset, size })
+    substreams.push({
+      start: glyf_offset + offset,
+      offset: glyf_offset + offset,
+      size,
+    })
     offset += size
   }
   // Handle overlap bitmap
@@ -375,7 +391,7 @@ pub fn reconstruct_glyf(
   }
   // bbox bitmap
   let bbox_bitmap_offset = substreams[bbox_stream].offset
-  let bbox_bitmap_length = ((num_glyphs + 31) >> 5) << 2
+  let bbox_bitmap_length = (num_glyphs + 31) >> 5 << 2
   substreams[bbox_stream].offset += bbox_bitmap_length
   // Output buffers
   let loca_values : Array[Int] = Array::new(capacity=num_glyphs + 1)
@@ -415,7 +431,9 @@ pub fn reconstruct_glyf(
         substreams[glyph_stream].offset = tmp_reader.position()
       }
       // Build glyph
-      let glyph_size = 10 + comp_size + (if have_instructions { 2 + instruction_size } else { 0 })
+      let glyph_size = 10 +
+        comp_size +
+        (if have_instructions { 2 + instruction_size } else { 0 })
       let glyph = FixedArray::make(glyph_size, b'\x00')
       // nContours = -1 (0xFFFF)
       write_i16_be(glyph, 0, -1)
@@ -477,7 +495,7 @@ pub fn reconstruct_glyf(
         data,
         substreams[glyph_stream].offset,
         substreams[glyph_stream].size -
-          (substreams[glyph_stream].offset - substreams[glyph_stream].start),
+        (substreams[glyph_stream].offset - substreams[glyph_stream].start),
         total_n_points,
       )
       substreams[flag_stream].offset += total_n_points
@@ -488,7 +506,9 @@ pub fn reconstruct_glyf(
       let instruction_size = read_255ushort(gs_reader).reinterpret_as_int()
       substreams[glyph_stream].offset = gs_reader.position()
       // Allocate glyph buffer (generous upper bound)
-      let size_needed = 12 + (2 * n_contours) + (5 * total_n_points) +
+      let size_needed = 12 +
+        2 * n_contours +
+        5 * total_n_points +
         instruction_size
       let glyph = FixedArray::make(size_needed, b'\x00')
       // nContours
@@ -501,7 +521,11 @@ pub fn reconstruct_glyf(
         }
         substreams[bbox_stream].offset += 8
         let xm = (data[bbox_off].to_int() << 8) | data[bbox_off + 1].to_int()
-        if xm >= 0x8000 { xm - 0x10000 } else { xm }
+        if xm >= 0x8000 {
+          xm - 0x10000
+        } else {
+          xm
+        }
       } else {
         compute_bbox(points, glyph, 0)
       }
@@ -525,12 +549,7 @@ pub fn reconstruct_glyf(
       glyph_size += instruction_size
       // Store flags + coordinates
       glyph_size = store_points(
-        points,
-        n_contours,
-        instruction_size,
-        have_overlap,
-        glyph,
-        size_needed,
+        points, n_contours, instruction_size, have_overlap, glyph, size_needed,
       )
       loca_values.push(glyf_buf.length())
       glyf_buf.write_fixed(glyph, 0, glyph_size)
@@ -553,7 +572,7 @@ pub fn reconstruct_glyf(
   // Build loca table
   let loca_size = (if index_format != 0 { 4 } else { 2 }) * (num_glyphs + 1)
   let loca = FixedArray::make(loca_size, b'\x00')
-  for i in 0..=num_glyphs {
+  for i in 0..<=num_glyphs {
     let value = loca_values[i]
     if index_format != 0 {
       write_u32_be(loca, i * 4, value.reinterpret_as_uint())

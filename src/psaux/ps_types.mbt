@@ -16,6 +16,7 @@ struct PsInterp {
   hints_v : Array[StemHint] // vertical stem hints
   // Width
   mut width : Int64 // advance width (set by first operator)
+  mut nominal_width : Int64 // nominalWidthX for Type 2 width deltas
   mut width_set : Bool
   // Subroutines
   mut local_subrs : Array[Bytes]
@@ -62,6 +63,7 @@ pub fn PsInterp::new() -> PsInterp {
     hints_h: [],
     hints_v: [],
     width: 0L,
+    nominal_width: 0L,
     width_set: false,
     local_subrs: [],
     global_subrs: [],

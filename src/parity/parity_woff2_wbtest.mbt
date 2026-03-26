@@ -44,18 +44,9 @@ test "WOFF2: metadata matches TTF source" {
   let ttf_face = @freetype.from_bytes(
     try! @fs.read_file_to_bytes("test/fonts/DejaVuSans.ttf"),
   )
-  inspect(
-    woff2_face.family_name() == ttf_face.family_name(),
-    content="true",
-  )
-  inspect(
-    woff2_face.num_glyphs() == ttf_face.num_glyphs(),
-    content="true",
-  )
-  inspect(
-    woff2_face.units_per_em() == ttf_face.units_per_em(),
-    content="true",
-  )
+  inspect(woff2_face.family_name() == ttf_face.family_name(), content="true")
+  inspect(woff2_face.num_glyphs() == ttf_face.num_glyphs(), content="true")
+  inspect(woff2_face.units_per_em() == ttf_face.units_per_em(), content="true")
 }
 
 ///|
@@ -64,12 +55,6 @@ test "WOFF2: CFF metadata matches OTF source" {
   let otf_face = @freetype.from_bytes(
     try! @fs.read_file_to_bytes("test/fonts/minimal.otf"),
   )
-  inspect(
-    woff2_face.num_glyphs() == otf_face.num_glyphs(),
-    content="true",
-  )
-  inspect(
-    woff2_face.units_per_em() == otf_face.units_per_em(),
-    content="true",
-  )
+  inspect(woff2_face.num_glyphs() == otf_face.num_glyphs(), content="true")
+  inspect(woff2_face.units_per_em() == otf_face.units_per_em(), content="true")
 }

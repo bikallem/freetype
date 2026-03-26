@@ -4,16 +4,12 @@ fn load_cff_standalone(data : Bytes) -> @base.FaceRec raise @error.FTError {
   let cff = @cff.load_cff(data, 0)
   let face = @base.FaceRec::new()
   face.set_family_name(cff.name())
-  face.set_face_flags(
-    @base.FACE_FLAG_SCALABLE | @base.FACE_FLAG_HORIZONTAL,
-  )
+  face.set_face_flags(@base.FACE_FLAG_SCALABLE | @base.FACE_FLAG_HORIZONTAL)
   face.set_num_glyphs(cff.num_glyphs().reinterpret_as_int().to_int64())
   face.set_units_per_em(1000U)
   let bbox = cff.top_dict().font_bbox()
   if bbox.length() == 4 {
-    face.set_bbox(
-      @types.BBox::new(bbox[0], bbox[1], bbox[2], bbox[3]),
-    )
+    face.set_bbox(@types.BBox::new(bbox[0], bbox[1], bbox[2], bbox[3]))
   }
   face.charmaps().push(@base.CharMapRec::new(@base.Encoding::Unicode, 7U, 0U))
   if face.charmaps().length() > 0 {

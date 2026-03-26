@@ -47,6 +47,26 @@ test "Type2: vmoveto" {
 }
 
 ///|
+test "Type2: hmoveto width uses nominalWidthX" {
+  // width = nominal 400 + 200, dx = 50
+  let cs : Bytes = [247, 92, 189, 22, 14]
+  let (outline, width, _, _) = execute_type2(cs, 500L, 400L)
+  inspect(width, content="600")
+  inspect(outline.n_points(), content="1")
+  inspect(outline.points()[0].x(), content="50")
+  inspect(outline.points()[0].y(), content="0")
+}
+
+///|
+test "Type2: endchar width uses nominalWidthX" {
+  // width = nominal 400 + 50
+  let cs : Bytes = [189, 14]
+  let (outline, width, _, _) = execute_type2(cs, 500L, 400L)
+  inspect(width, content="450")
+  inspect(outline.n_points(), content="0")
+}
+
+///|
 test "Type2: rrcurveto" {
   // rmoveto(0,0) rrcurveto(10,20,30,40,50,60) endchar
   let cs : Bytes = [
@@ -136,4 +156,16 @@ test "Type2: hstem hints" {
   // The hstem hint should be recorded but outline will just have endchar
   ignore(outline)
   // Verify through execute_type2 — hints are internal state, test via outline output
+}
+
+///|
+test "Type2: hstem width does not corrupt hints" {
+  // width = nominal 400 + 50, then hstem 10 20
+  let cs : Bytes = [189, 149, 159, 1, 14]
+  let (_, width, hh, hv) = execute_type2(cs, 500L, 400L)
+  inspect(width, content="450")
+  inspect(hh.length(), content="1")
+  inspect(hv.length(), content="0")
+  inspect(hh[0].position(), content="10")
+  inspect(hh[0].width(), content="20")
 }

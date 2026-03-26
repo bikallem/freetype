@@ -3,68 +3,68 @@
 /// See https://www.w3.org/TR/WOFF2/#table_dir_format
 let woff2_known_tags : FixedArray[UInt] = [
   0x636D6170U, // 0  cmap
-  0x68656164U, // 1  head
-  0x68686561U, // 2  hhea
-  0x686D7478U, // 3  hmtx
-  0x6D617870U, // 4  maxp
-  0x6E616D65U, // 5  name
-  0x4F532F32U, // 6  OS/2
-  0x706F7374U, // 7  post
-  0x63767420U, // 8  cvt
-  0x6670676DU, // 9  fpgm
-  0x676C7966U, // 10 glyf
-  0x6C6F6361U, // 11 loca
-  0x70726570U, // 12 prep
-  0x43464620U, // 13 CFF
-  0x564F5247U, // 14 VORG
-  0x45424454U, // 15 EBDT
-  0x45424C43U, // 16 EBLC
-  0x67617370U, // 17 gasp
-  0x68646D78U, // 18 hdmx
-  0x6B65726EU, // 19 kern
-  0x4C545348U, // 20 LTSH
-  0x50434C54U, // 21 PCLT
-  0x56444D58U, // 22 VDMX
-  0x76686561U, // 23 vhea
-  0x766D7478U, // 24 vmtx
-  0x42415345U, // 25 BASE
-  0x47444546U, // 26 GDEF
-  0x47504F53U, // 27 GPOS
-  0x47535542U, // 28 GSUB
-  0x45425343U, // 29 EBSC
-  0x4A535446U, // 30 JSTF
-  0x4D415448U, // 31 MATH
-  0x43424454U, // 32 CBDT
-  0x43424C43U, // 33 CBLC
-  0x434F4C52U, // 34 COLR
-  0x4350414CU, // 35 CPAL
-  0x53564720U, // 36 SVG
-  0x73626978U, // 37 sbix
-  0x61636E74U, // 38 acnt
-  0x61766172U, // 39 avar
-  0x62646174U, // 40 bdat
-  0x626C6F63U, // 41 bloc
-  0x62736C6EU, // 42 bsln
-  0x63766172U, // 43 cvar
-  0x66647363U, // 44 fdsc
-  0x66656174U, // 45 feat
-  0x666D7478U, // 46 fmtx
-  0x66766172U, // 47 fvar
-  0x67766172U, // 48 gvar
-  0x68737479U, // 49 hsty
-  0x6A757374U, // 50 just
-  0x6C636172U, // 51 lcar
-  0x6D6F7274U, // 52 mort
-  0x6D6F7278U, // 53 morx
-  0x6F706264U, // 54 opbd
-  0x70726F70U, // 55 prop
-  0x7472616BU, // 56 trak
-  0x5A617066U, // 57 Zapf
-  0x53696C66U, // 58 Silf
-  0x476C6174U, // 59 Glat
-  0x476C6F63U, // 60 Gloc
-  0x46656174U, // 61 Feat
-  0x53696C6CU, // 62 Sill
+   0x68656164U, // 1  head
+   0x68686561U, // 2  hhea
+   0x686D7478U, // 3  hmtx
+   0x6D617870U, // 4  maxp
+   0x6E616D65U, // 5  name
+   0x4F532F32U, // 6  OS/2
+   0x706F7374U, // 7  post
+   0x63767420U, // 8  cvt
+   0x6670676DU, // 9  fpgm
+   0x676C7966U, // 10 glyf
+   0x6C6F6361U, // 11 loca
+   0x70726570U, // 12 prep
+   0x43464620U, // 13 CFF
+   0x564F5247U, // 14 VORG
+   0x45424454U, // 15 EBDT
+   0x45424C43U, // 16 EBLC
+   0x67617370U, // 17 gasp
+   0x68646D78U, // 18 hdmx
+   0x6B65726EU, // 19 kern
+   0x4C545348U, // 20 LTSH
+   0x50434C54U, // 21 PCLT
+   0x56444D58U, // 22 VDMX
+   0x76686561U, // 23 vhea
+   0x766D7478U, // 24 vmtx
+   0x42415345U, // 25 BASE
+   0x47444546U, // 26 GDEF
+   0x47504F53U, // 27 GPOS
+   0x47535542U, // 28 GSUB
+   0x45425343U, // 29 EBSC
+   0x4A535446U, // 30 JSTF
+   0x4D415448U, // 31 MATH
+   0x43424454U, // 32 CBDT
+   0x43424C43U, // 33 CBLC
+   0x434F4C52U, // 34 COLR
+   0x4350414CU, // 35 CPAL
+   0x53564720U, // 36 SVG
+   0x73626978U, // 37 sbix
+   0x61636E74U, // 38 acnt
+   0x61766172U, // 39 avar
+   0x62646174U, // 40 bdat
+   0x626C6F63U, // 41 bloc
+   0x62736C6EU, // 42 bsln
+   0x63766172U, // 43 cvar
+   0x66647363U, // 44 fdsc
+   0x66656174U, // 45 feat
+   0x666D7478U, // 46 fmtx
+   0x66766172U, // 47 fvar
+   0x67766172U, // 48 gvar
+   0x68737479U, // 49 hsty
+   0x6A757374U, // 50 just
+   0x6C636172U, // 51 lcar
+   0x6D6F7274U, // 52 mort
+   0x6D6F7278U, // 53 morx
+   0x6F706264U, // 54 opbd
+   0x70726F70U, // 55 prop
+   0x7472616BU, // 56 trak
+   0x5A617066U, // 57 Zapf
+   0x53696C66U, // 58 Silf
+   0x476C6174U, // 59 Glat
+   0x476C6F63U, // 60 Gloc
+   0x46656174U, // 61 Feat
+   0x53696C6CU, // 62 Sill
 ]
 
 ///|
@@ -193,7 +193,7 @@ pub fn decompress_woff2(data : Bytes) -> Bytes raise @error.FTError {
   // Read and decompress the compressed data stream
   let compressed_offset = reader.position()
   let compressed_data = data[compressed_offset:compressed_offset +
-    total_compressed_size.reinterpret_as_int()].to_bytes()
+  total_compressed_size.reinterpret_as_int()].to_bytes()
   let uncompressed = @brotli.decompress(compressed_data) catch {
     _ => raise @error.FTError::InvalidTable
   }
@@ -315,11 +315,7 @@ pub fn decompress_woff2(data : Bytes) -> Bytes raise @error.FTError {
     let rec_offset = 12 + i * 16
     write_u32_be(sfnt, rec_offset, entry.tag)
     write_u32_be(sfnt, rec_offset + 4, checksum)
-    write_u32_be(
-      sfnt,
-      rec_offset + 8,
-      table_offset.reinterpret_as_uint(),
-    )
+    write_u32_be(sfnt, rec_offset + 8, table_offset.reinterpret_as_uint())
     write_u32_be(sfnt, rec_offset + 12, actual_length.reinterpret_as_uint())
   }
   Bytes::from_array(sfnt[:])

@@ -4,7 +4,7 @@
 pub fn execute_type2(
   charstring : Bytes,
   default_width : Int64,
-  _nominal_width : Int64,
+  nominal_width : Int64,
   local_subrs? : Array[Bytes] = [],
   global_subrs? : Array[Bytes] = [],
 ) -> (@types.Outline, Int64, Array[StemHint], Array[StemHint]) raise @error.FTError {
@@ -12,9 +12,37 @@ pub fn execute_type2(
   interp.local_subrs = local_subrs
   interp.global_subrs = global_subrs
   interp.width = default_width
+  interp.nominal_width = nominal_width
   exec_type2_code(interp, charstring)
   let outline = interp.finalize()
   (outline, interp.width, interp.hints_h, interp.hints_v)
+}
+
+///|
+/// Pop and return the oldest operand from the Type 2 stack.
+fn pop_first_arg(interp : PsInterp) -> Int64 {
+  if interp.stack.length() == 0 {
+    return 0L
+  }
+  let first = interp.stack[0]
+  let rest : Array[Int64] = []
+  for i in 1..<interp.stack.length() {
+    rest.push(interp.stack[i])
+  }
+  interp.stack = rest
+  first
+}
+
+///|
+/// Consume the optional Type 2 width operand from the first eligible operator.
+/// When present, the charstring stores `width - nominalWidthX`.
+fn consume_width(interp : PsInterp, has_width : Bool) -> Unit {
+  if not(interp.width_set) {
+    if has_width {
+      interp.width = interp.nominal_width + pop_first_arg(interp)
+    }
+    interp.width_set = true
+  }
 }
 
 ///|
@@ -44,7 +72,7 @@ fn exec_type2_code(
         next_ip = exec_type2_op(interp, code, next_ip, b0)
       19 | 20 => {
         // hintmask / cntrmask: consume (num_hints + 7) / 8 bytes
-        check_width(interp)
+        consume_width(interp, interp.stack.length() % 2 == 1)
         let num_hints = interp.hints_h.length() + interp.hints_v.length()
         // First, consume any remaining stem hints on stack
         let pairs_on_stack = interp.stack.length() / 2
@@ -107,21 +135,6 @@ fn exec_type2_code(
 }
 
 ///|
-/// Mark that the width-setting window has passed.
-/// Per CFF spec, the optional width operand appears as the first stack element
-/// before the first path-building or hint operator, only if the argument count
-/// is odd for that operator. Extracting it correctly requires per-operator
-/// knowledge of expected argument counts, which is handled inline at each call
-/// site that needs it (e.g. hstem/vstem check for odd pair counts). This
-/// function simply closes the width-setting window to prevent later operators
-/// from misinterpreting stack contents.
-fn check_width(interp : PsInterp) -> Unit {
-  if not(interp.width_set) {
-    interp.width_set = true
-  }
-}
-
-///|
 /// Execute a one-byte Type 2 operator.
 fn exec_type2_op(
   interp : PsInterp,
@@ -133,7 +146,7 @@ fn exec_type2_op(
   match op {
     1 | 3 => {
       // hstem (1) / vstem (3)
-      check_width(interp)
+      consume_width(interp, interp.stack.length() % 2 == 1)
       let pairs = interp.stack.length() / 2
       let hints = if op == 1 { interp.hints_h } else { interp.hints_v }
       let mut pos = 0L
@@ -149,10 +162,10 @@ fn exec_type2_op(
     }
     4 => {
       // vmoveto
-      check_width(interp)
-      if interp.stack.length() > 1 && not(interp.width_set) {
-        // First arg is width
-      }
+      consume_width(
+        interp,
+        interp.stack.length() > 0 && interp.stack.length() % 2 == 0,
+      )
       let dy = interp.pop()
       interp.move_to(interp.current_x, interp.current_y + dy)
       ip
@@ -233,12 +246,15 @@ fn exec_type2_op(
     11 => ip // return from subroutine (handled by caller)
     14 => {
       // endchar
-      check_width(interp)
+      consume_width(
+        interp,
+        interp.stack.length() == 1 || interp.stack.length() == 5,
+      )
       ip + code.length() // stop execution
     }
     18 => {
       // hstemhm (same as hstem but for hint masks)
-      check_width(interp)
+      consume_width(interp, interp.stack.length() % 2 == 1)
       let pairs = interp.stack.length() / 2
       let mut pos = 0L
       for i in 0..<pairs {
@@ -253,7 +269,7 @@ fn exec_type2_op(
     }
     21 => {
       // rmoveto
-      check_width(interp)
+      consume_width(interp, interp.stack.length() % 2 == 1)
       let dy = interp.pop()
       let dx = interp.pop()
       interp.move_to(interp.current_x + dx, interp.current_y + dy)
@@ -261,14 +277,17 @@ fn exec_type2_op(
     }
     22 => {
       // hmoveto
-      check_width(interp)
+      consume_width(
+        interp,
+        interp.stack.length() > 0 && interp.stack.length() % 2 == 0,
+      )
       let dx = interp.pop()
       interp.move_to(interp.current_x + dx, interp.current_y)
       ip
     }
     23 => {
       // vstemhm (same as vstem but for hint masks)
-      check_width(interp)
+      consume_width(interp, interp.stack.length() % 2 == 1)
       let pairs = interp.stack.length() / 2
       let mut pos = 0L
       for i in 0..<pairs {

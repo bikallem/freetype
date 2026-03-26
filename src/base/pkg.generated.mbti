@@ -204,6 +204,7 @@ pub(all) enum FontFormat {
   TrueType
   TrueTypeCollection
   CffOpenType
+  CffStandalone
   Woff1
   Woff2
   Type1Pfa
