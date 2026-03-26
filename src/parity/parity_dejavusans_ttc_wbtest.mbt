@@ -8,18 +8,12 @@ fn load_generated_dejavusans_ttc() -> Bytes {
 
 ///|
 test "parity/DejaVuSans.ttc: format" {
-  inspect(
-    @base.detect_format(load_generated_dejavusans_ttc()),
-    content="TrueTypeCollection",
-  )
+  inspect(@base.detect_format(load_generated_dejavusans_ttc()), content="TrueTypeCollection")
 }
 
 ///|
 test "parity/DejaVuSans.ttc: loads" {
-  inspect(
-    (try? @freetype.from_bytes(load_generated_dejavusans_ttc())) is Ok(_),
-    content="true",
-  )
+  inspect((try? @freetype.from_bytes(load_generated_dejavusans_ttc())) is Ok(_), content="true")
 }
 
 ///|
@@ -132,6 +126,7 @@ test "parity/DejaVuSans.ttc: charmap entries" {
   inspect(@freetype.get_char_index(f, 79U), content="50")
   inspect(@freetype.get_char_index(f, 80U), content="51")
   inspect(@freetype.get_char_index(f, 81U), content="52")
+  inspect(@freetype.get_char_index(f, 66304U), content="5373")
 }
 
 ///|
@@ -223,7 +218,7 @@ test "parity/DejaVuSans.ttc: glyph metrics at 16ppem" {
 }
 
 ///|
-test "parity/DejaVuSans.ttc: TTC multi-face" {
+test "parity/DejaVuSans.ttc: multi-face" {
   let f0 = @freetype.from_bytes(load_generated_dejavusans_ttc(), face_index=0)
   inspect(f0.num_glyphs() > 0L, content="true")
   let f1 = @freetype.from_bytes(load_generated_dejavusans_ttc(), face_index=1)
@@ -283,11 +278,8 @@ test "parity/DejaVuSans.ttc: outline FORCE_AUTOHINT 16ppem" {
   let f = @freetype.from_bytes(load_generated_dejavusans_ttc())
   let r1 = try? @freetype.set_pixel_sizes(f, 0U, 16U)
   guard r1 is Ok(_) else { return }
-  let r2 = try? @freetype.load_glyph(
-    f,
-    4U,
-    load_flags=@base.LOAD_FORCE_AUTOHINT,
-  )
+  let r2 = try? @freetype.load_glyph(f, 4U, load_flags=@base.LOAD_FORCE_AUTOHINT)
   guard r2 is Ok(_) else { return }
   inspect(f.glyph().metrics().hori_advance(), content="384")
 }
+

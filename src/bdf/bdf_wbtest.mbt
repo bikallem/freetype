@@ -10,6 +10,7 @@ test "BdfFont creation" {
 test "BdfGlyph creation" {
   let glyph = BdfGlyph::new()
   inspect(glyph.encoding, content="-1")
+  inspect(glyph.dwidth_x, content="0")
   inspect(glyph.bbx_width, content="0")
   inspect(glyph.name, content="")
 }
@@ -40,11 +41,23 @@ test "parse_bdf_header parses glyphs" {
   let font = parse_bdf_header(data)
   inspect(font.glyphs.length(), content="1")
   inspect(font.glyphs[0].encoding, content="65")
+  inspect(font.glyphs[0].swidth_x, content="500")
+  inspect(font.glyphs[0].dwidth_x, content="8")
   inspect(font.glyphs[0].bbx_width, content="8")
   inspect(font.glyphs[0].bbx_height, content="8")
   inspect(font.glyphs[0].name, content="")
   inspect(font.glyphs[0].bitmap.length() > 0, content="true")
   inspect(font.glyphs[0].bitmap.length(), content="8")
+}
+
+///|
+test "parse_bdf_header preserves device width distinct from bbx" {
+  let bdf = "STARTFONT 2.1\nFONT test\nSIZE 8 75 75\nFONTBOUNDINGBOX 8 8 0 0\nCHARS 1\nSTARTCHAR A\nENCODING 65\nSWIDTH 500 0\nDWIDTH 10 0\nBBX 8 8 1 0\nBITMAP\n18\n24\n42\n7E\n42\n42\n42\n00\nENDCHAR\nENDFONT\n"
+  let data = @utf8.encode(bdf)
+  let font = parse_bdf_header(data)
+  inspect(font.glyphs[0].dwidth_x, content="10")
+  inspect(font.glyphs[0].bbx_width, content="8")
+  inspect(font.glyphs[0].bbx_x_offset, content="1")
 }
 
 ///|

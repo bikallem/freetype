@@ -8,18 +8,12 @@ fn load_generated_dejavusans_woff() -> Bytes {
 
 ///|
 test "parity/DejaVuSans.woff: format" {
-  inspect(
-    @base.detect_format(load_generated_dejavusans_woff()),
-    content="Woff1",
-  )
+  inspect(@base.detect_format(load_generated_dejavusans_woff()), content="Woff1")
 }
 
 ///|
 test "parity/DejaVuSans.woff: loads" {
-  inspect(
-    (try? @freetype.from_bytes(load_generated_dejavusans_woff())) is Ok(_),
-    content="true",
-  )
+  inspect((try? @freetype.from_bytes(load_generated_dejavusans_woff())) is Ok(_), content="true")
 }
 
 ///|
@@ -132,6 +126,7 @@ test "parity/DejaVuSans.woff: charmap entries" {
   inspect(@freetype.get_char_index(f, 79U), content="50")
   inspect(@freetype.get_char_index(f, 80U), content="51")
   inspect(@freetype.get_char_index(f, 81U), content="52")
+  inspect(@freetype.get_char_index(f, 66304U), content="5373")
 }
 
 ///|
@@ -275,11 +270,8 @@ test "parity/DejaVuSans.woff: outline FORCE_AUTOHINT 16ppem" {
   let f = @freetype.from_bytes(load_generated_dejavusans_woff())
   let r1 = try? @freetype.set_pixel_sizes(f, 0U, 16U)
   guard r1 is Ok(_) else { return }
-  let r2 = try? @freetype.load_glyph(
-    f,
-    4U,
-    load_flags=@base.LOAD_FORCE_AUTOHINT,
-  )
+  let r2 = try? @freetype.load_glyph(f, 4U, load_flags=@base.LOAD_FORCE_AUTOHINT)
   guard r2 is Ok(_) else { return }
   inspect(f.glyph().metrics().hori_advance(), content="384")
 }
+

@@ -78,16 +78,71 @@ priv struct Woff2TableEntry {
 }
 
 ///|
-fn find_woff2_entry(
+priv struct Woff2FontEntry {
+  flavor : UInt
+  table_indices : Array[Int]
+}
+
+fn sorted_font_table_indices(
+  font : Woff2FontEntry,
+  entries : Array[Woff2TableEntry],
+) -> Array[Int] {
+  let indices : Array[Int] = Array::new(capacity=font.table_indices.length())
+  for _, index in font.table_indices {
+    indices.push(index)
+  }
+  indices.sort_by(fn(a, b) { entries[a].tag.compare(entries[b].tag) })
+  indices
+}
+
+///|
+fn find_font_table_index(
+  font : Woff2FontEntry,
   entries : Array[Woff2TableEntry],
   tag : UInt,
-) -> Woff2TableEntry? {
-  for _, entry in entries {
-    if entry.tag == tag {
-      return Some(entry)
+) -> Int {
+  for _, index in font.table_indices {
+    if index >= 0 && index < entries.length() && entries[index].tag == tag {
+      return index
     }
   }
-  None
+  -1
+}
+
+///|
+fn read_collection_directory(
+  reader : @stream.ByteReader,
+  num_tables : Int,
+) -> (UInt, Array[Woff2FontEntry]) raise @error.FTError {
+  let version = reader.read_u32_be()
+  let num_fonts = read_255ushort(reader).reinterpret_as_int()
+  let fonts : Array[Woff2FontEntry] = Array::new(capacity=num_fonts)
+  for _ in 0..<num_fonts {
+    let font_num_tables = read_255ushort(reader).reinterpret_as_int()
+    let flavor = reader.read_u32_be()
+    let table_indices : Array[Int] = Array::new(capacity=font_num_tables)
+    for _ in 0..<font_num_tables {
+      let index = read_255ushort(reader).reinterpret_as_int()
+      if index < 0 || index >= num_tables {
+        raise @error.FTError::InvalidTable
+      }
+      table_indices.push(index)
+    }
+    fonts.push({ flavor, table_indices })
+  }
+  (version, fonts)
+}
+
+///|
+fn make_single_font_entries(
+  flavor : UInt,
+  num_tables : Int,
+) -> Array[Woff2FontEntry] {
+  let table_indices : Array[Int] = Array::new(capacity=num_tables)
+  for i in 0..<num_tables {
+    table_indices.push(i)
+  }
+  [{ flavor, table_indices }]
 }
 
 ///|
@@ -223,63 +278,26 @@ fn reconstruct_hmtx_table(
 
 ///|
 fn reconstruct_transformed_hmtx(
-  entries : Array[Woff2TableEntry],
+  hmtx_entry : Woff2TableEntry,
   uncompressed : Bytes,
-  glyf_loca_data : (Bytes, Bytes)?,
-) -> Bytes? raise @error.FTError {
-  let hmtx_entry = match find_woff2_entry(entries, @types.TAG_HMTX) {
-    Some(entry) => entry
-    None => return None
-  }
+  maxp : Bytes,
+  hhea : Bytes,
+  glyf_data : Bytes,
+  loca_data : Bytes,
+) -> Bytes raise @error.FTError {
   if (hmtx_entry.flags & 0x100U) == 0U {
-    return None
+    raise @error.FTError::InvalidTable
   }
-  let maxp_entry = match find_woff2_entry(entries, @types.TAG_MAXP) {
-    Some(entry) => entry
-    None => raise @error.FTError::InvalidTable
-  }
-  let hhea_entry = match find_woff2_entry(entries, @types.TAG_HHEA) {
-    Some(entry) => entry
-    None => raise @error.FTError::InvalidTable
-  }
-  let maxp = woff2_table_bytes(uncompressed, maxp_entry)
-  let hhea = woff2_table_bytes(uncompressed, hhea_entry)
   if maxp.length() < 6 || hhea.length() < 36 {
     raise @error.FTError::InvalidTable
   }
   let num_glyphs = read_u16_be_from_bytes(maxp, 4)
   let num_hmetrics = read_u16_be_from_bytes(hhea, 34)
-  let x_mins = match glyf_loca_data {
-    Some((glyf_data, loca_data)) => {
-      let expected_long = (num_glyphs + 1) * 4
-      let index_format = if loca_data.length() == expected_long { 1 } else { 0 }
-      collect_glyf_x_mins(glyf_data, loca_data, index_format, num_glyphs)
-    }
-    None => {
-      let head_entry = match find_woff2_entry(entries, @types.TAG_HEAD) {
-        Some(entry) => entry
-        None => raise @error.FTError::InvalidTable
-      }
-      let glyf_entry = match find_woff2_entry(entries, @types.TAG_GLYF) {
-        Some(entry) => entry
-        None => raise @error.FTError::InvalidTable
-      }
-      let loca_entry = match find_woff2_entry(entries, @types.TAG_LOCA) {
-        Some(entry) => entry
-        None => raise @error.FTError::InvalidTable
-      }
-      let head = woff2_table_bytes(uncompressed, head_entry)
-      let glyf = woff2_table_bytes(uncompressed, glyf_entry)
-      let loca = woff2_table_bytes(uncompressed, loca_entry)
-      if head.length() < 52 {
-        raise @error.FTError::InvalidTable
-      }
-      let index_format = read_i16_be_from_bytes(head, 50)
-      collect_glyf_x_mins(glyf, loca, index_format, num_glyphs)
-    }
-  }
+  let expected_long = (num_glyphs + 1) * 4
+  let index_format = if loca_data.length() == expected_long { 1 } else { 0 }
+  let x_mins = collect_glyf_x_mins(glyf_data, loca_data, index_format, num_glyphs)
   let transformed = woff2_table_bytes(uncompressed, hmtx_entry)
-  Some(reconstruct_hmtx_table(transformed, num_glyphs, num_hmetrics, x_mins))
+  reconstruct_hmtx_table(transformed, num_glyphs, num_hmetrics, x_mins)
 }
 
 ///|
@@ -341,6 +359,141 @@ fn compute_checksum(data : Bytes, offset : Int, length : Int) -> UInt {
 }
 
 ///|
+fn compute_search_params(num_tables : Int) -> (Int, Int, Int) {
+  let (sr, es) = for sr = 1, es = 0; sr * 2 <= num_tables; {
+    continue sr * 2, es + 1
+  } nobreak {
+    (sr * 16, es)
+  }
+  (sr, es, num_tables * 16 - sr)
+}
+
+///|
+fn build_sfnt_font(
+  font : Woff2FontEntry,
+  entries : Array[Woff2TableEntry],
+  resolved_tables : Array[Bytes],
+) -> Bytes {
+  let indices = sorted_font_table_indices(font, entries)
+  let num_tables = indices.length()
+  let sfnt_header_size = 12 + num_tables * 16
+  let table_offsets : Array[Int] = Array::new(capacity=num_tables)
+  let mut dest_offset = sfnt_header_size
+  for _, entry_index in indices {
+    dest_offset = (dest_offset + 3) & -4
+    table_offsets.push(dest_offset)
+    dest_offset += resolved_tables[entry_index].length()
+  }
+  let total_size = (dest_offset + 3) & -4
+  let sfnt = FixedArray::make(total_size, b'\x00')
+  write_u32_be(sfnt, 0, font.flavor)
+  write_u16_be(sfnt, 4, num_tables.reinterpret_as_uint())
+  let (search_range, entry_selector, range_shift) = compute_search_params(
+    num_tables,
+  )
+  write_u16_be(sfnt, 6, search_range.reinterpret_as_uint())
+  write_u16_be(sfnt, 8, entry_selector.reinterpret_as_uint())
+  write_u16_be(sfnt, 10, range_shift.reinterpret_as_uint())
+  for i, entry_index in indices {
+    let table_offset = table_offsets[i]
+    let table_data = resolved_tables[entry_index]
+    for j in 0..<table_data.length() {
+      sfnt[table_offset + j] = table_data[j]
+    }
+    let checksum = compute_checksum(table_data, 0, table_data.length())
+    let rec_offset = 12 + i * 16
+    write_u32_be(sfnt, rec_offset, entries[entry_index].tag)
+    write_u32_be(sfnt, rec_offset + 4, checksum)
+    write_u32_be(sfnt, rec_offset + 8, table_offset.reinterpret_as_uint())
+    write_u32_be(
+      sfnt,
+      rec_offset + 12,
+      table_data.length().reinterpret_as_uint(),
+    )
+  }
+  Bytes::from_array(sfnt[:])
+}
+
+///|
+fn build_ttc_font_collection(
+  version : UInt,
+  fonts : Array[Woff2FontEntry],
+  entries : Array[Woff2TableEntry],
+  resolved_tables : Array[Bytes],
+) -> Bytes {
+  let num_fonts = fonts.length()
+  let ttc_version = if version == 0x00020000U || version == 0U {
+    0x00010000U
+  } else {
+    version
+  }
+  let sorted_indices : Array[Array[Int]] = Array::new(capacity=num_fonts)
+  let font_offsets : Array[Int] = Array::new(capacity=num_fonts)
+  let mut dir_offset = 12 + num_fonts * 4
+  for _, font in fonts {
+    let indices = sorted_font_table_indices(font, entries)
+    sorted_indices.push(indices)
+    font_offsets.push(dir_offset)
+    dir_offset += 12 + indices.length() * 16
+  }
+  let table_offsets : Array[Int] = Array::make(entries.length(), -1)
+  let mut data_offset = dir_offset
+  for i, _ in entries {
+    data_offset = (data_offset + 3) & -4
+    table_offsets[i] = data_offset
+    data_offset += resolved_tables[i].length()
+  }
+  let total_size = (data_offset + 3) & -4
+  let ttc = FixedArray::make(total_size, b'\x00')
+  write_u32_be(ttc, 0, @types.TAG_TTCF)
+  write_u32_be(ttc, 4, ttc_version)
+  write_u32_be(ttc, 8, num_fonts.reinterpret_as_uint())
+  for i, font_offset in font_offsets {
+    write_u32_be(ttc, 12 + i * 4, font_offset.reinterpret_as_uint())
+  }
+  for font_index, font in fonts {
+    let indices = sorted_indices[font_index]
+    let base = font_offsets[font_index]
+    let num_tables = indices.length()
+    let (search_range, entry_selector, range_shift) = compute_search_params(
+      num_tables,
+    )
+    write_u32_be(ttc, base, font.flavor)
+    write_u16_be(ttc, base + 4, num_tables.reinterpret_as_uint())
+    write_u16_be(ttc, base + 6, search_range.reinterpret_as_uint())
+    write_u16_be(ttc, base + 8, entry_selector.reinterpret_as_uint())
+    write_u16_be(ttc, base + 10, range_shift.reinterpret_as_uint())
+    for j, entry_index in indices {
+      let rec_offset = base + 12 + j * 16
+      let table_data = resolved_tables[entry_index]
+      write_u32_be(ttc, rec_offset, entries[entry_index].tag)
+      write_u32_be(
+        ttc,
+        rec_offset + 4,
+        compute_checksum(table_data, 0, table_data.length()),
+      )
+      write_u32_be(
+        ttc,
+        rec_offset + 8,
+        table_offsets[entry_index].reinterpret_as_uint(),
+      )
+      write_u32_be(
+        ttc,
+        rec_offset + 12,
+        table_data.length().reinterpret_as_uint(),
+      )
+    }
+  }
+  for i, table_data in resolved_tables {
+    let table_offset = table_offsets[i]
+    for j in 0..<table_data.length() {
+      ttc[table_offset + j] = table_data[j]
+    }
+  }
+  Bytes::from_array(ttc[:])
+}
+
+///|
 /// Parse a WOFF2 file and return the decompressed SFNT data.
 /// Uses @brotli.decompress for the compressed data stream.
 pub fn decompress_woff2(data : Bytes) -> Bytes raise @error.FTError {
@@ -395,6 +548,11 @@ pub fn decompress_woff2(data : Bytes) -> Bytes raise @error.FTError {
     entries.push({ tag, flags, orig_length, transform_length, src_offset })
     stream_offset += transform_length.reinterpret_as_int()
   }
+  let (collection_version, fonts) = if flavor == @types.TAG_TTCF {
+    read_collection_directory(reader, num_tables)
+  } else {
+    (0U, make_single_font_entries(flavor, num_tables))
+  }
   // Read and decompress the compressed data stream
   let compressed_offset = reader.position()
   let compressed_data = data[compressed_offset:compressed_offset +
@@ -405,139 +563,93 @@ pub fn decompress_woff2(data : Bytes) -> Bytes raise @error.FTError {
   if uncompressed.length() < stream_offset {
     raise @error.FTError::InvalidTable
   }
-  // Check for transformed glyf/loca
-  let mut glyf_index = -1
-  let mut loca_index = -1
-  for i, entry in entries {
-    if entry.tag == @types.TAG_GLYF {
-      glyf_index = i
+  let resolved_tables : Array[Bytes] = Array::make(entries.length(), b"")
+  let table_is_resolved : Array[Bool] = Array::make(entries.length(), false)
+  for _, font in fonts {
+    let glyf_index = find_font_table_index(font, entries, @types.TAG_GLYF)
+    let loca_index = find_font_table_index(font, entries, @types.TAG_LOCA)
+    if glyf_index < 0 || loca_index < 0 || table_is_resolved[glyf_index] {
+      continue
     }
-    if entry.tag == @types.TAG_LOCA {
-      loca_index = i
-    }
-  }
-  let glyf_is_transformed = glyf_index >= 0 &&
-    (entries[glyf_index].flags & 0x100U) != 0U
-  // Pre-reconstruct transformed glyf/loca if needed
-  let glyf_loca_data : (Bytes, Bytes)? = if glyf_is_transformed &&
-    glyf_index >= 0 &&
-    loca_index >= 0 {
     let glyf_entry = entries[glyf_index]
-    let loca_entry = entries[loca_index]
-    let (glyf_data, loca_data, _x_mins) = reconstruct_glyf(
+    let is_transformed = (glyf_entry.flags & 0x100U) != 0U
+    if is_transformed {
+      if flavor == @types.TAG_TTCF && loca_index != glyf_index + 1 {
+        raise @error.FTError::InvalidTable
+      }
+      let (glyf_data, loca_data, _x_mins) = reconstruct_glyf(
+        uncompressed,
+        glyf_entry.src_offset,
+        glyf_entry.transform_length.reinterpret_as_int(),
+        entries[loca_index].orig_length.reinterpret_as_int(),
+      )
+      resolved_tables[glyf_index] = glyf_data
+      resolved_tables[loca_index] = loca_data
+      table_is_resolved[glyf_index] = true
+      table_is_resolved[loca_index] = true
+    }
+  }
+  for _, font in fonts {
+    let hmtx_index = find_font_table_index(font, entries, @types.TAG_HMTX)
+    if hmtx_index < 0 ||
+      table_is_resolved[hmtx_index] ||
+      (entries[hmtx_index].flags & 0x100U) == 0U {
+      continue
+    }
+    let maxp_index = find_font_table_index(font, entries, @types.TAG_MAXP)
+    let hhea_index = find_font_table_index(font, entries, @types.TAG_HHEA)
+    let glyf_index = find_font_table_index(font, entries, @types.TAG_GLYF)
+    let loca_index = find_font_table_index(font, entries, @types.TAG_LOCA)
+    if maxp_index < 0 ||
+      hhea_index < 0 ||
+      glyf_index < 0 ||
+      loca_index < 0 {
+      raise @error.FTError::InvalidTable
+    }
+    let maxp = if table_is_resolved[maxp_index] {
+      resolved_tables[maxp_index]
+    } else {
+      woff2_table_bytes(uncompressed, entries[maxp_index])
+    }
+    let hhea = if table_is_resolved[hhea_index] {
+      resolved_tables[hhea_index]
+    } else {
+      woff2_table_bytes(uncompressed, entries[hhea_index])
+    }
+    let glyf = if table_is_resolved[glyf_index] {
+      resolved_tables[glyf_index]
+    } else {
+      woff2_table_bytes(uncompressed, entries[glyf_index])
+    }
+    let loca = if table_is_resolved[loca_index] {
+      resolved_tables[loca_index]
+    } else {
+      woff2_table_bytes(uncompressed, entries[loca_index])
+    }
+    resolved_tables[hmtx_index] = reconstruct_transformed_hmtx(
+      entries[hmtx_index],
       uncompressed,
-      glyf_entry.src_offset,
-      glyf_entry.transform_length.reinterpret_as_int(),
-      loca_entry.orig_length.reinterpret_as_int(),
+      maxp,
+      hhea,
+      glyf,
+      loca,
     )
-    Some((glyf_data, loca_data))
-  } else {
-    None
+    table_is_resolved[hmtx_index] = true
   }
-  let transformed_hmtx_data = reconstruct_transformed_hmtx(
-    entries, uncompressed, glyf_loca_data,
-  )
-  // Build SFNT: use a two-pass approach
-  // Pass 1: compute table sizes and offsets
-  let sfnt_header_size = 12 + num_tables * 16
-  let table_offsets : Array[Int] = []
-  let table_lengths : Array[Int] = []
-  let mut dest_offset = sfnt_header_size
   for i, entry in entries {
-    dest_offset = (dest_offset + 3) & -4
-    table_offsets.push(dest_offset)
-    let actual_length = if glyf_is_transformed && entry.tag == @types.TAG_GLYF {
-      match glyf_loca_data {
-        Some((glyf_data, _)) => glyf_data.length()
-        None => entry.orig_length.reinterpret_as_int()
-      }
-    } else if glyf_is_transformed && entry.tag == @types.TAG_LOCA {
-      match glyf_loca_data {
-        Some((_, loca_data)) => loca_data.length()
-        None => entry.orig_length.reinterpret_as_int()
-      }
-    } else if entry.tag == @types.TAG_HMTX {
-      match transformed_hmtx_data {
-        Some(hmtx) => hmtx.length()
-        None => entry.orig_length.reinterpret_as_int()
-      }
-    } else {
-      entry.orig_length.reinterpret_as_int()
+    if table_is_resolved[i] {
+      continue
     }
-    table_lengths.push(actual_length)
-    ignore(i)
-    dest_offset += actual_length
-  }
-  let total_size = (dest_offset + 3) & -4
-  // Pass 2: build SFNT
-  let sfnt = FixedArray::make(total_size, b'\x00')
-  // SFNT header
-  write_u32_be(sfnt, 0, flavor)
-  write_u16_be(sfnt, 4, num_tables.reinterpret_as_uint())
-  let (sr, es) = for sr = 1, es = 0; sr * 2 <= num_tables; {
-    continue sr * 2, es + 1
-  } nobreak {
-    (sr * 16, es)
-  }
-  write_u16_be(sfnt, 6, sr.reinterpret_as_uint())
-  write_u16_be(sfnt, 8, es.reinterpret_as_uint())
-  write_u16_be(sfnt, 10, (num_tables * 16 - sr).reinterpret_as_uint())
-  // Copy/reconstruct tables
-  for i, entry in entries {
-    let table_offset = table_offsets[i]
-    let actual_length = table_lengths[i]
     let is_transformed = (entry.flags & 0x100U) != 0U
-    if is_transformed && entry.tag == @types.TAG_GLYF {
-      // Copy reconstructed glyf
-      match glyf_loca_data {
-        Some((glyf_data, _)) =>
-          for j in 0..<actual_length {
-            sfnt[table_offset + j] = glyf_data[j]
-          }
-        None => ()
-      }
-    } else if is_transformed && entry.tag == @types.TAG_LOCA {
-      // Copy reconstructed loca
-      match glyf_loca_data {
-        Some((_, loca_data)) =>
-          for j in 0..<actual_length {
-            sfnt[table_offset + j] = loca_data[j]
-          }
-        None => ()
-      }
-    } else if is_transformed && entry.tag == @types.TAG_HMTX {
-      match transformed_hmtx_data {
-        Some(hmtx) =>
-          for j in 0..<actual_length {
-            sfnt[table_offset + j] = hmtx[j]
-          }
-        None => raise @error.FTError::InvalidTable
-      }
-    } else if is_transformed {
-      // Other transformed tables are not yet supported.
+    if is_transformed {
       raise @error.FTError::UnimplementedFeature
-    } else {
-      // Non-transformed: copy from uncompressed stream
-      let src = entry.src_offset
-      let copy_len = if entry.transform_length.reinterpret_as_int() <
-        actual_length {
-        entry.transform_length.reinterpret_as_int()
-      } else {
-        actual_length
-      }
-      for j in 0..<copy_len {
-        sfnt[table_offset + j] = uncompressed[src + j]
-      }
     }
-    // Compute checksum from the final data
-    let result = Bytes::from_array(sfnt[:])
-    let checksum = compute_checksum(result, table_offset, actual_length)
-    // Write table record
-    let rec_offset = 12 + i * 16
-    write_u32_be(sfnt, rec_offset, entry.tag)
-    write_u32_be(sfnt, rec_offset + 4, checksum)
-    write_u32_be(sfnt, rec_offset + 8, table_offset.reinterpret_as_uint())
-    write_u32_be(sfnt, rec_offset + 12, actual_length.reinterpret_as_uint())
+    resolved_tables[i] = woff2_table_bytes(uncompressed, entry)
+    table_is_resolved[i] = true
   }
-  Bytes::from_array(sfnt[:])
+  if flavor == @types.TAG_TTCF {
+    build_ttc_font_collection(collection_version, fonts, entries, resolved_tables)
+  } else {
+    build_sfnt_font(fonts[0], entries, resolved_tables)
+  }
 }

@@ -34,19 +34,33 @@ fn make_bdf_bitmap(glyph : @bdf.BdfGlyph) -> @types.Bitmap {
 }
 
 ///|
+fn glyph_advance_width(glyph : @bdf.BdfGlyph) -> Int {
+  let dwidth = glyph.dwidth_x()
+  if dwidth != 0 {
+    dwidth
+  } else {
+    glyph.bbx_width()
+  }
+}
+
+///|
 fn load_bdf(data : Bytes) -> @base.FaceRec raise @error.FTError {
   let font = @bdf.parse_bdf_header(data)
   let face = @base.FaceRec::new()
   let glyphs = font.glyphs()
   let num_chars = font.num_chars()
   let family_name = extract_bdf_family_name(font.font_name())
+  let mut max_advance_width = font.bbx_width()
+  for _, glyph in glyphs {
+    max_advance_width = max_advance_width.max(glyph_advance_width(glyph))
+  }
   face.set_family_name(family_name)
   face.set_face_flags(@base.FACE_FLAG_FIXED_SIZES | @base.FACE_FLAG_HORIZONTAL)
   face.set_num_glyphs((num_chars + 1).to_int64())
   face.set_ascender(font.bbx_height() + font.bbx_y_offset())
   face.set_descender(font.bbx_y_offset())
   face.set_height(font.bbx_height())
-  face.set_max_advance_width(font.bbx_width())
+  face.set_max_advance_width(max_advance_width)
   face.set_max_advance_height(font.bbx_height())
   let strike_ppem = font.point_size().to_int64() << 6
   face.set_available_sizes([
@@ -110,12 +124,13 @@ fn load_bdf(data : Bytes) -> @base.FaceRec raise @error.FTError {
     match maybe_glyph {
       Some(glyph) => {
         let top = glyph.bbx_height() + glyph.bbx_y_offset()
+        let advance = glyph_advance_width(glyph)
         let slot_data = @base.GlyphSlotData::new(
           glyph.bbx_width().to_int64(),
           glyph.bbx_height().to_int64(),
           glyph.bbx_x_offset().to_int64(),
           top.to_int64(),
-          glyph.bbx_width().to_int64(),
+          advance.to_int64(),
         )
         @base.BitmapGlyphData::new(
           slot_data,

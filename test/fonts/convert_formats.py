@@ -1,18 +1,35 @@
 #!/usr/bin/env python3
 """
-Convert real-world fonts to WOFF1 and TTC formats for parity testing.
+Convert alternate container formats for parity testing.
 
 Produces:
   DejaVuSans.woff  — real WOFF1 wrapping DejaVuSans.ttf (6253 glyphs)
   DejaVuSans.ttc   — real TTC containing DejaVuSans.ttf as 2 faces
+  minimal_collection.woff2 — synthetic WOFF2 collection wrapping minimal.ttc
 
 These are genuine production font data in alternate container formats,
-not synthetic minimal fonts.
+except for the small WOFF2 collection fixture used for decoder coverage.
 """
 
 import struct, zlib, os, sys
+try:
+    import brotli
+except ImportError:
+    brotli = None
 
 FONT_DIR = os.path.dirname(os.path.abspath(__file__))
+
+KNOWN_WOFF2_TAGS = [
+    b'cmap', b'head', b'hhea', b'hmtx', b'maxp', b'name', b'OS/2', b'post',
+    b'cvt ', b'fpgm', b'glyf', b'loca', b'prep', b'CFF ', b'VORG', b'EBDT',
+    b'EBLC', b'gasp', b'hdmx', b'kern', b'LTSH', b'PCLT', b'VDMX', b'vhea',
+    b'vmtx', b'BASE', b'GDEF', b'GPOS', b'GSUB', b'EBSC', b'JSTF', b'MATH',
+    b'CBDT', b'CBLC', b'COLR', b'CPAL', b'SVG ', b'sbix', b'acnt', b'avar',
+    b'bdat', b'bloc', b'bsln', b'cvar', b'fdsc', b'feat', b'fmtx', b'fvar',
+    b'gvar', b'hsty', b'just', b'lcar', b'mort', b'morx', b'opbd', b'prop',
+    b'trak', b'Zapf', b'Silf', b'Glat', b'Gloc', b'Feat', b'Sill',
+]
+WOFF2_TAG_INDEX = {tag: i for i, tag in enumerate(KNOWN_WOFF2_TAGS)}
 
 
 def read_font(name):
@@ -32,6 +49,116 @@ def parse_sfnt_tables(data):
         tag, checksum, toff, tlen = struct.unpack_from(">4sIII", data, off)
         tables.append((tag, toff, tlen, checksum))
     return tables
+
+
+def encode_base128(value):
+    parts = [value & 0x7F]
+    value >>= 7
+    while value:
+        parts.append(0x80 | (value & 0x7F))
+        value >>= 7
+    return bytes(reversed(parts))
+
+
+def encode_255ushort(value):
+    if value < 253:
+        return bytes([value])
+    if value < 506:
+        return bytes([255, value - 253])
+    if value < 759:
+        return bytes([254, value - 506])
+    return bytes([253]) + struct.pack(">H", value)
+
+
+def parse_ttc_fonts(data):
+    if data[:4] != b"ttcf":
+        raise ValueError("not a TTC")
+    version, num_fonts = struct.unpack_from(">II", data, 4)
+    offsets = struct.unpack_from(f">{num_fonts}I", data, 12)
+    fonts = []
+    for offset in offsets:
+        sfnt_version, num_tables = struct.unpack_from(">IH", data, offset)
+        tables = []
+        for i in range(num_tables):
+            off = offset + 12 + i * 16
+            tag, checksum, table_offset, length = struct.unpack_from(">4sIII", data, off)
+            tables.append((tag, table_offset, length, checksum))
+        fonts.append((sfnt_version, tables))
+    return version, fonts
+
+
+def reorder_tables_for_woff2_collection(tables):
+    ordered = []
+    pending_loca = None
+    for table in tables:
+        if table[0] == b"loca":
+            pending_loca = table
+            continue
+        ordered.append(table)
+        if table[0] == b"glyf" and pending_loca is not None:
+            ordered.append(pending_loca)
+            pending_loca = None
+    if pending_loca is not None:
+        ordered.append(pending_loca)
+    return ordered
+
+
+def build_woff2_collection(ttc_data):
+    if brotli is None:
+        raise RuntimeError("brotli module is required")
+    version, fonts = parse_ttc_fonts(ttc_data)
+    entries = []
+    index_by_offset = {}
+    collection_fonts = []
+    for sfnt_version, tables in fonts:
+        ordered_tables = reorder_tables_for_woff2_collection(tables)
+        indices = []
+        for tag, offset, length, checksum in ordered_tables:
+            if offset not in index_by_offset:
+                index_by_offset[offset] = len(entries)
+                entries.append((tag, checksum, ttc_data[offset:offset + length]))
+            indices.append(index_by_offset[offset])
+        collection_fonts.append((sfnt_version, indices))
+
+    raw_stream = b"".join(table for _, _, table in entries)
+    compressed = brotli.compress(raw_stream, quality=11, mode=brotli.MODE_FONT)
+
+    table_directory = bytearray()
+    for tag, _, table in entries:
+        if tag in (b"glyf", b"loca"):
+            flag = 0xC0 | WOFF2_TAG_INDEX[tag]
+        else:
+            flag = WOFF2_TAG_INDEX.get(tag, 0x3F)
+        table_directory.append(flag)
+        if (flag & 0x3F) == 0x3F:
+            table_directory += tag
+        table_directory += encode_base128(len(table))
+
+    collection_directory = bytearray()
+    collection_directory += struct.pack(">I", version)
+    collection_directory += encode_255ushort(len(collection_fonts))
+    for sfnt_version, indices in collection_fonts:
+        collection_directory += encode_255ushort(len(indices))
+        collection_directory += struct.pack(">I", sfnt_version)
+        for index in indices:
+            collection_directory += encode_255ushort(index)
+
+    length = 48 + len(table_directory) + len(collection_directory) + len(compressed)
+    header = struct.pack(
+        ">IIIHHIIHHIIIII",
+        0x774F4632,  # wOF2
+        0x74746366,  # ttcf
+        length,
+        len(entries),
+        0,
+        len(ttc_data),
+        len(compressed),
+        1,
+        0,
+        0, 0, 0,
+        0, 0,
+    )
+    return header + table_directory + collection_directory + compressed
 
 
 def build_woff(sfnt_data):
@@ -212,6 +339,22 @@ def main():
             print(f"  [created] SourceCodePro-Regular.woff ({len(woff):,} bytes from {len(scp):,} byte OTF)")
     else:
         print("  [skip] SourceCodePro-Regular.woff (SourceCodePro-Regular.otf not found)")
+
+    # === WOFF2 collection from minimal.ttc ===
+    minimal_ttc = read_font("minimal.ttc")
+    if brotli is None:
+        print("  [skip] minimal_collection.woff2 (python brotli module not available)")
+    elif minimal_ttc:
+        woff2_path = os.path.join(FONT_DIR, "minimal_collection.woff2")
+        if os.path.exists(woff2_path):
+            print("  [skip] minimal_collection.woff2")
+        else:
+            woff2 = build_woff2_collection(minimal_ttc)
+            with open(woff2_path, "wb") as f:
+                f.write(woff2)
+            print(f"  [created] minimal_collection.woff2 ({len(woff2):,} bytes from {len(minimal_ttc):,} byte TTC)")
+    else:
+        print("  [skip] minimal_collection.woff2 (minimal.ttc not found)")
 
 
 if __name__ == "__main__":

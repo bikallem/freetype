@@ -6,6 +6,10 @@
 /// BDF glyph representation.
 struct BdfGlyph {
   mut encoding : Int // character encoding value
+  mut swidth_x : Int // scalable advance width x component
+  mut swidth_y : Int // scalable advance width y component
+  mut dwidth_x : Int // device advance width x component
+  mut dwidth_y : Int // device advance width y component
   mut bbx_width : Int // bounding box width
   mut bbx_height : Int // bounding box height
   mut bbx_x_offset : Int // bounding box x offset
@@ -18,6 +22,10 @@ struct BdfGlyph {
 pub fn BdfGlyph::new() -> BdfGlyph {
   {
     encoding: -1,
+    swidth_x: 0,
+    swidth_y: 0,
+    dwidth_x: 0,
+    dwidth_y: 0,
     bbx_width: 0,
     bbx_height: 0,
     bbx_x_offset: 0,
@@ -324,6 +332,20 @@ pub fn parse_bdf_header(data : Bytes) -> BdfFont raise @error.FTError {
             bytes_skip_spaces(data, gs + 9, ge),
             ge,
           )
+        } else if bytes_starts_with(data, gs, ge, "SWIDTH ") {
+          let fields : Array[Int] = []
+          bytes_parse_int_fields(data, gs + 7, ge, fields, 2)
+          if fields.length() >= 2 {
+            glyph.swidth_x = fields[0]
+            glyph.swidth_y = fields[1]
+          }
+        } else if bytes_starts_with(data, gs, ge, "DWIDTH ") {
+          let fields : Array[Int] = []
+          bytes_parse_int_fields(data, gs + 7, ge, fields, 2)
+          if fields.length() >= 2 {
+            glyph.dwidth_x = fields[0]
+            glyph.dwidth_y = fields[1]
+          }
         } else if bytes_starts_with(data, gs, ge, "BBX ") {
           let fields : Array[Int] = []
           bytes_parse_int_fields(data, gs + 4, ge, fields, 4)
@@ -473,6 +495,26 @@ pub fn BdfFont::y_resolution(self : BdfFont) -> Int {
 ///|
 pub fn BdfGlyph::encoding(self : BdfGlyph) -> Int {
   self.encoding
+}
+
+///|
+pub fn BdfGlyph::swidth_x(self : BdfGlyph) -> Int {
+  self.swidth_x
+}
+
+///|
+pub fn BdfGlyph::swidth_y(self : BdfGlyph) -> Int {
+  self.swidth_y
+}
+
+///|
+pub fn BdfGlyph::dwidth_x(self : BdfGlyph) -> Int {
+  self.dwidth_x
+}
+
+///|
+pub fn BdfGlyph::dwidth_y(self : BdfGlyph) -> Int {
+  self.dwidth_y
 }
 
 ///|

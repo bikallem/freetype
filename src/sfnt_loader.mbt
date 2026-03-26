@@ -438,13 +438,16 @@ fn find_best_cmap(
   cmap_table_offset : UInt,
 ) -> @sfnt.CmapLookup? {
   let reader = @stream.ByteReader::new(data)
-  // Prefer platform 3/encoding 1 (Windows BMP), then 3/10 (Windows UCS-4),
-  // then platform 0 (Unicode), then first available
+  // Prefer full-repertoire Unicode subtables before BMP-only ones so
+  // supplementary-plane lookups don't get trapped on a 16-bit cmap.
   let priorities : Array[(UInt, UInt)] = [
-    (3U, 1U),
     (3U, 10U),
-    (0U, 3U),
+    (0U, 10U),
+    (0U, 6U),
     (0U, 4U),
+    (3U, 1U),
+    (0U, 3U),
+    (0U, 2U),
     (0U, 1U),
     (0U, 0U),
   ]

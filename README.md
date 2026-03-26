@@ -29,7 +29,7 @@ Pure MoonBit port of the [FreeType](https://freetype.org/) font library.
 - PostScript Type 1 charstring interpreter (hsbw, closepath, callothersubr/Flex, seac)
 - Font variations API (`set_var_design_coordinates`, fvar/avar parsing, axis normalization)
 - WOFF1 decompression (zlib via `bikallem/compress`)
-- WOFF2 decompression (Brotli via `bikallem/compress`) with glyf/loca transform reconstruction
+- WOFF2 decompression (Brotli via `bikallem/compress`) with glyf/loca and hmtx transform reconstruction, including collections
 - Standalone CFF font loading (bare CFF without SFNT container)
 - Format auto-detection from file header bytes
 
@@ -43,7 +43,7 @@ Pure MoonBit port of the [FreeType](https://freetype.org/) font library.
 | OpenType/CFF | `.otf` | Full | `cff/` — CFF INDEX/DICT parsing, Type 2 charstrings |
 | TrueType Collection | `.ttc` | Full | `sfnt/` — collection header, per-face loading |
 | WOFF1 | `.woff` | Full | `sfnt/woff.mbt` — zlib decompression via `bikallem/compress` |
-| WOFF2 | `.woff2` | Full | `sfnt/woff2.mbt` — Brotli decompression, glyf/loca transform reconstruction |
+| WOFF2 | `.woff2` | Full | `sfnt/woff2.mbt` — Brotli decompression, glyf/loca + hmtx transform reconstruction, collections |
 | Standalone CFF | `.cff` | Full | `cff_loader.mbt` — bare CFF without SFNT container, PS hinting |
 | Type 1 (PFB/PFA) | `.pfb` `.pfa` | Full | `type1/` — PFB/PFA parsing, eexec, Type 1 charstrings |
 | BDF (bitmap) | `.bdf` | Full | `bdf/` — header + glyph bitmap extraction |
@@ -61,7 +61,6 @@ The following FreeType subsystems are **excluded** from this port:
 | **Rendering/rasterization** (`src/smooth/`, `src/raster/`, `src/sdf/`) | Out of scope — this library produces outlines, not pixels |
 | **File I/O** (`ftsystem.c` file operations) | Accepts `Bytes` instead of file paths; no I/O or OS dependency |
 | **SVG rendering** | Requires external SVG renderer |
-| **Transformed hmtx in WOFF2** | Rarely needed; non-transformed hmtx works fine |
 | **FT_Library global state** | Eliminated — API is stateless, no initialization needed |
 | **Memory allocator** (`FT_ALLOC`/`FT_FREE`/`FT_Memory`) | Eliminated — GC handles memory |
 | **FT_Generic** (user data hooks) | Omitted — users wrap `Face` in their own struct |
