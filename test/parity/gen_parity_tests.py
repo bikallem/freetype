@@ -22,7 +22,8 @@ def esc(s):
 
 
 FMT = {".ttf": "TrueType", ".otf": "CffOpenType", ".ttc": "TrueTypeCollection",
-       ".woff": "Woff1", ".pfb": "Type1Pfb", ".bdf": "Bdf"}
+       ".woff": "Woff1", ".woff2": "Woff2", ".pfb": "Type1Pfb", ".bdf": "Bdf",
+       ".pcf": "Pcf", ".cff": "CffStandalone"}
 
 
 def font_path_expr(ff):
@@ -75,34 +76,35 @@ def gen_font_tests(ff, golden):
     ext = os.path.splitext(ff)[1].lower()
     upe = meta.get("units_per_em", 0)
     path = font_path_expr(ff)
+    loader_fn = f"load_generated_{v}"
 
     L = [f"// Parity tests for {ff}", "// AUTO-GENERATED — do not edit", ""]
 
     # Helper: load font data
-    L += [f"///|", f"fn load_{v}() -> Bytes {{", f"  try! @fs.read_file_to_bytes({path})", f"}}", ""]
+    L += [f"///|", f"fn {loader_fn}() -> Bytes {{", f"  try! @fs.read_file_to_bytes({path})", f"}}", ""]
     tc = 0
 
     # T1: format detection
     L += [f"///|", f'test "parity/{ff}: format" {{']
     if ext == ".ttf":
-        L += [f'  inspect(@base.detect_format(load_{v}()) is (TrueType | TrueTypeCollection), content="true")']
+        L += [f'  inspect(@base.detect_format({loader_fn}()) is (TrueType | TrueTypeCollection), content="true")']
     else:
-        L += [f'  inspect(@base.detect_format(load_{v}()), content="{detect_font_format_name(ff)}")']
+        L += [f'  inspect(@base.detect_format({loader_fn}()), content="{detect_font_format_name(ff)}")']
     L += ["}", ""]
     tc += 1
 
     # T2: loads
     L += [f"///|", f'test "parity/{ff}: loads" {{',
-          f'  inspect((try? @freetype.from_bytes(load_{v}())) is Ok(_), content="true")',
+          f'  inspect((try? @freetype.from_bytes({loader_fn}())) is Ok(_), content="true")',
           "}", ""]
     tc += 1
 
-    if upe <= 0 and ext != ".bdf":
+    if upe <= 0 and ext not in (".bdf", ".pcf"):
         return L, tc
 
     # T3: metadata
     L += [f"///|", f'test "parity/{ff}: metadata" {{',
-          f"  let f = @freetype.from_bytes(load_{v}())"]
+          f"  let f = @freetype.from_bytes({loader_fn}())"]
     if meta.get("family_name"):
         L += [f'  inspect(f.family_name(), content="{esc(meta["family_name"])}")']
     L += [f'  inspect(f.num_glyphs(), content="{meta["num_glyphs"]}")']
@@ -122,7 +124,7 @@ def gen_font_tests(ff, golden):
     bbox = meta.get("bbox", {})
     if bbox and upe > 0:
         L += [f"///|", f'test "parity/{ff}: bbox" {{',
-              f"  let f = @freetype.from_bytes(load_{v}())",
+              f"  let f = @freetype.from_bytes({loader_fn}())",
               f'  inspect(f.bbox().x_min(), content="{bbox["xMin"]}")',
               f'  inspect(f.bbox().y_min(), content="{bbox["yMin"]}")',
               f'  inspect(f.bbox().x_max(), content="{bbox["xMax"]}")',
@@ -134,7 +136,7 @@ def gen_font_tests(ff, golden):
     ff_ = meta.get("face_flags", 0)
     if True:  # flags apply to all formats
         L += [f"///|", f'test "parity/{ff}: flags" {{',
-              f"  let f = @freetype.from_bytes(load_{v}())",
+              f"  let f = @freetype.from_bytes({loader_fn}())",
               f'  inspect(f.is_scalable(), content="{str(bool(ff_ & 1)).lower()}")',
               f'  inspect(f.is_sfnt(), content="{str(bool(ff_ & 8)).lower()}")',
               f'  inspect(f.has_horizontal(), content="{str(bool(ff_ & 16)).lower()}")',
@@ -146,7 +148,7 @@ def gen_font_tests(ff, golden):
     n_cm = meta.get("num_charmaps", 0)
     if n_cm > 0:  # charmaps apply to all formats
         L += [f"///|", f'test "parity/{ff}: charmaps" {{',
-              f"  let f = @freetype.from_bytes(load_{v}())",
+              f"  let f = @freetype.from_bytes({loader_fn}())",
               f'  inspect(f.charmaps().length(), content="{n_cm}")']
         for ci, cm in enumerate(charmaps):
             L += [f"  if f.charmaps().length() > {ci} {{",
@@ -170,14 +172,14 @@ def gen_font_tests(ff, golden):
     if best_cm:  # charmap entries apply to all formats
         entries = best_cm["entries"][:50]
         L += [f"///|", f'test "parity/{ff}: charmap entries" {{',
-              f"  let f = @freetype.from_bytes(load_{v}())"]
+              f"  let f = @freetype.from_bytes({loader_fn}())"]
         for code, gid in entries:
             L += [f"  inspect(@freetype.get_char_index(f, {code}U), content=\"{gid}\")"]
         L += ["}", ""]
         tc += 1
 
     # T8: glyph outlines (NO_SCALE) — skip PFB (driver not wired)
-    if ext != ".bdf":  # BDF is bitmap-only, no outline glyphs
+    if ext not in (".bdf", ".pcf"):  # bitmap-only formats have no outline glyphs
         noscale = [g for g in glyphs if g["load_flags"] == "NO_SCALE" and g["outline"]["n_points"] > 0]
         seen_gids = set()
         noscale_dedup = []
@@ -189,7 +191,7 @@ def gen_font_tests(ff, golden):
             o = g["outline"]
             L += [f"///|",
                   f'test "parity/{ff}: glyph {g["glyph_index"]} outline NO_SCALE" {{',
-                  f"  let f = @freetype.from_bytes(load_{v}())",
+                  f"  let f = @freetype.from_bytes({loader_fn}())",
                   f"  let r = try? @freetype.load_glyph(f, {g['glyph_index']}U, load_flags=@base.LOAD_NO_SCALE)",
                   f"  guard r is Ok(_) else {{ return }}"]
             L += [f'  inspect(f.glyph().outline().n_points(), content="{o["n_points"]}")',
@@ -202,7 +204,7 @@ def gen_font_tests(ff, golden):
             tc += 1
 
     # T9: glyph metrics at 16ppem — skip PFB
-    if ext != ".bdf":  # BDF is bitmap-only, no outline glyphs
+    if ext not in (".bdf", ".pcf"):  # bitmap-only formats have no outline glyphs
         default_16 = [g for g in glyphs if g["load_flags"] == "DEFAULT"
                       and g["size_ppem"] == 16 and g["outline"]["n_points"] > 0]
         if default_16:
@@ -210,7 +212,7 @@ def gen_font_tests(ff, golden):
             m = g["metrics"]
             L += [f"///|",
                   f'test "parity/{ff}: glyph metrics at 16ppem" {{',
-                  f"  let f = @freetype.from_bytes(load_{v}())",
+                  f"  let f = @freetype.from_bytes({loader_fn}())",
                   f"  let r1 = try? @freetype.set_pixel_sizes(f, 0U, 16U)",
                   f"  guard r1 is Ok(_) else {{ return }}",
                   f"  let r2 = try? @freetype.load_glyph(f, {g['glyph_index']}U)",
@@ -225,7 +227,7 @@ def gen_font_tests(ff, golden):
         if nf > 1:
             L += [f"///|", f'test "parity/{ff}: TTC multi-face" {{']
             for fi in range(min(nf, 3)):
-                L += [f"  let f{fi} = @freetype.from_bytes(load_{v}(), face_index={fi})",
+                L += [f"  let f{fi} = @freetype.from_bytes({loader_fn}(), face_index={fi})",
                       f'  inspect(f{fi}.num_glyphs() > 0L, content="true")']
             L += ["}", ""]
             tc += 1
@@ -233,14 +235,14 @@ def gen_font_tests(ff, golden):
     # T11: kerning
     if kerning:
         L += [f"///|", f'test "parity/{ff}: kerning" {{',
-              f"  let f = @freetype.from_bytes(load_{v}())"]
+              f"  let f = @freetype.from_bytes({loader_fn}())"]
         for kp in kerning[:20]:
             L += [f"  inspect(@freetype.get_kerning(f, {kp['left']}U, {kp['right']}U).0, content=\"{kp['x']}\")"]
         L += ["}", ""]
         tc += 1
 
     # T12: Hinted outline (DEFAULT at 16ppem) — tests TT/PS hinting
-    if ext != ".bdf" and upe > 0:
+    if ext not in (".bdf", ".pcf") and upe > 0:
         default_16_all = [g for g in glyphs if g["load_flags"] == "DEFAULT"
                           and g["size_ppem"] == 16 and g["outline"]["n_points"] > 0]
         if default_16_all:
@@ -248,7 +250,7 @@ def gen_font_tests(ff, golden):
             o = g["outline"]
             L += [f"///|",
                   f'test "parity/{ff}: hinted outline DEFAULT 16ppem" {{',
-                  f"  let f = @freetype.from_bytes(load_{v}())",
+                  f"  let f = @freetype.from_bytes({loader_fn}())",
                   f"  let r1 = try? @freetype.set_pixel_sizes(f, 0U, 16U)",
                   f"  guard r1 is Ok(_) else {{ return }}",
                   f"  let r2 = try? @freetype.load_glyph(f, {g['glyph_index']}U)",
@@ -261,14 +263,14 @@ def gen_font_tests(ff, golden):
             tc += 1
 
     # T13: NO_HINTING outline at 16ppem — baseline for hinting comparison
-    if ext != ".bdf" and upe > 0:
+    if ext not in (".bdf", ".pcf") and upe > 0:
         nohint_16 = [g for g in glyphs if g["load_flags"] == "NO_HINTING"
                      and g["size_ppem"] == 16 and g["outline"]["n_points"] > 0]
         if nohint_16:
             g = nohint_16[0]
             L += [f"///|",
                   f'test "parity/{ff}: outline NO_HINTING 16ppem" {{',
-                  f"  let f = @freetype.from_bytes(load_{v}())",
+                  f"  let f = @freetype.from_bytes({loader_fn}())",
                   f"  let r1 = try? @freetype.set_pixel_sizes(f, 0U, 16U)",
                   f"  guard r1 is Ok(_) else {{ return }}",
                   f"  let r2 = try? @freetype.load_glyph(f, {g['glyph_index']}U, load_flags=@base.LOAD_NO_HINTING)",
@@ -278,14 +280,14 @@ def gen_font_tests(ff, golden):
             tc += 1
 
     # T14: FORCE_AUTOHINT outline — tests auto-hinter
-    if ext != ".bdf" and upe > 0:
+    if ext not in (".bdf", ".pcf") and upe > 0:
         autohint_16 = [g for g in glyphs if g["load_flags"] == "FORCE_AUTOHINT"
                        and g["size_ppem"] == 16 and g["outline"]["n_points"] > 0]
         if autohint_16:
             g = autohint_16[0]
             L += [f"///|",
                   f'test "parity/{ff}: outline FORCE_AUTOHINT 16ppem" {{',
-                  f"  let f = @freetype.from_bytes(load_{v}())",
+                  f"  let f = @freetype.from_bytes({loader_fn}())",
                   f"  let r1 = try? @freetype.set_pixel_sizes(f, 0U, 16U)",
                   f"  guard r1 is Ok(_) else {{ return }}",
                   f"  let r2 = try? @freetype.load_glyph(f, {g['glyph_index']}U, load_flags=@base.LOAD_FORCE_AUTOHINT)",
@@ -300,9 +302,16 @@ def gen_font_tests(ff, golden):
 def main():
     os.makedirs(OUTPUT_DIR, exist_ok=True)
 
-    # Remove old generated files
+    # Remove only previously generated parity files, preserving handwritten
+    # coverage like standalone CFF/WOFF2 tests.
     for old in glob.glob(os.path.join(OUTPUT_DIR, "*_wbtest.mbt")):
-        os.remove(old)
+        try:
+            with open(old, "r", encoding="utf-8") as f:
+                header = f.read(256)
+        except OSError:
+            continue
+        if "AUTO-GENERATED" in header:
+            os.remove(old)
 
     fonts = []
     for gf in sorted(glob.glob(os.path.join(GOLDEN_DIR, "*.json"))):
@@ -310,8 +319,10 @@ def main():
         fp = os.path.join(FONT_DIR, ff)
         if not os.path.exists(fp):
             continue
-        # Skip synthetic minimal fonts — real fonts cover all formats
-        if ff.startswith("minimal."):
+        # Skip synthetic minimal fonts when a real corpus font already covers
+        # the format; keep minimal.pcf and minimal.woff2 because those formats
+        # otherwise lack automated parity coverage.
+        if ff.startswith("minimal.") and ff not in {"minimal.pcf", "minimal.woff2"}:
             print(f"  [skip] {ff} (synthetic — real font covers this format)")
             continue
         fonts.append((ff, fp, json.load(open(gf))))

@@ -269,6 +269,7 @@ int main(int argc, char *argv[]) {
         if (!ext) continue;
         if (strcmp(ext, ".ttf") && strcmp(ext, ".otf") &&
             strcmp(ext, ".ttc") && strcmp(ext, ".woff") &&
+            strcmp(ext, ".woff2") && strcmp(ext, ".cff") &&
             strcmp(ext, ".pfb") && strcmp(ext, ".pfa") &&
             strcmp(ext, ".bdf") && strcmp(ext, ".pcf") &&
             strcmp(ext, ".fnt") && strcmp(ext, ".fon"))

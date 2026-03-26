@@ -25,7 +25,7 @@ gen_golden: gen_golden.c $(FREETYPE_DIR)/objs/libfreetype.a
 
 generate: gen_golden
 	@mkdir -p $(OUTPUT_DIR)
-	./gen_golden $(FONT_DIR) $(OUTPUT_DIR)
+	python3 generate.py $(FONT_DIR) $(OUTPUT_DIR)
 
 clean:
 	rm -f gen_golden

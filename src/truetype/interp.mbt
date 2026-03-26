@@ -675,7 +675,7 @@ fn InterpContext::exec_opcode(self : InterpContext, opcode : Int) -> Unit {
     0x81 => self.op_fliprgon() // FLIPRGON
     0x82 => self.op_fliprgoff() // FLIPRGOFF
     // --- Misc ---
-    _ => () // Unimplemented opcodes are no-ops for now
+    _ => self.error = true
   }
 }
 

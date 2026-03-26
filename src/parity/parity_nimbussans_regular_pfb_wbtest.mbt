@@ -2,14 +2,14 @@
 // AUTO-GENERATED — do not edit
 
 ///|
-fn load_nimbussans_regular_pfb() -> Bytes {
+fn load_generated_nimbussans_regular_pfb() -> Bytes {
   try! @fs.read_file_to_bytes("test/fonts/NimbusSans-Regular.pfb")
 }
 
 ///|
 test "parity/NimbusSans-Regular.pfb: format" {
   inspect(
-    @base.detect_format(load_nimbussans_regular_pfb()),
+    @base.detect_format(load_generated_nimbussans_regular_pfb()),
     content="Type1Pfa",
   )
 }
@@ -17,14 +17,15 @@ test "parity/NimbusSans-Regular.pfb: format" {
 ///|
 test "parity/NimbusSans-Regular.pfb: loads" {
   inspect(
-    (try? @freetype.from_bytes(load_nimbussans_regular_pfb())) is Ok(_),
+    (try? @freetype.from_bytes(load_generated_nimbussans_regular_pfb()))
+    is Ok(_),
     content="true",
   )
 }
 
 ///|
 test "parity/NimbusSans-Regular.pfb: metadata" {
-  let f = @freetype.from_bytes(load_nimbussans_regular_pfb())
+  let f = @freetype.from_bytes(load_generated_nimbussans_regular_pfb())
   inspect(f.family_name(), content="Nimbus Sans")
   inspect(f.num_glyphs(), content="855")
   inspect(f.units_per_em(), content="1000")
@@ -37,7 +38,7 @@ test "parity/NimbusSans-Regular.pfb: metadata" {
 
 ///|
 test "parity/NimbusSans-Regular.pfb: bbox" {
-  let f = @freetype.from_bytes(load_nimbussans_regular_pfb())
+  let f = @freetype.from_bytes(load_generated_nimbussans_regular_pfb())
   inspect(f.bbox().x_min(), content="-210")
   inspect(f.bbox().y_min(), content="-299")
   inspect(f.bbox().x_max(), content="1032")
@@ -46,7 +47,7 @@ test "parity/NimbusSans-Regular.pfb: bbox" {
 
 ///|
 test "parity/NimbusSans-Regular.pfb: flags" {
-  let f = @freetype.from_bytes(load_nimbussans_regular_pfb())
+  let f = @freetype.from_bytes(load_generated_nimbussans_regular_pfb())
   inspect(f.is_scalable(), content="true")
   inspect(f.is_sfnt(), content="false")
   inspect(f.has_horizontal(), content="true")
@@ -55,7 +56,7 @@ test "parity/NimbusSans-Regular.pfb: flags" {
 
 ///|
 test "parity/NimbusSans-Regular.pfb: charmaps" {
-  let f = @freetype.from_bytes(load_nimbussans_regular_pfb())
+  let f = @freetype.from_bytes(load_generated_nimbussans_regular_pfb())
   inspect(f.charmaps().length(), content="2")
   if f.charmaps().length() > 0 {
     inspect(f.charmaps()[0].platform_id(), content="3")
@@ -69,7 +70,7 @@ test "parity/NimbusSans-Regular.pfb: charmaps" {
 
 ///|
 test "parity/NimbusSans-Regular.pfb: charmap entries" {
-  let f = @freetype.from_bytes(load_nimbussans_regular_pfb())
+  let f = @freetype.from_bytes(load_generated_nimbussans_regular_pfb())
   inspect(@freetype.get_char_index(f, 32U), content="381")
   inspect(@freetype.get_char_index(f, 33U), content="274")
   inspect(@freetype.get_char_index(f, 34U), content="298")
@@ -124,7 +125,7 @@ test "parity/NimbusSans-Regular.pfb: charmap entries" {
 
 ///|
 test "parity/NimbusSans-Regular.pfb: glyph 274 outline NO_SCALE" {
-  let f = @freetype.from_bytes(load_nimbussans_regular_pfb())
+  let f = @freetype.from_bytes(load_generated_nimbussans_regular_pfb())
   let r = try? @freetype.load_glyph(f, 274U, load_flags=@base.LOAD_NO_SCALE)
   guard r is Ok(_) else { return }
   inspect(f.glyph().outline().n_points(), content="10")
@@ -150,7 +151,7 @@ test "parity/NimbusSans-Regular.pfb: glyph 274 outline NO_SCALE" {
 
 ///|
 test "parity/NimbusSans-Regular.pfb: glyph 298 outline NO_SCALE" {
-  let f = @freetype.from_bytes(load_nimbussans_regular_pfb())
+  let f = @freetype.from_bytes(load_generated_nimbussans_regular_pfb())
   let r = try? @freetype.load_glyph(f, 298U, load_flags=@base.LOAD_NO_SCALE)
   guard r is Ok(_) else { return }
   inspect(f.glyph().outline().n_points(), content="12")
@@ -176,7 +177,7 @@ test "parity/NimbusSans-Regular.pfb: glyph 298 outline NO_SCALE" {
 
 ///|
 test "parity/NimbusSans-Regular.pfb: glyph 300 outline NO_SCALE" {
-  let f = @freetype.from_bytes(load_nimbussans_regular_pfb())
+  let f = @freetype.from_bytes(load_generated_nimbussans_regular_pfb())
   let r = try? @freetype.load_glyph(f, 300U, load_flags=@base.LOAD_NO_SCALE)
   guard r is Ok(_) else { return }
   inspect(f.glyph().outline().n_points(), content="32")
@@ -202,7 +203,7 @@ test "parity/NimbusSans-Regular.pfb: glyph 300 outline NO_SCALE" {
 
 ///|
 test "parity/NimbusSans-Regular.pfb: glyph metrics at 16ppem" {
-  let f = @freetype.from_bytes(load_nimbussans_regular_pfb())
+  let f = @freetype.from_bytes(load_generated_nimbussans_regular_pfb())
   let r1 = try? @freetype.set_pixel_sizes(f, 0U, 16U)
   guard r1 is Ok(_) else { return }
   let r2 = try? @freetype.load_glyph(f, 274U)
@@ -212,7 +213,7 @@ test "parity/NimbusSans-Regular.pfb: glyph metrics at 16ppem" {
 
 ///|
 test "parity/NimbusSans-Regular.pfb: hinted outline DEFAULT 16ppem" {
-  let f = @freetype.from_bytes(load_nimbussans_regular_pfb())
+  let f = @freetype.from_bytes(load_generated_nimbussans_regular_pfb())
   let r1 = try? @freetype.set_pixel_sizes(f, 0U, 16U)
   guard r1 is Ok(_) else { return }
   let r2 = try? @freetype.load_glyph(f, 274U)
@@ -225,7 +226,7 @@ test "parity/NimbusSans-Regular.pfb: hinted outline DEFAULT 16ppem" {
 
 ///|
 test "parity/NimbusSans-Regular.pfb: outline NO_HINTING 16ppem" {
-  let f = @freetype.from_bytes(load_nimbussans_regular_pfb())
+  let f = @freetype.from_bytes(load_generated_nimbussans_regular_pfb())
   let r1 = try? @freetype.set_pixel_sizes(f, 0U, 16U)
   guard r1 is Ok(_) else { return }
   let r2 = try? @freetype.load_glyph(f, 274U, load_flags=@base.LOAD_NO_HINTING)
@@ -235,7 +236,7 @@ test "parity/NimbusSans-Regular.pfb: outline NO_HINTING 16ppem" {
 
 ///|
 test "parity/NimbusSans-Regular.pfb: outline FORCE_AUTOHINT 16ppem" {
-  let f = @freetype.from_bytes(load_nimbussans_regular_pfb())
+  let f = @freetype.from_bytes(load_generated_nimbussans_regular_pfb())
   let r1 = try? @freetype.set_pixel_sizes(f, 0U, 16U)
   guard r1 is Ok(_) else { return }
   let r2 = try? @freetype.load_glyph(

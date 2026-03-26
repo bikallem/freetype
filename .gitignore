@@ -11,6 +11,7 @@ test/fonts/*.otf
 test/fonts/*.woff
 test/fonts/*.bdf
 test/fonts/*.pcf
+!test/fonts/minimal.pcf
 test/fonts/*.tar.*
 test/fonts/*.zip
 test/fonts/.downloaded

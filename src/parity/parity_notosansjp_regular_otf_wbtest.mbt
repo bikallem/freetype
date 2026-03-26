@@ -2,14 +2,14 @@
 // AUTO-GENERATED — do not edit
 
 ///|
-fn load_notosansjp_regular_otf() -> Bytes {
+fn load_generated_notosansjp_regular_otf() -> Bytes {
   try! @fs.read_file_to_bytes("test/fonts/NotoSansJP-Regular.otf")
 }
 
 ///|
 test "parity/NotoSansJP-Regular.otf: format" {
   inspect(
-    @base.detect_format(load_notosansjp_regular_otf()),
+    @base.detect_format(load_generated_notosansjp_regular_otf()),
     content="CffOpenType",
   )
 }
@@ -17,14 +17,15 @@ test "parity/NotoSansJP-Regular.otf: format" {
 ///|
 test "parity/NotoSansJP-Regular.otf: loads" {
   inspect(
-    (try? @freetype.from_bytes(load_notosansjp_regular_otf())) is Ok(_),
+    (try? @freetype.from_bytes(load_generated_notosansjp_regular_otf()))
+    is Ok(_),
     content="true",
   )
 }
 
 ///|
 test "parity/NotoSansJP-Regular.otf: metadata" {
-  let f = @freetype.from_bytes(load_notosansjp_regular_otf())
+  let f = @freetype.from_bytes(load_generated_notosansjp_regular_otf())
   inspect(f.family_name(), content="Noto Sans JP")
   inspect(f.num_glyphs(), content="17936")
   inspect(f.units_per_em(), content="1000")
@@ -37,7 +38,7 @@ test "parity/NotoSansJP-Regular.otf: metadata" {
 
 ///|
 test "parity/NotoSansJP-Regular.otf: bbox" {
-  let f = @freetype.from_bytes(load_notosansjp_regular_otf())
+  let f = @freetype.from_bytes(load_generated_notosansjp_regular_otf())
   inspect(f.bbox().x_min(), content="-1002")
   inspect(f.bbox().y_min(), content="-1048")
   inspect(f.bbox().x_max(), content="2928")
@@ -46,7 +47,7 @@ test "parity/NotoSansJP-Regular.otf: bbox" {
 
 ///|
 test "parity/NotoSansJP-Regular.otf: flags" {
-  let f = @freetype.from_bytes(load_notosansjp_regular_otf())
+  let f = @freetype.from_bytes(load_generated_notosansjp_regular_otf())
   inspect(f.is_scalable(), content="true")
   inspect(f.is_sfnt(), content="true")
   inspect(f.has_horizontal(), content="true")
@@ -55,7 +56,7 @@ test "parity/NotoSansJP-Regular.otf: flags" {
 
 ///|
 test "parity/NotoSansJP-Regular.otf: charmaps" {
-  let f = @freetype.from_bytes(load_notosansjp_regular_otf())
+  let f = @freetype.from_bytes(load_generated_notosansjp_regular_otf())
   inspect(f.charmaps().length(), content="6")
   if f.charmaps().length() > 0 {
     inspect(f.charmaps()[0].platform_id(), content="0")
@@ -85,7 +86,7 @@ test "parity/NotoSansJP-Regular.otf: charmaps" {
 
 ///|
 test "parity/NotoSansJP-Regular.otf: charmap entries" {
-  let f = @freetype.from_bytes(load_notosansjp_regular_otf())
+  let f = @freetype.from_bytes(load_generated_notosansjp_regular_otf())
   inspect(@freetype.get_char_index(f, 32U), content="1")
   inspect(@freetype.get_char_index(f, 33U), content="2")
   inspect(@freetype.get_char_index(f, 34U), content="3")
@@ -140,7 +141,7 @@ test "parity/NotoSansJP-Regular.otf: charmap entries" {
 
 ///|
 test "parity/NotoSansJP-Regular.otf: glyph 2 outline NO_SCALE" {
-  let f = @freetype.from_bytes(load_notosansjp_regular_otf())
+  let f = @freetype.from_bytes(load_generated_notosansjp_regular_otf())
   let r = try? @freetype.load_glyph(f, 2U, load_flags=@base.LOAD_NO_SCALE)
   guard r is Ok(_) else { return }
   inspect(f.glyph().outline().n_points(), content="18")
@@ -166,7 +167,7 @@ test "parity/NotoSansJP-Regular.otf: glyph 2 outline NO_SCALE" {
 
 ///|
 test "parity/NotoSansJP-Regular.otf: glyph 3 outline NO_SCALE" {
-  let f = @freetype.from_bytes(load_notosansjp_regular_otf())
+  let f = @freetype.from_bytes(load_generated_notosansjp_regular_otf())
   let r = try? @freetype.load_glyph(f, 3U, load_flags=@base.LOAD_NO_SCALE)
   guard r is Ok(_) else { return }
   inspect(f.glyph().outline().n_points(), content="12")
@@ -192,7 +193,7 @@ test "parity/NotoSansJP-Regular.otf: glyph 3 outline NO_SCALE" {
 
 ///|
 test "parity/NotoSansJP-Regular.otf: glyph 4 outline NO_SCALE" {
-  let f = @freetype.from_bytes(load_notosansjp_regular_otf())
+  let f = @freetype.from_bytes(load_generated_notosansjp_regular_otf())
   let r = try? @freetype.load_glyph(f, 4U, load_flags=@base.LOAD_NO_SCALE)
   guard r is Ok(_) else { return }
   inspect(f.glyph().outline().n_points(), content="32")
@@ -218,7 +219,7 @@ test "parity/NotoSansJP-Regular.otf: glyph 4 outline NO_SCALE" {
 
 ///|
 test "parity/NotoSansJP-Regular.otf: glyph metrics at 16ppem" {
-  let f = @freetype.from_bytes(load_notosansjp_regular_otf())
+  let f = @freetype.from_bytes(load_generated_notosansjp_regular_otf())
   let r1 = try? @freetype.set_pixel_sizes(f, 0U, 16U)
   guard r1 is Ok(_) else { return }
   let r2 = try? @freetype.load_glyph(f, 2U)
@@ -228,7 +229,7 @@ test "parity/NotoSansJP-Regular.otf: glyph metrics at 16ppem" {
 
 ///|
 test "parity/NotoSansJP-Regular.otf: hinted outline DEFAULT 16ppem" {
-  let f = @freetype.from_bytes(load_notosansjp_regular_otf())
+  let f = @freetype.from_bytes(load_generated_notosansjp_regular_otf())
   let r1 = try? @freetype.set_pixel_sizes(f, 0U, 16U)
   guard r1 is Ok(_) else { return }
   let r2 = try? @freetype.load_glyph(f, 2U)
@@ -241,7 +242,7 @@ test "parity/NotoSansJP-Regular.otf: hinted outline DEFAULT 16ppem" {
 
 ///|
 test "parity/NotoSansJP-Regular.otf: outline NO_HINTING 16ppem" {
-  let f = @freetype.from_bytes(load_notosansjp_regular_otf())
+  let f = @freetype.from_bytes(load_generated_notosansjp_regular_otf())
   let r1 = try? @freetype.set_pixel_sizes(f, 0U, 16U)
   guard r1 is Ok(_) else { return }
   let r2 = try? @freetype.load_glyph(f, 2U, load_flags=@base.LOAD_NO_HINTING)
@@ -251,7 +252,7 @@ test "parity/NotoSansJP-Regular.otf: outline NO_HINTING 16ppem" {
 
 ///|
 test "parity/NotoSansJP-Regular.otf: outline FORCE_AUTOHINT 16ppem" {
-  let f = @freetype.from_bytes(load_notosansjp_regular_otf())
+  let f = @freetype.from_bytes(load_generated_notosansjp_regular_otf())
   let r1 = try? @freetype.set_pixel_sizes(f, 0U, 16U)
   guard r1 is Ok(_) else { return }
   let r2 = try? @freetype.load_glyph(

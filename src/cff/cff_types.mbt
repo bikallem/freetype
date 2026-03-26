@@ -70,8 +70,8 @@ pub fn CffTopDict::new() -> CffTopDict {
     is_cid: false,
     font_matrix: [],
     font_bbox: [],
-    underline_position: 0,
-    underline_thickness: 0,
+    underline_position: -100,
+    underline_thickness: 50,
   }
 }
 

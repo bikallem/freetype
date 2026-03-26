@@ -1,31 +1,30 @@
-// Parity tests for DejaVuSans.ttf
+// Parity tests for DejaVuSans.woff2
 // AUTO-GENERATED — do not edit
 
 ///|
-fn load_generated_dejavusans_ttf() -> Bytes {
-  try! @fs.read_file_to_bytes("test/fonts/DejaVuSans.ttf")
+fn load_generated_dejavusans_woff2() -> Bytes {
+  try! @fs.read_file_to_bytes("test/fonts/DejaVuSans.woff2")
 }
 
 ///|
-test "parity/DejaVuSans.ttf: format" {
+test "parity/DejaVuSans.woff2: format" {
   inspect(
-    @base.detect_format(load_generated_dejavusans_ttf())
-    is (TrueType | TrueTypeCollection),
+    @base.detect_format(load_generated_dejavusans_woff2()),
+    content="Woff2",
+  )
+}
+
+///|
+test "parity/DejaVuSans.woff2: loads" {
+  inspect(
+    (try? @freetype.from_bytes(load_generated_dejavusans_woff2())) is Ok(_),
     content="true",
   )
 }
 
 ///|
-test "parity/DejaVuSans.ttf: loads" {
-  inspect(
-    (try? @freetype.from_bytes(load_generated_dejavusans_ttf())) is Ok(_),
-    content="true",
-  )
-}
-
-///|
-test "parity/DejaVuSans.ttf: metadata" {
-  let f = @freetype.from_bytes(load_generated_dejavusans_ttf())
+test "parity/DejaVuSans.woff2: metadata" {
+  let f = @freetype.from_bytes(load_generated_dejavusans_woff2())
   inspect(f.family_name(), content="DejaVu Sans")
   inspect(f.num_glyphs(), content="6253")
   inspect(f.units_per_em(), content="2048")
@@ -37,8 +36,8 @@ test "parity/DejaVuSans.ttf: metadata" {
 }
 
 ///|
-test "parity/DejaVuSans.ttf: bbox" {
-  let f = @freetype.from_bytes(load_generated_dejavusans_ttf())
+test "parity/DejaVuSans.woff2: bbox" {
+  let f = @freetype.from_bytes(load_generated_dejavusans_woff2())
   inspect(f.bbox().x_min(), content="-2090")
   inspect(f.bbox().y_min(), content="-948")
   inspect(f.bbox().x_max(), content="3673")
@@ -46,8 +45,8 @@ test "parity/DejaVuSans.ttf: bbox" {
 }
 
 ///|
-test "parity/DejaVuSans.ttf: flags" {
-  let f = @freetype.from_bytes(load_generated_dejavusans_ttf())
+test "parity/DejaVuSans.woff2: flags" {
+  let f = @freetype.from_bytes(load_generated_dejavusans_woff2())
   inspect(f.is_scalable(), content="true")
   inspect(f.is_sfnt(), content="true")
   inspect(f.has_horizontal(), content="true")
@@ -55,8 +54,8 @@ test "parity/DejaVuSans.ttf: flags" {
 }
 
 ///|
-test "parity/DejaVuSans.ttf: charmaps" {
-  let f = @freetype.from_bytes(load_generated_dejavusans_ttf())
+test "parity/DejaVuSans.woff2: charmaps" {
+  let f = @freetype.from_bytes(load_generated_dejavusans_woff2())
   inspect(f.charmaps().length(), content="5")
   if f.charmaps().length() > 0 {
     inspect(f.charmaps()[0].platform_id(), content="0")
@@ -81,8 +80,8 @@ test "parity/DejaVuSans.ttf: charmaps" {
 }
 
 ///|
-test "parity/DejaVuSans.ttf: charmap entries" {
-  let f = @freetype.from_bytes(load_generated_dejavusans_ttf())
+test "parity/DejaVuSans.woff2: charmap entries" {
+  let f = @freetype.from_bytes(load_generated_dejavusans_woff2())
   inspect(@freetype.get_char_index(f, 32U), content="3")
   inspect(@freetype.get_char_index(f, 33U), content="4")
   inspect(@freetype.get_char_index(f, 34U), content="5")
@@ -136,8 +135,8 @@ test "parity/DejaVuSans.ttf: charmap entries" {
 }
 
 ///|
-test "parity/DejaVuSans.ttf: glyph 4 outline NO_SCALE" {
-  let f = @freetype.from_bytes(load_generated_dejavusans_ttf())
+test "parity/DejaVuSans.woff2: glyph 4 outline NO_SCALE" {
+  let f = @freetype.from_bytes(load_generated_dejavusans_woff2())
   let r = try? @freetype.load_glyph(f, 4U, load_flags=@base.LOAD_NO_SCALE)
   guard r is Ok(_) else { return }
   inspect(f.glyph().outline().n_points(), content="10")
@@ -162,8 +161,8 @@ test "parity/DejaVuSans.ttf: glyph 4 outline NO_SCALE" {
 }
 
 ///|
-test "parity/DejaVuSans.ttf: glyph 5 outline NO_SCALE" {
-  let f = @freetype.from_bytes(load_generated_dejavusans_ttf())
+test "parity/DejaVuSans.woff2: glyph 5 outline NO_SCALE" {
+  let f = @freetype.from_bytes(load_generated_dejavusans_woff2())
   let r = try? @freetype.load_glyph(f, 5U, load_flags=@base.LOAD_NO_SCALE)
   guard r is Ok(_) else { return }
   inspect(f.glyph().outline().n_points(), content="8")
@@ -188,8 +187,8 @@ test "parity/DejaVuSans.ttf: glyph 5 outline NO_SCALE" {
 }
 
 ///|
-test "parity/DejaVuSans.ttf: glyph 6 outline NO_SCALE" {
-  let f = @freetype.from_bytes(load_generated_dejavusans_ttf())
+test "parity/DejaVuSans.woff2: glyph 6 outline NO_SCALE" {
+  let f = @freetype.from_bytes(load_generated_dejavusans_woff2())
   let r = try? @freetype.load_glyph(f, 6U, load_flags=@base.LOAD_NO_SCALE)
   guard r is Ok(_) else { return }
   inspect(f.glyph().outline().n_points(), content="32")
@@ -214,8 +213,8 @@ test "parity/DejaVuSans.ttf: glyph 6 outline NO_SCALE" {
 }
 
 ///|
-test "parity/DejaVuSans.ttf: glyph metrics at 16ppem" {
-  let f = @freetype.from_bytes(load_generated_dejavusans_ttf())
+test "parity/DejaVuSans.woff2: glyph metrics at 16ppem" {
+  let f = @freetype.from_bytes(load_generated_dejavusans_woff2())
   let r1 = try? @freetype.set_pixel_sizes(f, 0U, 16U)
   guard r1 is Ok(_) else { return }
   let r2 = try? @freetype.load_glyph(f, 4U)
@@ -224,8 +223,8 @@ test "parity/DejaVuSans.ttf: glyph metrics at 16ppem" {
 }
 
 ///|
-test "parity/DejaVuSans.ttf: kerning" {
-  let f = @freetype.from_bytes(load_generated_dejavusans_ttf())
+test "parity/DejaVuSans.woff2: kerning" {
+  let f = @freetype.from_bytes(load_generated_dejavusans_woff2())
   inspect(@freetype.get_kerning(f, 36U, 36U).0, content="57")
   inspect(@freetype.get_kerning(f, 36U, 38U).0, content="-36")
   inspect(@freetype.get_kerning(f, 36U, 42U).0, content="-36")
@@ -249,8 +248,8 @@ test "parity/DejaVuSans.ttf: kerning" {
 }
 
 ///|
-test "parity/DejaVuSans.ttf: hinted outline DEFAULT 16ppem" {
-  let f = @freetype.from_bytes(load_generated_dejavusans_ttf())
+test "parity/DejaVuSans.woff2: hinted outline DEFAULT 16ppem" {
+  let f = @freetype.from_bytes(load_generated_dejavusans_woff2())
   let r1 = try? @freetype.set_pixel_sizes(f, 0U, 16U)
   guard r1 is Ok(_) else { return }
   let r2 = try? @freetype.load_glyph(f, 4U)
@@ -262,8 +261,8 @@ test "parity/DejaVuSans.ttf: hinted outline DEFAULT 16ppem" {
 }
 
 ///|
-test "parity/DejaVuSans.ttf: outline NO_HINTING 16ppem" {
-  let f = @freetype.from_bytes(load_generated_dejavusans_ttf())
+test "parity/DejaVuSans.woff2: outline NO_HINTING 16ppem" {
+  let f = @freetype.from_bytes(load_generated_dejavusans_woff2())
   let r1 = try? @freetype.set_pixel_sizes(f, 0U, 16U)
   guard r1 is Ok(_) else { return }
   let r2 = try? @freetype.load_glyph(f, 4U, load_flags=@base.LOAD_NO_HINTING)
@@ -272,8 +271,8 @@ test "parity/DejaVuSans.ttf: outline NO_HINTING 16ppem" {
 }
 
 ///|
-test "parity/DejaVuSans.ttf: outline FORCE_AUTOHINT 16ppem" {
-  let f = @freetype.from_bytes(load_generated_dejavusans_ttf())
+test "parity/DejaVuSans.woff2: outline FORCE_AUTOHINT 16ppem" {
+  let f = @freetype.from_bytes(load_generated_dejavusans_woff2())
   let r1 = try? @freetype.set_pixel_sizes(f, 0U, 16U)
   guard r1 is Ok(_) else { return }
   let r2 = try? @freetype.load_glyph(

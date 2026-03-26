@@ -2,33 +2,33 @@
 // AUTO-GENERATED — do not edit
 
 ///|
-fn load_unifont_bdf() -> Bytes {
+fn load_generated_unifont_bdf() -> Bytes {
   try! @fs.read_file_to_bytes("test/fonts/unifont.bdf")
 }
 
 ///|
 test "parity/unifont.bdf: format" {
-  inspect(@base.detect_format(load_unifont_bdf()), content="Bdf")
+  inspect(@base.detect_format(load_generated_unifont_bdf()), content="Bdf")
 }
 
 ///|
 test "parity/unifont.bdf: loads" {
   inspect(
-    (try? @freetype.from_bytes(load_unifont_bdf())) is Ok(_),
+    (try? @freetype.from_bytes(load_generated_unifont_bdf())) is Ok(_),
     content="true",
   )
 }
 
 ///|
 test "parity/unifont.bdf: metadata" {
-  let f = @freetype.from_bytes(load_unifont_bdf())
+  let f = @freetype.from_bytes(load_generated_unifont_bdf())
   inspect(f.family_name(), content="Unifont")
   inspect(f.num_glyphs(), content="57087")
 }
 
 ///|
 test "parity/unifont.bdf: flags" {
-  let f = @freetype.from_bytes(load_unifont_bdf())
+  let f = @freetype.from_bytes(load_generated_unifont_bdf())
   inspect(f.is_scalable(), content="false")
   inspect(f.is_sfnt(), content="false")
   inspect(f.has_horizontal(), content="true")
@@ -37,7 +37,7 @@ test "parity/unifont.bdf: flags" {
 
 ///|
 test "parity/unifont.bdf: charmaps" {
-  let f = @freetype.from_bytes(load_unifont_bdf())
+  let f = @freetype.from_bytes(load_generated_unifont_bdf())
   inspect(f.charmaps().length(), content="1")
   if f.charmaps().length() > 0 {
     inspect(f.charmaps()[0].platform_id(), content="3")
@@ -47,7 +47,7 @@ test "parity/unifont.bdf: charmaps" {
 
 ///|
 test "parity/unifont.bdf: charmap entries" {
-  let f = @freetype.from_bytes(load_unifont_bdf())
+  let f = @freetype.from_bytes(load_generated_unifont_bdf())
   inspect(@freetype.get_char_index(f, 0U), content="1")
   inspect(@freetype.get_char_index(f, 1U), content="2")
   inspect(@freetype.get_char_index(f, 2U), content="3")

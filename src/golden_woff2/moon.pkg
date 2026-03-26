@@ -1,0 +1,9 @@
+import {
+  "bikallem/freetype/sfnt",
+  "moonbitlang/core/env" @env,
+  "moonbitlang/x/fs" @fs,
+}
+
+options(
+  "is-main": true,
+)

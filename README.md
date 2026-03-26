@@ -166,7 +166,7 @@ make all       # build + fmt + test + parity
 
 Parity tests verify that the MoonBit port produces identical results to the vendored C FreeType library across all supported font formats. The test pipeline:
 
-1. **Golden file generation** — A C program (`test/golden/generate/gen_golden.c`) links against vendored FreeType and dumps JSON per font: face metadata, charmap entries, glyph outlines at multiple sizes and load flags, and kerning pairs.
+1. **Golden file generation** — A Python wrapper (`test/golden/generate/generate.py`) stages the font corpus, using the repo's MoonBit WOFF2 decompressor for `.woff2` files, then invokes a C program (`test/golden/generate/gen_golden.c`) linked against vendored FreeType to dump JSON per font: face metadata, charmap entries, glyph outlines at multiple sizes and load flags, and kerning pairs.
 
 2. **Test generation** — A Python script (`test/parity/gen_parity_tests.py`) reads the golden JSON and generates MoonBit test files that load the same fonts through our port and compare every value.
 

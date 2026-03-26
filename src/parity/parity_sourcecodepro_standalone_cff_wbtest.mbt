@@ -1,44 +1,44 @@
-// Parity tests for SourceCodePro-Regular.woff
+// Parity tests for SourceCodePro_standalone.cff
 // AUTO-GENERATED — do not edit
 
 ///|
-fn load_generated_sourcecodepro_regular_woff() -> Bytes {
-  try! @fs.read_file_to_bytes("test/fonts/SourceCodePro-Regular.woff")
+fn load_generated_sourcecodepro_standalone_cff() -> Bytes {
+  try! @fs.read_file_to_bytes("test/fonts/SourceCodePro_standalone.cff")
 }
 
 ///|
-test "parity/SourceCodePro-Regular.woff: format" {
+test "parity/SourceCodePro_standalone.cff: format" {
   inspect(
-    @base.detect_format(load_generated_sourcecodepro_regular_woff()),
-    content="Woff1",
+    @base.detect_format(load_generated_sourcecodepro_standalone_cff()),
+    content="CffStandalone",
   )
 }
 
 ///|
-test "parity/SourceCodePro-Regular.woff: loads" {
+test "parity/SourceCodePro_standalone.cff: loads" {
   inspect(
-    (try? @freetype.from_bytes(load_generated_sourcecodepro_regular_woff()))
+    (try? @freetype.from_bytes(load_generated_sourcecodepro_standalone_cff()))
     is Ok(_),
     content="true",
   )
 }
 
 ///|
-test "parity/SourceCodePro-Regular.woff: metadata" {
-  let f = @freetype.from_bytes(load_generated_sourcecodepro_regular_woff())
+test "parity/SourceCodePro_standalone.cff: metadata" {
+  let f = @freetype.from_bytes(load_generated_sourcecodepro_standalone_cff())
   inspect(f.family_name(), content="Source Code Pro")
   inspect(f.num_glyphs(), content="1568")
   inspect(f.units_per_em(), content="1000")
-  inspect(f.ascender(), content="984")
-  inspect(f.descender(), content="-273")
-  inspect(f.height(), content="1257")
+  inspect(f.ascender(), content="1060")
+  inspect(f.descender(), content="-454")
+  inspect(f.height(), content="1514")
   inspect(f.underline_position(), content="-75")
   inspect(f.underline_thickness(), content="50")
 }
 
 ///|
-test "parity/SourceCodePro-Regular.woff: bbox" {
-  let f = @freetype.from_bytes(load_generated_sourcecodepro_regular_woff())
+test "parity/SourceCodePro_standalone.cff: bbox" {
+  let f = @freetype.from_bytes(load_generated_sourcecodepro_standalone_cff())
   inspect(f.bbox().x_min(), content="-193")
   inspect(f.bbox().y_min(), content="-454")
   inspect(f.bbox().x_max(), content="793")
@@ -46,47 +46,31 @@ test "parity/SourceCodePro-Regular.woff: bbox" {
 }
 
 ///|
-test "parity/SourceCodePro-Regular.woff: flags" {
-  let f = @freetype.from_bytes(load_generated_sourcecodepro_regular_woff())
+test "parity/SourceCodePro_standalone.cff: flags" {
+  let f = @freetype.from_bytes(load_generated_sourcecodepro_standalone_cff())
   inspect(f.is_scalable(), content="true")
-  inspect(f.is_sfnt(), content="true")
+  inspect(f.is_sfnt(), content="false")
   inspect(f.has_horizontal(), content="true")
   inspect(f.has_kerning(), content="false")
 }
 
 ///|
-test "parity/SourceCodePro-Regular.woff: charmaps" {
-  let f = @freetype.from_bytes(load_generated_sourcecodepro_regular_woff())
-  inspect(f.charmaps().length(), content="6")
+test "parity/SourceCodePro_standalone.cff: charmaps" {
+  let f = @freetype.from_bytes(load_generated_sourcecodepro_standalone_cff())
+  inspect(f.charmaps().length(), content="2")
   if f.charmaps().length() > 0 {
-    inspect(f.charmaps()[0].platform_id(), content="0")
-    inspect(f.charmaps()[0].encoding_id(), content="3")
+    inspect(f.charmaps()[0].platform_id(), content="3")
+    inspect(f.charmaps()[0].encoding_id(), content="1")
   }
   if f.charmaps().length() > 1 {
-    inspect(f.charmaps()[1].platform_id(), content="0")
-    inspect(f.charmaps()[1].encoding_id(), content="4")
-  }
-  if f.charmaps().length() > 2 {
-    inspect(f.charmaps()[2].platform_id(), content="1")
-    inspect(f.charmaps()[2].encoding_id(), content="0")
-  }
-  if f.charmaps().length() > 3 {
-    inspect(f.charmaps()[3].platform_id(), content="3")
-    inspect(f.charmaps()[3].encoding_id(), content="1")
-  }
-  if f.charmaps().length() > 4 {
-    inspect(f.charmaps()[4].platform_id(), content="3")
-    inspect(f.charmaps()[4].encoding_id(), content="10")
-  }
-  if f.charmaps().length() > 5 {
-    inspect(f.charmaps()[5].platform_id(), content="7")
-    inspect(f.charmaps()[5].encoding_id(), content="0")
+    inspect(f.charmaps()[1].platform_id(), content="7")
+    inspect(f.charmaps()[1].encoding_id(), content="0")
   }
 }
 
 ///|
-test "parity/SourceCodePro-Regular.woff: charmap entries" {
-  let f = @freetype.from_bytes(load_generated_sourcecodepro_regular_woff())
+test "parity/SourceCodePro_standalone.cff: charmap entries" {
+  let f = @freetype.from_bytes(load_generated_sourcecodepro_standalone_cff())
   inspect(@freetype.get_char_index(f, 32U), content="1")
   inspect(@freetype.get_char_index(f, 33U), content="918")
   inspect(@freetype.get_char_index(f, 34U), content="923")
@@ -140,8 +124,8 @@ test "parity/SourceCodePro-Regular.woff: charmap entries" {
 }
 
 ///|
-test "parity/SourceCodePro-Regular.woff: glyph 918 outline NO_SCALE" {
-  let f = @freetype.from_bytes(load_generated_sourcecodepro_regular_woff())
+test "parity/SourceCodePro_standalone.cff: glyph 918 outline NO_SCALE" {
+  let f = @freetype.from_bytes(load_generated_sourcecodepro_standalone_cff())
   let r = try? @freetype.load_glyph(f, 918U, load_flags=@base.LOAD_NO_SCALE)
   guard r is Ok(_) else { return }
   inspect(f.glyph().outline().n_points(), content="18")
@@ -166,8 +150,8 @@ test "parity/SourceCodePro-Regular.woff: glyph 918 outline NO_SCALE" {
 }
 
 ///|
-test "parity/SourceCodePro-Regular.woff: glyph 923 outline NO_SCALE" {
-  let f = @freetype.from_bytes(load_generated_sourcecodepro_regular_woff())
+test "parity/SourceCodePro_standalone.cff: glyph 923 outline NO_SCALE" {
+  let f = @freetype.from_bytes(load_generated_sourcecodepro_standalone_cff())
   let r = try? @freetype.load_glyph(f, 923U, load_flags=@base.LOAD_NO_SCALE)
   guard r is Ok(_) else { return }
   inspect(f.glyph().outline().n_points(), content="12")
@@ -192,8 +176,8 @@ test "parity/SourceCodePro-Regular.woff: glyph 923 outline NO_SCALE" {
 }
 
 ///|
-test "parity/SourceCodePro-Regular.woff: glyph 1000 outline NO_SCALE" {
-  let f = @freetype.from_bytes(load_generated_sourcecodepro_regular_woff())
+test "parity/SourceCodePro_standalone.cff: glyph 1000 outline NO_SCALE" {
+  let f = @freetype.from_bytes(load_generated_sourcecodepro_standalone_cff())
   let r = try? @freetype.load_glyph(f, 1000U, load_flags=@base.LOAD_NO_SCALE)
   guard r is Ok(_) else { return }
   inspect(f.glyph().outline().n_points(), content="32")
@@ -218,8 +202,8 @@ test "parity/SourceCodePro-Regular.woff: glyph 1000 outline NO_SCALE" {
 }
 
 ///|
-test "parity/SourceCodePro-Regular.woff: glyph metrics at 16ppem" {
-  let f = @freetype.from_bytes(load_generated_sourcecodepro_regular_woff())
+test "parity/SourceCodePro_standalone.cff: glyph metrics at 16ppem" {
+  let f = @freetype.from_bytes(load_generated_sourcecodepro_standalone_cff())
   let r1 = try? @freetype.set_pixel_sizes(f, 0U, 16U)
   guard r1 is Ok(_) else { return }
   let r2 = try? @freetype.load_glyph(f, 918U)
@@ -228,8 +212,8 @@ test "parity/SourceCodePro-Regular.woff: glyph metrics at 16ppem" {
 }
 
 ///|
-test "parity/SourceCodePro-Regular.woff: hinted outline DEFAULT 16ppem" {
-  let f = @freetype.from_bytes(load_generated_sourcecodepro_regular_woff())
+test "parity/SourceCodePro_standalone.cff: hinted outline DEFAULT 16ppem" {
+  let f = @freetype.from_bytes(load_generated_sourcecodepro_standalone_cff())
   let r1 = try? @freetype.set_pixel_sizes(f, 0U, 16U)
   guard r1 is Ok(_) else { return }
   let r2 = try? @freetype.load_glyph(f, 918U)
@@ -241,8 +225,8 @@ test "parity/SourceCodePro-Regular.woff: hinted outline DEFAULT 16ppem" {
 }
 
 ///|
-test "parity/SourceCodePro-Regular.woff: outline NO_HINTING 16ppem" {
-  let f = @freetype.from_bytes(load_generated_sourcecodepro_regular_woff())
+test "parity/SourceCodePro_standalone.cff: outline NO_HINTING 16ppem" {
+  let f = @freetype.from_bytes(load_generated_sourcecodepro_standalone_cff())
   let r1 = try? @freetype.set_pixel_sizes(f, 0U, 16U)
   guard r1 is Ok(_) else { return }
   let r2 = try? @freetype.load_glyph(f, 918U, load_flags=@base.LOAD_NO_HINTING)
@@ -251,8 +235,8 @@ test "parity/SourceCodePro-Regular.woff: outline NO_HINTING 16ppem" {
 }
 
 ///|
-test "parity/SourceCodePro-Regular.woff: outline FORCE_AUTOHINT 16ppem" {
-  let f = @freetype.from_bytes(load_generated_sourcecodepro_regular_woff())
+test "parity/SourceCodePro_standalone.cff: outline FORCE_AUTOHINT 16ppem" {
+  let f = @freetype.from_bytes(load_generated_sourcecodepro_standalone_cff())
   let r1 = try? @freetype.set_pixel_sizes(f, 0U, 16U)
   guard r1 is Ok(_) else { return }
   let r2 = try? @freetype.load_glyph(

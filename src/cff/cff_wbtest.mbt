@@ -88,6 +88,17 @@ test "parse_top_dict: FontMatrix real numbers" {
 }
 
 ///|
+test "parse_top_dict: underline defaults and override" {
+  let defaults = parse_top_dict(b"")
+  inspect(defaults.underline_position(), content="-100")
+  inspect(defaults.underline_thickness(), content="50")
+
+  let override_position = parse_top_dict([28, 0xFF, 0xB5, 12, 3])
+  inspect(override_position.underline_position(), content="-75")
+  inspect(override_position.underline_thickness(), content="50")
+}
+
+///|
 test "parse_private_dict: BlueScale, BlueShift, BlueFuzz" {
   let data : Bytes = [
     30, 0x0A, 0x25, 0xFF, 12, 9, // BlueScale = 0.25

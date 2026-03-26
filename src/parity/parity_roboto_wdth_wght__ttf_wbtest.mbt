@@ -2,14 +2,14 @@
 // AUTO-GENERATED — do not edit
 
 ///|
-fn load_roboto_wdth_wght__ttf() -> Bytes {
+fn load_generated_roboto_wdth_wght__ttf() -> Bytes {
   try! @fs.read_file_to_bytes("test/fonts/Roboto[wdth,wght].ttf")
 }
 
 ///|
 test "parity/Roboto[wdth,wght].ttf: format" {
   inspect(
-    @base.detect_format(load_roboto_wdth_wght__ttf())
+    @base.detect_format(load_generated_roboto_wdth_wght__ttf())
     is (TrueType | TrueTypeCollection),
     content="true",
   )
@@ -18,14 +18,14 @@ test "parity/Roboto[wdth,wght].ttf: format" {
 ///|
 test "parity/Roboto[wdth,wght].ttf: loads" {
   inspect(
-    (try? @freetype.from_bytes(load_roboto_wdth_wght__ttf())) is Ok(_),
+    (try? @freetype.from_bytes(load_generated_roboto_wdth_wght__ttf())) is Ok(_),
     content="true",
   )
 }
 
 ///|
 test "parity/Roboto[wdth,wght].ttf: metadata" {
-  let f = @freetype.from_bytes(load_roboto_wdth_wght__ttf())
+  let f = @freetype.from_bytes(load_generated_roboto_wdth_wght__ttf())
   inspect(f.family_name(), content="Roboto")
   inspect(f.num_glyphs(), content="1326")
   inspect(f.units_per_em(), content="2048")
@@ -38,7 +38,7 @@ test "parity/Roboto[wdth,wght].ttf: metadata" {
 
 ///|
 test "parity/Roboto[wdth,wght].ttf: bbox" {
-  let f = @freetype.from_bytes(load_roboto_wdth_wght__ttf())
+  let f = @freetype.from_bytes(load_generated_roboto_wdth_wght__ttf())
   inspect(f.bbox().x_min(), content="-1510")
   inspect(f.bbox().y_min(), content="-555")
   inspect(f.bbox().x_max(), content="2353")
@@ -47,7 +47,7 @@ test "parity/Roboto[wdth,wght].ttf: bbox" {
 
 ///|
 test "parity/Roboto[wdth,wght].ttf: flags" {
-  let f = @freetype.from_bytes(load_roboto_wdth_wght__ttf())
+  let f = @freetype.from_bytes(load_generated_roboto_wdth_wght__ttf())
   inspect(f.is_scalable(), content="true")
   inspect(f.is_sfnt(), content="true")
   inspect(f.has_horizontal(), content="true")
@@ -56,7 +56,7 @@ test "parity/Roboto[wdth,wght].ttf: flags" {
 
 ///|
 test "parity/Roboto[wdth,wght].ttf: charmaps" {
-  let f = @freetype.from_bytes(load_roboto_wdth_wght__ttf())
+  let f = @freetype.from_bytes(load_generated_roboto_wdth_wght__ttf())
   inspect(f.charmaps().length(), content="2")
   if f.charmaps().length() > 0 {
     inspect(f.charmaps()[0].platform_id(), content="0")
@@ -70,7 +70,7 @@ test "parity/Roboto[wdth,wght].ttf: charmaps" {
 
 ///|
 test "parity/Roboto[wdth,wght].ttf: charmap entries" {
-  let f = @freetype.from_bytes(load_roboto_wdth_wght__ttf())
+  let f = @freetype.from_bytes(load_generated_roboto_wdth_wght__ttf())
   inspect(@freetype.get_char_index(f, 0U), content="1")
   inspect(@freetype.get_char_index(f, 2U), content="2")
   inspect(@freetype.get_char_index(f, 13U), content="3")
@@ -125,7 +125,7 @@ test "parity/Roboto[wdth,wght].ttf: charmap entries" {
 
 ///|
 test "parity/Roboto[wdth,wght].ttf: glyph 5 outline NO_SCALE" {
-  let f = @freetype.from_bytes(load_roboto_wdth_wght__ttf())
+  let f = @freetype.from_bytes(load_generated_roboto_wdth_wght__ttf())
   let r = try? @freetype.load_glyph(f, 5U, load_flags=@base.LOAD_NO_SCALE)
   guard r is Ok(_) else { return }
   inspect(f.glyph().outline().n_points(), content="16")
@@ -151,7 +151,7 @@ test "parity/Roboto[wdth,wght].ttf: glyph 5 outline NO_SCALE" {
 
 ///|
 test "parity/Roboto[wdth,wght].ttf: glyph 6 outline NO_SCALE" {
-  let f = @freetype.from_bytes(load_roboto_wdth_wght__ttf())
+  let f = @freetype.from_bytes(load_generated_roboto_wdth_wght__ttf())
   let r = try? @freetype.load_glyph(f, 6U, load_flags=@base.LOAD_NO_SCALE)
   guard r is Ok(_) else { return }
   inspect(f.glyph().outline().n_points(), content="12")
@@ -177,7 +177,7 @@ test "parity/Roboto[wdth,wght].ttf: glyph 6 outline NO_SCALE" {
 
 ///|
 test "parity/Roboto[wdth,wght].ttf: glyph 7 outline NO_SCALE" {
-  let f = @freetype.from_bytes(load_roboto_wdth_wght__ttf())
+  let f = @freetype.from_bytes(load_generated_roboto_wdth_wght__ttf())
   let r = try? @freetype.load_glyph(f, 7U, load_flags=@base.LOAD_NO_SCALE)
   guard r is Ok(_) else { return }
   inspect(f.glyph().outline().n_points(), content="16")
@@ -203,7 +203,7 @@ test "parity/Roboto[wdth,wght].ttf: glyph 7 outline NO_SCALE" {
 
 ///|
 test "parity/Roboto[wdth,wght].ttf: glyph metrics at 16ppem" {
-  let f = @freetype.from_bytes(load_roboto_wdth_wght__ttf())
+  let f = @freetype.from_bytes(load_generated_roboto_wdth_wght__ttf())
   let r1 = try? @freetype.set_pixel_sizes(f, 0U, 16U)
   guard r1 is Ok(_) else { return }
   let r2 = try? @freetype.load_glyph(f, 5U)
@@ -213,7 +213,7 @@ test "parity/Roboto[wdth,wght].ttf: glyph metrics at 16ppem" {
 
 ///|
 test "parity/Roboto[wdth,wght].ttf: hinted outline DEFAULT 16ppem" {
-  let f = @freetype.from_bytes(load_roboto_wdth_wght__ttf())
+  let f = @freetype.from_bytes(load_generated_roboto_wdth_wght__ttf())
   let r1 = try? @freetype.set_pixel_sizes(f, 0U, 16U)
   guard r1 is Ok(_) else { return }
   let r2 = try? @freetype.load_glyph(f, 5U)
@@ -226,7 +226,7 @@ test "parity/Roboto[wdth,wght].ttf: hinted outline DEFAULT 16ppem" {
 
 ///|
 test "parity/Roboto[wdth,wght].ttf: outline NO_HINTING 16ppem" {
-  let f = @freetype.from_bytes(load_roboto_wdth_wght__ttf())
+  let f = @freetype.from_bytes(load_generated_roboto_wdth_wght__ttf())
   let r1 = try? @freetype.set_pixel_sizes(f, 0U, 16U)
   guard r1 is Ok(_) else { return }
   let r2 = try? @freetype.load_glyph(f, 5U, load_flags=@base.LOAD_NO_HINTING)
@@ -236,7 +236,7 @@ test "parity/Roboto[wdth,wght].ttf: outline NO_HINTING 16ppem" {
 
 ///|
 test "parity/Roboto[wdth,wght].ttf: outline FORCE_AUTOHINT 16ppem" {
-  let f = @freetype.from_bytes(load_roboto_wdth_wght__ttf())
+  let f = @freetype.from_bytes(load_generated_roboto_wdth_wght__ttf())
   let r1 = try? @freetype.set_pixel_sizes(f, 0U, 16U)
   guard r1 is Ok(_) else { return }
   let r2 = try? @freetype.load_glyph(

@@ -201,6 +201,13 @@ test "InterpContext: FLOOR/CEILING" {
 }
 
 ///|
+test "InterpContext: unsupported opcode errors" {
+  let ctx = InterpContext::new()
+  let result = try? ctx.execute(b"\x00")
+  inspect(result is Err(_), content="true")
+}
+
+///|
 test "loca: short format" {
   // 3 glyphs + 1 sentinel = 4 entries, short format (values ÷ 2)
   let data : Bytes = [

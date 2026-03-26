@@ -24,6 +24,9 @@ fn load_sfnt(
     ) {
     face.set_face_flags(face.face_flags() | @base.FACE_FLAG_HINTER)
   }
+  if has_cff {
+    face.set_face_flags(face.face_flags() | @base.FACE_FLAG_HINTER)
+  }
   // Lazy initializers
   let ensure_hmtx = fn() -> @sfnt.HmtxTable raise @error.FTError {
     match hmtx_ref.val {
