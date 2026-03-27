@@ -26,7 +26,7 @@ Generates:
 
 Vendored external fixtures:
   regular_CFF2.otf / cff2_vf.otf — real CFF2 OpenType fixtures
-  ab_svg.ttf — minimal OT-SVG fixture
+  ab_svg.ttf — minimal OT-SVG unsupported-path fixture
 
 Note: minimal.pcf is not generated because it requires the bdftopcf tool.
       To create one: bdftopcf minimal.bdf > minimal.pcf

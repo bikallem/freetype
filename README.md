@@ -1,7 +1,6 @@
 # bikallem/freetype
 
-MoonBit FreeType-compatible font engine, with pure MoonBit drivers plus a
-native-target fallback for OT-SVG rendering.
+MoonBit FreeType-compatible font engine with pure MoonBit drivers.
 
 ## Table of Contents
 
@@ -23,7 +22,6 @@ native-target fallback for OT-SVG rendering.
 - Glyph outline loading (TrueType simple/composite, CFF charstrings)
 - Glyph rendering (`render_glyph`, `LOAD_RENDER`) in normal, light, mono,
   LCD, LCD_V, color BGRA, and SDF modes
-- Native-target fallback for OT-SVG glyph rendering
 - Pixel size scaling with proper 16.16 fixed-point math
 - Kerning pair lookup
 - TrueType bytecode hinting (~160 opcodes: point movement, zones, projection vectors, rounding, deltas)
@@ -53,7 +51,7 @@ native-target fallback for OT-SVG rendering.
 | Type 1 (PFB/PFA) | `.pfb` `.pfa` | Full | `type1/` — pure MoonBit single-master + Multiple Master parsing, hinting, and AFM/PFM-backed metrics/kerning |
 | BDF (bitmap) | `.bdf` | Full | `bdf/` — header + glyph bitmap extraction |
 | PCF (bitmap) | `.pcf` | Full | `pcf/` — TOC, properties, metrics, encodings, bitmaps |
-| Color glyphs | `COLR`/`CPAL`, `sbix`, `CBDT`/`CBLC`, `SVG ` | Full on native target | `color/` — MoonBit COLR/sbix/CBDT path, `nativeft/` — OT-SVG loading/rendering via vendored FreeType + native raster bridge |
+| Color glyphs | `COLR`/`CPAL`, `sbix`, `CBDT`/`CBLC` | Full | `color/` — MoonBit COLR/sbix/CBDT path |
 
 Obsolete formats **not supported**: CID-keyed (standalone), Type 42, PFR (Bitstream), Windows FNT/FON.
 CID-keyed fonts inside CFF/OpenType are supported through the CFF driver.
@@ -62,16 +60,13 @@ CID-keyed fonts inside CFF/OpenType are supported through the CFF driver.
 
 The following FreeType subsystems are **excluded** from this port:
 
-The native target is only required for OT-SVG coverage. Non-native targets use
-the same pure MoonBit implementations for TrueType, CFF1/CFF2, Type 1, bitmap
-formats, and the non-SVG color codecs.
-
 | Subsystem | Reason |
 |-----------|--------|
 | **File I/O** (`ftsystem.c` file operations) | Accepts `Bytes` instead of file paths; no I/O or OS dependency |
 | **FT_Library global state** | Eliminated — API is stateless, no initialization needed |
 | **Memory allocator** (`FT_ALLOC`/`FT_FREE`/`FT_Memory`) | Eliminated — GC handles memory |
 | **FT_Generic** (user data hooks) | Omitted — users wrap `Face` in their own struct |
+| **OT-SVG renderer** (`SVG ` table rendering) | Not implemented — the runtime exposes SVG table metadata but does not ship an SVG rasterizer |
 
 ## API
 
@@ -172,7 +167,7 @@ src/
   smooth/              # Outline rasterizer: gray, mono, LCD, LCD_V bitmap emission
   color/               # Color font table parsing, BGRA surfaces, bitmap decode helpers
   sdf/                 # Signed-distance-field rasterization
-  nativeft/            # Native-target fallback bridge to vendored FreeType
+  nativeft/            # Legacy native bridge experiments (not used by the public runtime)
   sfnt/                # SFNT parsing: table directory, head, hhea, maxp, hmtx, name,
                        #   OS/2, post, cmap (formats 0/2/4/6/8/10/12/13/14), kern,
                        #   WOFF1, WOFF2

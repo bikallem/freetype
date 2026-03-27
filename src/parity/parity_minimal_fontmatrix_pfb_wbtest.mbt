@@ -8,19 +8,12 @@ fn load_generated_minimal_fontmatrix_pfb() -> Bytes {
 
 ///|
 test "parity/minimal_fontmatrix.pfb: format" {
-  inspect(
-    @base.detect_format(load_generated_minimal_fontmatrix_pfb()),
-    content="Type1Pfb",
-  )
+  inspect(@base.detect_format(load_generated_minimal_fontmatrix_pfb()), content="Type1Pfb")
 }
 
 ///|
 test "parity/minimal_fontmatrix.pfb: loads" {
-  inspect(
-    (try? @freetype.from_bytes(load_generated_minimal_fontmatrix_pfb()))
-    is Ok(_),
-    content="true",
-  )
+  inspect((try? @freetype.from_bytes(load_generated_minimal_fontmatrix_pfb())) is Ok(_), content="true")
 }
 
 ///|
@@ -135,10 +128,7 @@ test "parity/minimal_fontmatrix.pfb: rendered glyph 2 NORMAL char 65" {
   inspect(f.glyph().bitmap().num_grays(), content="256")
   inspect(f.glyph().bitmap_left(), content="0")
   inspect(f.glyph().bitmap_top(), content="6")
-  try! assert_buffer_hex(
-    f.glyph().bitmap().buffer(),
-    "000c0c0000504f000099980000e1e1002bffff2a74ffff73",
-  )
+  try! assert_buffer_hex(f.glyph().bitmap().buffer(), "000c0c0000504f000099980000e1e1002bffff2a74ffff73")
 }
 
 ///|
@@ -176,10 +166,7 @@ test "parity/minimal_fontmatrix.pfb: rendered glyph 2 LIGHT char 65" {
   inspect(f.glyph().bitmap().num_grays(), content="256")
   inspect(f.glyph().bitmap_left(), content="0")
   inspect(f.glyph().bitmap_top(), content="6")
-  try! assert_buffer_hex(
-    f.glyph().bitmap().buffer(),
-    "000c0c0000504f000099980000e1e1002bffff2a74ffff73",
-  )
+  try! assert_buffer_hex(f.glyph().bitmap().buffer(), "000c0c0000504f000099980000e1e1002bffff2a74ffff73")
 }
 
 ///|
@@ -255,10 +242,7 @@ test "parity/minimal_fontmatrix.pfb: rendered glyph 2 LCD char 65" {
   inspect(f.glyph().bitmap().num_grays(), content="256")
   inspect(f.glyph().bitmap_left(), content="0")
   inspect(f.glyph().bitmap_top(), content="6")
-  try! assert_buffer_hex(
-    f.glyph().bitmap().buffer(),
-    "000000000c19190c00000000000000075099984f070000000000024599eaea98440100000000368ee1ffffe18d350000002b7fd7ffffffffd67e2a001f74c8ffffffffffffc7731f",
-  )
+  try! assert_buffer_hex(f.glyph().bitmap().buffer(), "000000000c19190c00000000000000075099984f070000000000024599eaea98440100000000368ee1ffffe18d350000002b7fd7ffffffffd67e2a001f74c8ffffffffffffc7731f")
 }
 
 ///|
@@ -296,10 +280,7 @@ test "parity/minimal_fontmatrix.pfb: rendered glyph 2 LCD_V char 65" {
   inspect(f.glyph().bitmap().num_grays(), content="256")
   inspect(f.glyph().bitmap_left(), content="0")
   inspect(f.glyph().bitmap_top(), content="6")
-  try! assert_buffer_hex(
-    f.glyph().bitmap().buffer(),
-    "00020200000c0c00001f1e000038370000504f0000686700008180000099980000b1b00000cac90000e1e10006f3f30615fdfd142bffff2a43ffff425cffff5b74ffff7355acac552e54542d0000000000000000",
-  )
+  try! assert_buffer_hex(f.glyph().bitmap().buffer(), "00020200000c0c00001f1e000038370000504f0000686700008180000099980000b1b00000cac90000e1e10006f3f30615fdfd142bffff2a43ffff425cffff5b74ffff7355acac552e54542d0000000000000000")
 }
 
 ///|
@@ -330,11 +311,8 @@ test "parity/minimal_fontmatrix.pfb: outline FORCE_AUTOHINT 16ppem" {
   let f = @freetype.from_bytes(load_generated_minimal_fontmatrix_pfb())
   let r1 = try? @freetype.set_pixel_sizes(f, 0U, 16U)
   guard r1 is Ok(_) else { return }
-  let r2 = try? @freetype.load_glyph(
-    f,
-    2U,
-    load_flags=@base.LOAD_FORCE_AUTOHINT,
-  )
+  let r2 = try? @freetype.load_glyph(f, 2U, load_flags=@base.LOAD_FORCE_AUTOHINT)
   guard r2 is Ok(_) else { return }
   inspect(f.glyph().metrics().hori_advance(), content="256")
 }
+

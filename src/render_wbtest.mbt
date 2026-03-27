@@ -912,24 +912,16 @@ test "render_glyph: bitmap font can be re-rendered as sdf" {
 }
 
 ///|
-test "load_glyph: OT-SVG glyph stays SVG before render and renders to BGRA natively" {
+test "load_glyph: OT-SVG fonts no longer use an SVG color-render path" {
   let face = from_bytes(render_svg_test_font())
   inspect(face.has_color(), content="true")
+  inspect((face.face_flags() & @base.FACE_FLAG_SVG) != 0L, content="true")
   try! set_pixel_sizes(face, 0U, 16U)
   let gid = get_char_index(face, 97U)
-  if @nativeft.native_available() {
-    try! load_glyph(face, gid, load_flags=@base.LOAD_COLOR)
-    inspect(face.glyph().format(), content="Svg")
-    try! render_glyph(face, mode=Normal)
-    inspect(face.glyph().format(), content="Bitmap")
-    inspect(face.glyph().bitmap().pixel_mode(), content="Bgra")
-    inspect(face.glyph().bitmap().buffer().length() > 0, content="true")
-  } else {
-    let result : Result[Unit, @error.FTError] = Ok(
-      load_glyph(face, gid, load_flags=@base.LOAD_COLOR),
-    ) catch {
-      err => Err(err)
-    }
-    inspect(result, content="Err(UnimplementedFeature)")
-  }
+  try! load_glyph(face, gid, load_flags=@base.LOAD_COLOR)
+  inspect(face.glyph().format(), content="Outline")
+  try! render_glyph(face, mode=Normal)
+  inspect(face.glyph().format(), content="Bitmap")
+  inspect(face.glyph().bitmap().pixel_mode(), content="Gray")
+  inspect(face.glyph().bitmap().buffer().length() > 0, content="true")
 }

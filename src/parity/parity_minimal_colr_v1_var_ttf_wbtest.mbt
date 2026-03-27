@@ -8,20 +8,12 @@ fn load_generated_minimal_colr_v1_var_ttf() -> Bytes {
 
 ///|
 test "parity/minimal_colr_v1_var.ttf: format" {
-  inspect(
-    @base.detect_format(load_generated_minimal_colr_v1_var_ttf())
-    is (TrueType | TrueTypeCollection),
-    content="true",
-  )
+  inspect(@base.detect_format(load_generated_minimal_colr_v1_var_ttf()) is (TrueType | TrueTypeCollection), content="true")
 }
 
 ///|
 test "parity/minimal_colr_v1_var.ttf: loads" {
-  inspect(
-    (try? @freetype.from_bytes(load_generated_minimal_colr_v1_var_ttf()))
-    is Ok(_),
-    content="true",
-  )
+  inspect((try? @freetype.from_bytes(load_generated_minimal_colr_v1_var_ttf())) is Ok(_), content="true")
 }
 
 ///|
@@ -131,10 +123,7 @@ test "parity/minimal_colr_v1_var.ttf: rendered glyph 4 NORMAL char 65" {
   inspect(f.glyph().bitmap().num_grays(), content="256")
   inspect(f.glyph().bitmap_left(), content="0")
   inspect(f.glyph().bitmap_top(), content="12")
-  try! assert_buffer_hex(
-    f.glyph().bitmap().buffer(),
-    "000000010100000000000034330000000000007d7c000000000000c6c5000000000012fcfc110000000058ffff5700000000a2ffffa100000001e9ffffe901000034ffffffff3300007dffffffff7c0000c6ffffffffc50012fcfffffffffc12",
-  )
+  try! assert_buffer_hex(f.glyph().bitmap().buffer(), "000000010100000000000034330000000000007d7c000000000000c6c5000000000012fcfc110000000058ffff5700000000a2ffffa100000001e9ffffe901000034ffffffff3300007dffffffff7c0000c6ffffffffc50012fcfffffffffc12")
 }
 
 ///|
@@ -172,10 +161,7 @@ test "parity/minimal_colr_v1_var.ttf: rendered glyph 4 LIGHT char 65" {
   inspect(f.glyph().bitmap().num_grays(), content="256")
   inspect(f.glyph().bitmap_left(), content="0")
   inspect(f.glyph().bitmap_top(), content="12")
-  try! assert_buffer_hex(
-    f.glyph().bitmap().buffer(),
-    "000000010100000000000034330000000000007d7c000000000000c6c5000000000012fcfc110000000058ffff5700000000a2ffffa100000001e9ffffe901000034ffffffff3300007dffffffff7c0000c6ffffffffc50012fcfffffffffc12",
-  )
+  try! assert_buffer_hex(f.glyph().bitmap().buffer(), "000000010100000000000034330000000000007d7c000000000000c6c5000000000012fcfc110000000058ffff5700000000a2ffffa100000001e9ffffe901000034ffffffff3300007dffffffff7c0000c6ffffffffc50012fcfffffffffc12")
 }
 
 ///|
@@ -251,10 +237,7 @@ test "parity/minimal_colr_v1_var.ttf: rendered glyph 4 LCD char 65" {
   inspect(f.glyph().bitmap().num_grays(), content="256")
   inspect(f.glyph().bitmap_left(), content="0")
   inspect(f.glyph().bitmap_top(), content="12")
-  try! assert_buffer_hex(
-    f.glyph().bitmap().buffer(),
-    "000000000000000000000102020100000000000000000000000000000000000000003466663300000000000000000000000000000000000000297dd1d07c2800000000000000000000000000000000001a72c6ffffc5711a0000000000000000000000000000001263bbfcfffffcba6211000000000000000000000000000b58acf8fffffffff8ab570b0000000000000000000000044ea2f0fffffffffffff0a14d04000000000000000000013f97e9ffffffffffffffffe9963e0100000000000000003488dfffffffffffffffffffffdf873300000000000000297dd1ffffffffffffffffffffffffd07c2800000000001a72c6ffffffffffffffffffffffffffffc5711a0000001263bbfcfffffffffffffffffffffffffffffcbb631200",
-  )
+  try! assert_buffer_hex(f.glyph().bitmap().buffer(), "000000000000000000000102020100000000000000000000000000000000000000003466663300000000000000000000000000000000000000297dd1d07c2800000000000000000000000000000000001a72c6ffffc5711a0000000000000000000000000000001263bbfcfffffcba6211000000000000000000000000000b58acf8fffffffff8ab570b0000000000000000000000044ea2f0fffffffffffff0a14d04000000000000000000013f97e9ffffffffffffffffe9963e0100000000000000003488dfffffffffffffffffffffdf873300000000000000297dd1ffffffffffffffffffffffffd07c2800000000001a72c6ffffffffffffffffffffffffffffc5711a0000001263bbfcfffffffffffffffffffffffffffffcbb631200")
 }
 
 ///|
@@ -292,10 +275,7 @@ test "parity/minimal_colr_v1_var.ttf: rendered glyph 4 LCD_V char 65" {
   inspect(f.glyph().bitmap().num_grays(), content="256")
   inspect(f.glyph().bitmap_left(), content="0")
   inspect(f.glyph().bitmap_top(), content="12")
-  try! assert_buffer_hex(
-    f.glyph().bitmap().buffer(),
-    "000000000000000000000001010000000000000a0a0000000000001c1c00000000000034330000000000004c4b00000000000065640000000000007d7c0000000000009594000000000000aead000000000000c6c5000000000000dedd000000000005f1f1050000000012fcfc110000000027ffff260000000040ffff3f0000000058ffff570000000070ffff6f000000008affff8900000000a2ffffa100000000baffffb900000000d3ffffd200000001e9ffffe90100000af8fffff80a00001cffffffff1c000034ffffffff3300004cffffffff4b000065ffffffff6400007dffffffff7c000095ffffffff940000aeffffffffad0000c6ffffffffc50000deffffffffdd0005f2fffffffff10512fcfffffffffc1212acacacacacac120d5454545454540c00000000000000000000000000000000",
-  )
+  try! assert_buffer_hex(f.glyph().bitmap().buffer(), "000000000000000000000001010000000000000a0a0000000000001c1c00000000000034330000000000004c4b00000000000065640000000000007d7c0000000000009594000000000000aead000000000000c6c5000000000000dedd000000000005f1f1050000000012fcfc110000000027ffff260000000040ffff3f0000000058ffff570000000070ffff6f000000008affff8900000000a2ffffa100000000baffffb900000000d3ffffd200000001e9ffffe90100000af8fffff80a00001cffffffff1c000034ffffffff3300004cffffffff4b000065ffffffff6400007dffffffff7c000095ffffffff940000aeffffffffad0000c6ffffffffc50000deffffffffdd0005f2fffffffff10512fcfffffffffc1212acacacacacac120d5454545454540c00000000000000000000000000000000")
 }
 
 ///|
@@ -313,11 +293,8 @@ test "parity/minimal_colr_v1_var.ttf: outline FORCE_AUTOHINT 16ppem" {
   let f = @freetype.from_bytes(load_generated_minimal_colr_v1_var_ttf())
   let r1 = try? @freetype.set_pixel_sizes(f, 0U, 16U)
   guard r1 is Ok(_) else { return }
-  let r2 = try? @freetype.load_glyph(
-    f,
-    4U,
-    load_flags=@base.LOAD_FORCE_AUTOHINT,
-  )
+  let r2 = try? @freetype.load_glyph(f, 4U, load_flags=@base.LOAD_FORCE_AUTOHINT)
   guard r2 is Ok(_) else { return }
   inspect(f.glyph().metrics().hori_advance(), content="512")
 }
+

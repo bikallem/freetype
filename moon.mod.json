@@ -16,6 +16,6 @@
     "truetype",
     "opentype"
   ],
-  "description": "MoonBit FreeType-compatible font engine with native fallback for advanced formats",
+  "description": "Pure MoonBit FreeType-compatible font engine",
   "source": "src"
 }
