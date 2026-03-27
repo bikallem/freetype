@@ -36,6 +36,40 @@ pub fn parse_cff_index(
 }
 
 ///|
+/// Parse a CFF2 INDEX structure (32-bit count).
+pub fn parse_cff2_index(
+  reader : @stream.ByteReader,
+) -> CffIndex raise @error.FTError {
+  let count = reader.read_u32_be()
+  if count == 0U {
+    return {
+      count: 0U,
+      off_size: 0,
+      offsets: [],
+      data_start: reader.position(),
+      data: b"",
+    }
+  }
+  let off_size = reader.read_byte().to_int()
+  let offsets : Array[UInt] = []
+  for _ in 0..<(count.reinterpret_as_int() + 1) {
+    let off = match off_size {
+      1 => reader.read_byte().to_uint()
+      2 => reader.read_u16_be()
+      3 => reader.read_u24_be()
+      4 => reader.read_u32_be()
+      _ => raise @error.FTError::InvalidTable
+    }
+    offsets.push(off)
+  }
+  let data_start = reader.position()
+  let last_offset = offsets[offsets.length() - 1]
+  let data_size = last_offset.reinterpret_as_int() - 1
+  let data = if data_size > 0 { reader.read_bytes(data_size) } else { b"" }
+  { count, off_size, offsets, data_start, data }
+}
+
+///|
 /// Get data for an item in a CFF INDEX.
 pub fn CffIndex::get_item(self : CffIndex, index : Int) -> Bytes {
   if index < 0 || index >= self.count.reinterpret_as_int() {
@@ -126,6 +160,107 @@ fn parse_dict_operand(data : Bytes, pos : Int) -> (Double, Int) {
 }
 
 ///|
+fn is_cff2_top_dict_op(b0 : Int) -> Bool {
+  (b0 >= 0 && b0 <= 21) || b0 == 24 || b0 == 25
+}
+
+///|
+fn cff2_blend_vector_length(vstore : CffVarStore?, vsindex : Int) -> Int {
+  match vstore {
+    Some(store) =>
+      if vsindex >= 0 && vsindex < store.data.length() {
+        match store.data[vsindex] {
+          Some(data) => data.region_indices.length() + 1
+          None => 1
+        }
+      } else {
+        1
+      }
+    None => 1
+  }
+}
+
+///|
+fn collapse_cff2_blend_stack(stack : Array[Double], len_bv : Int) -> Unit {
+  if stack.length() == 0 || len_bv <= 0 {
+    stack.clear()
+    return
+  }
+  let num_blends = stack[stack.length() - 1].to_int()
+  if num_blends <= 0 {
+    stack.clear()
+    return
+  }
+  let num_operands = num_blends * len_bv
+  if stack.length() < num_operands + 1 {
+    stack.clear()
+    return
+  }
+  let base_count = stack.length() - 1 - num_operands
+  let blended : Array[Double] = []
+  for i in 0..<base_count {
+    blended.push(stack[i])
+  }
+  for i in 0..<num_blends {
+    blended.push(stack[base_count + i])
+  }
+  stack.clear()
+  for _, value in blended {
+    stack.push(value)
+  }
+}
+
+///|
+fn apply_cff2_blend_stack(
+  stack : Array[Double],
+  blend_vector : Array[Int64],
+) -> Unit {
+  if stack.length() == 0 || blend_vector.length() == 0 {
+    stack.clear()
+    return
+  }
+  let num_blends = stack[stack.length() - 1].to_int()
+  if num_blends <= 0 {
+    stack.clear()
+    return
+  }
+  let len_bv = blend_vector.length()
+  let num_operands = num_blends * len_bv
+  if stack.length() < num_operands + 1 {
+    stack.clear()
+    return
+  }
+  let base_count = stack.length() - 1 - num_operands
+  let blended : Array[Double] = []
+  for i in 0..<base_count {
+    blended.push(stack[i])
+  }
+  for i in 0..<num_blends {
+    let mut value = stack[base_count + i]
+    for j in 1..<len_bv {
+      let scalar = blend_vector[j].to_double() / 65536.0
+      value += stack[base_count + num_blends * j + i] * scalar
+    }
+    blended.push(value)
+  }
+  stack.clear()
+  for _, value in blended {
+    stack.push(value)
+  }
+}
+
+///|
+fn delta_operands_to_i64(values : Array[Double]) -> Array[Int64] {
+  let out : Array[Int64] = []
+  let mut accum = 0L
+  for _, value in values {
+    accum += value.to_int64()
+    out.push(accum)
+  }
+  out
+}
+
+///|
 /// Parse a CFF Top DICT from raw DICT data bytes.
 pub fn parse_top_dict(data : Bytes) -> CffTopDict {
   let dict = CffTopDict::new()
@@ -185,6 +320,10 @@ fn apply_top_dict_op(
         dict.private_size = stack[0].to_int().reinterpret_as_uint()
         dict.private_offset = stack[1].to_int().reinterpret_as_uint()
       }
+    24 =>
+      if stack.length() > 0 {
+        dict.vstore_offset = stack[0].to_int().reinterpret_as_uint()
+      }
     5 =>
       // FontBBox
       if stack.length() >= 4 {
@@ -238,6 +377,34 @@ fn apply_top_dict_op2(
 }
 
 ///|
+pub fn parse_top_dict_cff2(data : Bytes) -> CffTopDict {
+  let dict = CffTopDict::new()
+  let stack : Array[Double] = []
+  let mut pos = 0
+  let len = data.length()
+  while pos < len {
+    let b0 = data[pos].to_int()
+    if is_cff2_top_dict_op(b0) {
+      if b0 == 12 {
+        pos += 1
+        if pos < len {
+          apply_top_dict_op2(dict, stack, data[pos].to_int())
+        }
+      } else {
+        apply_top_dict_op(dict, stack, b0)
+      }
+      stack.clear()
+      pos += 1
+    } else {
+      let (val, consumed) = parse_dict_operand(data, pos)
+      stack.push(val)
+      pos += consumed
+    }
+  }
+  dict
+}
+
+///|
 /// Parse a CFF Private DICT from raw DICT data bytes.
 pub fn parse_private_dict(data : Bytes) -> CffPrivateDict {
   let dict = CffPrivateDict::new()
@@ -267,10 +434,10 @@ pub fn parse_private_dict(data : Bytes) -> CffPrivateDict {
         match b0 {
           6 =>
             // BlueValues
-            dict.blue_values = stack.map(fn(v) { v.to_int64() })
+            dict.blue_values = delta_operands_to_i64(stack)
           7 =>
             // OtherBlues
-            dict.other_blues = stack.map(fn(v) { v.to_int64() })
+            dict.other_blues = delta_operands_to_i64(stack)
           10 =>
             // StdHW
             if stack.length() > 0 {
@@ -298,6 +465,166 @@ pub fn parse_private_dict(data : Bytes) -> CffPrivateDict {
             }
           _ => ()
         }
+      }
+      stack.clear()
+      pos += 1
+    } else {
+      let (val, consumed) = parse_dict_operand(data, pos)
+      stack.push(val)
+      pos += consumed
+    }
+  }
+  dict
+}
+
+///|
+fn parse_variation_region_list_cff(
+  reader : @stream.ByteReader,
+  offset : Int,
+) -> (Int, Array[Array[CffVarRegionAxis]]) raise @error.FTError {
+  reader.seek(offset)
+  let axis_count = reader.read_u16_be().reinterpret_as_int()
+  let region_count = reader.read_u16_be().reinterpret_as_int()
+  let regions : Array[Array[CffVarRegionAxis]] = Array::new(
+    capacity=region_count,
+  )
+  for _ in 0..<region_count {
+    let axes : Array[CffVarRegionAxis] = Array::new(capacity=axis_count)
+    for _ in 0..<axis_count {
+      let start_coord = @fixed.F2Dot14::from_raw(reader.read_i16_be())
+        .to_fixed()
+        .val()
+      let mut peak_coord = @fixed.F2Dot14::from_raw(reader.read_i16_be())
+        .to_fixed()
+        .val()
+      let end_coord = @fixed.F2Dot14::from_raw(reader.read_i16_be())
+        .to_fixed()
+        .val()
+      if (start_coord < 0L && end_coord > 0L) ||
+        start_coord > peak_coord ||
+        peak_coord > end_coord {
+        peak_coord = 0L
+      }
+      axes.push({ start_coord, peak_coord, end_coord })
+    }
+    regions.push(axes)
+  }
+  (axis_count, regions)
+}
+
+///|
+fn parse_cff_vstore(
+  data : Bytes,
+  offset : Int,
+) -> CffVarStore? raise @error.FTError {
+  if offset <= 0 || offset + 2 > data.length() {
+    return None
+  }
+  let reader = @stream.ByteReader::new(data)
+  reader.seek(offset)
+  let length = reader.read_u16_be().reinterpret_as_int()
+  if length <= 2 || offset + length > data.length() {
+    raise @error.FTError::InvalidTable
+  }
+  let base = offset + 2
+  reader.seek(base)
+  let format = reader.read_u16_be()
+  if format != 1U {
+    raise @error.FTError::InvalidTable
+  }
+  let region_list_offset = reader.read_u32_be().reinterpret_as_int()
+  let data_count = reader.read_u16_be().reinterpret_as_int()
+  let data_offsets : Array[Int] = Array::new(capacity=data_count)
+  for _ in 0..<data_count {
+    data_offsets.push(reader.read_u32_be().reinterpret_as_int())
+  }
+  let (axis_count, regions) = parse_variation_region_list_cff(
+    reader,
+    base + region_list_offset,
+  )
+  let var_data : Array[CffVarData?] = Array::new(capacity=data_count)
+  for _, data_offset in data_offsets {
+    if data_offset == 0 {
+      var_data.push(None)
+    } else {
+      reader.seek(base + data_offset)
+      ignore(reader.read_u16_be()) // itemCount
+      ignore(reader.read_u16_be()) // shortDeltaCount
+      let region_idx_count = reader.read_u16_be().reinterpret_as_int()
+      let region_indices : Array[Int] = Array::new(capacity=region_idx_count)
+      for _ in 0..<region_idx_count {
+        region_indices.push(reader.read_u16_be().reinterpret_as_int())
+      }
+      var_data.push(Some({ region_indices, }))
+    }
+  }
+  Some({ axis_count, regions, data: var_data })
+}
+
+///|
+pub fn parse_private_dict_cff2(
+  data : Bytes,
+  vstore? : CffVarStore? = None,
+  normalized_coords? : Array[Int] = [],
+) -> CffPrivateDict {
+  let dict = CffPrivateDict::new()
+  let stack : Array[Double] = []
+  let mut current_vsindex = 0
+  let mut pos = 0
+  let len = data.length()
+  while pos < len {
+    let b0 = data[pos].to_int()
+    if b0 == 12 {
+      pos += 1
+      if pos < len {
+        match data[pos].to_int() {
+          9 => if stack.length() > 0 { dict.blue_scale = Some(stack[0]) }
+          10 =>
+            if stack.length() > 0 {
+              dict.blue_shift = Some(stack[0].to_int())
+            }
+          11 =>
+            if stack.length() > 0 {
+              dict.blue_fuzz = Some(stack[0].to_int())
+            }
+          _ => ()
+        }
+      }
+      stack.clear()
+      pos += 1
+    } else if b0 == 22 {
+      if stack.length() > 0 {
+        current_vsindex = stack[0].to_int()
+        dict.default_vsindex = current_vsindex
+      }
+      stack.clear()
+      pos += 1
+    } else if b0 == 23 {
+      let blend_vector = match vstore {
+        Some(store) => store.blend_vector(current_vsindex, normalized_coords)
+        None =>
+          Array::make(cff2_blend_vector_length(vstore, current_vsindex), 0L)
+      }
+      if blend_vector.length() > 0 {
+        apply_cff2_blend_stack(stack, blend_vector)
+      } else {
+        collapse_cff2_blend_stack(
+          stack,
+          cff2_blend_vector_length(vstore, current_vsindex),
+        )
+      }
+      pos += 1
+    } else if b0 >= 0 && b0 <= 21 {
+      match b0 {
+        6 => dict.blue_values = delta_operands_to_i64(stack)
+        7 => dict.other_blues = delta_operands_to_i64(stack)
+        10 => if stack.length() > 0 { dict.std_hw = stack[0].to_int64() }
+        11 => if stack.length() > 0 { dict.std_vw = stack[0].to_int64() }
+        19 =>
+          if stack.length() > 0 {
+            dict.subrs_offset = stack[0].to_int().reinterpret_as_uint()
+          }
+        _ => ()
       }
       stack.clear()
       pos += 1
@@ -515,6 +842,7 @@ pub fn load_cff(data : Bytes, offset : Int) -> CffFont raise @error.FTError {
     is_fixed_pitch: top_dict.is_fixed_pitch,
     top_dict,
     private_dict,
+    private_data: None,
     charstrings,
     global_subrs,
     local_subrs,
@@ -524,9 +852,160 @@ pub fn load_cff(data : Bytes, offset : Int) -> CffFont raise @error.FTError {
     encoding_glyphs,
     cached_local_subrs,
     fd_private_dicts,
+    fd_private_data: [],
     fd_local_subrs,
     fd_select,
     cached_global_subrs,
+    is_cff2: false,
+    vstore: None,
+  }
+}
+
+///|
+/// Load a CFF2 font from SFNT table bytes.
+pub fn load_cff2(
+  data : Bytes,
+  offset : Int,
+  units_per_em : UInt,
+) -> CffFont raise @error.FTError {
+  let reader = @stream.ByteReader::new(data)
+  reader.seek(offset)
+  let major = reader.read_byte().to_int()
+  let minor = reader.read_byte().to_int()
+  let hdr_size = reader.read_byte().to_int()
+  let top_dict_length = reader.read_u16_be().reinterpret_as_int()
+  if major != 2 || hdr_size < 5 || top_dict_length <= 0 {
+    raise @error.FTError::InvalidTable
+  }
+  let header = { major, minor, hdr_size, off_size: 0 }
+  let top_dict_start = offset + hdr_size
+  reader.seek(top_dict_start)
+  let top_dict_data = reader.read_bytes(top_dict_length)
+  let top_dict = parse_top_dict_cff2(top_dict_data)
+  reader.seek(top_dict_start + top_dict_length)
+  let global_subrs = parse_cff2_index(reader)
+  let vstore = if top_dict.vstore_offset > 0U {
+    parse_cff_vstore(data, offset + top_dict.vstore_offset.reinterpret_as_int())
+  } else {
+    None
+  }
+  reader.seek(offset + top_dict.charstrings_offset.reinterpret_as_int())
+  let charstrings = parse_cff2_index(reader)
+  let num_glyphs = charstrings.count
+  let global_count = global_subrs.count.reinterpret_as_int()
+  let cached_global_subrs : Array[Bytes] = []
+  for i in 0..<global_count {
+    cached_global_subrs.push(global_subrs.get_item(i))
+  }
+  let fd_private_dicts : Array[CffPrivateDict] = []
+  let fd_private_data : Array[Bytes] = []
+  let fd_local_subrs : Array[Array[Bytes]] = []
+  let fd_select : Array[Int] = Array::make(num_glyphs.reinterpret_as_int(), 0)
+  if top_dict.fd_array_offset > 0U {
+    reader.seek(offset + top_dict.fd_array_offset.reinterpret_as_int())
+    let fd_array = parse_cff2_index(reader)
+    let fd_count = fd_array.count.reinterpret_as_int()
+    for i in 0..<fd_count {
+      let fd_dict = parse_top_dict_cff2(fd_array.get_item(i))
+      let fd_private_dict = if fd_dict.private_size > 0U {
+        let priv_start = offset + fd_dict.private_offset.reinterpret_as_int()
+        let priv_size = fd_dict.private_size.reinterpret_as_int()
+        reader.seek(priv_start)
+        let priv_data = reader.read_bytes(priv_size)
+        fd_private_data.push(priv_data)
+        parse_private_dict_cff2(priv_data, vstore~)
+      } else {
+        fd_private_data.push(b"")
+        CffPrivateDict::new()
+      }
+      let cached_fd_local_subrs : Array[Bytes] = if fd_private_dict.subrs_offset >
+        0U {
+        let subrs_abs = offset +
+          fd_dict.private_offset.reinterpret_as_int() +
+          fd_private_dict.subrs_offset.reinterpret_as_int()
+        reader.seek(subrs_abs)
+        let idx = parse_cff2_index(reader)
+        let count = idx.count.reinterpret_as_int()
+        let subrs : Array[Bytes] = []
+        for j in 0..<count {
+          subrs.push(idx.get_item(j))
+        }
+        subrs
+      } else {
+        []
+      }
+      fd_private_dicts.push(fd_private_dict)
+      fd_local_subrs.push(cached_fd_local_subrs)
+    }
+  }
+  if top_dict.fd_select_offset > 0U {
+    reader.seek(offset + top_dict.fd_select_offset.reinterpret_as_int())
+    let format = reader.read_byte().to_int()
+    match format {
+      0 =>
+        for i in 0..<num_glyphs.reinterpret_as_int() {
+          fd_select[i] = reader.read_byte().to_int()
+        }
+      3 => {
+        let n_ranges = reader.read_u16_be().reinterpret_as_int()
+        let first_glyphs : Array[Int] = []
+        let fds : Array[Int] = []
+        for _ in 0..<n_ranges {
+          first_glyphs.push(reader.read_u16_be().reinterpret_as_int())
+          fds.push(reader.read_byte().to_int())
+        }
+        let sentinel = reader.read_u16_be().reinterpret_as_int()
+        for i in 0..<n_ranges {
+          let start = first_glyphs[i].max(0)
+          let raw_end = if i + 1 < n_ranges {
+            first_glyphs[i + 1]
+          } else {
+            sentinel
+          }
+          let end_ = raw_end.min(num_glyphs.reinterpret_as_int())
+          for glyph in start..<end_ {
+            fd_select[glyph] = fds[i]
+          }
+        }
+      }
+      _ => raise @error.FTError::InvalidTable
+    }
+  }
+  let private_dict = if fd_private_dicts.length() > 0 {
+    fd_private_dicts[0]
+  } else {
+    CffPrivateDict::new()
+  }
+  let cached_local_subrs = if fd_local_subrs.length() > 0 {
+    fd_local_subrs[0]
+  } else {
+    []
+  }
+  {
+    header,
+    name: "",
+    family_name: "",
+    style_name: "",
+    units_per_em,
+    is_fixed_pitch: false,
+    top_dict,
+    private_dict,
+    private_data: None,
+    charstrings,
+    global_subrs,
+    local_subrs: None,
+    num_glyphs,
+    custom_strings: [],
+    glyph_names: [],
+    encoding_glyphs: Array::make(256, 0U),
+    cached_local_subrs,
+    fd_private_dicts,
+    fd_private_data,
+    fd_local_subrs,
+    fd_select,
+    cached_global_subrs,
+    is_cff2: true,
+    vstore,
   }
 }
 
@@ -535,17 +1014,53 @@ pub fn load_cff(data : Bytes, offset : Int) -> CffFont raise @error.FTError {
 pub fn load_cff_glyph(
   cff : CffFont,
   glyph_index : UInt,
+  normalized_coords? : Array[Int] = [],
 ) -> (@types.Outline, Int64, Array[@psaux.StemHint], Array[@psaux.StemHint]) raise @error.FTError {
   let charstring = cff.charstrings.get_item(glyph_index.reinterpret_as_int())
   if charstring.length() == 0 {
     return (@types.Outline::new(), 0L, [], [])
   }
-  let private_dict = cff.private_dict_for_glyph(glyph_index)
+  let private_dict = if cff.is_cff2() {
+    let fd_idx = cff.fd_index_for_glyph(glyph_index)
+    let maybe_private_data = if cff.top_dict().is_cid() &&
+      fd_idx >= 0 &&
+      fd_idx < cff.fd_private_data().length() {
+      Some(cff.fd_private_data()[fd_idx])
+    } else {
+      cff.private_data()
+    }
+    match maybe_private_data {
+      Some(priv_data) if priv_data.length() > 0 =>
+        parse_private_dict_cff2(
+          priv_data,
+          vstore=cff.vstore(),
+          normalized_coords~,
+        )
+      _ => cff.private_dict_for_glyph(glyph_index)
+    }
+  } else {
+    cff.private_dict_for_glyph(glyph_index)
+  }
+  let blend_vectors : Array[Array[Int64]?] = match cff.vstore {
+    Some(vstore) => {
+      let vectors : Array[Array[Int64]?] = Array::new(
+        capacity=vstore.data.length(),
+      )
+      for i in 0..<vstore.data.length() {
+        vectors.push(Some(vstore.blend_vector(i, normalized_coords)))
+      }
+      vectors
+    }
+    None => []
+  }
   @psaux.execute_type2(
     charstring,
     private_dict.default_width_x(),
     private_dict.nominal_width_x(),
     local_subrs=cff.cached_local_subrs_for_glyph(glyph_index),
     global_subrs=cff.cached_global_subrs,
+    is_cff2=cff.is_cff2,
+    default_vsindex=private_dict.default_vsindex(),
+    blend_vectors~,
   )
 }

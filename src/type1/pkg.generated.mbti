@@ -3,6 +3,7 @@ package "bikallem/freetype/type1"
 
 import {
   "bikallem/freetype/error",
+  "bikallem/freetype/fixed",
   "bikallem/freetype/psaux",
   "bikallem/freetype/types",
 }
@@ -36,6 +37,11 @@ pub fn Type1Font::font_name(Self) -> String
 pub fn Type1Font::glyph_order(Self) -> Array[String]
 pub fn Type1Font::latin1_encoding(Self) -> Bool
 pub fn Type1Font::len_iv(Self) -> Int
+pub fn Type1Font::mm_axis_defaults(Self) -> Array[@fixed.Fixed]
+pub fn Type1Font::mm_axis_maxs(Self) -> Array[@fixed.Fixed]
+pub fn Type1Font::mm_axis_mins(Self) -> Array[@fixed.Fixed]
+pub fn Type1Font::mm_axis_tags(Self) -> Array[UInt]
+pub fn Type1Font::multiple_master(Self) -> Bool
 pub fn Type1Font::new() -> Self
 pub fn Type1Font::other_blues(Self) -> Array[Int]
 pub fn Type1Font::paint_type(Self) -> Int

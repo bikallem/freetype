@@ -8,12 +8,19 @@ fn load_generated_notosansjp_regular_otf() -> Bytes {
 
 ///|
 test "parity/NotoSansJP-Regular.otf: format" {
-  inspect(@base.detect_format(load_generated_notosansjp_regular_otf()), content="CffOpenType")
+  inspect(
+    @base.detect_format(load_generated_notosansjp_regular_otf()),
+    content="CffOpenType",
+  )
 }
 
 ///|
 test "parity/NotoSansJP-Regular.otf: loads" {
-  inspect((try? @freetype.from_bytes(load_generated_notosansjp_regular_otf())) is Ok(_), content="true")
+  inspect(
+    (try? @freetype.from_bytes(load_generated_notosansjp_regular_otf()))
+    is Ok(_),
+    content="true",
+  )
 }
 
 ///|
@@ -255,7 +262,10 @@ test "parity/NotoSansJP-Regular.otf: rendered glyph 34 NORMAL char 65" {
   inspect(f.glyph().bitmap().num_grays(), content="256")
   inspect(f.glyph().bitmap_left(), content="0")
   inspect(f.glyph().bitmap_top(), content="12")
-  try! assert_buffer_hex(f.glyph().bitmap().buffer(), "00000011bb980000000000000063e1fe1c000000000000b97dd570000000000014fb3188c7000000000066e5013cff1f00000000bd9a0003eb7400000017fc4a00009fcb0000006affc6bfbfdbff220000c1c36b6b6b6cf6780019fd5700000000b1ce006ef80d0000000060ff25c4b4000000000014fc7c")
+  try! assert_buffer_hex(
+    f.glyph().bitmap().buffer(),
+    "00000011bb980000000000000063e1fe1c000000000000b97dd570000000000014fb3188c7000000000066e5013cff1f00000000bd9a0003eb7400000017fc4a00009fcb0000006affc6bfbfdbff220000c1c36b6b6b6cf6780019fd5700000000b1ce006ef80d0000000060ff25c4b4000000000014fc7c",
+  )
 }
 
 ///|
@@ -274,7 +284,10 @@ test "parity/NotoSansJP-Regular.otf: rendered glyph 66 NORMAL char 97" {
   inspect(f.glyph().bitmap().num_grays(), content="256")
   inspect(f.glyph().bitmap_left(), content="0")
   inspect(f.glyph().bitmap_top(), content="9")
-  try! assert_buffer_hex(f.glyph().bitmap().buffer(), "000460aad9c255000079de8059a7ff3a000a06000004f49600000005305de4b5000686e9ce9bddbb00a6db2c0000bbbb04f770000000bebb00eabf171e90fdbb0056f4fff1828ebb00000c2703000000")
+  try! assert_buffer_hex(
+    f.glyph().bitmap().buffer(),
+    "000460aad9c255000079de8059a7ff3a000a06000004f49600000005305de4b5000686e9ce9bddbb00a6db2c0000bbbb04f770000000bebb00eabf171e90fdbb0056f4fff1828ebb00000c2703000000",
+  )
 }
 
 ///|
@@ -293,7 +306,10 @@ test "parity/NotoSansJP-Regular.otf: rendered glyph 2388 NORMAL char 19968" {
   inspect(f.glyph().bitmap().num_grays(), content="256")
   inspect(f.glyph().bitmap_left(), content="0")
   inspect(f.glyph().bitmap_top(), content="7")
-  try! assert_buffer_hex(f.glyph().bitmap().buffer(), "43e3e3e3e3e3e3e3e3e3e3e3e3e3e351206b6b6b6b6b6b6b6b6b6b6b6b6b6b26")
+  try! assert_buffer_hex(
+    f.glyph().bitmap().buffer(),
+    "43e3e3e3e3e3e3e3e3e3e3e3e3e3e351206b6b6b6b6b6b6b6b6b6b6b6b6b6b26",
+  )
 }
 
 ///|
@@ -331,7 +347,10 @@ test "parity/NotoSansJP-Regular.otf: rendered glyph 34 LIGHT char 65" {
   inspect(f.glyph().bitmap().num_grays(), content="256")
   inspect(f.glyph().bitmap_left(), content="0")
   inspect(f.glyph().bitmap_top(), content="12")
-  try! assert_buffer_hex(f.glyph().bitmap().buffer(), "00000011bb980000000000000063e1fe1c000000000000b97dd570000000000014fb3188c7000000000066e5013cff1f00000000bd9a0003eb7400000017fc4a00009fcb0000006affc6bfbfdbff220000c1c36b6b6b6cf6780019fd5700000000b1ce006ef80d0000000060ff25c4b4000000000014fc7c")
+  try! assert_buffer_hex(
+    f.glyph().bitmap().buffer(),
+    "00000011bb980000000000000063e1fe1c000000000000b97dd570000000000014fb3188c7000000000066e5013cff1f00000000bd9a0003eb7400000017fc4a00009fcb0000006affc6bfbfdbff220000c1c36b6b6b6cf6780019fd5700000000b1ce006ef80d0000000060ff25c4b4000000000014fc7c",
+  )
 }
 
 ///|
@@ -350,7 +369,10 @@ test "parity/NotoSansJP-Regular.otf: rendered glyph 66 LIGHT char 97" {
   inspect(f.glyph().bitmap().num_grays(), content="256")
   inspect(f.glyph().bitmap_left(), content="0")
   inspect(f.glyph().bitmap_top(), content="9")
-  try! assert_buffer_hex(f.glyph().bitmap().buffer(), "000460aad9c255000079de8059a7ff3a000a06000004f49600000005305de4b5000686e9ce9bddbb00a6db2c0000bbbb04f770000000bebb00eabf171e90fdbb0056f4fff1828ebb00000c2703000000")
+  try! assert_buffer_hex(
+    f.glyph().bitmap().buffer(),
+    "000460aad9c255000079de8059a7ff3a000a06000004f49600000005305de4b5000686e9ce9bddbb00a6db2c0000bbbb04f770000000bebb00eabf171e90fdbb0056f4fff1828ebb00000c2703000000",
+  )
 }
 
 ///|
@@ -369,7 +391,10 @@ test "parity/NotoSansJP-Regular.otf: rendered glyph 2388 LIGHT char 19968" {
   inspect(f.glyph().bitmap().num_grays(), content="256")
   inspect(f.glyph().bitmap_left(), content="0")
   inspect(f.glyph().bitmap_top(), content="7")
-  try! assert_buffer_hex(f.glyph().bitmap().buffer(), "43e3e3e3e3e3e3e3e3e3e3e3e3e3e351206b6b6b6b6b6b6b6b6b6b6b6b6b6b26")
+  try! assert_buffer_hex(
+    f.glyph().bitmap().buffer(),
+    "43e3e3e3e3e3e3e3e3e3e3e3e3e3e351206b6b6b6b6b6b6b6b6b6b6b6b6b6b26",
+  )
 }
 
 ///|
@@ -483,7 +508,10 @@ test "parity/NotoSansJP-Regular.otf: rendered glyph 34 LCD char 65" {
   inspect(f.glyph().bitmap().num_grays(), content="256")
   inspect(f.glyph().bitmap_left(), content="-1")
   inspect(f.glyph().bitmap_top(), content="12")
-  try! assert_buffer_hex(f.glyph().bitmap().buffer(), "00000000000000000000000000114f8fbbbbbb985a1a00000000000000000000000000000000000000000000000000001363b7fae1e1e2fec66e1c0000000000000000000000000000000000000000000000001265b9fad17d5281d5fec4701e000000000000000000000000000000000000000000001464bcfbde8531003488dcfec7731d00000000000000000000000000000000000000001666bafce5923a0100013c90e6ffc9711f0000000000000000000000000000000000001569bdfceb9a460200000003439bebffc87421000000000000000000000000000000001768c0fcf19e4a060000000000044b9fefffcb77200000000000000000000000000000196abefdfff1dbc6bfbfbfbfbfbfbfc6dbf0ffffcd7522000000000000000000000000176dc1fdf4c3936c6b6b6b6b6b6b6b6b6b6c93c6f6ffcc782500000000000000000000196bc3fdf7ab570c00000000000000000000000d5db1f8ffce7a2300000000000000001c6ec2fef8b1590d000000000000000000000000001160b4fbffd179250000000000001a70c4fef9b4600e0000000000000000000000000000001464bcfcffd07c28000000")
+  try! assert_buffer_hex(
+    f.glyph().bitmap().buffer(),
+    "00000000000000000000000000114f8fbbbbbb985a1a00000000000000000000000000000000000000000000000000001363b7fae1e1e2fec66e1c0000000000000000000000000000000000000000000000001265b9fad17d5281d5fec4701e000000000000000000000000000000000000000000001464bcfbde8531003488dcfec7731d00000000000000000000000000000000000000001666bafce5923a0100013c90e6ffc9711f0000000000000000000000000000000000001569bdfceb9a460200000003439bebffc87421000000000000000000000000000000001768c0fcf19e4a060000000000044b9fefffcb77200000000000000000000000000000196abefdfff1dbc6bfbfbfbfbfbfbfc6dbf0ffffcd7522000000000000000000000000176dc1fdf4c3936c6b6b6b6b6b6b6b6b6b6c93c6f6ffcc782500000000000000000000196bc3fdf7ab570c00000000000000000000000d5db1f8ffce7a2300000000000000001c6ec2fef8b1590d000000000000000000000000001160b4fbffd179250000000000001a70c4fef9b4600e0000000000000000000000000000001464bcfcffd07c28000000",
+  )
 }
 
 ///|
@@ -502,7 +530,10 @@ test "parity/NotoSansJP-Regular.otf: rendered glyph 66 LCD char 97" {
   inspect(f.glyph().bitmap().num_grays(), content="256")
   inspect(f.glyph().bitmap_left(), content="0")
   inspect(f.glyph().bitmap_top(), content="9")
-  try! assert_buffer_hex(f.glyph().bitmap().buffer(), "0000000004163860819aaabbccd9dbd2c2ae885524060000000000000000002679cdf5deba97806e5e59607aa7d6f8ffe18d3a0500000000000000000a1010060000000000000000044ca4f4ffea96420000000000000000000000000000051021303f4e5d7cb3e4ffffb561090000000000000006255486abcee9f1e4cebaaa9b95b7ddffffbb670f00000000001253a6e7f9dba25e2c1002000000000f67bbffffbb670f000000000450a8f7ffc4701c0000000000000000126abeffffbb670f00000000003e96eafff7bf7a32170a0d1e365d90c8edfdffffbb670f0000000000001e569fd9f4fffffffffbf1dbb4824c538edbffbb670f000000000000000000030c1926271c0c030000000000000000000000000000")
+  try! assert_buffer_hex(
+    f.glyph().bitmap().buffer(),
+    "0000000004163860819aaabbccd9dbd2c2ae885524060000000000000000002679cdf5deba97806e5e59607aa7d6f8ffe18d3a0500000000000000000a1010060000000000000000044ca4f4ffea96420000000000000000000000000000051021303f4e5d7cb3e4ffffb561090000000000000006255486abcee9f1e4cebaaa9b95b7ddffffbb670f00000000001253a6e7f9dba25e2c1002000000000f67bbffffbb670f000000000450a8f7ffc4701c0000000000000000126abeffffbb670f00000000003e96eafff7bf7a32170a0d1e365d90c8edfdffffbb670f0000000000001e569fd9f4fffffffffbf1dbb4824c538edbffbb670f000000000000000000030c1926271c0c030000000000000000000000000000",
+  )
 }
 
 ///|
@@ -521,7 +552,10 @@ test "parity/NotoSansJP-Regular.otf: rendered glyph 2388 LCD char 19968" {
   inspect(f.glyph().bitmap().num_grays(), content="256")
   inspect(f.glyph().bitmap_left(), content="0")
   inspect(f.glyph().bitmap_top(), content="7")
-  try! assert_buffer_hex(f.glyph().bitmap().buffer(), "00438edce3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e39c5107002043686b6b6b6b6b6b6b6b6b6b6b6b6b6b6b6b6b6b6b6b6b6b6b6b6b6b6b6b6b6b6b6b6b6b6b6b6b6b6b6b6b4a2603")
+  try! assert_buffer_hex(
+    f.glyph().bitmap().buffer(),
+    "00438edce3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e39c5107002043686b6b6b6b6b6b6b6b6b6b6b6b6b6b6b6b6b6b6b6b6b6b6b6b6b6b6b6b6b6b6b6b6b6b6b6b6b6b6b6b6b4a2603",
+  )
 }
 
 ///|
@@ -559,7 +593,10 @@ test "parity/NotoSansJP-Regular.otf: rendered glyph 34 LCD_V char 65" {
   inspect(f.glyph().bitmap().num_grays(), content="256")
   inspect(f.glyph().bitmap_left(), content="0")
   inspect(f.glyph().bitmap_top(), content="13")
-  try! assert_buffer_hex(f.glyph().bitmap().buffer(), "0000000000000000000000000000000000000000000000000f0b0000000000000004674e0000000000000011bb980000000000000028ffdf0000000000000046f9f40900000000000063e1fe1c0000000000007fbffa360000000000009d99eb54000000000000b97dd570000000000000d564bc8d000000000005ee4aa1aa000000000014fb3188c700000000002cfe1a6fe201000000004af60955f50b0000000066e5013cff1f0000000083cd0022ff3a00000000a1b3000efa5800000000bd9a0003eb7400000000d9800000d59000000006f0640000b9ae00000017fc4a00009fcb00000030ff44131392e50200004eff826b6bb3f70d00006affc6bfbfdbff22000087ffffffffffff3e0000a4e9bfbfbfc0ff5b0000c1c36b6b6b6cf6780000dd9517171718e6940008f27100000000cbb20019fd5700000000b1ce0034ff3c0000000097e80352ff21000000007bf9106ef80d0000000060ff258ae8020000000046ff41a8ce00000000002aff5fc4b4000000000014fc7c8d70000000000005a85d4a3200000000000050320000000000000000000000000000000000000000")
+  try! assert_buffer_hex(
+    f.glyph().bitmap().buffer(),
+    "0000000000000000000000000000000000000000000000000f0b0000000000000004674e0000000000000011bb980000000000000028ffdf0000000000000046f9f40900000000000063e1fe1c0000000000007fbffa360000000000009d99eb54000000000000b97dd570000000000000d564bc8d000000000005ee4aa1aa000000000014fb3188c700000000002cfe1a6fe201000000004af60955f50b0000000066e5013cff1f0000000083cd0022ff3a00000000a1b3000efa5800000000bd9a0003eb7400000000d9800000d59000000006f0640000b9ae00000017fc4a00009fcb00000030ff44131392e50200004eff826b6bb3f70d00006affc6bfbfdbff22000087ffffffffffff3e0000a4e9bfbfbfc0ff5b0000c1c36b6b6b6cf6780000dd9517171718e6940008f27100000000cbb20019fd5700000000b1ce0034ff3c0000000097e80352ff21000000007bf9106ef80d0000000060ff258ae8020000000046ff41a8ce00000000002aff5fc4b4000000000014fc7c8d70000000000005a85d4a3200000000000050320000000000000000000000000000000000000000",
+  )
 }
 
 ///|
@@ -578,7 +615,10 @@ test "parity/NotoSansJP-Regular.otf: rendered glyph 66 LCD_V char 97" {
   inspect(f.glyph().bitmap().num_grays(), content="256")
   inspect(f.glyph().bitmap_left(), content="0")
   inspect(f.glyph().bitmap_top(), content="10")
-  try! assert_buffer_hex(f.glyph().bitmap().buffer(), "00000000000000000000000000000000000000052d16000000001656856e1800000460aad9c255000031b4f9feffa805005ff5d4ade6e8190079de8059a7ff3a0056902c0657ff61002739000019fd81000a06000004f496000000000000e4a100000000000bdbac00000005305de4b50000014384b1f3ba0000349bdcedf3bb000686e9ce9bddbb0027d9d57a47c7bb0066f87f2200bbbb00a6db2c0000bbbb00d1af020000bbbb00e980000000bbbb04f770000000bebb04fd7800000bd3bb03f89300003eeabb00eabf171e90fdbb00cbe36a71d5e1bb009afcc2c9cfb8bb0056f4fff1828ebb0022add3a132577e0002557b4905293d00000c27030000000000000000000000")
+  try! assert_buffer_hex(
+    f.glyph().bitmap().buffer(),
+    "00000000000000000000000000000000000000052d16000000001656856e1800000460aad9c255000031b4f9feffa805005ff5d4ade6e8190079de8059a7ff3a0056902c0657ff61002739000019fd81000a06000004f496000000000000e4a100000000000bdbac00000005305de4b50000014384b1f3ba0000349bdcedf3bb000686e9ce9bddbb0027d9d57a47c7bb0066f87f2200bbbb00a6db2c0000bbbb00d1af020000bbbb00e980000000bbbb04f770000000bebb04fd7800000bd3bb03f89300003eeabb00eabf171e90fdbb00cbe36a71d5e1bb009afcc2c9cfb8bb0056f4fff1828ebb0022add3a132577e0002557b4905293d00000c27030000000000000000000000",
+  )
 }
 
 ///|
@@ -597,7 +637,10 @@ test "parity/NotoSansJP-Regular.otf: rendered glyph 2388 LCD_V char 19968" {
   inspect(f.glyph().bitmap().num_grays(), content="256")
   inspect(f.glyph().bitmap_left(), content="0")
   inspect(f.glyph().bitmap_top(), content="8")
-  try! assert_buffer_hex(f.glyph().bitmap().buffer(), "0000000000000000000000000000000000000000000000000000000000000000103737373737373737373737373737142a8f8f8f8f8f8f8f8f8f8f8f8f8f8f3343e3e3e3e3e3e3e3e3e3e3e3e3e3e3514bffffffffffffffffffffffffffff5b38bfbfbfbfbfbfbfbfbfbfbfbfbfbf44206b6b6b6b6b6b6b6b6b6b6b6b6b6b2607171717171717171717171717171708")
+  try! assert_buffer_hex(
+    f.glyph().bitmap().buffer(),
+    "0000000000000000000000000000000000000000000000000000000000000000103737373737373737373737373737142a8f8f8f8f8f8f8f8f8f8f8f8f8f8f3343e3e3e3e3e3e3e3e3e3e3e3e3e3e3514bffffffffffffffffffffffffffff5b38bfbfbfbfbfbfbfbfbfbfbfbfbfbf44206b6b6b6b6b6b6b6b6b6b6b6b6b6b2607171717171717171717171717171708",
+  )
 }
 
 ///|
@@ -628,8 +671,11 @@ test "parity/NotoSansJP-Regular.otf: outline FORCE_AUTOHINT 16ppem" {
   let f = @freetype.from_bytes(load_generated_notosansjp_regular_otf())
   let r1 = try? @freetype.set_pixel_sizes(f, 0U, 16U)
   guard r1 is Ok(_) else { return }
-  let r2 = try? @freetype.load_glyph(f, 2U, load_flags=@base.LOAD_FORCE_AUTOHINT)
+  let r2 = try? @freetype.load_glyph(
+    f,
+    2U,
+    load_flags=@base.LOAD_FORCE_AUTOHINT,
+  )
   guard r2 is Ok(_) else { return }
   inspect(f.glyph().metrics().hori_advance(), content="384")
 }
-

@@ -277,14 +277,17 @@ fn set_slot_bitmap_glyph(
 
 ///|
 fn load_flags_with_render_mode(load_flags : Int, mode : RenderMode) -> Int {
-  let cleared =
-    load_flags &
+  let cleared = load_flags &
     (-1 ^ @base.LOAD_TARGET_MODE_MASK) &
     (-1 ^ @base.LOAD_MONOCHROME)
   match mode {
     Normal => cleared | @base.LOAD_RENDER | @base.LOAD_TARGET_NORMAL
     Light => cleared | @base.LOAD_RENDER | @base.LOAD_TARGET_LIGHT
-    Mono => cleared | @base.LOAD_RENDER | @base.LOAD_TARGET_MONO | @base.LOAD_MONOCHROME
+    Mono =>
+      cleared |
+      @base.LOAD_RENDER |
+      @base.LOAD_TARGET_MONO |
+      @base.LOAD_MONOCHROME
     Lcd => cleared | @base.LOAD_RENDER | @base.LOAD_TARGET_LCD
     LcdV => cleared | @base.LOAD_RENDER | @base.LOAD_TARGET_LCD_V
     // SDF uses the existing grayscale/native bitmap path and converts after.
@@ -660,7 +663,9 @@ pub fn load_glyph(
                 SfntDriver(_) => scaled_hori_advance < 384L
                 _ => false
               }
-              if is_narrow_sfnt_autohint {
+              let bbox_advance = face.glyph().metrics().hori_bearing_x() +
+                face.glyph().metrics().width()
+              let fitted_advance = if is_narrow_sfnt_autohint {
                 let compensated_advance = if lsb_adjust > 0L {
                   rounded_advance + lsb_adjust
                 } else {
@@ -676,6 +681,11 @@ pub fn load_glyph(
                 }
               } else {
                 rounded_advance
+              }
+              if scaled_hori_advance > 0L && bbox_advance > fitted_advance {
+                bbox_advance
+              } else {
+                fitted_advance
               }
             } else {
               @fixed.F26Dot6::from_raw(face.glyph().metrics().hori_advance())

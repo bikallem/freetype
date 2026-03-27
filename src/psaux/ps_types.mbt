@@ -21,6 +21,9 @@ struct PsInterp {
   mut width : Int64 // advance width (set by first operator)
   mut nominal_width : Int64 // nominalWidthX for Type 2 width deltas
   mut width_set : Bool
+  mut is_cff2 : Bool
+  mut vsindex : Int
+  mut blend_vectors : Array[Array[Int64]?]
   // Subroutines
   mut local_subrs : Array[Bytes]
   mut global_subrs : Array[Bytes]
@@ -72,6 +75,9 @@ pub fn PsInterp::new() -> PsInterp {
     width: 0L,
     nominal_width: 0L,
     width_set: false,
+    is_cff2: false,
+    vsindex: 0,
+    blend_vectors: [],
     local_subrs: [],
     global_subrs: [],
     random_state: 0x7384L,
@@ -100,15 +106,13 @@ fn PsInterp::close_current_contour(self : PsInterp) -> Unit {
   } else {
     self.contours[self.contours.length() - 1].reinterpret_as_int() + 1
   }
-  if n - contour_start >= 4 {
+  if n - contour_start >= 2 {
     let end = n - 1
     let start_pt = self.points[contour_start]
     let end_pt = self.points[end]
     if start_pt.x() == end_pt.x() &&
       start_pt.y() == end_pt.y() &&
-      self.tags[end] == @types.CURVE_TAG_ON &&
-      self.tags[end - 1] == @types.CURVE_TAG_CUBIC &&
-      self.tags[end - 2] == @types.CURVE_TAG_CUBIC {
+      self.tags[end] == @types.CURVE_TAG_ON {
       ignore(self.points.pop())
       ignore(self.tags.pop())
     }

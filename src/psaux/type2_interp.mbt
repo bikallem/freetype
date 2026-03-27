@@ -44,12 +44,19 @@ pub fn execute_type2(
   nominal_width : Int64,
   local_subrs? : Array[Bytes] = [],
   global_subrs? : Array[Bytes] = [],
+  is_cff2? : Bool = false,
+  default_vsindex? : Int = 0,
+  blend_vectors? : Array[Array[Int64]?] = [],
 ) -> (@types.Outline, Int64, Array[StemHint], Array[StemHint]) raise @error.FTError {
   let interp = PsInterp::new()
   interp.local_subrs = local_subrs
   interp.global_subrs = global_subrs
   interp.width = default_width
   interp.nominal_width = nominal_width
+  interp.is_cff2 = is_cff2
+  interp.width_set = is_cff2
+  interp.vsindex = default_vsindex
+  interp.blend_vectors = blend_vectors
   exec_type2_code(interp, charstring)
   let outline = interp.finalize()
   (outline, interp.width, interp.hints_h, interp.hints_v)
@@ -110,6 +117,48 @@ fn roll_stack(interp : PsInterp, count : Int, shift : Int) -> Unit {
   }
   for i in 0..<count {
     interp.stack[base + (i + amount) % count] = segment[i]
+  }
+}
+
+///|
+fn type2_blend_vector(interp : PsInterp) -> Array[Int64] {
+  let idx = interp.vsindex
+  if idx < 0 || idx >= interp.blend_vectors.length() {
+    return [type2_fixed_one]
+  }
+  match interp.blend_vectors[idx] {
+    Some(values) if values.length() > 0 => values
+    _ => [type2_fixed_one]
+  }
+}
+
+///|
+fn do_type2_blend(
+  interp : PsInterp,
+  num_blends : Int,
+) -> Unit raise @error.FTError {
+  let blend_vector = type2_blend_vector(interp)
+  let num_operands = num_blends * blend_vector.length()
+  if num_blends < 0 || num_operands <= 0 || interp.stack.length() < num_operands {
+    raise @error.FTError::SyntaxError
+  }
+  let base = interp.stack.length() - num_operands
+  let mut delta_index = base + num_blends
+  for i in 0..<num_blends {
+    let mut sum = interp.stack[base + i]
+    for j in 1..<blend_vector.length() {
+      sum += type2_fixed_mul(blend_vector[j], interp.stack[delta_index])
+      delta_index += 1
+    }
+    interp.stack[base + i] = sum
+  }
+  let keep = base + num_blends
+  if keep < interp.stack.length() {
+    let kept : Array[Int64] = Array::new(capacity=keep)
+    for i in 0..<keep {
+      kept.push(interp.stack[i])
+    }
+    interp.stack = kept
   }
 }
 
@@ -391,11 +440,35 @@ fn exec_type2_op(
     11 => ip // return from subroutine (handled by caller)
     14 => {
       // endchar
+      if interp.is_cff2 {
+        interp.stack = []
+        return ip
+      }
       consume_width(
         interp,
         interp.stack.length() == 1 || interp.stack.length() == 5,
       )
       ip + code.length() // stop execution
+    }
+    15 => {
+      if interp.is_cff2 && interp.stack.length() > 0 {
+        let idx = type2_fixed_to_int(interp.pop()).to_int()
+        if idx >= 0 {
+          interp.vsindex = idx
+        }
+      } else {
+        interp.stack = []
+      }
+      ip
+    }
+    16 => {
+      if interp.is_cff2 && interp.stack.length() > 0 {
+        let num_blends = type2_fixed_to_int(interp.pop()).to_int()
+        do_type2_blend(interp, num_blends)
+      } else {
+        interp.stack = []
+      }
+      ip
     }
     18 => {
       // hstemhm (same as hstem but for hint masks)

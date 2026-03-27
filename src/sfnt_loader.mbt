@@ -20,9 +20,6 @@ fn load_sfnt(
   let has_glyf = sfnt_data.table_dir().find_table(@types.TAG_GLYF) is Some(_)
   let has_cff = sfnt_data.table_dir().find_table(@types.TAG_CFF) is Some(_)
   let has_cff2 = sfnt_data.table_dir().find_table(@types.TAG_CFF2) is Some(_)
-  if has_cff2 {
-    raise @error.FTError::UnimplementedFeature
-  }
   let color_tables = try
     @color.parse_color_tables(
       data,
@@ -42,7 +39,7 @@ fn load_sfnt(
     ) {
     face.set_face_flags(face.face_flags() | @base.FACE_FLAG_HINTER)
   }
-  if has_cff {
+  if has_cff || has_cff2 {
     face.set_face_flags(face.face_flags() | @base.FACE_FLAG_HINTER)
   }
   // Lazy initializers
@@ -114,6 +111,18 @@ fn load_sfnt(
           match sfnt_data.table_dir().find_table(@types.TAG_CFF) {
             Some(rec) =>
               Some(@cff.load_cff(data, rec.offset().reinterpret_as_int()))
+            None => None
+          }
+        } else if has_cff2 {
+          match sfnt_data.table_dir().find_table(@types.TAG_CFF2) {
+            Some(rec) =>
+              Some(
+                @cff.load_cff2(
+                  data,
+                  rec.offset().reinterpret_as_int(),
+                  face.units_per_em(),
+                ),
+              )
             None => None
           }
         } else {
@@ -423,7 +432,11 @@ fn load_sfnt(
       }
       (o, instr, bbox, phantoms)
     } else if ensure_cff() is Some(cff) {
-      let (o, _w, hh, hv) = @cff.load_cff_glyph(cff, glyph_index)
+      let (o, _w, hh, hv) = @cff.load_cff_glyph(
+        cff,
+        glyph_index,
+        normalized_coords=face.var_coords(),
+      )
       if no_hinting {
         hint_has_hints.val = false
         hint_globals_ref.val = None
@@ -512,13 +525,13 @@ fn load_sfnt(
       false
     }
   }
-  if has_cff {
+  if has_cff || has_cff2 {
     match ensure_cff() {
       Some(cff) => {
-        if cff.top_dict().underline_position() != 0 {
+        if !cff.is_cff2() && cff.top_dict().underline_position() != 0 {
           face.set_underline_position(cff.top_dict().underline_position())
         }
-        if cff.top_dict().underline_thickness() != 0 {
+        if !cff.is_cff2() && cff.top_dict().underline_thickness() != 0 {
           face.set_underline_thickness(cff.top_dict().underline_thickness())
         }
       }

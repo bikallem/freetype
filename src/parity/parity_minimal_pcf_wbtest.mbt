@@ -13,7 +13,10 @@ test "parity/minimal.pcf: format" {
 
 ///|
 test "parity/minimal.pcf: loads" {
-  inspect((try? @freetype.from_bytes(load_generated_minimal_pcf())) is Ok(_), content="true")
+  inspect(
+    (try? @freetype.from_bytes(load_generated_minimal_pcf())) is Ok(_),
+    content="true",
+  )
 }
 
 ///|
@@ -47,4 +50,3 @@ test "parity/minimal.pcf: charmap entries" {
   inspect(@freetype.get_char_index(f, 32U), content="1")
   inspect(@freetype.get_char_index(f, 65U), content="2")
 }
-

@@ -8,12 +8,18 @@ fn load_generated_cff2_vf_otf() -> Bytes {
 
 ///|
 test "parity/cff2_vf.otf: format" {
-  inspect(@base.detect_format(load_generated_cff2_vf_otf()), content="Cff2OpenType")
+  inspect(
+    @base.detect_format(load_generated_cff2_vf_otf()),
+    content="Cff2OpenType",
+  )
 }
 
 ///|
 test "parity/cff2_vf.otf: loads" {
-  inspect((try? @freetype.from_bytes(load_generated_cff2_vf_otf())) is Ok(_), content="true")
+  inspect(
+    (try? @freetype.from_bytes(load_generated_cff2_vf_otf())) is Ok(_),
+    content="true",
+  )
 }
 
 ///|
@@ -151,7 +157,10 @@ test "parity/cff2_vf.otf: rendered glyph 1 NORMAL char 65" {
   inspect(f.glyph().bitmap().num_grays(), content="256")
   inspect(f.glyph().bitmap_left(), content="0")
   inspect(f.glyph().bitmap_top(), content="11")
-  try! assert_buffer_hex(f.glyph().bitmap().buffer(), "000000003bbe020000000000000000abff400000000000000005b6db9700000000000000497185ea03000000000000a01c2fff45000000000007b40000d99c000000000055a83b3bbfff0500000000bf987f7fadff4a0000000bb200000000d7a100000058660000000081f10700a6ffe38700009af7ffff4d")
+  try! assert_buffer_hex(
+    f.glyph().bitmap().buffer(),
+    "000000003bbe020000000000000000abff400000000000000005b6db9700000000000000497185ea03000000000000a01c2fff45000000000007b40000d99c000000000055a83b3bbfff0500000000bf987f7fadff4a0000000bb200000000d7a100000058660000000081f10700a6ffe38700009af7ffff4d",
+  )
 }
 
 ///|
@@ -170,7 +179,10 @@ test "parity/cff2_vf.otf: rendered glyph 1 LIGHT char 65" {
   inspect(f.glyph().bitmap().num_grays(), content="256")
   inspect(f.glyph().bitmap_left(), content="0")
   inspect(f.glyph().bitmap_top(), content="11")
-  try! assert_buffer_hex(f.glyph().bitmap().buffer(), "000000003bbe020000000000000000abff400000000000000005b6db9700000000000000497185ea03000000000000a01c2fff45000000000007b40000d99c000000000055a83b3bbfff0500000000bf987f7fadff4a0000000bb200000000d7a100000058660000000081f10700a6ffe38700009af7ffff4d")
+  try! assert_buffer_hex(
+    f.glyph().bitmap().buffer(),
+    "000000003bbe020000000000000000abff400000000000000005b6db9700000000000000497185ea03000000000000a01c2fff45000000000007b40000d99c000000000055a83b3bbfff0500000000bf987f7fadff4a0000000bb200000000d7a100000058660000000081f10700a6ffe38700009af7ffff4d",
+  )
 }
 
 ///|
@@ -208,7 +220,10 @@ test "parity/cff2_vf.otf: rendered glyph 1 LCD char 65" {
   inspect(f.glyph().bitmap().num_grays(), content="256")
   inspect(f.glyph().bitmap_left(), content="-1")
   inspect(f.glyph().bitmap_top(), content="11")
-  try! assert_buffer_hex(f.glyph().bitmap().buffer(), "000000000000000000000000000000033b7ec0be7e38020000000000000000000000000000000000000000000000000000000345abffffffe99440030000000000000000000000000000000000000000000000000005459cb6a5a6dbffe8974303000000000000000000000000000000000000000000000006499cb5711f3185d9ffea9a4203000000000000000000000000000000000000000000064da0b56e1c00002f83dbffec99450400000000000000000000000000000000000000074da3b46f1a000000002d85d9ffec9c480400000000000000000000000000000000000955bae0a8563b3b3b3b3b3c6bbfffffffa047050000000000000000000000000000000954bff7d8987f7f7f7f7f7f7f80adffffffff9e4a06000000000000000000000000000b54a9b26915000000000000000000002b83d7ffefa14d0600000000000000000000000d58a9b166160000000000000000000000002d81d5fff1a44c070000000000002a67a6ccffffffffe3c2b7874a0f00000000215e9ab8c3f7ffffffffffffbf894d14")
+  try! assert_buffer_hex(
+    f.glyph().bitmap().buffer(),
+    "000000000000000000000000000000033b7ec0be7e38020000000000000000000000000000000000000000000000000000000345abffffffe99440030000000000000000000000000000000000000000000000000005459cb6a5a6dbffe8974303000000000000000000000000000000000000000000000006499cb5711f3185d9ffea9a4203000000000000000000000000000000000000000000064da0b56e1c00002f83dbffec99450400000000000000000000000000000000000000074da3b46f1a000000002d85d9ffec9c480400000000000000000000000000000000000955bae0a8563b3b3b3b3b3c6bbfffffffa047050000000000000000000000000000000954bff7d8987f7f7f7f7f7f7f80adffffffff9e4a06000000000000000000000000000b54a9b26915000000000000000000002b83d7ffefa14d0600000000000000000000000d58a9b166160000000000000000000000002d81d5fff1a44c070000000000002a67a6ccffffffffe3c2b7874a0f00000000215e9ab8c3f7ffffffffffffbf894d14",
+  )
 }
 
 ///|
@@ -227,7 +242,10 @@ test "parity/cff2_vf.otf: rendered glyph 1 LCD_V char 65" {
   inspect(f.glyph().bitmap().num_grays(), content="256")
   inspect(f.glyph().bitmap_left(), content="0")
   inspect(f.glyph().bitmap_top(), content="12")
-  try! assert_buffer_hex(f.glyph().bitmap().buffer(), "0000000000000000000000000000000000000000000000000000051a0000000000000000001c6a0000000000000000003bbe0200000000000000005ef70d000000000000000088ff240000000000000000abff400000000000000000c0ff5c0000000000000000c0f27a0000000000000005b6db970000000000000013a7bfb4000000000000002c8ea1d100000000000000497185ea03000000000000665569fa1100000000000084374bff29000000000000a01c2fff45000000000000b20a16fc62000000000000bb0006ef80000000000007b40000d99c000000000018a40000bcb90000000000348800009fd7000000000055a83b3bbfff050000000080df8f8ff6ff1400000000a9edbbbbffff2e00000000bf987f7fadff4a00000000c2332b2b40ff6700000001bc00000005ee850000000bb200000000d7a10000001e9f00000000babe0000003b82000000009ddc00000058660000000081f1070009a16c0400000585ff2c0059ffa647000051c0ff9f27a6ffe38700009af7ffff4d9dffb182000095bfffeb4c4d93534000004958a7772600000000000000000000000000000000000000000000")
+  try! assert_buffer_hex(
+    f.glyph().bitmap().buffer(),
+    "0000000000000000000000000000000000000000000000000000051a0000000000000000001c6a0000000000000000003bbe0200000000000000005ef70d000000000000000088ff240000000000000000abff400000000000000000c0ff5c0000000000000000c0f27a0000000000000005b6db970000000000000013a7bfb4000000000000002c8ea1d100000000000000497185ea03000000000000665569fa1100000000000084374bff29000000000000a01c2fff45000000000000b20a16fc62000000000000bb0006ef80000000000007b40000d99c000000000018a40000bcb90000000000348800009fd7000000000055a83b3bbfff050000000080df8f8ff6ff1400000000a9edbbbbffff2e00000000bf987f7fadff4a00000000c2332b2b40ff6700000001bc00000005ee850000000bb200000000d7a10000001e9f00000000babe0000003b82000000009ddc00000058660000000081f1070009a16c0400000585ff2c0059ffa647000051c0ff9f27a6ffe38700009af7ffff4d9dffb182000095bfffeb4c4d93534000004958a7772600000000000000000000000000000000000000000000",
+  )
 }
 
 ///|
@@ -258,7 +276,11 @@ test "parity/cff2_vf.otf: outline FORCE_AUTOHINT 16ppem" {
   let f = @freetype.from_bytes(load_generated_cff2_vf_otf())
   let r1 = try? @freetype.set_pixel_sizes(f, 0U, 16U)
   guard r1 is Ok(_) else { return }
-  let r2 = try? @freetype.load_glyph(f, 1U, load_flags=@base.LOAD_FORCE_AUTOHINT)
+  let r2 = try? @freetype.load_glyph(
+    f,
+    1U,
+    load_flags=@base.LOAD_FORCE_AUTOHINT,
+  )
   guard r2 is Ok(_) else { return }
   inspect(f.glyph().metrics().hori_advance(), content="704")
 }
@@ -268,24 +290,18 @@ test "parity/cff2_vf.otf: variation state" {
   let f = @freetype.from_bytes(load_generated_cff2_vf_otf())
   inspect(f.has_multiple_masters(), content="true")
   inspect(f.is_variation(), content="false")
-  try! @freetype.set_var_design_coordinates(
-    f,
-    [
-      (@fixed.Fixed::from_raw(58982400L), 0x77676874U),
-    ],
-  )
+  try! @freetype.set_var_design_coordinates(f, [
+    (@fixed.Fixed::from_raw(58982400L), 0x77676874U),
+  ])
   inspect(f.is_variation(), content="true")
 }
 
 ///|
 test "parity/cff2_vf.otf: varied 65 outline NO_SCALE" {
   let f = @freetype.from_bytes(load_generated_cff2_vf_otf())
-  try! @freetype.set_var_design_coordinates(
-    f,
-    [
-      (@fixed.Fixed::from_raw(58982400L), 0x77676874U),
-    ],
-  )
+  try! @freetype.set_var_design_coordinates(f, [
+    (@fixed.Fixed::from_raw(58982400L), 0x77676874U),
+  ])
   let gid = @freetype.get_char_index(f, 65U)
   let r = try? @freetype.load_glyph(f, gid, load_flags=@base.LOAD_NO_SCALE)
   guard r is Ok(_) else { return }
@@ -308,12 +324,9 @@ test "parity/cff2_vf.otf: varied 65 outline NO_SCALE" {
 ///|
 test "parity/cff2_vf.otf: varied outline NO_HINTING 16ppem" {
   let f = @freetype.from_bytes(load_generated_cff2_vf_otf())
-  try! @freetype.set_var_design_coordinates(
-    f,
-    [
-      (@fixed.Fixed::from_raw(58982400L), 0x77676874U),
-    ],
-  )
+  try! @freetype.set_var_design_coordinates(f, [
+    (@fixed.Fixed::from_raw(58982400L), 0x77676874U),
+  ])
   let gid = @freetype.get_char_index(f, 65U)
   let r1 = try? @freetype.set_pixel_sizes(f, 0U, 16U)
   guard r1 is Ok(_) else { return }
@@ -331,12 +344,9 @@ test "parity/cff2_vf.otf: varied outline NO_HINTING 16ppem" {
 ///|
 test "parity/cff2_vf.otf: varied hinted outline DEFAULT 16ppem" {
   let f = @freetype.from_bytes(load_generated_cff2_vf_otf())
-  try! @freetype.set_var_design_coordinates(
-    f,
-    [
-      (@fixed.Fixed::from_raw(58982400L), 0x77676874U),
-    ],
-  )
+  try! @freetype.set_var_design_coordinates(f, [
+    (@fixed.Fixed::from_raw(58982400L), 0x77676874U),
+  ])
   let gid = @freetype.get_char_index(f, 65U)
   let r1 = try? @freetype.set_pixel_sizes(f, 0U, 16U)
   guard r1 is Ok(_) else { return }
@@ -352,17 +362,17 @@ test "parity/cff2_vf.otf: varied hinted outline DEFAULT 16ppem" {
 ///|
 test "parity/cff2_vf.otf: varied outline FORCE_AUTOHINT 16ppem" {
   let f = @freetype.from_bytes(load_generated_cff2_vf_otf())
-  try! @freetype.set_var_design_coordinates(
-    f,
-    [
-      (@fixed.Fixed::from_raw(58982400L), 0x77676874U),
-    ],
-  )
+  try! @freetype.set_var_design_coordinates(f, [
+    (@fixed.Fixed::from_raw(58982400L), 0x77676874U),
+  ])
   let gid = @freetype.get_char_index(f, 65U)
   let r1 = try? @freetype.set_pixel_sizes(f, 0U, 16U)
   guard r1 is Ok(_) else { return }
-  let r2 = try? @freetype.load_glyph(f, gid, load_flags=@base.LOAD_FORCE_AUTOHINT)
+  let r2 = try? @freetype.load_glyph(
+    f,
+    gid,
+    load_flags=@base.LOAD_FORCE_AUTOHINT,
+  )
   guard r2 is Ok(_) else { return }
   inspect(f.glyph().metrics().hori_advance(), content="768")
 }
-

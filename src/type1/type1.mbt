@@ -29,6 +29,11 @@ struct Type1Font {
   mut underline_position : Int
   mut underline_thickness : Int
   unique_id : Int // UniqueID
+  mut multiple_master : Bool
+  mut mm_axis_tags : Array[UInt]
+  mut mm_axis_mins : Array[@fixed.Fixed]
+  mut mm_axis_defaults : Array[@fixed.Fixed]
+  mut mm_axis_maxs : Array[@fixed.Fixed]
 } derive(Show)
 
 ///|
@@ -58,6 +63,11 @@ pub fn Type1Font::new() -> Type1Font {
     underline_position: 0,
     underline_thickness: 0,
     unique_id: 0,
+    multiple_master: false,
+    mm_axis_tags: [],
+    mm_axis_mins: [],
+    mm_axis_defaults: [],
+    mm_axis_maxs: [],
   }
 }
 
@@ -154,9 +164,6 @@ pub fn parse_type1_pfb(data : Bytes) -> Type1Font raise @error.FTError {
   }
   // Extract font name and FontBBox from ASCII segment if available
   if ascii_parts.length() > 0 {
-    if has_multiple_master_tokens(ascii_parts[0]) {
-      raise @error.FTError::UnimplementedFeature
-    }
     font.font_name = extract_font_name(ascii_parts[0])
     font.family_name = extract_family_name(ascii_parts[0])
     font.font_matrix = extract_font_matrix(ascii_parts[0])
@@ -177,13 +184,11 @@ pub fn parse_type1_pfb(data : Bytes) -> Type1Font raise @error.FTError {
     font.custom_encoding = custom_encoding
     font.expert_encoding = expert_encoding
     font.latin1_encoding = latin1_encoding
+    apply_multiple_master_metadata(font, ascii_parts[0])
   }
   // Decrypt binary segment (eexec encrypted private dict + charstrings)
   if binary_parts.length() > 0 {
     let decrypted = eexec_decrypt(binary_parts[0])
-    if has_multiple_master_tokens(decrypted) {
-      raise @error.FTError::UnimplementedFeature
-    }
     // Parse /lenIV from decrypted data
     font.len_iv = extract_len_iv(decrypted)
     // Parse /CharStrings dict from decrypted data
@@ -198,11 +203,8 @@ pub fn parse_type1_pfb(data : Bytes) -> Type1Font raise @error.FTError {
 ///|
 /// Parse a PFA (ASCII) Type 1 font.
 /// The entire file is ASCII; the eexec section is hex-encoded.
-fn parse_type1_pfa(data : Bytes) -> Type1Font raise @error.FTError {
+fn parse_type1_pfa(data : Bytes) -> Type1Font {
   let font = Type1Font::new()
-  if has_multiple_master_tokens(data) {
-    raise @error.FTError::UnimplementedFeature
-  }
   // The whole file is ASCII
   font.font_name = extract_font_name(data)
   font.family_name = extract_family_name(data)
@@ -217,6 +219,7 @@ fn parse_type1_pfa(data : Bytes) -> Type1Font raise @error.FTError {
   font.custom_encoding = custom_encoding
   font.expert_encoding = expert_encoding
   font.latin1_encoding = latin1_encoding
+  apply_multiple_master_metadata(font, data)
   // Find "eexec" keyword — everything after it is hex-encoded encrypted data
   let text_len = data.length()
   let mut eexec_pos = -1
@@ -263,9 +266,6 @@ fn parse_type1_pfa(data : Bytes) -> Type1Font raise @error.FTError {
       data[eexec_pos:text_len].to_bytes()
     }
     let decrypted = eexec_decrypt(binary_data)
-    if has_multiple_master_tokens(decrypted) {
-      raise @error.FTError::UnimplementedFeature
-    }
     font.len_iv = extract_len_iv(decrypted)
     let (charstrings, glyph_order) = extract_charstrings(decrypted)
     font.charstrings = charstrings
@@ -276,18 +276,260 @@ fn parse_type1_pfa(data : Bytes) -> Type1Font raise @error.FTError {
 }
 
 ///|
-fn has_multiple_master_tokens(data : Bytes) -> Bool {
-  let patterns = [
-    b"/BlendDesignPositions", b"/BlendDesignMap", b"/BlendAxisTypes", b"/WeightVector",
-    b"/BuildCharArray",
-  ]
-  let len = data.length()
-  for _, pattern in patterns {
-    if bytes_find(data, len, pattern) >= 0 {
-      return true
+fn axis_tag_from_type1_name(name : String) -> UInt {
+  match name {
+    "Weight" => @types.make_tag(b'w', b'g', b'h', b't')
+    "Width" => @types.make_tag(b'w', b'd', b't', b'h')
+    "OpticalSize" => @types.make_tag(b'o', b'p', b's', b'z')
+    "Slant" => @types.make_tag(b's', b'l', b'n', b't')
+    _ =>
+      if name.length() >= 4 {
+        @types.make_tag(
+          name[0].to_byte(),
+          name[1].to_byte(),
+          name[2].to_byte(),
+          name[3].to_byte(),
+        )
+      } else {
+        0U
+      }
+  }
+}
+
+///|
+fn fixed_from_double(value : Double) -> @fixed.Fixed {
+  @fixed.Fixed::from_raw(
+    if value < 0.0 {
+      (value * 65536.0 - 0.5).to_int().to_int64()
+    } else {
+      (value * 65536.0 + 0.5).to_int().to_int64()
+    },
+  )
+}
+
+///|
+fn skip_ascii_ws(data : Bytes, start : Int) -> Int {
+  let mut pos = start
+  while pos < data.length() &&
+        (
+          data[pos] == b' ' ||
+          data[pos] == b'\t' ||
+          data[pos] == b'\n' ||
+          data[pos] == b'\r'
+        ) {
+    pos += 1
+  }
+  pos
+}
+
+///|
+fn find_ps_array_start(data : Bytes, key : Bytes) -> Int {
+  let pos = bytes_find(data, data.length(), key)
+  if pos < 0 {
+    return -1
+  }
+  let array_pos = skip_ascii_ws(data, pos + key.length())
+  if array_pos < data.length() && data[array_pos] == b'[' {
+    array_pos
+  } else {
+    -1
+  }
+}
+
+///|
+fn read_ps_name_token(data : Bytes, start : Int) -> (String, Int) {
+  let mut pos = skip_ascii_ws(data, start)
+  if pos < data.length() && data[pos] == b'/' {
+    pos += 1
+  }
+  let begin = pos
+  while pos < data.length() &&
+        data[pos] != b' ' &&
+        data[pos] != b'\t' &&
+        data[pos] != b'\n' &&
+        data[pos] != b'\r' &&
+        data[pos] != b'[' &&
+        data[pos] != b']' {
+    pos += 1
+  }
+  let buf = StringBuilder::new()
+  for i in begin..<pos {
+    buf.write_char(Int::unsafe_to_char(data[i].to_int()))
+  }
+  (buf.to_string(), pos)
+}
+
+///|
+fn read_ps_number_token(data : Bytes, start : Int) -> (Double, Int, Bool) {
+  let pos0 = skip_ascii_ws(data, start)
+  if pos0 >= data.length() {
+    return (0.0, pos0, false)
+  }
+  let mut pos = pos0
+  if data[pos] == b'+' || data[pos] == b'-' {
+    pos += 1
+  }
+  let begin = pos0
+  let mut saw = false
+  while pos < data.length() &&
+        ((data[pos] >= b'0' && data[pos] <= b'9') || data[pos] == b'.') {
+    pos += 1
+    saw = true
+  }
+  if !saw {
+    return (0.0, pos0, false)
+  }
+  let buf = StringBuilder::new()
+  for i in begin..<pos {
+    buf.write_char(Int::unsafe_to_char(data[i].to_int()))
+  }
+  let value = @string.parse_double(buf.to_string()) catch { _ => 0.0 }
+  (value, pos, true)
+}
+
+///|
+fn extract_axis_types(ascii_data : Bytes) -> Array[UInt] {
+  let start = find_ps_array_start(ascii_data, b"/BlendAxisTypes")
+  if start < 0 {
+    return []
+  }
+  let out : Array[UInt] = []
+  let mut pos = start + 1
+  while pos < ascii_data.length() {
+    pos = skip_ascii_ws(ascii_data, pos)
+    if pos >= ascii_data.length() || ascii_data[pos] == b']' {
+      break
+    }
+    let (name, next_pos) = read_ps_name_token(ascii_data, pos)
+    if name != "" {
+      out.push(axis_tag_from_type1_name(name))
+    }
+    pos = next_pos
+  }
+  out
+}
+
+///|
+fn extract_blend_design_positions(ascii_data : Bytes) -> Array[Array[Double]] {
+  let start = find_ps_array_start(ascii_data, b"/BlendDesignPositions")
+  if start < 0 {
+    return []
+  }
+  let masters : Array[Array[Double]] = []
+  let mut pos = start + 1
+  while pos < ascii_data.length() {
+    pos = skip_ascii_ws(ascii_data, pos)
+    if pos >= ascii_data.length() || ascii_data[pos] == b']' {
+      break
+    }
+    if ascii_data[pos] != b'[' {
+      pos += 1
+      continue
+    }
+    pos += 1
+    let coords : Array[Double] = []
+    while pos < ascii_data.length() {
+      pos = skip_ascii_ws(ascii_data, pos)
+      if pos >= ascii_data.length() || ascii_data[pos] == b']' {
+        break
+      }
+      let (value, next_pos, ok) = read_ps_number_token(ascii_data, pos)
+      if !ok {
+        break
+      }
+      coords.push(value)
+      pos = next_pos
+    }
+    if pos < ascii_data.length() && ascii_data[pos] == b']' {
+      pos += 1
+    }
+    if !coords.is_empty() {
+      masters.push(coords)
     }
   }
-  false
+  masters
+}
+
+///|
+fn extract_weight_vector(ascii_data : Bytes) -> Array[Double] {
+  let start = find_ps_array_start(ascii_data, b"/WeightVector")
+  if start < 0 {
+    return []
+  }
+  let values : Array[Double] = []
+  let mut pos = start + 1
+  while pos < ascii_data.length() {
+    pos = skip_ascii_ws(ascii_data, pos)
+    if pos >= ascii_data.length() || ascii_data[pos] == b']' {
+      break
+    }
+    let (value, next_pos, ok) = read_ps_number_token(ascii_data, pos)
+    if !ok {
+      break
+    }
+    values.push(value)
+    pos = next_pos
+  }
+  values
+}
+
+///|
+fn apply_multiple_master_metadata(font : Type1Font, ascii_data : Bytes) -> Unit {
+  let axis_tags = extract_axis_types(ascii_data)
+  let design_positions = extract_blend_design_positions(ascii_data)
+  if axis_tags.is_empty() || design_positions.is_empty() {
+    return
+  }
+  let axis_count = axis_tags.length()
+  let weight_vector = extract_weight_vector(ascii_data)
+  let mins : Array[Double] = Array::make(axis_count, 0.0)
+  let maxs : Array[Double] = Array::make(axis_count, 0.0)
+  let defaults : Array[Double] = Array::make(axis_count, 0.0)
+  let mut total_weight = 0.0
+  for axis in 0..<axis_count {
+    mins[axis] = if axis < design_positions[0].length() {
+      design_positions[0][axis]
+    } else {
+      0.0
+    }
+    maxs[axis] = mins[axis]
+  }
+  for master_index, master in design_positions {
+    let weight = if master_index < weight_vector.length() {
+      weight_vector[master_index]
+    } else {
+      1.0
+    }
+    total_weight += weight
+    for axis in 0..<axis_count {
+      let value = if axis < master.length() { master[axis] } else { 0.0 }
+      if master_index == 0 || value < mins[axis] {
+        mins[axis] = value
+      }
+      if master_index == 0 || value > maxs[axis] {
+        maxs[axis] = value
+      }
+      defaults[axis] = defaults[axis] + value * weight
+    }
+  }
+  let denom = if total_weight == 0.0 {
+    design_positions.length().to_double()
+  } else {
+    total_weight
+  }
+  let axis_mins : Array[@fixed.Fixed] = []
+  let axis_defaults : Array[@fixed.Fixed] = []
+  let axis_maxs : Array[@fixed.Fixed] = []
+  for axis in 0..<axis_count {
+    axis_mins.push(fixed_from_double(mins[axis]))
+    axis_defaults.push(fixed_from_double(defaults[axis] / denom))
+    axis_maxs.push(fixed_from_double(maxs[axis]))
+  }
+  font.multiple_master = true
+  font.mm_axis_tags = axis_tags
+  font.mm_axis_mins = axis_mins
+  font.mm_axis_defaults = axis_defaults
+  font.mm_axis_maxs = axis_maxs
 }
 
 ///|
@@ -1063,6 +1305,31 @@ pub fn Type1Font::blue_values(self : Type1Font) -> Array[Int] {
 ///|
 pub fn Type1Font::other_blues(self : Type1Font) -> Array[Int] {
   self.other_blues
+}
+
+///|
+pub fn Type1Font::multiple_master(self : Type1Font) -> Bool {
+  self.multiple_master
+}
+
+///|
+pub fn Type1Font::mm_axis_tags(self : Type1Font) -> Array[UInt] {
+  self.mm_axis_tags
+}
+
+///|
+pub fn Type1Font::mm_axis_mins(self : Type1Font) -> Array[@fixed.Fixed] {
+  self.mm_axis_mins
+}
+
+///|
+pub fn Type1Font::mm_axis_defaults(self : Type1Font) -> Array[@fixed.Fixed] {
+  self.mm_axis_defaults
+}
+
+///|
+pub fn Type1Font::mm_axis_maxs(self : Type1Font) -> Array[@fixed.Fixed] {
+  self.mm_axis_maxs
 }
 
 ///|

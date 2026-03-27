@@ -2,8 +2,9 @@
 /// Blue zone for PostScript hinting.
 #valtype
 struct BlueZone {
-  position : Int64 // reference position (font units)
-  overshoot : Int64 // overshoot position
+  bottom : Int64
+  top : Int64
+  flat : Int64
   is_bottom : Bool // true for bottom zones (descender, baseline)
 } derive(Eq, Show)
 
@@ -84,31 +85,83 @@ pub fn apply_blue_zone(
 ) -> Int64? {
   let pos_scaled = @fixed.mul_fix(scale, @fixed.Fixed::from_raw(position)).val()
   for _, zone in zones {
-    let ref_scaled = @fixed.mul_fix(
-      scale,
-      @fixed.Fixed::from_raw(zone.position),
-    ).val()
-    let over_scaled = @fixed.mul_fix(
-      scale,
-      @fixed.Fixed::from_raw(zone.overshoot),
-    ).val()
-    let zone_lo = if ref_scaled < over_scaled {
-      ref_scaled
-    } else {
-      over_scaled
-    }
-    let zone_hi = if ref_scaled > over_scaled {
-      ref_scaled
-    } else {
-      over_scaled
-    }
-    // Check if position is within blue zone (with blue_shift tolerance)
+    let zone_lo = @fixed.mul_fix(scale, @fixed.Fixed::from_raw(zone.bottom)).val()
+    let zone_hi = @fixed.mul_fix(scale, @fixed.Fixed::from_raw(zone.top)).val()
     let tolerance = blue_shift << 6 // convert to 26.6
     if pos_scaled >= zone_lo - tolerance && pos_scaled <= zone_hi + tolerance {
-      // Snap to reference position (rounded to pixel)
-      let aligned = (ref_scaled + 32L) & -64L
+      let flat_scaled = @fixed.mul_fix(scale, @fixed.Fixed::from_raw(zone.flat)).val()
+      let aligned = (flat_scaled + 32L) & -64L
       return Some(aligned)
     }
+  }
+  None
+}
+
+///|
+fn pix_round(value : Int64) -> Int64 {
+  (value + 32L) & -64L
+}
+
+///|
+fn snap_stem_side_delta(pos : Int64, len : Int64) -> Int64 {
+  let delta1 = pix_round(pos) - pos
+  let delta2 = pix_round(pos + len) - pos - len
+  if delta1.abs() <= delta2.abs() {
+    delta1
+  } else {
+    delta2
+  }
+}
+
+///|
+fn quantize_stem_length(len : Int64, std_width : Int64) -> Int64 {
+  if len <= 64L {
+    return 64L
+  }
+  let mut result = len
+  if std_width > 0L {
+    let mut delta = result - std_width
+    if delta < 0L {
+      delta = -delta
+    }
+    if delta < 40L {
+      result = if std_width < 48L { 48L } else { std_width }
+    }
+  }
+  if result < 192L {
+    let delta = result & 63L
+    result = result & -64L
+    if delta < 10L {
+      result += delta
+    } else if delta < 32L {
+      result += 10L
+    } else if delta < 54L {
+      result += 54L
+    } else {
+      result += delta
+    }
+    return result
+  }
+  pix_round(result)
+}
+
+///|
+fn fit_blue_zone_edge(
+  position : Int64,
+  zones : Array[BlueZone],
+  globals : PsGlobals,
+  scale : @fixed.Fixed,
+  top_edge : Bool,
+) -> Int64? {
+  ignore(top_edge)
+  for _, zone in zones {
+    if position < zone.bottom - globals.blue_fuzz() ||
+      position > zone.top + globals.blue_fuzz() {
+      continue
+    }
+    return Some(
+      pix_round(@fixed.mul_fix(scale, @fixed.Fixed::from_raw(zone.top)).val()),
+    )
   }
   None
 }
@@ -128,21 +181,39 @@ pub fn build_ps_globals(
   blue_fuzz : Int,
 ) -> PsGlobals {
   let bv : Array[BlueZone] = []
-  // blue_values: pairs of (reference, overshoot)
-  // First pair is baseline (bottom zone), rest are top zones
+  // Match FreeType's PS blue-zone interpretation:
+  // the first BlueValues pair is a bottom zone whose flat edge is the second
+  // value; subsequent BlueValues pairs are top zones whose flat edge is the
+  // first value. OtherBlues are always bottom zones with the second value as
+  // the flat edge.
   for i = 0; i + 1 < blue_values.length(); {
-    let ref_pos = blue_values[i].to_int64()
-    let overshoot = blue_values[i + 1].to_int64()
-    let is_bottom = i == 0 // first pair is baseline zone
-    bv.push({ position: ref_pos, overshoot, is_bottom })
+    let v0 = blue_values[i].to_int64()
+    let v1 = blue_values[i + 1].to_int64()
+    let bottom = if v0 < v1 { v0 } else { v1 }
+    let top = if v0 > v1 { v0 } else { v1 }
+    let is_bottom = i == 0
+    let flat = if is_bottom { v1 } else { v0 }
+    bv.push({ bottom, top, flat, is_bottom })
     continue i + 2
   }
   let ob : Array[BlueZone] = []
-  // other_blues: pairs of (reference, overshoot), all bottom zones
   for i = 0; i + 1 < other_blues.length(); {
-    let ref_pos = other_blues[i].to_int64()
-    let overshoot = other_blues[i + 1].to_int64()
-    ob.push({ position: ref_pos, overshoot, is_bottom: true })
+    let v0 = other_blues[i].to_int64()
+    let v1 = other_blues[i + 1].to_int64()
+    ob.push({
+      bottom: if v0 < v1 {
+        v0
+      } else {
+        v1
+      },
+      top: if v0 > v1 {
+        v0
+      } else {
+        v1
+      },
+      flat: v1,
+      is_bottom: true,
+    })
     continue i + 2
   }
   {
@@ -182,47 +253,65 @@ pub fn fit_stems(
     []
   }
   for _, stem in stems {
-    let org_pos = stem.position()
-    let org_width = stem.width()
+    let mut org_pos = stem.position()
+    let mut org_width = stem.width()
+    if org_width < 0L {
+      org_pos += org_width
+      org_width = -org_width
+    }
     // Scale position and width to 26.6 pixels
     let pos_px = @fixed.mul_fix(scale, @fixed.Fixed::from_raw(org_pos)).val()
     let width_px = @fixed.mul_fix(scale, @fixed.Fixed::from_raw(org_width)).val()
-    // Round width: snap to nearest pixel, minimum 1px (64 in 26.6)
-    let abs_width = if width_px < 0L { -width_px } else { width_px }
-    let rounded_width = if abs_width > 0L {
-      let w = if is_horizontal {
-        (abs_width + 32L) & -64L
+    let std_width = if is_horizontal {
+      let scaled = @fixed.mul_fix(
+        scale,
+        @fixed.Fixed::from_raw(globals.std_hw()),
+      ).val()
+      if scaled < 0L {
+        -scaled
       } else {
-        (abs_width + 63L) & -64L
-      }
-      if w < 64L {
-        64L
-      } else {
-        w
+        scaled
       }
     } else {
-      64L // minimum 1 pixel even for zero-width stems
+      let scaled = @fixed.mul_fix(
+        scale,
+        @fixed.Fixed::from_raw(globals.std_vw()),
+      ).val()
+      if scaled < 0L {
+        -scaled
+      } else {
+        scaled
+      }
     }
-    let cur_width = if width_px < 0L { -rounded_width } else { rounded_width }
-    // Try blue zone snapping for horizontal stems
-    let cur_pos = if is_horizontal && zones.length() > 0 {
-      // Check if bottom edge falls in a blue zone
-      match apply_blue_zone(org_pos, zones, scale, globals.blue_shift) {
-        Some(snapped) => snapped
-        None => {
-          // Check if top edge falls in a blue zone
-          let top_pos = org_pos + org_width
-          match apply_blue_zone(top_pos, zones, scale, globals.blue_shift) {
-            Some(snapped) => snapped - cur_width
-            None =>
-              // No blue zone match: round position to pixel grid
-              (pos_px + 32L) & -64L
-          }
+    let mut cur_width = quantize_stem_length(
+      if width_px < 0L {
+        -width_px
+      } else {
+        width_px
+      },
+      std_width,
+    )
+    let mut cur_pos = pos_px + snap_stem_side_delta(pos_px, cur_width)
+    if is_horizontal && !zones.is_empty() {
+      let bottom_aligned = fit_blue_zone_edge(
+        org_pos, zones, globals, scale, false,
+      )
+      let top_aligned = fit_blue_zone_edge(
+        org_pos + org_width,
+        zones,
+        globals,
+        scale,
+        true,
+      )
+      match (bottom_aligned, top_aligned) {
+        (Some(bot), Some(top)) => {
+          cur_pos = bot
+          cur_width = top - bot
         }
+        (Some(bot), None) => cur_pos = bot
+        (None, Some(top)) => cur_pos = top - cur_width
+        (None, None) => ()
       }
-    } else {
-      // Vertical stems: just round to pixel grid
-      (pos_px + 32L) & -64L
     }
     result.push({ org_pos, org_width, cur_pos, cur_width })
   }

@@ -44,6 +44,7 @@ struct CffTopDict {
   mut private_size : UInt
   mut fd_array_offset : UInt
   mut fd_select_offset : UInt
+  mut vstore_offset : UInt
   mut ros : (UInt, UInt, UInt) // Registry, Ordering, Supplement (CID fonts)
   mut is_cid : Bool
   mut font_matrix : Array[Double] // 6 values
@@ -66,6 +67,7 @@ pub fn CffTopDict::new() -> CffTopDict {
     private_size: 0U,
     fd_array_offset: 0U,
     fd_select_offset: 0U,
+    vstore_offset: 0U,
     ros: (0U, 0U, 0U),
     is_cid: false,
     font_matrix: [],
@@ -80,6 +82,7 @@ pub fn CffTopDict::new() -> CffTopDict {
 struct CffPrivateDict {
   mut default_width_x : Int64
   mut nominal_width_x : Int64
+  mut default_vsindex : Int
   mut subrs_offset : UInt // relative to start of Private DICT
   mut blue_values : Array[Int64]
   mut other_blues : Array[Int64]
@@ -95,6 +98,7 @@ pub fn CffPrivateDict::new() -> CffPrivateDict {
   {
     default_width_x: 0L,
     nominal_width_x: 0L,
+    default_vsindex: 0,
     subrs_offset: 0U,
     blue_values: [],
     other_blues: [],
@@ -107,6 +111,25 @@ pub fn CffPrivateDict::new() -> CffPrivateDict {
 }
 
 ///|
+struct CffVarRegionAxis {
+  start_coord : Int64
+  peak_coord : Int64
+  end_coord : Int64
+} derive(Show)
+
+///|
+struct CffVarData {
+  region_indices : Array[Int]
+} derive(Show)
+
+///|
+struct CffVarStore {
+  axis_count : Int
+  regions : Array[Array[CffVarRegionAxis]]
+  data : Array[CffVarData?]
+} derive(Show)
+
+///|
 /// Parsed CFF font data.
 struct CffFont {
   header : CffHeader
@@ -117,6 +140,7 @@ struct CffFont {
   is_fixed_pitch : Bool
   top_dict : CffTopDict
   private_dict : CffPrivateDict
+  private_data : Bytes?
   charstrings : CffIndex // Charstrings INDEX
   global_subrs : CffIndex // Global Subr INDEX
   local_subrs : CffIndex? // Local Subr INDEX (from Private DICT)
@@ -126,9 +150,12 @@ struct CffFont {
   encoding_glyphs : Array[UInt]
   cached_local_subrs : Array[Bytes]
   fd_private_dicts : Array[CffPrivateDict]
+  fd_private_data : Array[Bytes]
   fd_local_subrs : Array[Array[Bytes]]
   fd_select : Array[Int]
   cached_global_subrs : Array[Bytes]
+  is_cff2 : Bool
+  vstore : CffVarStore?
 } derive(Show)
 
 ///|
@@ -202,8 +229,18 @@ pub fn CffFont::cached_local_subrs(self : CffFont) -> Array[Bytes] {
 }
 
 ///|
+pub fn CffFont::private_data(self : CffFont) -> Bytes? {
+  self.private_data
+}
+
+///|
 pub fn CffFont::fd_private_dicts(self : CffFont) -> Array[CffPrivateDict] {
   self.fd_private_dicts
+}
+
+///|
+pub fn CffFont::fd_private_data(self : CffFont) -> Array[Bytes] {
+  self.fd_private_data
 }
 
 ///|
@@ -224,6 +261,16 @@ pub fn CffFont::cached_global_subrs(self : CffFont) -> Array[Bytes] {
 ///|
 pub fn CffFont::name(self : CffFont) -> String {
   self.name
+}
+
+///|
+pub fn CffFont::is_cff2(self : CffFont) -> Bool {
+  self.is_cff2
+}
+
+///|
+pub fn CffFont::vstore(self : CffFont) -> CffVarStore? {
+  self.vstore
 }
 
 ///|
@@ -288,6 +335,11 @@ pub fn CffPrivateDict::default_width_x(self : CffPrivateDict) -> Int64 {
 ///|
 pub fn CffPrivateDict::nominal_width_x(self : CffPrivateDict) -> Int64 {
   self.nominal_width_x
+}
+
+///|
+pub fn CffPrivateDict::default_vsindex(self : CffPrivateDict) -> Int {
+  self.default_vsindex
 }
 
 ///|
@@ -365,4 +417,72 @@ pub fn CffPrivateDict::blue_shift(self : CffPrivateDict) -> Int? {
 ///|
 pub fn CffPrivateDict::blue_fuzz(self : CffPrivateDict) -> Int? {
   self.blue_fuzz
+}
+
+///|
+fn cff_region_scalar(
+  region : Array[CffVarRegionAxis],
+  normalized_coords : Array[Int],
+) -> Int64 {
+  if normalized_coords.length() == 0 {
+    return 0L
+  }
+  let mut scalar = 0x10000L
+  let axis_count = if region.length() < normalized_coords.length() {
+    region.length()
+  } else {
+    normalized_coords.length()
+  }
+  for axis_index in 0..<axis_count {
+    let axis = region[axis_index]
+    let coord = @fixed.F2Dot14::from_raw(normalized_coords[axis_index])
+      .to_fixed()
+      .val()
+    if axis.peak_coord == 0L || axis.peak_coord == coord {
+      continue
+    }
+    if coord <= axis.start_coord || coord >= axis.end_coord {
+      return 0L
+    }
+    let (numerator, denominator) = if coord < axis.peak_coord {
+      (coord - axis.start_coord, axis.peak_coord - axis.start_coord)
+    } else {
+      (axis.end_coord - coord, axis.end_coord - axis.peak_coord)
+    }
+    if denominator <= 0L {
+      return 0L
+    }
+    scalar = scalar * numerator / denominator
+    if scalar <= 0L {
+      return 0L
+    }
+  }
+  scalar
+}
+
+///|
+pub fn CffVarStore::blend_vector(
+  self : CffVarStore,
+  vsindex : Int,
+  normalized_coords : Array[Int],
+) -> Array[Int64] {
+  if vsindex < 0 || vsindex >= self.data.length() {
+    return [0x10000L]
+  }
+  match self.data[vsindex] {
+    None => [0x10000L]
+    Some(data) => {
+      let out : Array[Int64] = [0x10000L]
+      for _, region_index in data.region_indices {
+        if region_index < 0 || region_index >= self.regions.length() {
+          out.push(0L)
+        } else {
+          out.push(
+            cff_region_scalar(self.regions[region_index], normalized_coords),
+          )
+        }
+      }
+      out
+    }
+  }
 }

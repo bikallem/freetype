@@ -11,13 +11,21 @@ import {
 // Values
 pub fn load_cff(Bytes, Int) -> CffFont raise @error.FTError
 
-pub fn load_cff_glyph(CffFont, UInt) -> (@types.Outline, Int64, Array[@psaux.StemHint], Array[@psaux.StemHint]) raise @error.FTError
+pub fn load_cff2(Bytes, Int, UInt) -> CffFont raise @error.FTError
+
+pub fn load_cff_glyph(CffFont, UInt, normalized_coords? : Array[Int]) -> (@types.Outline, Int64, Array[@psaux.StemHint], Array[@psaux.StemHint]) raise @error.FTError
+
+pub fn parse_cff2_index(@stream.ByteReader) -> CffIndex raise @error.FTError
 
 pub fn parse_cff_index(@stream.ByteReader) -> CffIndex raise @error.FTError
 
 pub fn parse_private_dict(Bytes) -> CffPrivateDict
 
+pub fn parse_private_dict_cff2(Bytes, vstore? : CffVarStore?, normalized_coords? : Array[Int]) -> CffPrivateDict
+
 pub fn parse_top_dict(Bytes) -> CffTopDict
+
+pub fn parse_top_dict_cff2(Bytes) -> CffTopDict
 
 // Errors
 
@@ -32,19 +40,23 @@ pub fn CffFont::encoding_glyphs(Self) -> Array[UInt]
 pub fn CffFont::family_name(Self) -> String
 pub fn CffFont::fd_index_for_glyph(Self, UInt) -> Int
 pub fn CffFont::fd_local_subrs(Self) -> Array[Array[Bytes]]
+pub fn CffFont::fd_private_data(Self) -> Array[Bytes]
 pub fn CffFont::fd_private_dicts(Self) -> Array[CffPrivateDict]
 pub fn CffFont::fd_select(Self) -> Array[Int]
 pub fn CffFont::global_subrs(Self) -> CffIndex
 pub fn CffFont::glyph_names(Self) -> Array[String]
+pub fn CffFont::is_cff2(Self) -> Bool
 pub fn CffFont::is_fixed_pitch(Self) -> Bool
 pub fn CffFont::local_subrs(Self) -> CffIndex?
 pub fn CffFont::name(Self) -> String
 pub fn CffFont::num_glyphs(Self) -> UInt
+pub fn CffFont::private_data(Self) -> Bytes?
 pub fn CffFont::private_dict(Self) -> CffPrivateDict
 pub fn CffFont::private_dict_for_glyph(Self, UInt) -> CffPrivateDict
 pub fn CffFont::style_name(Self) -> String
 pub fn CffFont::top_dict(Self) -> CffTopDict
 pub fn CffFont::units_per_em(Self) -> UInt
+pub fn CffFont::vstore(Self) -> CffVarStore?
 
 type CffHeader derive(Show)
 
@@ -58,6 +70,7 @@ pub fn CffPrivateDict::blue_fuzz(Self) -> Int?
 pub fn CffPrivateDict::blue_scale(Self) -> Double?
 pub fn CffPrivateDict::blue_shift(Self) -> Int?
 pub fn CffPrivateDict::blue_values(Self) -> Array[Int64]
+pub fn CffPrivateDict::default_vsindex(Self) -> Int
 pub fn CffPrivateDict::default_width_x(Self) -> Int64
 pub fn CffPrivateDict::new() -> Self
 pub fn CffPrivateDict::nominal_width_x(Self) -> Int64
@@ -76,6 +89,13 @@ pub fn CffTopDict::private_offset(Self) -> UInt
 pub fn CffTopDict::private_size(Self) -> UInt
 pub fn CffTopDict::underline_position(Self) -> Int
 pub fn CffTopDict::underline_thickness(Self) -> Int
+
+type CffVarData derive(Show)
+
+type CffVarRegionAxis derive(Show)
+
+type CffVarStore derive(Show)
+pub fn CffVarStore::blend_vector(Self, Int, Array[Int]) -> Array[Int64]
 
 // Type aliases
 

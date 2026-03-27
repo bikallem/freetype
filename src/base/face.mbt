@@ -266,7 +266,11 @@ pub fn SfntOps::new(
     @fixed.Fixed,
     UInt,
   ) -> Bool,
-  load_native_slot~ : (FaceRec, UInt, Int) -> Bool raise @error.FTError = (_face, _glyph_index, _load_flags) => false,
+  load_native_slot? : (FaceRec, UInt, Int) -> Bool raise @error.FTError = (
+    _face,
+    _glyph_index,
+    _load_flags,
+  ) => false,
   palette_data~ : () -> @types.PaletteData?,
   select_palette~ : (UInt) -> Array[@types.Color]? raise @error.FTError,
   load_color_glyph~ : (UInt, Int, UInt, UInt, Array[@types.Color], @types.Color) -> BitmapGlyphData? raise @error.FTError,
@@ -389,12 +393,16 @@ pub fn Type1Ops::new(
   char_index~ : (UInt) -> UInt,
   load_glyph~ : (UInt, Int) -> (GlyphSlotData, @types.Outline) raise @error.FTError,
   apply_hints~ : (@types.Outline, @fixed.Fixed) -> Bool,
-  load_native_slot~ : (FaceRec, UInt, Int) -> Bool raise @error.FTError = (_face, _glyph_index, _load_flags) => false,
-  get_kerning~ : (UInt, UInt) -> Int = fn(_left, _right) { 0 },
-  set_var_design_coordinates~ : (Array[(@fixed.Fixed, UInt)]) -> Unit raise @error.FTError = (_coordinates) => {
+  load_native_slot? : (FaceRec, UInt, Int) -> Bool raise @error.FTError = (
+    _face,
+    _glyph_index,
+    _load_flags,
+  ) => false,
+  get_kerning? : (UInt, UInt) -> Int = fn(_left, _right) { 0 },
+  set_var_design_coordinates? : (Array[(@fixed.Fixed, UInt)]) -> Unit raise @error.FTError = _coordinates => {
     raise @error.FTError::InvalidArgument
   },
-  attach_metrics~ : (Bytes) -> Unit raise @error.FTError = (_data) => {
+  attach_metrics? : (Bytes) -> Unit raise @error.FTError = _data => {
     raise @error.FTError::InvalidArgument
   },
 ) -> Type1Ops {

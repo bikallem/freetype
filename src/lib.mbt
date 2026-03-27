@@ -11,14 +11,13 @@ fn should_use_native_sfnt(data : Bytes, face_index : Int) -> Bool {
   } noraise {
     (sfnt_data, _face) => {
       let table_dir = sfnt_data.table_dir()
-      let has_cff2 = table_dir.find_table(@types.TAG_CFF2) is Some(_)
       let has_svg = table_dir.find_table(@types.TAG_SVG) is Some(_)
       let has_colr = table_dir.find_table(@types.TAG_COLR) is Some(_) &&
         table_dir.find_table(@types.TAG_CPAL) is Some(_)
       let has_sbix = table_dir.find_table(@types.TAG_SBIX) is Some(_)
       let has_cbdt = table_dir.find_table(@types.TAG_CBDT) is Some(_) &&
         table_dir.find_table(@types.TAG_CBLC) is Some(_)
-      has_cff2 || (has_svg && !has_colr && !has_sbix && !has_cbdt)
+      has_svg && !has_colr && !has_sbix && !has_cbdt
     }
   }
 }
@@ -39,23 +38,13 @@ pub fn from_bytes(
       } else {
         load_sfnt(data, face_index)
       }
-    Cff2OpenType =>
-      if @nativeft.native_available() {
-        @nativeft.load_sfnt_face_native(data, face_index)
-      } else {
-        raise @error.FTError::UnimplementedFeature
-      }
+    Cff2OpenType => load_sfnt(data, face_index)
     CffStandalone => load_cff_standalone(data)
     Woff1 => {
       let decompressed = @sfnt.decompress_woff(data)
       from_bytes(decompressed, face_index~)
     }
-    Type1Pfb | Type1Pfa =>
-      if @nativeft.native_available() {
-        @nativeft.load_type1_face_native(data, face_index)
-      } else {
-        load_type1_pfb(data)
-      }
+    Type1Pfb | Type1Pfa => load_type1_pfb(data)
     Bdf => load_bdf(data)
     Pcf => load_pcf(data)
     Woff2 => {

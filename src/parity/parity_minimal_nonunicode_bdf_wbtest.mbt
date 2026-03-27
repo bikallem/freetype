@@ -8,12 +8,19 @@ fn load_generated_minimal_nonunicode_bdf() -> Bytes {
 
 ///|
 test "parity/minimal_nonunicode.bdf: format" {
-  inspect(@base.detect_format(load_generated_minimal_nonunicode_bdf()), content="Bdf")
+  inspect(
+    @base.detect_format(load_generated_minimal_nonunicode_bdf()),
+    content="Bdf",
+  )
 }
 
 ///|
 test "parity/minimal_nonunicode.bdf: loads" {
-  inspect((try? @freetype.from_bytes(load_generated_minimal_nonunicode_bdf())) is Ok(_), content="true")
+  inspect(
+    (try? @freetype.from_bytes(load_generated_minimal_nonunicode_bdf()))
+    is Ok(_),
+    content="true",
+  )
 }
 
 ///|
@@ -47,4 +54,3 @@ test "parity/minimal_nonunicode.bdf: charmap entries" {
   inspect(@freetype.get_char_index(f, 32U), content="1")
   inspect(@freetype.get_char_index(f, 65U), content="2")
 }
-

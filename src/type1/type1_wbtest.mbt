@@ -124,17 +124,19 @@ test "parse_type1_pfa recognizes ISOLatin1Encoding" {
 }
 
 ///|
-test "parse_type1_pfa rejects Multiple Master tokens" {
+test "parse_type1_pfa captures Multiple Master metadata" {
   let pfa : Bytes = b"%!PS-AdobeFont-1.0: MinimalMM 001.000\n" +
     b"/FontName /MinimalMM def\n" +
     b"/Encoding StandardEncoding def\n" +
-    b"/BlendAxisTypes [ /Weight ] def\n"
-  let result : Result[Type1Font, @error.FTError] = Ok(parse_type1_pfa(pfa)) catch {
-    err => Err(err)
-  }
-  inspect(result is Err(_), content="true")
-  match result {
-    Err(err) => inspect(err, content="UnimplementedFeature")
-    _ => ()
-  }
+    b"/BlendAxisTypes [ /Weight ] def\n" +
+    b"/BlendDesignPositions [ [400] [700] ] def\n" +
+    b"/WeightVector [0.5 0.5] def\n"
+  let font = parse_type1_pfa(pfa)
+  inspect(font.multiple_master(), content="true")
+  inspect(font.mm_axis_tags().length(), content="1")
+  inspect(font.mm_axis_tags()[0], content="2003265652")
+  inspect(font.mm_axis_mins().length(), content="1")
+  inspect(font.mm_axis_mins()[0].to_int(), content="400")
+  inspect(font.mm_axis_defaults()[0].to_int(), content="550")
+  inspect(font.mm_axis_maxs()[0].to_int(), content="700")
 }

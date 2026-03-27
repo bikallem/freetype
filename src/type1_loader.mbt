@@ -13,6 +13,141 @@ fn double_to_fixed(value : Double) -> @fixed.Fixed {
 }
 
 ///|
+fn afm_pair_key(left : UInt, right : UInt) -> Int64 {
+  (left.to_int().to_int64() << 32) | right.to_int().to_int64()
+}
+
+///|
+fn is_ascii_space(byte : Byte) -> Bool {
+  byte == b' ' || byte == b'\t' || byte == b'\r' || byte == b'\n'
+}
+
+///|
+fn skip_ascii_space(data : Bytes, start : Int, end : Int) -> Int {
+  let mut pos = start
+  while pos < end && is_ascii_space(data[pos]) {
+    pos += 1
+  }
+  pos
+}
+
+///|
+fn read_ascii_token(data : Bytes, start : Int, end : Int) -> (String, Int) {
+  let token_start = skip_ascii_space(data, start, end)
+  let mut token_end = token_start
+  while token_end < end && !is_ascii_space(data[token_end]) {
+    token_end += 1
+  }
+  let buf = StringBuilder::new()
+  for i in token_start..<token_end {
+    buf.write_char(Int::unsafe_to_char(data[i].to_int()))
+  }
+  (buf.to_string(), token_end)
+}
+
+///|
+fn parse_ascii_int(data : Bytes, start : Int, end : Int) -> Int? {
+  let mut pos = skip_ascii_space(data, start, end)
+  if pos >= end {
+    return None
+  }
+  let mut sign = 1
+  if data[pos] == b'-' {
+    sign = -1
+    pos += 1
+  } else if data[pos] == b'+' {
+    pos += 1
+  }
+  let mut value = 0
+  let mut saw_digit = false
+  while pos < end {
+    let byte = data[pos]
+    if byte < b'0' || byte > b'9' {
+      break
+    }
+    saw_digit = true
+    value = value * 10 + (byte.to_int() - b'0'.to_int())
+    pos += 1
+  }
+  if saw_digit {
+    Some(value * sign)
+  } else {
+    None
+  }
+}
+
+///|
+fn parse_afm_kerning_pairs(
+  data : Bytes,
+  name_to_index : Map[String, UInt],
+) -> Map[Int64, Int] {
+  let pairs : Map[Int64, Int] = {}
+  let mut line_start = 0
+  while line_start < data.length() {
+    let mut line_end = line_start
+    while line_end < data.length() &&
+          data[line_end] != b'\n' &&
+          data[line_end] != b'\r' {
+      line_end += 1
+    }
+    if line_end - line_start >= 4 &&
+      data[line_start] == b'K' &&
+      data[line_start + 1] == b'P' &&
+      data[line_start + 2] == b'X' &&
+      data[line_start + 3] == b' ' {
+      let (left_name, next0) = read_ascii_token(data, line_start + 4, line_end)
+      let (right_name, next1) = read_ascii_token(data, next0, line_end)
+      match parse_ascii_int(data, next1, line_end) {
+        Some(value) =>
+          match (name_to_index.get(left_name), name_to_index.get(right_name)) {
+            (Some(left), Some(right)) =>
+              pairs[afm_pair_key(left, right)] = value
+            _ => ()
+          }
+        None => ()
+      }
+    }
+    line_start = line_end
+    if line_start < data.length() && data[line_start] == b'\r' {
+      line_start += 1
+    }
+    if line_start < data.length() && data[line_start] == b'\n' {
+      line_start += 1
+    }
+  }
+  pairs
+}
+
+///|
+fn normalize_mm_design_coord(
+  value : @fixed.Fixed,
+  min_value : @fixed.Fixed,
+  default_value : @fixed.Fixed,
+  max_value : @fixed.Fixed,
+) -> Int {
+  if value.val() == default_value.val() {
+    return 0
+  }
+  if value.val() < default_value.val() {
+    let denom = default_value.val() - min_value.val()
+    if denom <= 0L {
+      return -0x4000
+    }
+    let num = value.val() - default_value.val()
+    let scaled = (num * 0x4000L / denom).max(-0x4000L)
+    scaled.to_int()
+  } else {
+    let denom = max_value.val() - default_value.val()
+    if denom <= 0L {
+      return 0x4000
+    }
+    let num = value.val() - default_value.val()
+    let scaled = (num * 0x4000L / denom).min(0x4000L)
+    scaled.to_int()
+  }
+}
+
+///|
 fn type1_font_transform(
   font_matrix : Array[Double],
 ) -> (@fixed.Matrix, Int64, Int64) {
@@ -116,6 +251,7 @@ fn load_type1_pfb(data : Bytes) -> @base.FaceRec raise @error.FTError {
   for i, name in glyph_names {
     name_to_index[name] = i.reinterpret_as_uint()
   }
+  let attached_kerning : Ref[Map[Int64, Int]] = Ref::new({})
   // Build Unicode charmap from glyph names when possible.
   let unicode_cmap = @psnames.build_unicode_map(glyph_names)
   // Pre-compute charcode -> glyph_index cache (256 entries)
@@ -146,6 +282,10 @@ fn load_type1_pfb(data : Bytes) -> @base.FaceRec raise @error.FTError {
   face.charmaps().push(encoding_charmap)
   if face.charmaps().length() > 0 {
     face.set_active_charmap(0)
+  }
+  if font.multiple_master() && font.mm_axis_tags().length() > 0 {
+    face.set_face_flags(face.face_flags() | @base.FACE_FLAG_MULTIPLE_MASTERS)
+    face.set_var_coords(Array::make(font.mm_axis_tags().length(), 0))
   }
   // Set up Type1Ops driver data. Public API uses the active charmap, which we
   // synthesize as Unicode when glyph names allow it.
@@ -267,6 +407,67 @@ fn load_type1_pfb(data : Bytes) -> @base.FaceRec raise @error.FTError {
         char_index=encoding_char_index_fn,
         load_glyph=load_glyph_fn,
         apply_hints=apply_hints_fn,
+        get_kerning=fn(left, right) {
+          match attached_kerning.val.get(afm_pair_key(left, right)) {
+            Some(value) => value
+            None => 0
+          }
+        },
+        set_var_design_coordinates=coordinates => {
+          if !font.multiple_master() || font.mm_axis_tags().length() == 0 {
+            raise @error.FTError::InvalidArgument
+          }
+          let normalized : Array[Int] = []
+          let mut has_non_default = false
+          for axis_index, axis_tag in font.mm_axis_tags() {
+            let mut design_value = font.mm_axis_defaults()[axis_index]
+            for _, coordinate in coordinates {
+              let (coord_value, tag) = coordinate
+              if tag == axis_tag {
+                design_value = coord_value
+                break
+              }
+            }
+            let norm = normalize_mm_design_coord(
+              design_value,
+              font.mm_axis_mins()[axis_index],
+              font.mm_axis_defaults()[axis_index],
+              font.mm_axis_maxs()[axis_index],
+            )
+            normalized.push(norm)
+            if norm != 0 {
+              has_non_default = true
+            }
+          }
+          face.set_var_coords(normalized)
+          let base_flags = if (face.face_flags() & @base.FACE_FLAG_VARIATION) !=
+            0L {
+            face.face_flags() - @base.FACE_FLAG_VARIATION
+          } else {
+            face.face_flags()
+          }
+          face.set_face_flags(
+            if has_non_default {
+              base_flags | @base.FACE_FLAG_VARIATION
+            } else {
+              base_flags
+            },
+          )
+        },
+        attach_metrics=metrics_data => {
+          let parsed_pairs = parse_afm_kerning_pairs(
+            metrics_data, name_to_index,
+          )
+          if parsed_pairs.is_empty() {
+            raise @error.FTError::InvalidFileFormat
+          }
+          let merged = attached_kerning.val
+          for pair, value in parsed_pairs {
+            merged[pair] = value
+          }
+          attached_kerning.val = merged
+          face.set_face_flags(face.face_flags() | @base.FACE_FLAG_KERNING)
+        },
       ),
     ),
   )

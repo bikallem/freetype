@@ -61,7 +61,9 @@ fn color_bytes_to_palette(bytes : Bytes) -> Array[@types.Color] {
   let palette : Array[@types.Color] = []
   let mut i = 0
   while i + 3 < bytes.length() {
-    palette.push(@types.Color::new(bytes[i], bytes[i + 1], bytes[i + 2], bytes[i + 3]))
+    palette.push(
+      @types.Color::new(bytes[i], bytes[i + 1], bytes[i + 2], bytes[i + 3]),
+    )
     i += 4
   }
   palette
@@ -177,8 +179,8 @@ fn parse_afm_kerning_pairs(
   while line_start < data.length() {
     let mut line_end = line_start
     while line_end < data.length() &&
-      data[line_end] != b'\n' &&
-      data[line_end] != b'\r' {
+          data[line_end] != b'\n' &&
+          data[line_end] != b'\r' {
       line_end += 1
     }
     if line_end - line_start >= 4 &&
@@ -191,7 +193,8 @@ fn parse_afm_kerning_pairs(
       match parse_ascii_int(data, next1, line_end) {
         Some(value) =>
           match (name_to_index.get(left_name), name_to_index.get(right_name)) {
-            (Some(left), Some(right)) => pairs[afm_pair_key(left, right)] = value
+            (Some(left), Some(right)) =>
+              pairs[afm_pair_key(left, right)] = value
             _ => ()
           }
         None => ()
@@ -235,9 +238,7 @@ fn bitmap_from_native(
 }
 
 ///|
-fn outline_from_native(
-  handle : NativeFtFace,
-) -> @types.Outline {
+fn outline_from_native(handle : NativeFtFace) -> @types.Outline {
   let packed_points = native_face_slot_outline_points(handle)
   let tags_bytes = native_face_slot_outline_tags(handle)
   let contour_indices = native_face_slot_outline_contours(handle)
@@ -245,7 +246,10 @@ fn outline_from_native(
   let points = FixedArray::make(n_points, @types.Vector::new(0L, 0L))
   let tags = FixedArray::make(n_points, b'\x00')
   for i in 0..<n_points {
-    points[i] = @types.Vector::new(packed_points[i * 2], packed_points[i * 2 + 1])
+    points[i] = @types.Vector::new(
+      packed_points[i * 2],
+      packed_points[i * 2 + 1],
+    )
     tags[i] = tags_bytes[i]
   }
   let contours = FixedArray::make(contour_indices.length(), 0U)
@@ -290,7 +294,9 @@ fn set_slot_from_native(
     2 => {
       let meta = native_face_slot_bitmap_meta(handle)
       slot.set_format(@types.GlyphFormat::Bitmap)
-      slot.set_bitmap(bitmap_from_native(meta, native_face_slot_bitmap_buffer(handle)))
+      slot.set_bitmap(
+        bitmap_from_native(meta, native_face_slot_bitmap_buffer(handle)),
+      )
       slot.set_bitmap_left(meta[5].to_int())
       slot.set_bitmap_top(meta[6].to_int())
     }
@@ -472,11 +478,15 @@ pub fn load_type1_face_native(
     face_index=face_index.to_int64(),
   )
   populate_common_face(face, handle)
-  face.set_char_index_fn(fn(charcode) { native_face_char_index(handle, face.active_charmap(), charcode) })
+  face.set_char_index_fn(fn(charcode) {
+    native_face_char_index(handle, face.active_charmap(), charcode)
+  })
   face.set_driver_data(
     @base.DriverData::Type1Ops(
       @base.Type1Ops::new(
-        char_index=fn(charcode) { native_face_char_index(handle, face.active_charmap(), charcode) },
+        char_index=fn(charcode) {
+          native_face_char_index(handle, face.active_charmap(), charcode)
+        },
         load_glyph=(_glyph_index, _load_flags) => {
           raise @error.FTError::UnimplementedFeature
         },
@@ -490,11 +500,13 @@ pub fn load_type1_face_native(
             None => native_face_get_kerning(handle, left, right)
           }
         },
-        set_var_design_coordinates=(coordinates) => {
+        set_var_design_coordinates=coordinates => {
           type1_set_var_design_coordinates_impl(face, handle, coordinates)
         },
-        attach_metrics=(metrics_data) => {
-          let parsed_pairs = parse_afm_kerning_pairs(metrics_data, glyph_name_map)
+        attach_metrics=metrics_data => {
+          let parsed_pairs = parse_afm_kerning_pairs(
+            metrics_data, glyph_name_map,
+          )
           if !parsed_pairs.is_empty() {
             let merged = attached_kerning.val
             for pair, value in parsed_pairs {
@@ -528,11 +540,15 @@ pub fn load_sfnt_face_native(
     face_index=face_index.to_int64(),
   )
   populate_common_face(face, handle)
-  face.set_char_index_fn(fn(charcode) { native_face_char_index(handle, face.active_charmap(), charcode) })
+  face.set_char_index_fn(fn(charcode) {
+    native_face_char_index(handle, face.active_charmap(), charcode)
+  })
   face.set_driver_data(
     @base.DriverData::SfntDriver(
       @base.SfntOps::new(
-        char_index=fn(charcode) { native_face_char_index(handle, face.active_charmap(), charcode) },
+        char_index=fn(charcode) {
+          native_face_char_index(handle, face.active_charmap(), charcode)
+        },
         char_variant_index=fn(charcode, selector) {
           native_face_char_variant_index(handle, charcode, selector)
         },
@@ -551,20 +567,42 @@ pub fn load_sfnt_face_native(
         load_glyph=(_glyph_index, _load_flags) => {
           raise @error.FTError::UnimplementedFeature
         },
-        get_kerning=fn(left, right) { native_face_get_kerning(handle, left, right) },
+        get_kerning=fn(left, right) {
+          native_face_get_kerning(handle, left, right)
+        },
         apply_hints=fn(_outline, _scale) { false },
-        tt_hint=fn(_outline, _instructions, _phantoms, _x_scale, _y_scale, _ppem) { false },
+        tt_hint=fn(
+          _outline,
+          _instructions,
+          _phantoms,
+          _x_scale,
+          _y_scale,
+          _ppem,
+        ) {
+          false
+        },
         load_native_slot=(face, glyph_index, load_flags) => {
           load_slot_native_impl(face, handle, glyph_index, load_flags)
         },
         palette_data=fn() { face.palette_data() },
         select_palette=fn(index) {
-          let palette = color_bytes_to_palette(native_face_palette_bytes(handle, index))
+          let palette = color_bytes_to_palette(
+            native_face_palette_bytes(handle, index),
+          )
           face.set_palette(palette)
           face.set_palette_index(index.reinterpret_as_int())
           Some(palette)
         },
-        load_color_glyph=fn(_glyph_index, _load_flags, _x_ppem, _y_ppem, _palette, _foreground) { None },
+        load_color_glyph=fn(
+          _glyph_index,
+          _load_flags,
+          _x_ppem,
+          _y_ppem,
+          _palette,
+          _foreground,
+        ) {
+          None
+        },
         num_glyphs=native_face_num_glyphs(handle).to_int().reinterpret_as_uint(),
         raw_data=data,
       ),
@@ -649,7 +687,10 @@ extern "c" fn native_face_num_fixed_sizes(handle : NativeFtFace) -> Int = "bikal
 
 ///|
 #borrow(handle)
-extern "c" fn native_face_fixed_size(handle : NativeFtFace, index : Int) -> FixedArray[Int64] = "bikallem_freetype_native_face_fixed_size"
+extern "c" fn native_face_fixed_size(
+  handle : NativeFtFace,
+  index : Int,
+) -> FixedArray[Int64] = "bikallem_freetype_native_face_fixed_size"
 
 ///|
 #borrow(handle)
@@ -661,59 +702,99 @@ extern "c" fn native_face_default_charmap_index(handle : NativeFtFace) -> Int = 
 
 ///|
 #borrow(handle)
-extern "c" fn native_face_charmap_encoding_tag(handle : NativeFtFace, index : Int) -> UInt = "bikallem_freetype_native_face_charmap_encoding_tag"
+extern "c" fn native_face_charmap_encoding_tag(
+  handle : NativeFtFace,
+  index : Int,
+) -> UInt = "bikallem_freetype_native_face_charmap_encoding_tag"
 
 ///|
 #borrow(handle)
-extern "c" fn native_face_charmap_platform_id(handle : NativeFtFace, index : Int) -> UInt = "bikallem_freetype_native_face_charmap_platform_id"
+extern "c" fn native_face_charmap_platform_id(
+  handle : NativeFtFace,
+  index : Int,
+) -> UInt = "bikallem_freetype_native_face_charmap_platform_id"
 
 ///|
 #borrow(handle)
-extern "c" fn native_face_charmap_encoding_id(handle : NativeFtFace, index : Int) -> UInt = "bikallem_freetype_native_face_charmap_encoding_id"
+extern "c" fn native_face_charmap_encoding_id(
+  handle : NativeFtFace,
+  index : Int,
+) -> UInt = "bikallem_freetype_native_face_charmap_encoding_id"
 
 ///|
 #borrow(handle)
-extern "c" fn native_face_palette_meta(handle : NativeFtFace) -> FixedArray[UInt] = "bikallem_freetype_native_face_palette_meta"
+extern "c" fn native_face_palette_meta(
+  handle : NativeFtFace,
+) -> FixedArray[UInt] = "bikallem_freetype_native_face_palette_meta"
 
 ///|
 #borrow(handle)
-extern "c" fn native_face_palette_name_ids(handle : NativeFtFace) -> FixedArray[UInt] = "bikallem_freetype_native_face_palette_name_ids"
+extern "c" fn native_face_palette_name_ids(
+  handle : NativeFtFace,
+) -> FixedArray[UInt] = "bikallem_freetype_native_face_palette_name_ids"
 
 ///|
 #borrow(handle)
-extern "c" fn native_face_palette_flags(handle : NativeFtFace) -> FixedArray[UInt] = "bikallem_freetype_native_face_palette_flags"
+extern "c" fn native_face_palette_flags(
+  handle : NativeFtFace,
+) -> FixedArray[UInt] = "bikallem_freetype_native_face_palette_flags"
 
 ///|
 #borrow(handle)
-extern "c" fn native_face_palette_entry_name_ids(handle : NativeFtFace) -> FixedArray[UInt] = "bikallem_freetype_native_face_palette_entry_name_ids"
+extern "c" fn native_face_palette_entry_name_ids(
+  handle : NativeFtFace,
+) -> FixedArray[UInt] = "bikallem_freetype_native_face_palette_entry_name_ids"
 
 ///|
 #borrow(handle)
-extern "c" fn native_face_palette_bytes(handle : NativeFtFace, palette_index : UInt) -> Bytes = "bikallem_freetype_native_face_palette_bytes"
+extern "c" fn native_face_palette_bytes(
+  handle : NativeFtFace,
+  palette_index : UInt,
+) -> Bytes = "bikallem_freetype_native_face_palette_bytes"
 
 ///|
 #borrow(handle)
-extern "c" fn native_face_char_index(handle : NativeFtFace, active_charmap : Int, charcode : UInt) -> UInt = "bikallem_freetype_native_face_char_index"
+extern "c" fn native_face_char_index(
+  handle : NativeFtFace,
+  active_charmap : Int,
+  charcode : UInt,
+) -> UInt = "bikallem_freetype_native_face_char_index"
 
 ///|
 #borrow(handle)
-extern "c" fn native_face_char_variant_index(handle : NativeFtFace, charcode : UInt, selector : UInt) -> UInt = "bikallem_freetype_native_face_char_variant_index"
+extern "c" fn native_face_char_variant_index(
+  handle : NativeFtFace,
+  charcode : UInt,
+  selector : UInt,
+) -> UInt = "bikallem_freetype_native_face_char_variant_index"
 
 ///|
 #borrow(handle)
-extern "c" fn native_face_char_variant_is_default(handle : NativeFtFace, charcode : UInt, selector : UInt) -> Int = "bikallem_freetype_native_face_char_variant_is_default"
+extern "c" fn native_face_char_variant_is_default(
+  handle : NativeFtFace,
+  charcode : UInt,
+  selector : UInt,
+) -> Int = "bikallem_freetype_native_face_char_variant_is_default"
 
 ///|
 #borrow(handle)
-extern "c" fn native_face_variant_selectors(handle : NativeFtFace) -> FixedArray[UInt] = "bikallem_freetype_native_face_variant_selectors"
+extern "c" fn native_face_variant_selectors(
+  handle : NativeFtFace,
+) -> FixedArray[UInt] = "bikallem_freetype_native_face_variant_selectors"
 
 ///|
 #borrow(handle)
-extern "c" fn native_face_variants_of_char(handle : NativeFtFace, charcode : UInt) -> FixedArray[UInt] = "bikallem_freetype_native_face_variants_of_char"
+extern "c" fn native_face_variants_of_char(
+  handle : NativeFtFace,
+  charcode : UInt,
+) -> FixedArray[UInt] = "bikallem_freetype_native_face_variants_of_char"
 
 ///|
 #borrow(handle)
-extern "c" fn native_face_chars_of_variant(handle : NativeFtFace, selector : UInt) -> FixedArray[UInt] = "bikallem_freetype_native_face_chars_of_variant"
+extern "c" fn native_face_chars_of_variant(
+  handle : NativeFtFace,
+  selector : UInt,
+) -> FixedArray[UInt] = "bikallem_freetype_native_face_chars_of_variant"
 
 ///|
 #borrow(handle, coords)
@@ -738,11 +819,15 @@ extern "c" fn native_face_slot_format(handle : NativeFtFace) -> Int = "bikallem_
 
 ///|
 #borrow(handle)
-extern "c" fn native_face_slot_metrics(handle : NativeFtFace) -> FixedArray[Int64] = "bikallem_freetype_native_face_slot_metrics"
+extern "c" fn native_face_slot_metrics(
+  handle : NativeFtFace,
+) -> FixedArray[Int64] = "bikallem_freetype_native_face_slot_metrics"
 
 ///|
 #borrow(handle)
-extern "c" fn native_face_slot_outline_points(handle : NativeFtFace) -> FixedArray[Int64] = "bikallem_freetype_native_face_slot_outline_points"
+extern "c" fn native_face_slot_outline_points(
+  handle : NativeFtFace,
+) -> FixedArray[Int64] = "bikallem_freetype_native_face_slot_outline_points"
 
 ///|
 #borrow(handle)
@@ -750,7 +835,9 @@ extern "c" fn native_face_slot_outline_tags(handle : NativeFtFace) -> Bytes = "b
 
 ///|
 #borrow(handle)
-extern "c" fn native_face_slot_outline_contours(handle : NativeFtFace) -> FixedArray[UInt] = "bikallem_freetype_native_face_slot_outline_contours"
+extern "c" fn native_face_slot_outline_contours(
+  handle : NativeFtFace,
+) -> FixedArray[UInt] = "bikallem_freetype_native_face_slot_outline_contours"
 
 ///|
 #borrow(handle)
@@ -758,7 +845,9 @@ extern "c" fn native_face_slot_outline_flags(handle : NativeFtFace) -> Int = "bi
 
 ///|
 #borrow(handle)
-extern "c" fn native_face_slot_bitmap_meta(handle : NativeFtFace) -> FixedArray[Int64] = "bikallem_freetype_native_face_slot_bitmap_meta"
+extern "c" fn native_face_slot_bitmap_meta(
+  handle : NativeFtFace,
+) -> FixedArray[Int64] = "bikallem_freetype_native_face_slot_bitmap_meta"
 
 ///|
 #borrow(handle)
@@ -766,28 +855,47 @@ extern "c" fn native_face_slot_bitmap_buffer(handle : NativeFtFace) -> Bytes = "
 
 ///|
 #borrow(handle)
-extern "c" fn native_face_get_kerning(handle : NativeFtFace, left : UInt, right : UInt) -> Int = "bikallem_freetype_native_face_get_kerning"
+extern "c" fn native_face_get_kerning(
+  handle : NativeFtFace,
+  left : UInt,
+  right : UInt,
+) -> Int = "bikallem_freetype_native_face_get_kerning"
 
 ///|
 #borrow(handle)
-extern "c" fn native_face_glyph_name(handle : NativeFtFace, glyph_index : UInt) -> Bytes = "bikallem_freetype_native_face_glyph_name"
+extern "c" fn native_face_glyph_name(
+  handle : NativeFtFace,
+  glyph_index : UInt,
+) -> Bytes = "bikallem_freetype_native_face_glyph_name"
 
 ///|
 #borrow(handle, data)
-extern "c" fn native_face_attach_metrics(handle : NativeFtFace, data : Bytes) -> Int = "bikallem_freetype_native_face_attach_metrics"
+extern "c" fn native_face_attach_metrics(
+  handle : NativeFtFace,
+  data : Bytes,
+) -> Int = "bikallem_freetype_native_face_attach_metrics"
 
 ///|
 #borrow(handle)
-extern "c" fn native_face_var_axis_tags(handle : NativeFtFace) -> FixedArray[UInt] = "bikallem_freetype_native_face_var_axis_tags"
+extern "c" fn native_face_var_axis_tags(
+  handle : NativeFtFace,
+) -> FixedArray[UInt] = "bikallem_freetype_native_face_var_axis_tags"
 
 ///|
 #borrow(handle)
-extern "c" fn native_face_var_axis_defaults(handle : NativeFtFace) -> FixedArray[Int64] = "bikallem_freetype_native_face_var_axis_defaults"
+extern "c" fn native_face_var_axis_defaults(
+  handle : NativeFtFace,
+) -> FixedArray[Int64] = "bikallem_freetype_native_face_var_axis_defaults"
 
 ///|
 #borrow(handle, coords)
-extern "c" fn native_face_set_var_design_coordinates(handle : NativeFtFace, coords : FixedArray[Int64]) -> Int = "bikallem_freetype_native_face_set_var_design_coordinates"
+extern "c" fn native_face_set_var_design_coordinates(
+  handle : NativeFtFace,
+  coords : FixedArray[Int64],
+) -> Int = "bikallem_freetype_native_face_set_var_design_coordinates"
 
 ///|
 #borrow(handle)
-extern "c" fn native_face_var_blend_coords(handle : NativeFtFace) -> FixedArray[Int64] = "bikallem_freetype_native_face_var_blend_coords"
+extern "c" fn native_face_var_blend_coords(
+  handle : NativeFtFace,
+) -> FixedArray[Int64] = "bikallem_freetype_native_face_var_blend_coords"

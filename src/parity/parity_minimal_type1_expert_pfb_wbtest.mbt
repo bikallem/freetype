@@ -8,12 +8,19 @@ fn load_generated_minimal_type1_expert_pfb() -> Bytes {
 
 ///|
 test "parity/minimal_type1_expert.pfb: format" {
-  inspect(@base.detect_format(load_generated_minimal_type1_expert_pfb()), content="Type1Pfb")
+  inspect(
+    @base.detect_format(load_generated_minimal_type1_expert_pfb()),
+    content="Type1Pfb",
+  )
 }
 
 ///|
 test "parity/minimal_type1_expert.pfb: loads" {
-  inspect((try? @freetype.from_bytes(load_generated_minimal_type1_expert_pfb())) is Ok(_), content="true")
+  inspect(
+    (try? @freetype.from_bytes(load_generated_minimal_type1_expert_pfb()))
+    is Ok(_),
+    content="true",
+  )
 }
 
 ///|
@@ -161,4 +168,3 @@ test "parity/minimal_type1_expert.pfb: rendered glyph 1 LCD_V char 32" {
   inspect(f.glyph().bitmap_top(), content="1")
   try! assert_buffer_hex(f.glyph().bitmap().buffer(), "")
 }
-

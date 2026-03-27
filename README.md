@@ -1,7 +1,7 @@
 # bikallem/freetype
 
 MoonBit FreeType-compatible font engine, with pure MoonBit drivers plus a
-native-target fallback for advanced codecs and renderers.
+native-target fallback for OT-SVG rendering.
 
 ## Table of Contents
 
@@ -23,8 +23,7 @@ native-target fallback for advanced codecs and renderers.
 - Glyph outline loading (TrueType simple/composite, CFF charstrings)
 - Glyph rendering (`render_glyph`, `LOAD_RENDER`) in normal, light, mono,
   LCD, LCD_V, color BGRA, and SDF modes
-- Native-target fallback for CFF2 OpenType, Multiple Master Type 1, AFM/PFM
-  metric attachment, and OT-SVG glyph rendering
+- Native-target fallback for OT-SVG glyph rendering
 - Pixel size scaling with proper 16.16 fixed-point math
 - Kerning pair lookup
 - TrueType bytecode hinting (~160 opcodes: point movement, zones, projection vectors, rounding, deltas)
@@ -46,12 +45,12 @@ native-target fallback for advanced codecs and renderers.
 |--------|-----------|--------|--------|
 | TrueType | `.ttf` | Full | `truetype/` — glyph loading, bytecode interpreter |
 | OpenType/CFF (CFF1) | `.otf` | Full | `cff/` — CFF INDEX/DICT parsing, Type 2 charstrings |
-| OpenType/CFF2 | `.otf` | Full on native target | `nativeft/` — vendored FreeType fallback for CFF2 charstrings and variation support |
+| OpenType/CFF2 | `.otf` | Full | `cff/` + `sfnt/` — pure MoonBit CFF2 parsing, charstrings, variations, and SFNT integration |
 | TrueType Collection | `.ttc` | Full | `sfnt/` — collection header, per-face loading |
 | WOFF1 | `.woff` | Full | `sfnt/woff.mbt` — zlib decompression via `bikallem/compress` |
 | WOFF2 | `.woff2` | Full | `sfnt/woff2.mbt` — Brotli decompression, glyf/loca + hmtx transform reconstruction, collections |
 | Standalone CFF | `.cff` | Full | `cff_loader.mbt` — bare CFF without SFNT container, PS hinting |
-| Type 1 (PFB/PFA) | `.pfb` `.pfa` | Full on native target | `type1/` — pure MoonBit single-master path, `nativeft/` — Multiple Master + AFM/PFM-backed metrics/kerning |
+| Type 1 (PFB/PFA) | `.pfb` `.pfa` | Full | `type1/` — pure MoonBit single-master + Multiple Master parsing, hinting, and AFM/PFM-backed metrics/kerning |
 | BDF (bitmap) | `.bdf` | Full | `bdf/` — header + glyph bitmap extraction |
 | PCF (bitmap) | `.pcf` | Full | `pcf/` — TOC, properties, metrics, encodings, bitmaps |
 | Color glyphs | `COLR`/`CPAL`, `sbix`, `CBDT`/`CBLC`, `SVG ` | Full on native target | `color/` — MoonBit COLR/sbix/CBDT path, `nativeft/` — OT-SVG loading/rendering via vendored FreeType + native raster bridge |
@@ -63,9 +62,9 @@ CID-keyed fonts inside CFF/OpenType are supported through the CFF driver.
 
 The following FreeType subsystems are **excluded** from this port:
 
-The native target is the preferred target for full codec coverage. Non-native
-targets keep using the pure MoonBit implementation and do not include the
-native-backed CFF2, Multiple Master Type 1, or OT-SVG paths.
+The native target is only required for OT-SVG coverage. Non-native targets use
+the same pure MoonBit implementations for TrueType, CFF1/CFF2, Type 1, bitmap
+formats, and the non-SVG color codecs.
 
 | Subsystem | Reason |
 |-----------|--------|

@@ -8,12 +8,19 @@ fn load_generated_ab_svg_ttf() -> Bytes {
 
 ///|
 test "parity/ab_svg.ttf: format" {
-  inspect(@base.detect_format(load_generated_ab_svg_ttf()) is (TrueType | TrueTypeCollection), content="true")
+  inspect(
+    @base.detect_format(load_generated_ab_svg_ttf())
+    is (TrueType | TrueTypeCollection),
+    content="true",
+  )
 }
 
 ///|
 test "parity/ab_svg.ttf: loads" {
-  inspect((try? @freetype.from_bytes(load_generated_ab_svg_ttf())) is Ok(_), content="true")
+  inspect(
+    (try? @freetype.from_bytes(load_generated_ab_svg_ttf())) is Ok(_),
+    content="true",
+  )
 }
 
 ///|
@@ -145,7 +152,10 @@ test "parity/ab_svg.ttf: rendered glyph 1 NORMAL char 97" {
   inspect(f.glyph().bitmap().num_grays(), content="256")
   inspect(f.glyph().bitmap_left(), content="0")
   inspect(f.glyph().bitmap_top(), content="8")
-  try! assert_buffer_hex(f.glyph().bitmap().buffer(), "00239ce3e9a50f0086843a39e58f00000000007fd40000368cc2eaeb008ee4631d68ec18ff3c000068ec15ff500027cfec0089fce4ce6dec00001623000000")
+  try! assert_buffer_hex(
+    f.glyph().bitmap().buffer(),
+    "00239ce3e9a50f0086843a39e58f00000000007fd40000368cc2eaeb008ee4631d68ec18ff3c000068ec15ff500027cfec0089fce4ce6dec00001623000000",
+  )
 }
 
 ///|
@@ -164,7 +174,10 @@ test "parity/ab_svg.ttf: rendered glyph 1 LIGHT char 97" {
   inspect(f.glyph().bitmap().num_grays(), content="256")
   inspect(f.glyph().bitmap_left(), content="0")
   inspect(f.glyph().bitmap_top(), content="8")
-  try! assert_buffer_hex(f.glyph().bitmap().buffer(), "00239ce3e9a50f0086843a39e58f00000000007fd40000368cc2eaeb008ee4631d68ec18ff3c000068ec15ff500027cfec0089fce4ce6dec00001623000000")
+  try! assert_buffer_hex(
+    f.glyph().bitmap().buffer(),
+    "00239ce3e9a50f0086843a39e58f00000000007fd40000368cc2eaeb008ee4631d68ec18ff3c000068ec15ff500027cfec0089fce4ce6dec00001623000000",
+  )
 }
 
 ///|
@@ -202,7 +215,10 @@ test "parity/ab_svg.ttf: rendered glyph 1 LCD char 97" {
   inspect(f.glyph().bitmap().num_grays(), content="256")
   inspect(f.glyph().bitmap_left(), content="0")
   inspect(f.glyph().bitmap_top(), content="8")
-  try! assert_buffer_hex(f.glyph().bitmap().buffer(), "0000000b234a779cbbd3e3eeefe9dcc8a571340f000000000000063d86baaf84624a3a2d2a3966ade5ffdf8f3b0300000000000000000000000000000000002b7fd3ffd480280000000000000005193657748ca0b3c2cfdbeaf6ffeb973f0000000010458ed1f1e4bb876347301d0e1868bcffec9840000000186cc4ffe4903c040000000000001468bcffec98400000001569c1ffeaa350120100000a275798cff2ffec9840000000000e4389cdf0fcf5eae4e7e4cea26a6d9ee4ec984000000000000000020a1622272314080000000000000000000000")
+  try! assert_buffer_hex(
+    f.glyph().bitmap().buffer(),
+    "0000000b234a779cbbd3e3eeefe9dcc8a571340f000000000000063d86baaf84624a3a2d2a3966ade5ffdf8f3b0300000000000000000000000000000000002b7fd3ffd480280000000000000005193657748ca0b3c2cfdbeaf6ffeb973f0000000010458ed1f1e4bb876347301d0e1868bcffec9840000000186cc4ffe4903c040000000000001468bcffec98400000001569c1ffeaa350120100000a275798cff2ffec9840000000000e4389cdf0fcf5eae4e7e4cea26a6d9ee4ec984000000000000000020a1622272314080000000000000000000000",
+  )
 }
 
 ///|
@@ -221,7 +237,10 @@ test "parity/ab_svg.ttf: rendered glyph 1 LCD_V char 97" {
   inspect(f.glyph().bitmap().num_grays(), content="256")
   inspect(f.glyph().bitmap_left(), content="0")
   inspect(f.glyph().bitmap_top(), content="9")
-  try! assert_buffer_hex(f.glyph().bitmap().buffer(), "0000000000000000000000000000000005373d0e000000488f95510000239ce3e9a50f0063eae6e3ea300094d58e8dfb620086843a39e58f0047300001c0af001502000098c700000000007fd4000000001792de000002386ebee60000368cc2eaeb00118adbc9cbec0046deb77197ec008ee4631d68ec02d0ae140068ec0cf36b000068ec18ff3c000068ec22ff2b000071ec20ff2e00039eec15ff500027cfec09f2953878e8ec02cfd790c9b2ec0089fce4ce6dec0042c0cf7d299e000d6877290e4d0000162300000000000000000000")
+  try! assert_buffer_hex(
+    f.glyph().bitmap().buffer(),
+    "0000000000000000000000000000000005373d0e000000488f95510000239ce3e9a50f0063eae6e3ea300094d58e8dfb620086843a39e58f0047300001c0af001502000098c700000000007fd4000000001792de000002386ebee60000368cc2eaeb00118adbc9cbec0046deb77197ec008ee4631d68ec02d0ae140068ec0cf36b000068ec18ff3c000068ec22ff2b000071ec20ff2e00039eec15ff500027cfec09f2953878e8ec02cfd790c9b2ec0089fce4ce6dec0042c0cf7d299e000d6877290e4d0000162300000000000000000000",
+  )
 }
 
 ///|
@@ -252,8 +271,11 @@ test "parity/ab_svg.ttf: outline FORCE_AUTOHINT 16ppem" {
   let f = @freetype.from_bytes(load_generated_ab_svg_ttf())
   let r1 = try? @freetype.set_pixel_sizes(f, 0U, 16U)
   guard r1 is Ok(_) else { return }
-  let r2 = try? @freetype.load_glyph(f, 1U, load_flags=@base.LOAD_FORCE_AUTOHINT)
+  let r2 = try? @freetype.load_glyph(
+    f,
+    1U,
+    load_flags=@base.LOAD_FORCE_AUTOHINT,
+  )
   guard r2 is Ok(_) else { return }
   inspect(f.glyph().metrics().hori_advance(), content="512")
 }
-

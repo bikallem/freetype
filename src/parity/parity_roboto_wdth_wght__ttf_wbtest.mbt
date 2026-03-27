@@ -8,12 +8,19 @@ fn load_generated_roboto_wdth_wght__ttf() -> Bytes {
 
 ///|
 test "parity/Roboto[wdth,wght].ttf: format" {
-  inspect(@base.detect_format(load_generated_roboto_wdth_wght__ttf()) is (TrueType | TrueTypeCollection), content="true")
+  inspect(
+    @base.detect_format(load_generated_roboto_wdth_wght__ttf())
+    is (TrueType | TrueTypeCollection),
+    content="true",
+  )
 }
 
 ///|
 test "parity/Roboto[wdth,wght].ttf: loads" {
-  inspect((try? @freetype.from_bytes(load_generated_roboto_wdth_wght__ttf())) is Ok(_), content="true")
+  inspect(
+    (try? @freetype.from_bytes(load_generated_roboto_wdth_wght__ttf())) is Ok(_),
+    content="true",
+  )
 }
 
 ///|
@@ -239,7 +246,10 @@ test "parity/Roboto[wdth,wght].ttf: rendered glyph 37 NORMAL char 65" {
   inspect(f.glyph().bitmap().num_grays(), content="256")
   inspect(f.glyph().bitmap_left(), content="0")
   inspect(f.glyph().bitmap_top(), content="12")
-  try! assert_buffer_hex(f.glyph().bitmap().buffer(), "000000003b91000000000000000000d6ff390000000000000027fffa9b0000000000000088d966f20a000000000003e57c10f85e00000000004bfe2100acc00000000000acc200004ffe2300000014ff9d38383dff9f0000006fffffffffffffff020000d0af040404043cff470032ff4e0000000000dba90093ec0500000000007ef812")
+  try! assert_buffer_hex(
+    f.glyph().bitmap().buffer(),
+    "000000003b91000000000000000000d6ff390000000000000027fffa9b0000000000000088d966f20a000000000003e57c10f85e00000000004bfe2100acc00000000000acc200004ffe2300000014ff9d38383dff9f0000006fffffffffffffff020000d0af040404043cff470032ff4e0000000000dba90093ec0500000000007ef812",
+  )
 }
 
 ///|
@@ -258,7 +268,10 @@ test "parity/Roboto[wdth,wght].ttf: rendered glyph 69 NORMAL char 97" {
   inspect(f.glyph().bitmap().num_grays(), content="256")
   inspect(f.glyph().bitmap_left(), content="0")
   inspect(f.glyph().bitmap_top(), content="9")
-  try! assert_buffer_hex(f.glyph().bitmap().buffer(), "00002378947213000053fabd9be3e31400c29600001efe6d000000021920f4870020aef8ece4ff8801d4be1a0000e8881cff5f000004ff8807eec73333b8ff8f0048e8fffa92ceb90000031f07000000")
+  try! assert_buffer_hex(
+    f.glyph().bitmap().buffer(),
+    "00002378947213000053fabd9be3e31400c29600001efe6d000000021920f4870020aef8ece4ff8801d4be1a0000e8881cff5f000004ff8807eec73333b8ff8f0048e8fffa92ceb90000031f07000000",
+  )
 }
 
 ///|
@@ -296,7 +309,10 @@ test "parity/Roboto[wdth,wght].ttf: rendered glyph 37 LIGHT char 65" {
   inspect(f.glyph().bitmap().num_grays(), content="256")
   inspect(f.glyph().bitmap_left(), content="0")
   inspect(f.glyph().bitmap_top(), content="12")
-  try! assert_buffer_hex(f.glyph().bitmap().buffer(), "000000003b91000000000000000000d6ff390000000000000027fffa9b0000000000000088d966f20a000000000003e57c10f85e00000000004bfe2100acc00000000000acc200004ffe2300000014ff9d38383dff9f0000006fffffffffffffff020000d0af040404043cff470032ff4e0000000000dba90093ec0500000000007ef812")
+  try! assert_buffer_hex(
+    f.glyph().bitmap().buffer(),
+    "000000003b91000000000000000000d6ff390000000000000027fffa9b0000000000000088d966f20a000000000003e57c10f85e00000000004bfe2100acc00000000000acc200004ffe2300000014ff9d38383dff9f0000006fffffffffffffff020000d0af040404043cff470032ff4e0000000000dba90093ec0500000000007ef812",
+  )
 }
 
 ///|
@@ -315,7 +331,10 @@ test "parity/Roboto[wdth,wght].ttf: rendered glyph 69 LIGHT char 97" {
   inspect(f.glyph().bitmap().num_grays(), content="256")
   inspect(f.glyph().bitmap_left(), content="0")
   inspect(f.glyph().bitmap_top(), content="9")
-  try! assert_buffer_hex(f.glyph().bitmap().buffer(), "00002378947213000053fabd9be3e31400c29600001efe6d000000021920f4870020aef8ece4ff8801d4be1a0000e8881cff5f000004ff8807eec73333b8ff8f0048e8fffa92ceb90000031f07000000")
+  try! assert_buffer_hex(
+    f.glyph().bitmap().buffer(),
+    "00002378947213000053fabd9be3e31400c29600001efe6d000000021920f4870020aef8ece4ff8801d4be1a0000e8881cff5f000004ff8807eec73333b8ff8f0048e8fffa92ceb90000031f07000000",
+  )
 }
 
 ///|
@@ -410,7 +429,10 @@ test "parity/Roboto[wdth,wght].ttf: rendered glyph 37 LCD char 65" {
   inspect(f.glyph().bitmap().num_grays(), content="256")
   inspect(f.glyph().bitmap_left(), content="-1")
   inspect(f.glyph().bitmap_top(), content="12")
-  try! assert_buffer_hex(f.glyph().bitmap().buffer(), "000000000000000000000000000000113b7a9f91521b000000000000000000000000000000000000000000000000000000001c71d6ffffffff8d390200000000000000000000000000000000000000000000000000277bd2fffbfafafee99b470500000000000000000000000000000000000000000000003488dbffd9854466bafbf2a8500a0000000000000000000000000000000000000000033e96e5ffd07c2800105db5f8f8b25e11000000000000000000000000000000000000084b9feefecb73210000000b58acf4fbc06c18000000000000000000000000000000000c58acf4fdc26e190000000000094fa3f1fece76230000000000000000000000000000146ed9fffff19d4e383838383838383d7ed6ffffff9f390000000000000000000000001d6ffbffffffffffffffffffffffffffffffffffffffffbd3902000000000000000000257dd0fff6af5b0f0404040404040404040404053c90e5ffed9b4706000000000000013286ddfff1a24e0900000000000000000000000000002f87dbfff2a9550a00000000023f93e4ffec9e4605000000000000000000000000000000002a7ed2fff8b75f1200")
+  try! assert_buffer_hex(
+    f.glyph().bitmap().buffer(),
+    "000000000000000000000000000000113b7a9f91521b000000000000000000000000000000000000000000000000000000001c71d6ffffffff8d390200000000000000000000000000000000000000000000000000277bd2fffbfafafee99b470500000000000000000000000000000000000000000000003488dbffd9854466bafbf2a8500a0000000000000000000000000000000000000000033e96e5ffd07c2800105db5f8f8b25e11000000000000000000000000000000000000084b9feefecb73210000000b58acf4fbc06c18000000000000000000000000000000000c58acf4fdc26e190000000000094fa3f1fece76230000000000000000000000000000146ed9fffff19d4e383838383838383d7ed6ffffff9f390000000000000000000000001d6ffbffffffffffffffffffffffffffffffffffffffffbd3902000000000000000000257dd0fff6af5b0f0404040404040404040404053c90e5ffed9b4706000000000000013286ddfff1a24e0900000000000000000000000000002f87dbfff2a9550a00000000023f93e4ffec9e4605000000000000000000000000000000002a7ed2fff8b75f1200",
+  )
 }
 
 ///|
@@ -429,7 +451,10 @@ test "parity/Roboto[wdth,wght].ttf: rendered glyph 69 LCD char 97" {
   inspect(f.glyph().bitmap().num_grays(), content="256")
   inspect(f.glyph().bitmap_left(), content="0")
   inspect(f.glyph().bitmap_top(), content="9")
-  try! assert_buffer_hex(f.glyph().bitmap().buffer(), "0000000000000a2346657885909491847256311302000000000000000000001953a0dffaf5dbbda4999ba7c6e3fafde3a44f14000000000000002977c2e4d6964c0b0000000000011e71c7feffc16d1a0000000000000000000000000000020710191e20205daaf4ffdb87330000000000000003204d86aed0ebf8f9f4ece7e4e4ffffffffdc88340000000000013083d4faeebe7c3e1a0800000000003c94e8ffdc883400000000001c70c8ffffb35f0b000000000000000472fbffffe6883400000000000749a1eefff2c78950332726334e7fb8ffffffffe68f3b0000000000000018488ac4e8fafffffffffae8c3927298cefffdb9651000000000000000000000030c181f1d12070100000000000000000000000000")
+  try! assert_buffer_hex(
+    f.glyph().bitmap().buffer(),
+    "0000000000000a2346657885909491847256311302000000000000000000001953a0dffaf5dbbda4999ba7c6e3fafde3a44f14000000000000002977c2e4d6964c0b0000000000011e71c7feffc16d1a0000000000000000000000000000020710191e20205daaf4ffdb87330000000000000003204d86aed0ebf8f9f4ece7e4e4ffffffffdc88340000000000013083d4faeebe7c3e1a0800000000003c94e8ffdc883400000000001c70c8ffffb35f0b000000000000000472fbffffe6883400000000000749a1eefff2c78950332726334e7fb8ffffffffe68f3b0000000000000018488ac4e8fafffffffffae8c3927298cefffdb9651000000000000000000000030c181f1d12070100000000000000000000000000",
+  )
 }
 
 ///|
@@ -467,7 +492,10 @@ test "parity/Roboto[wdth,wght].ttf: rendered glyph 37 LCD_V char 65" {
   inspect(f.glyph().bitmap().num_grays(), content="256")
   inspect(f.glyph().bitmap_left(), content="0")
   inspect(f.glyph().bitmap_top(), content="12")
-  try! assert_buffer_hex(f.glyph().bitmap().buffer(), "0000000006110000000000000000003b9100000000000000000078ff080000000000000000bdff1c0000000000000000d6ff390000000000000002ebff59000000000000000ff8ff7b0000000000000027fffa9b0000000000000047fdbfbb0000000000000068ef8cdb0000000000000088d966f20a000000000000a8ba47fd1f000000000000ca9a27ff3e000000000003e57c10f85e000000000011f85d03e77e00000000002bff3d00caa000000000004bfe2100acc000000000006bf50c008ede01000000008de001006ef40d00000000acc200004ffe2300000000cca4000031ff4200000004e984000015fb6300000014ff9d38383dff9f0000002dffd38c8c8cffea0000004fffffe4e4e4ffff0000006fffffffffffffff0200008fffb3b0b0b0ffff0f0000b1ff58585858afff270000d0af040404043cff470005ea8d000000001cfd670016fb6d0000000008f1890032ff4e0000000000dba90052ff300000000000bdc90074fb1500000000009de60393ec0500000000007ef8126d980000000000004aab123b450000000000001f540e00000000000000000000000000000000000000000000")
+  try! assert_buffer_hex(
+    f.glyph().bitmap().buffer(),
+    "0000000006110000000000000000003b9100000000000000000078ff080000000000000000bdff1c0000000000000000d6ff390000000000000002ebff59000000000000000ff8ff7b0000000000000027fffa9b0000000000000047fdbfbb0000000000000068ef8cdb0000000000000088d966f20a000000000000a8ba47fd1f000000000000ca9a27ff3e000000000003e57c10f85e000000000011f85d03e77e00000000002bff3d00caa000000000004bfe2100acc000000000006bf50c008ede01000000008de001006ef40d00000000acc200004ffe2300000000cca4000031ff4200000004e984000015fb6300000014ff9d38383dff9f0000002dffd38c8c8cffea0000004fffffe4e4e4ffff0000006fffffffffffffff0200008fffb3b0b0b0ffff0f0000b1ff58585858afff270000d0af040404043cff470005ea8d000000001cfd670016fb6d0000000008f1890032ff4e0000000000dba90052ff300000000000bdc90074fb1500000000009de60393ec0500000000007ef8126d980000000000004aab123b450000000000001f540e00000000000000000000000000000000000000000000",
+  )
 }
 
 ///|
@@ -486,7 +514,10 @@ test "parity/Roboto[wdth,wght].ttf: rendered glyph 69 LCD_V char 97" {
   inspect(f.glyph().bitmap().num_grays(), content="256")
   inspect(f.glyph().bitmap_left(), content="0")
   inspect(f.glyph().bitmap_top(), content="9")
-  try! assert_buffer_hex(f.glyph().bitmap().buffer(), "00000024401f00000000237894721300000471cce8c64e000020c9fdefffa3030053fabd9be3e3140090ef6947a7fc3200c0cd130055ff5600c29600001efe6d008152000006f87c00341d000000ef83000000021920f48700000f4f6d74ff8800045aa7c5ccff880020aef8ece4ff880054f2c59890ff88009eea6d4038fc8801d4be1a0000e88809f48a000000ed8814ff65000000ff881cff5f000004ff881bff6a000024ff8810fd95000069ff8a07eec73333b8ff8f00ccf08787ebff98008effdfdfdcf7a60048e8fffa92ceb9001698cbae3f82840000407356093c440000031f070000000000000000000000")
+  try! assert_buffer_hex(
+    f.glyph().bitmap().buffer(),
+    "00000024401f00000000237894721300000471cce8c64e000020c9fdefffa3030053fabd9be3e3140090ef6947a7fc3200c0cd130055ff5600c29600001efe6d008152000006f87c00341d000000ef83000000021920f48700000f4f6d74ff8800045aa7c5ccff880020aef8ece4ff880054f2c59890ff88009eea6d4038fc8801d4be1a0000e88809f48a000000ed8814ff65000000ff881cff5f000004ff881bff6a000024ff8810fd95000069ff8a07eec73333b8ff8f00ccf08787ebff98008effdfdfdcf7a60048e8fffa92ceb9001698cbae3f82840000407356093c440000031f070000000000000000000000",
+  )
 }
 
 ///|
@@ -517,7 +548,11 @@ test "parity/Roboto[wdth,wght].ttf: outline FORCE_AUTOHINT 16ppem" {
   let f = @freetype.from_bytes(load_generated_roboto_wdth_wght__ttf())
   let r1 = try? @freetype.set_pixel_sizes(f, 0U, 16U)
   guard r1 is Ok(_) else { return }
-  let r2 = try? @freetype.load_glyph(f, 5U, load_flags=@base.LOAD_FORCE_AUTOHINT)
+  let r2 = try? @freetype.load_glyph(
+    f,
+    5U,
+    load_flags=@base.LOAD_FORCE_AUTOHINT,
+  )
   guard r2 is Ok(_) else { return }
   inspect(f.glyph().metrics().hori_advance(), content="320")
 }
@@ -527,26 +562,20 @@ test "parity/Roboto[wdth,wght].ttf: variation state" {
   let f = @freetype.from_bytes(load_generated_roboto_wdth_wght__ttf())
   inspect(f.has_multiple_masters(), content="true")
   inspect(f.is_variation(), content="false")
-  try! @freetype.set_var_design_coordinates(
-    f,
-    [
-      (@fixed.Fixed::from_raw(58982400L), 0x77676874U),
-      (@fixed.Fixed::from_raw(4915200L), 0x77647468U),
-    ],
-  )
+  try! @freetype.set_var_design_coordinates(f, [
+    (@fixed.Fixed::from_raw(58982400L), 0x77676874U),
+    (@fixed.Fixed::from_raw(4915200L), 0x77647468U),
+  ])
   inspect(f.is_variation(), content="true")
 }
 
 ///|
 test "parity/Roboto[wdth,wght].ttf: varied 65 outline NO_SCALE" {
   let f = @freetype.from_bytes(load_generated_roboto_wdth_wght__ttf())
-  try! @freetype.set_var_design_coordinates(
-    f,
-    [
-      (@fixed.Fixed::from_raw(58982400L), 0x77676874U),
-      (@fixed.Fixed::from_raw(4915200L), 0x77647468U),
-    ],
-  )
+  try! @freetype.set_var_design_coordinates(f, [
+    (@fixed.Fixed::from_raw(58982400L), 0x77676874U),
+    (@fixed.Fixed::from_raw(4915200L), 0x77647468U),
+  ])
   let gid = @freetype.get_char_index(f, 65U)
   let r = try? @freetype.load_glyph(f, gid, load_flags=@base.LOAD_NO_SCALE)
   guard r is Ok(_) else { return }
@@ -569,13 +598,10 @@ test "parity/Roboto[wdth,wght].ttf: varied 65 outline NO_SCALE" {
 ///|
 test "parity/Roboto[wdth,wght].ttf: varied 97 outline NO_SCALE" {
   let f = @freetype.from_bytes(load_generated_roboto_wdth_wght__ttf())
-  try! @freetype.set_var_design_coordinates(
-    f,
-    [
-      (@fixed.Fixed::from_raw(58982400L), 0x77676874U),
-      (@fixed.Fixed::from_raw(4915200L), 0x77647468U),
-    ],
-  )
+  try! @freetype.set_var_design_coordinates(f, [
+    (@fixed.Fixed::from_raw(58982400L), 0x77676874U),
+    (@fixed.Fixed::from_raw(4915200L), 0x77647468U),
+  ])
   let gid = @freetype.get_char_index(f, 97U)
   let r = try? @freetype.load_glyph(f, gid, load_flags=@base.LOAD_NO_SCALE)
   guard r is Ok(_) else { return }
@@ -598,13 +624,10 @@ test "parity/Roboto[wdth,wght].ttf: varied 97 outline NO_SCALE" {
 ///|
 test "parity/Roboto[wdth,wght].ttf: varied outline NO_HINTING 16ppem" {
   let f = @freetype.from_bytes(load_generated_roboto_wdth_wght__ttf())
-  try! @freetype.set_var_design_coordinates(
-    f,
-    [
-      (@fixed.Fixed::from_raw(58982400L), 0x77676874U),
-      (@fixed.Fixed::from_raw(4915200L), 0x77647468U),
-    ],
-  )
+  try! @freetype.set_var_design_coordinates(f, [
+    (@fixed.Fixed::from_raw(58982400L), 0x77676874U),
+    (@fixed.Fixed::from_raw(4915200L), 0x77647468U),
+  ])
   let gid = @freetype.get_char_index(f, 65U)
   let r1 = try? @freetype.set_pixel_sizes(f, 0U, 16U)
   guard r1 is Ok(_) else { return }
@@ -622,13 +645,10 @@ test "parity/Roboto[wdth,wght].ttf: varied outline NO_HINTING 16ppem" {
 ///|
 test "parity/Roboto[wdth,wght].ttf: varied hinted outline DEFAULT 16ppem" {
   let f = @freetype.from_bytes(load_generated_roboto_wdth_wght__ttf())
-  try! @freetype.set_var_design_coordinates(
-    f,
-    [
-      (@fixed.Fixed::from_raw(58982400L), 0x77676874U),
-      (@fixed.Fixed::from_raw(4915200L), 0x77647468U),
-    ],
-  )
+  try! @freetype.set_var_design_coordinates(f, [
+    (@fixed.Fixed::from_raw(58982400L), 0x77676874U),
+    (@fixed.Fixed::from_raw(4915200L), 0x77647468U),
+  ])
   let gid = @freetype.get_char_index(f, 65U)
   let r1 = try? @freetype.set_pixel_sizes(f, 0U, 16U)
   guard r1 is Ok(_) else { return }
@@ -644,18 +664,18 @@ test "parity/Roboto[wdth,wght].ttf: varied hinted outline DEFAULT 16ppem" {
 ///|
 test "parity/Roboto[wdth,wght].ttf: varied outline FORCE_AUTOHINT 16ppem" {
   let f = @freetype.from_bytes(load_generated_roboto_wdth_wght__ttf())
-  try! @freetype.set_var_design_coordinates(
-    f,
-    [
-      (@fixed.Fixed::from_raw(58982400L), 0x77676874U),
-      (@fixed.Fixed::from_raw(4915200L), 0x77647468U),
-    ],
-  )
+  try! @freetype.set_var_design_coordinates(f, [
+    (@fixed.Fixed::from_raw(58982400L), 0x77676874U),
+    (@fixed.Fixed::from_raw(4915200L), 0x77647468U),
+  ])
   let gid = @freetype.get_char_index(f, 65U)
   let r1 = try? @freetype.set_pixel_sizes(f, 0U, 16U)
   guard r1 is Ok(_) else { return }
-  let r2 = try? @freetype.load_glyph(f, gid, load_flags=@base.LOAD_FORCE_AUTOHINT)
+  let r2 = try? @freetype.load_glyph(
+    f,
+    gid,
+    load_flags=@base.LOAD_FORCE_AUTOHINT,
+  )
   guard r2 is Ok(_) else { return }
   inspect(f.glyph().metrics().hori_advance(), content="640")
 }
-

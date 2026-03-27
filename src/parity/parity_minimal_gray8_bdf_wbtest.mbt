@@ -8,12 +8,18 @@ fn load_generated_minimal_gray8_bdf() -> Bytes {
 
 ///|
 test "parity/minimal_gray8.bdf: format" {
-  inspect(@base.detect_format(load_generated_minimal_gray8_bdf()), content="Bdf")
+  inspect(
+    @base.detect_format(load_generated_minimal_gray8_bdf()),
+    content="Bdf",
+  )
 }
 
 ///|
 test "parity/minimal_gray8.bdf: loads" {
-  inspect((try? @freetype.from_bytes(load_generated_minimal_gray8_bdf())) is Ok(_), content="true")
+  inspect(
+    (try? @freetype.from_bytes(load_generated_minimal_gray8_bdf())) is Ok(_),
+    content="true",
+  )
 }
 
 ///|
@@ -46,4 +52,3 @@ test "parity/minimal_gray8.bdf: charmap entries" {
   let f = @freetype.from_bytes(load_generated_minimal_gray8_bdf())
   inspect(@freetype.get_char_index(f, 65U), content="1")
 }
-

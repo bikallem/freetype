@@ -8,12 +8,19 @@ fn load_generated_minimal_sbix_ttf() -> Bytes {
 
 ///|
 test "parity/minimal_sbix.ttf: format" {
-  inspect(@base.detect_format(load_generated_minimal_sbix_ttf()) is (TrueType | TrueTypeCollection), content="true")
+  inspect(
+    @base.detect_format(load_generated_minimal_sbix_ttf())
+    is (TrueType | TrueTypeCollection),
+    content="true",
+  )
 }
 
 ///|
 test "parity/minimal_sbix.ttf: loads" {
-  inspect((try? @freetype.from_bytes(load_generated_minimal_sbix_ttf())) is Ok(_), content="true")
+  inspect(
+    (try? @freetype.from_bytes(load_generated_minimal_sbix_ttf())) is Ok(_),
+    content="true",
+  )
 }
 
 ///|
@@ -79,4 +86,3 @@ test "parity/minimal_sbix.ttf: glyph 2 outline NO_SCALE" {
   inspect(f.glyph().outline().points()[2].y(), content="0")
   inspect(f.glyph().metrics().hori_advance(), content="500")
 }
-
