@@ -45,7 +45,6 @@ fn read_be_u32(data : Bytes, offset : Int) -> UInt? {
 fn detect_otf_sfnt_format(data : Bytes) -> FontFormat {
   match read_be_u16(data, 4) {
     Some(num_tables) => {
-      let mut saw_cff = false
       for i in 0..<num_tables.reinterpret_as_int() {
         let record_offset = 12 + i * 16
         match read_be_u32(data, record_offset) {
@@ -53,20 +52,13 @@ fn detect_otf_sfnt_format(data : Bytes) -> FontFormat {
             if tag == @types.TAG_CFF2 {
               return Cff2OpenType
             }
-            if tag == @types.TAG_CFF {
-              saw_cff = true
-            }
           }
           None => break
         }
       }
-      if saw_cff {
-        CffOpenType
-      } else {
-        // Keep the historical bucket for generic OTTO SFNTs when the table
-        // directory is truncated or does not expose CFF/CFF2 yet.
-        CffOpenType
-      }
+      // OTTO signature is only used by CFF/CFF2-based fonts, so CffOpenType
+      // is always the correct classification for valid OTTO SFNTs.
+      CffOpenType
     }
     None => CffOpenType
   }

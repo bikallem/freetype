@@ -420,15 +420,10 @@ pub fn reconstruct_glyf(
       )
       let mut instruction_size = 0
       if have_instructions {
-        let gs = substreams[glyph_stream].offset
-        instruction_size = read_255ushort(
-          @stream.ByteReader::new(data[gs:gs + 3].to_bytes()),
-        ).reinterpret_as_int()
-        // Advance glyph_stream past the 255UShort
-        let tmp_reader = @stream.ByteReader::new(data)
-        tmp_reader.seek(gs)
-        let _ = read_255ushort(tmp_reader)
-        substreams[glyph_stream].offset = tmp_reader.position()
+        let gs_reader = @stream.ByteReader::new(data)
+        gs_reader.seek(substreams[glyph_stream].offset)
+        instruction_size = read_255ushort(gs_reader).reinterpret_as_int()
+        substreams[glyph_stream].offset = gs_reader.position()
       }
       // Build glyph
       let glyph_size = 10 +

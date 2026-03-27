@@ -49,7 +49,10 @@ struct GraphicsState {
   mut projection_vector_y : Int64
   mut dual_projection_x : Int64
   mut dual_projection_y : Int64
-  mut round_state : Int // 0=off, 1=to_grid, 2=to_half_grid, 3=to_double_grid, 4=down_to_grid, 5=up_to_grid
+  mut round_state : Int // 0=off, 1=to_grid, 2=to_half_grid, 3=to_double_grid, 4=down_to_grid, 5=up_to_grid, 6=super_round, 7=super_round_45
+  mut super_round_period : Int64 // 26.6 period for SROUND/S45ROUND
+  mut super_round_phase : Int64 // 26.6 phase for SROUND/S45ROUND
+  mut super_round_threshold : Int64 // 26.6 threshold for SROUND/S45ROUND
   mut minimum_distance : Int64 // 26.6
   mut control_value_cut_in : Int64 // 26.6
   mut single_width_cut_in : Int64 // 26.6
@@ -79,6 +82,9 @@ pub fn GraphicsState::default() -> GraphicsState {
     dual_projection_x: 0x4000L,
     dual_projection_y: 0L,
     round_state: 1, // round to grid
+    super_round_period: 64L,
+    super_round_phase: 0L,
+    super_round_threshold: 0L,
     minimum_distance: 64L, // 1 pixel in 26.6
     control_value_cut_in: 68L, // 17/16 pixel
     single_width_cut_in: 0L,
@@ -402,9 +408,51 @@ fn InterpContext::round_value(self : InterpContext, distance : Int64) -> Int64 {
     3 => (d + 16L) & -32L // round to double grid (nearest multiple of 32)
     4 => d & -64L // round down to grid (floor)
     5 => (d + 63L) & -64L // round up to grid (ceiling)
+    6 | 7 => { // super round / super round 45
+      let period = self.gs.super_round_period
+      let phase = self.gs.super_round_phase
+      let threshold = self.gs.super_round_threshold
+      if period == 0L {
+        d
+      } else {
+        let val = (d + threshold - phase) / period * period + phase
+        if val < 0L { phase } else { val }
+      }
+    }
     _ => (d + 32L) & -64L // default: round to grid
   }
   sign * result
+}
+
+///|
+/// Decode super round parameters from the selector argument.
+/// grid_period is 0x4000 for SROUND, 0x2D41 for S45ROUND.
+fn InterpContext::set_super_round(
+  self : InterpContext,
+  grid_period : Int64,
+  selector : Int64,
+) -> Unit {
+  let period = match (selector & 0xC0L).to_int() {
+    0 => grid_period / 2L
+    0x40 => grid_period
+    0x80 => grid_period * 2L
+    _ => grid_period // 0xC0 reserved
+  }
+  let phase = match (selector & 0x30L).to_int() {
+    0 => 0L
+    0x10 => period / 4L
+    0x20 => period / 2L
+    _ => period * 3L / 4L // 0x30
+  }
+  let threshold = if (selector & 0x0FL) == 0L {
+    period - 1L
+  } else {
+    ((selector & 0x0FL) - 4L) * period / 8L
+  }
+  // Convert from 2.14 to 26.6 format (shift right by 8)
+  self.gs.super_round_period = period >> 8
+  self.gs.super_round_phase = phase >> 8
+  self.gs.super_round_threshold = threshold >> 8
 }
 
 ///|
@@ -570,12 +618,14 @@ fn InterpContext::exec_opcode(self : InterpContext, opcode : Int) -> Unit {
     0x3D => self.gs.round_state = 3 // RTDG (round to double grid)
     0x7A => self.gs.round_state = 0 // ROFF (round off)
     0x76 => { // SROUND
-      ignore(self.pop()) // consume period/phase/threshold arg
-      self.gs.round_state = 1 // treat as round to grid
+      let arg = self.pop()
+      self.set_super_round(0x4000L, arg)
+      self.gs.round_state = 6
     }
     0x77 => { // S45ROUND
-      ignore(self.pop()) // consume period/phase/threshold arg
-      self.gs.round_state = 1 // treat as round to grid
+      let arg = self.pop()
+      self.set_super_round(0x2D41L, arg)
+      self.gs.round_state = 7
     }
     0x7C => self.gs.round_state = 5 // RUTG (round up to grid)
     0x7D => self.gs.round_state = 4 // RDTG (round down to grid)
@@ -685,6 +735,19 @@ fn InterpContext::exec_opcode(self : InterpContext, opcode : Int) -> Unit {
     0x80 => self.op_flippt() // FLIPPT
     0x81 => self.op_fliprgon() // FLIPRGON
     0x82 => self.op_fliprgoff() // FLIPRGOFF
+    // --- MAX/MIN ---
+    0x8B => { // MAX
+      let b = self.pop()
+      let a = self.pop()
+      self.push(if a > b { a } else { b })
+    }
+    0x8C => { // MIN
+      let b = self.pop()
+      let a = self.pop()
+      self.push(if a < b { a } else { b })
+    }
+    // --- IDEF ---
+    0x89 => self.op_idef() // IDEF
     // --- Misc ---
     _ => self.error = true
   }
@@ -960,6 +1023,36 @@ fn InterpContext::skip_to_eif(self : InterpContext) -> Unit {
 }
 
 ///|
+/// IDEF - Instruction DEFinition. For minimal implementation, just skip to
+/// the matching ENDF (0x2D) to consume the definition body.
+fn InterpContext::op_idef(self : InterpContext) -> Unit {
+  ignore(self.pop()) // consume the opcode number argument
+  // Skip to ENDF, same as FDEF but we don't store the definition
+  while self.ip < self.code.length() {
+    let op = self.code[self.ip].to_int()
+    self.ip += 1
+    if op == 0x2D {
+      // ENDF - end of definition
+      return
+    }
+    // Skip push data
+    match op {
+      0x40 => {
+        let n = self.code[self.ip].to_int()
+        self.ip += 1 + n
+      }
+      0x41 => {
+        let n = self.code[self.ip].to_int()
+        self.ip += 1 + n * 2
+      }
+      _ if op >= 0xB0 && op <= 0xB7 => self.ip += op - 0xB0 + 1
+      _ if op >= 0xB8 && op <= 0xBF => self.ip += (op - 0xB8 + 1) * 2
+      _ => ()
+    }
+  }
+}
+
+///|
 fn InterpContext::op_jmpr(self : InterpContext) -> Unit {
   let offset = self.pop().to_int()
   self.ip += offset - 1 // -1 because ip already advanced past opcode
@@ -1158,11 +1251,6 @@ fn InterpContext::op_getinfo(self : InterpContext) -> Unit {
 
 ///|
 fn InterpContext::op_getvariation(self : InterpContext) -> Unit {
-  let selector = self.pop()
-  if selector != 0L {
-    self.push(0L)
-    return
-  }
   for _, coord in self.var_coords {
     self.push(coord.to_int64())
   }
@@ -1336,93 +1424,120 @@ fn InterpContext::op_miap(self : InterpContext, flag : Int) -> Unit {
 ///|
 /// IUP[a] - Interpolate Untouched Points.
 /// a=0: interpolate y coordinates, a=1: interpolate x coordinates.
+/// Processes each contour independently using zone1_contours endpoint info.
 fn InterpContext::op_iup(self : InterpContext, flag : Int) -> Unit {
   let n_points = self.zone1_cur.length()
   if n_points == 0 {
     return
   }
   let touch_mask : Int = if flag == 1 { 0x01 } else { 0x02 } // x or y
-  // Process each contour
-  // For simplicity, treat all points as one contour if contour info not available
-  // Find touched points and interpolate between them
-  let start = 0
-  // Find contour boundaries from zone1_tags (on-curve/off-curve flags)
-  // For now, process all points as a single run
-  let end = n_points
-  // Collect indices of touched points in this contour
-  let touched : Array[Int] = []
-  for i in start..<end {
-    if i < self.zone1_touch.length() {
-      if (self.zone1_touch[i].to_int() & touch_mask) != 0 {
-        touched.push(i)
-      }
-    }
-  }
-  if touched.length() == 0 {
-    return
-  }
-  // Interpolate untouched points between consecutive touched points
-  for ti = 0; ti < touched.length(); ti = ti + 1 {
-    let t1 = touched[ti]
-    let t2 = touched[(ti + 1) % touched.length()]
-    // Interpolate points between t1 and t2
-    let range_start = t1 + 1
-    let range_end = if t2 > t1 { t2 } else { end }
-    if flag == 1 {
-      // Interpolate x
-      let org1_x = if t1 < self.zone1_org.length() {
-        self.zone1_org[t1].x()
-      } else {
-        0L
-      }
-      let cur1_x = self.zone1_cur[t1].x()
-      let org2_x = if t2 < self.zone1_org.length() {
-        self.zone1_org[t2].x()
-      } else {
-        0L
-      }
-      let cur2_x = self.zone1_cur[t2].x()
-      for i in range_start..<range_end {
-        if i < self.zone1_touch.length() &&
-          (self.zone1_touch[i].to_int() & touch_mask) == 0 {
-          let org_x = if i < self.zone1_org.length() {
-            self.zone1_org[i].x()
-          } else {
-            0L
-          }
-          let new_x = interp_value(org_x, org1_x, org2_x, cur1_x, cur2_x)
-          self.zone1_cur[i] = @types.Vector::new(new_x, self.zone1_cur[i].y())
-        }
-      }
+  // Determine contour boundaries from zone1_contours
+  let n_contours = self.zone1_contours.length()
+  let mut contour_start = 0
+  for c = 0; c < (if n_contours > 0 { n_contours } else { 1 }); c = c + 1 {
+    let contour_end = if n_contours > 0 {
+      self.zone1_contours[c].to_int() + 1
     } else {
-      // Interpolate y
-      let org1_y = if t1 < self.zone1_org.length() {
-        self.zone1_org[t1].y()
-      } else {
-        0L
-      }
-      let cur1_y = self.zone1_cur[t1].y()
-      let org2_y = if t2 < self.zone1_org.length() {
-        self.zone1_org[t2].y()
-      } else {
-        0L
-      }
-      let cur2_y = self.zone1_cur[t2].y()
-      for i in range_start..<range_end {
-        if i < self.zone1_touch.length() &&
-          (self.zone1_touch[i].to_int() & touch_mask) == 0 {
-          let org_y = if i < self.zone1_org.length() {
-            self.zone1_org[i].y()
-          } else {
-            0L
-          }
-          let new_y = interp_value(org_y, org1_y, org2_y, cur1_y, cur2_y)
-          self.zone1_cur[i] = @types.Vector::new(self.zone1_cur[i].x(), new_y)
+      n_points
+    }
+    // Collect indices of touched points in this contour
+    let touched : Array[Int] = []
+    for i in contour_start..<contour_end {
+      if i < self.zone1_touch.length() {
+        if (self.zone1_touch[i].to_int() & touch_mask) != 0 {
+          touched.push(i)
         }
       }
     }
+    if touched.length() > 0 {
+      // Interpolate untouched points between consecutive touched points
+      for ti = 0; ti < touched.length(); ti = ti + 1 {
+        let t1 = touched[ti]
+        let t2 = touched[(ti + 1) % touched.length()]
+        // Determine the range of points between t1 and t2 (wrapping within contour)
+        if t2 > t1 {
+          // Forward range: t1+1 .. t2-1
+          self.iup_interp_range(flag, touch_mask, t1, t2, t1 + 1, t2)
+        } else {
+          // Wrap around: t1+1..contour_end then contour_start..t2
+          self.iup_interp_range(
+            flag, touch_mask, t1, t2, t1 + 1, contour_end,
+          )
+          self.iup_interp_range(
+            flag, touch_mask, t1, t2, contour_start, t2,
+          )
+        }
+      }
+    }
+    contour_start = contour_end
   }
-  ignore(start)
+}
+
+///|
+/// Helper to interpolate untouched points in [range_start, range_end) between
+/// touched reference points t1 and t2.
+fn InterpContext::iup_interp_range(
+  self : InterpContext,
+  flag : Int,
+  touch_mask : Int,
+  t1 : Int,
+  t2 : Int,
+  range_start : Int,
+  range_end : Int,
+) -> Unit {
+  if flag == 1 {
+    // Interpolate x
+    let org1 = if t1 < self.zone1_org.length() {
+      self.zone1_org[t1].x()
+    } else {
+      0L
+    }
+    let cur1 = self.zone1_cur[t1].x()
+    let org2 = if t2 < self.zone1_org.length() {
+      self.zone1_org[t2].x()
+    } else {
+      0L
+    }
+    let cur2 = self.zone1_cur[t2].x()
+    for i in range_start..<range_end {
+      if i < self.zone1_touch.length() &&
+        (self.zone1_touch[i].to_int() & touch_mask) == 0 {
+        let org = if i < self.zone1_org.length() {
+          self.zone1_org[i].x()
+        } else {
+          0L
+        }
+        let new_val = interp_value(org, org1, org2, cur1, cur2)
+        self.zone1_cur[i] = @types.Vector::new(new_val, self.zone1_cur[i].y())
+      }
+    }
+  } else {
+    // Interpolate y
+    let org1 = if t1 < self.zone1_org.length() {
+      self.zone1_org[t1].y()
+    } else {
+      0L
+    }
+    let cur1 = self.zone1_cur[t1].y()
+    let org2 = if t2 < self.zone1_org.length() {
+      self.zone1_org[t2].y()
+    } else {
+      0L
+    }
+    let cur2 = self.zone1_cur[t2].y()
+    for i in range_start..<range_end {
+      if i < self.zone1_touch.length() &&
+        (self.zone1_touch[i].to_int() & touch_mask) == 0 {
+        let org = if i < self.zone1_org.length() {
+          self.zone1_org[i].y()
+        } else {
+          0L
+        }
+        let new_val = interp_value(org, org1, org2, cur1, cur2)
+        self.zone1_cur[i] = @types.Vector::new(self.zone1_cur[i].x(), new_val)
+      }
+    }
+  }
 }
 
 ///|

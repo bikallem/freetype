@@ -107,6 +107,9 @@ fn upscale_26dot6(x : Int64) -> Int64 {
 
 ///|
 fn ft_udiv(a : Int64, b : Int64) -> Int {
+  if b == 0L {
+    return 0
+  }
   ((
     (a.reinterpret_as_uint64() * (0xFFFFFFFFUL / b.reinterpret_as_uint64())) >>
     32

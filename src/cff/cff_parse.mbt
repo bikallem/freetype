@@ -643,7 +643,7 @@ fn resolve_units_per_em(top_dict : CffTopDict) -> UInt {
   if matrix.length() < 4 {
     return 1000U
   }
-  let scale = if matrix[3] != 0.0 { matrix[3] } else { matrix[1] }
+  let scale = if matrix[3] != 0.0 { matrix[3] } else { matrix[0] }
   let abs_scale = if scale < 0.0 { -scale } else { scale }
   if abs_scale <= 0.0 {
     return 1000U
@@ -826,6 +826,26 @@ pub fn load_cff(data : Bytes, offset : Int) -> CffFont raise @error.FTError {
           }
         }
       }
+      4 => {
+        let n_ranges = reader.read_u32_be().reinterpret_as_int()
+        let first_glyphs : Array[Int] = []
+        let past_end_glyphs : Array[Int] = []
+        let fds : Array[Int] = []
+        for _ in 0..<n_ranges {
+          first_glyphs.push(reader.read_u32_be().reinterpret_as_int())
+          past_end_glyphs.push(reader.read_u32_be().reinterpret_as_int())
+          fds.push(reader.read_u16_be().reinterpret_as_int())
+        }
+        for i in 0..<n_ranges {
+          let clamped_start = first_glyphs[i].max(0)
+          let clamped_end = past_end_glyphs[i].min(
+            num_glyphs.reinterpret_as_int(),
+          )
+          for glyph in clamped_start..<clamped_end {
+            fd_select[glyph] = fds[i]
+          }
+        }
+      }
       _ => ()
     }
   }
@@ -995,6 +1015,26 @@ pub fn load_cff2(
           }
           let end_ = raw_end.min(num_glyphs.reinterpret_as_int())
           for glyph in start..<end_ {
+            fd_select[glyph] = fds[i]
+          }
+        }
+      }
+      4 => {
+        let n_ranges = reader.read_u32_be().reinterpret_as_int()
+        let first_glyphs : Array[Int] = []
+        let past_end_glyphs : Array[Int] = []
+        let fds : Array[Int] = []
+        for _ in 0..<n_ranges {
+          first_glyphs.push(reader.read_u32_be().reinterpret_as_int())
+          past_end_glyphs.push(reader.read_u32_be().reinterpret_as_int())
+          fds.push(reader.read_u16_be().reinterpret_as_int())
+        }
+        for i in 0..<n_ranges {
+          let clamped_start = first_glyphs[i].max(0)
+          let clamped_end = past_end_glyphs[i].min(
+            num_glyphs.reinterpret_as_int(),
+          )
+          for glyph in clamped_start..<clamped_end {
             fd_select[glyph] = fds[i]
           }
         }

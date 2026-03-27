@@ -154,6 +154,22 @@ pub fn detect_script(charcode : UInt) -> Script {
   if cc >= 0x1E00 && cc <= 0x1EFF {
     return Script::Latin
   }
+  // Greek and Coptic (U+0370-U+03FF)
+  if cc >= 0x0370 && cc <= 0x03FF {
+    return Script::Latin
+  }
+  // Greek Extended (U+1F00-U+1FFF)
+  if cc >= 0x1F00 && cc <= 0x1FFF {
+    return Script::Latin
+  }
+  // Cyrillic (U+0400-U+04FF)
+  if cc >= 0x0400 && cc <= 0x04FF {
+    return Script::Latin
+  }
+  // Cyrillic Supplement (U+0500-U+052F)
+  if cc >= 0x0500 && cc <= 0x052F {
+    return Script::Latin
+  }
   // CJK Unified Ideographs
   if cc >= 0x4E00 && cc <= 0x9FFF {
     return Script::Cjk
