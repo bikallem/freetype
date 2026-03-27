@@ -285,3 +285,53 @@ test "outline_decompose: simple triangle" {
   inspect(log[1], content="L(100,0)")
   inspect(log[2], content="L(50,100)")
 }
+
+///|
+test "outline_decompose: invalid contour metadata returns InvalidOutline" {
+  let outline = @types.Outline::create_with_counts(
+    FixedArray::default(),
+    FixedArray::default(),
+    FixedArray::from_array([0U]),
+    1,
+    1,
+  )
+  let funcs = OutlineFuncs::new(
+    move_to=fn(_) {},
+    line_to=fn(_) {},
+    conic_to=fn(_, _) {},
+    cubic_to=fn(_, _, _) {},
+  )
+  let result = try? outline_decompose(outline, funcs)
+  inspect(result, content="Err(InvalidOutline)")
+}
+
+///|
+test "outline_decompose: repeated contour endpoint skips empty contour" {
+  let outline = @types.Outline::create(
+    FixedArray::from_array([
+      @types.Vector::new(0L, 0L),
+      @types.Vector::new(100L, 0L),
+      @types.Vector::new(50L, 100L),
+    ]),
+    FixedArray::from_array([
+      @types.CURVE_TAG_ON,
+      @types.CURVE_TAG_ON,
+      @types.CURVE_TAG_ON,
+    ]),
+    FixedArray::from_array([2U, 2U]),
+  )
+  let log : Array[String] = []
+  let funcs = OutlineFuncs::new(
+    move_to=fn(p) { log.push("M(\{p.x()},\{p.y()})") },
+    line_to=fn(p) { log.push("L(\{p.x()},\{p.y()})") },
+    conic_to=fn(c, p) { log.push("Q(\{c.x()},\{c.y()},\{p.x()},\{p.y()})") },
+    cubic_to=fn(c1, c2, p) {
+      log.push("C(\{c1.x()},\{c1.y()},\{c2.x()},\{c2.y()},\{p.x()},\{p.y()})")
+    },
+  )
+  outline_decompose(outline, funcs)
+  inspect(log.length() >= 3, content="true")
+  inspect(log[0], content="M(0,0)")
+  inspect(log[1], content="L(100,0)")
+  inspect(log[2], content="L(50,100)")
+}

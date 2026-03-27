@@ -26,3 +26,16 @@ test "render_outline_normal: unit square" {
   inspect(bitmap.buffer().length(), content="1")
   inspect(bitmap.buffer()[0].to_int(), content="255")
 }
+
+///|
+test "render_outline_normal: invalid outline returns InvalidOutline" {
+  let outline = @types.Outline::create_with_counts(
+    FixedArray::default(),
+    FixedArray::default(),
+    FixedArray::from_array([0U]),
+    1,
+    1,
+  )
+  let result = try? render_outline_normal(outline)
+  inspect(result, content="Err(InvalidOutline)")
+}

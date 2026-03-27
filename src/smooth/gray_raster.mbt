@@ -1267,6 +1267,7 @@ fn render_outline_with_layout(
 pub fn render_outline_normal(
   outline : @types.Outline,
 ) -> (@types.Bitmap, Int, Int) raise @error.FTError {
+  @base.outline_check(outline)
   render_outline_with_layout(
     outline,
     normal_layout(@base.outline_get_cbox(outline)),
@@ -1277,6 +1278,7 @@ pub fn render_outline_normal(
 pub fn render_outline_light(
   outline : @types.Outline,
 ) -> (@types.Bitmap, Int, Int) raise @error.FTError {
+  @base.outline_check(outline)
   render_outline_with_layout(
     outline,
     normal_layout(@base.outline_get_cbox(outline)),
@@ -1287,6 +1289,7 @@ pub fn render_outline_light(
 pub fn render_outline_mono(
   outline : @types.Outline,
 ) -> (@types.Bitmap, Int, Int) raise @error.FTError {
+  @base.outline_check(outline)
   render_outline_with_layout(
     outline,
     mono_layout(@base.outline_get_cbox(outline)),
@@ -1297,6 +1300,7 @@ pub fn render_outline_mono(
 pub fn render_outline_lcd(
   outline : @types.Outline,
 ) -> (@types.Bitmap, Int, Int) raise @error.FTError {
+  @base.outline_check(outline)
   render_outline_with_layout(
     outline,
     lcd_layout(@base.outline_get_cbox(outline)),
@@ -1307,6 +1311,7 @@ pub fn render_outline_lcd(
 pub fn render_outline_lcdv(
   outline : @types.Outline,
 ) -> (@types.Bitmap, Int, Int) raise @error.FTError {
+  @base.outline_check(outline)
   render_outline_with_layout(
     outline,
     lcdv_layout(@base.outline_get_cbox(outline)),
@@ -1322,5 +1327,6 @@ pub fn render_outline_gray_mask(
   width : Int,
   rows : Int,
 ) -> Bytes raise @error.FTError {
+  @base.outline_check(outline)
   render_gray_plane(outline, left, top, width, rows)
 }

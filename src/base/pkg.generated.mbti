@@ -100,6 +100,8 @@ pub const STYLE_FLAG_ITALIC : Int = 1
 
 pub fn detect_format(Bytes) -> FontFormat
 
+pub fn outline_check(@types.Outline) -> Unit raise @error.FTError
+
 pub fn outline_decompose(@types.Outline, OutlineFuncs) -> Unit raise @error.FTError
 
 pub fn outline_get_bbox(@types.Outline) -> @types.BBox

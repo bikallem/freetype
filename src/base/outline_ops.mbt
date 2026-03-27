@@ -79,12 +79,43 @@ pub fn OutlineFuncs::new(
 }
 
 ///|
+/// Validate outline backing storage and contour endpoints before walking it.
+/// This intentionally accepts trailing unused points in reusable outline buffers
+/// and repeated contour endpoints that encode empty contours; the critical
+/// requirement for safe decomposition is that contour endpoints never decrease
+/// and always stay in bounds for the declared point count.
+pub fn outline_check(outline : @types.Outline) -> Unit raise @error.FTError {
+  let n_points = outline.n_points()
+  let n_contours = outline.n_contours()
+  if n_points == 0 && n_contours == 0 {
+    return
+  }
+  if n_points <= 0 || n_contours <= 0 {
+    raise @error.FTError::InvalidOutline
+  }
+  if outline.points().length() < n_points ||
+    outline.tags().length() < n_points ||
+    outline.contours().length() < n_contours {
+    raise @error.FTError::InvalidOutline
+  }
+  let mut end0 = -1
+  for i in 0..<n_contours {
+    let end = outline.contours()[i].reinterpret_as_int()
+    if end < end0 || end >= n_points {
+      raise @error.FTError::InvalidOutline
+    }
+    end0 = end
+  }
+}
+
+///|
 /// Walk an outline's contours, emitting move_to/line_to/conic_to/cubic_to callbacks.
 /// Port of FT_Outline_Decompose from ftoutln.c.
 pub fn outline_decompose(
   outline : @types.Outline,
   funcs : OutlineFuncs,
 ) -> Unit raise @error.FTError {
+  outline_check(outline)
   let n_contours = outline.n_contours()
   if n_contours == 0 {
     return
@@ -97,6 +128,9 @@ pub fn outline_decompose(
 
   for c = 0, first = 0; c < n_contours; {
     let last = outline.contours()[c].reinterpret_as_int()
+    if last < first {
+      continue c + 1, first
+    }
     // Find first on-curve point
     let mut start = first
     let mut start_ct = @types.CurveTag::from_byte(outline.tags()[start])
