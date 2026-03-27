@@ -17,10 +17,16 @@
 |------|--------|---------|-------|
 | minimal.ttf | TrueType | Apache 2.0 | 3 glyphs, triangle 'A' |
 | minimal.otf | CFF/OpenType | Apache 2.0 | 3 glyphs, CFF charstrings |
+| minimal_standalone.cff | Standalone CFF | Apache 2.0 | 3 glyphs, standard encoding |
+| minimal_standalone_expert.cff | Standalone CFF | Apache 2.0 | 3 glyphs, Expert encoding metadata |
+| minimal_standalone_custom.cff | Standalone CFF | Apache 2.0 | 3 glyphs, custom encoding metadata |
 | minimal.ttc | TrueType Collection | Apache 2.0 | 2 faces |
 | minimal.woff | WOFF1 | Apache 2.0 | zlib-compressed SFNT |
 | minimal.pfb | Type 1 PFB | Apache 2.0 | eexec+charstring encrypted |
+| minimal_type1_expert.pfb | Type 1 PFB | Apache 2.0 | ExpertEncoding charmap fixture |
 | minimal.bdf | BDF Bitmap | Apache 2.0 | 8×8 bitmap glyphs |
+| minimal_sparse.bdf | BDF Bitmap | Apache 2.0 | sparse encoding map fixture |
+| minimal_chars_mismatch.bdf | BDF Bitmap | Apache 2.0 | CHARS mismatch fixture |
 
 ## Why synthetic fonts for TTC and WOFF?
 

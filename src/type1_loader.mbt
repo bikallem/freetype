@@ -136,6 +136,8 @@ fn load_type1_pfb(data : Bytes) -> @base.FaceRec raise @error.FTError {
   }
   let encoding_charmap = if font.custom_encoding() {
     @base.CharMapRec::new(@base.Encoding::AdobeCustom, 7U, 2U)
+  } else if font.expert_encoding() {
+    @base.CharMapRec::new(@base.Encoding::AdobeExpert, 7U, 1U)
   } else {
     @base.CharMapRec::new(@base.Encoding::AdobeStandard, 7U, 0U)
   }

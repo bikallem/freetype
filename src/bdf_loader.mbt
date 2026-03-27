@@ -49,6 +49,7 @@ fn load_bdf(data : Bytes) -> @base.FaceRec raise @error.FTError {
   let face = @base.FaceRec::new()
   let glyphs = font.glyphs()
   let num_chars = font.num_chars()
+  let num_glyphs = glyphs.length()
   let family_name = extract_bdf_family_name(font.font_name())
   let mut max_advance_width = font.bbx_width()
   for _, glyph in glyphs {
@@ -56,7 +57,8 @@ fn load_bdf(data : Bytes) -> @base.FaceRec raise @error.FTError {
   }
   face.set_family_name(family_name)
   face.set_face_flags(@base.FACE_FLAG_FIXED_SIZES | @base.FACE_FLAG_HORIZONTAL)
-  face.set_num_glyphs((num_chars + 1).to_int64())
+  let advertised_glyphs = if num_chars > 0 { num_chars } else { num_glyphs }
+  face.set_num_glyphs((advertised_glyphs + 1).to_int64())
   face.set_ascender(font.bbx_height() + font.bbx_y_offset())
   face.set_descender(font.bbx_y_offset())
   face.set_height(font.bbx_height())
@@ -76,27 +78,16 @@ fn load_bdf(data : Bytes) -> @base.FaceRec raise @error.FTError {
   face.set_active_charmap(0)
 
   let cmap : Map[UInt, UInt] = {}
-  let use_dense_unicode_map = glyphs.length() != num_chars
-  if !use_dense_unicode_map {
-    for i, glyph in glyphs {
-      let encoding = glyph.encoding()
-      if encoding >= 0 {
-        cmap[encoding.reinterpret_as_uint()] = (i + 1).reinterpret_as_uint()
-      }
+  for i, glyph in glyphs {
+    let encoding = glyph.encoding()
+    if encoding >= 0 {
+      cmap[encoding.reinterpret_as_uint()] = (i + 1).reinterpret_as_uint()
     }
   }
   let char_index_fn : (UInt) -> UInt = fn(charcode) {
-    if use_dense_unicode_map {
-      if charcode.reinterpret_as_int() < num_chars {
-        charcode + 1U
-      } else {
-        0U
-      }
-    } else {
-      match cmap.get(charcode) {
-        Some(gid) => gid
-        None => 0U
-      }
+    match cmap.get(charcode) {
+      Some(gid) => gid
+      None => 0U
     }
   }
   let load_glyph_fn : (UInt, Int) -> @base.BitmapGlyphData raise @error.FTError = fn(
@@ -113,40 +104,24 @@ fn load_bdf(data : Bytes) -> @base.FaceRec raise @error.FTError {
       )
     }
     let index = glyph_index.reinterpret_as_int() - 1
-    if index < 0 || index >= num_chars {
+    if index < 0 || index >= glyphs.length() {
       raise @error.FTError::InvalidGlyphIndex
     }
-    let maybe_glyph = if index < glyphs.length() {
-      Some(glyphs[index])
-    } else {
-      font.get_glyph(index)
-    }
-    match maybe_glyph {
-      Some(glyph) => {
-        let top = glyph.bbx_height() + glyph.bbx_y_offset()
-        let advance = glyph_advance_width(glyph)
-        let slot_data = @base.GlyphSlotData::new(
-          glyph.bbx_width().to_int64(),
-          glyph.bbx_height().to_int64(),
-          glyph.bbx_x_offset().to_int64(),
-          top.to_int64(),
-          advance.to_int64(),
-        )
-        @base.BitmapGlyphData::new(
-          slot_data,
-          make_bdf_bitmap(glyph),
-          glyph.bbx_x_offset(),
-          top,
-        )
-      }
-      None =>
-        @base.BitmapGlyphData::new(
-          @base.GlyphSlotData::new(0L, 0L, 0L, 0L, 0L),
-          @types.Bitmap::new(),
-          0,
-          0,
-        )
-    }
+    let glyph = glyphs[index]
+    let top = glyph.bbx_height() + glyph.bbx_y_offset()
+    let advance = glyph_advance_width(glyph)
+    @base.BitmapGlyphData::new(
+      @base.GlyphSlotData::new(
+        glyph.bbx_width().to_int64(),
+        glyph.bbx_height().to_int64(),
+        glyph.bbx_x_offset().to_int64(),
+        top.to_int64(),
+        advance.to_int64(),
+      ),
+      make_bdf_bitmap(glyph),
+      glyph.bbx_x_offset(),
+      top,
+    )
   }
   face.set_char_index_fn(char_index_fn)
   face.set_driver_data(

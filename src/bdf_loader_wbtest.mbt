@@ -4,6 +4,16 @@ fn load_bdf_with_wide_advance() -> Bytes {
 }
 
 ///|
+fn load_sparse_bdf_fixture() -> Bytes {
+  try! @fs.read_file_to_bytes("test/fonts/minimal_sparse.bdf")
+}
+
+///|
+fn load_chars_mismatch_bdf_fixture() -> Bytes {
+  try! @fs.read_file_to_bytes("test/fonts/minimal_chars_mismatch.bdf")
+}
+
+///|
 test "BDF: public API uses DWIDTH for advances" {
   let face = from_bytes(load_bdf_with_wide_advance())
   inspect(face.family_name(), content="Test")
@@ -16,4 +26,24 @@ test "BDF: public API uses DWIDTH for advances" {
   inspect(face.glyph().metrics().width(), content="8")
   inspect(face.glyph().metrics().hori_bearing_x(), content="1")
   inspect(face.glyph().metrics().hori_advance(), content="10")
+}
+
+///|
+test "BDF: sparse encoding map stays encoding-driven" {
+  let face = from_bytes(load_sparse_bdf_fixture())
+  inspect(face.num_glyphs(), content="3")
+  inspect(get_char_index(face, 32U), content="1")
+  inspect(get_char_index(face, 65U), content="0")
+  inspect(get_char_index(face, 66U), content="2")
+}
+
+///|
+test "BDF: CHARS mismatch still uses parsed glyph set" {
+  let face = from_bytes(load_chars_mismatch_bdf_fixture())
+  inspect(face.num_glyphs(), content="5")
+  inspect(get_char_index(face, 32U), content="1")
+  inspect(get_char_index(face, 65U), content="2")
+  let r = try? load_glyph(face, 2U)
+  guard r is Ok(_) else { return }
+  inspect(face.glyph().metrics().hori_advance(), content="8")
 }

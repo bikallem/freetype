@@ -61,6 +61,15 @@ test "parse_bdf_header preserves device width distinct from bbx" {
 }
 
 ///|
+test "parse_bdf_header accepts BITMAP lines with trailing spaces" {
+  let bdf = "STARTFONT 2.1\nFONT test\nSIZE 8 75 75\nFONTBOUNDINGBOX 8 8 0 0\nCHARS 1\nSTARTCHAR A\nENCODING 65\nSWIDTH 500 0\nDWIDTH 8 0\nBBX 8 8 0 0\nBITMAP \n18\n24\n42\n7E\n42\n42\n42\n00\nENDCHAR\nENDFONT\n"
+  let data = @utf8.encode(bdf)
+  let font = parse_bdf_header(data)
+  inspect(font.glyphs.length(), content="1")
+  inspect(font.glyphs[0].bitmap.length(), content="8")
+}
+
+///|
 test "BdfFont::get_glyph" {
   let bdf = "STARTFONT 2.1\nFONT test\nSIZE 8 75 75\nFONTBOUNDINGBOX 8 8 0 0\nCHARS 2\nSTARTCHAR A\nENCODING 65\nSWIDTH 500 0\nDWIDTH 8 0\nBBX 8 8 0 0\nBITMAP\n18\n24\n42\n7E\n42\n42\n42\n00\nENDCHAR\nSTARTCHAR B\nENCODING 66\nSWIDTH 500 0\nDWIDTH 8 0\nBBX 8 8 0 0\nBITMAP\n7C\n42\n7C\n42\n42\n42\n7C\n00\nENDCHAR\nENDFONT\n"
   let data = @utf8.encode(bdf)

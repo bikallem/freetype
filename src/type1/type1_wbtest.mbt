@@ -91,3 +91,18 @@ test "parse_type1_pfa captures non-default FontMatrix and units_per_em" {
   inspect((1.0 / font.font_matrix[3]).round().to_int(), content="2000")
   inspect(font.units_per_em, content="2000")
 }
+
+///|
+test "parse_type1_pfa recognizes ExpertEncoding" {
+  let pfa : Bytes = b"%!PS-AdobeFont-1.0: ExpertTest 001.000\n" +
+    b"/FontName /ExpertTest def\n" +
+    b"/FamilyName (Expert Test) readonly def\n" +
+    b"/FontType 1 def\n" +
+    b"/FontMatrix [0.001 0 0 0.001 0 0] readonly def\n" +
+    b"/FontBBox {0 -200 500 800} readonly def\n" +
+    b"/Encoding ExpertEncoding def\n"
+  let font = parse_type1_pfa(pfa)
+  inspect(font.custom_encoding(), content="false")
+  inspect(font.expert_encoding(), content="true")
+  inspect(font.encoding()[32], content="space")
+}

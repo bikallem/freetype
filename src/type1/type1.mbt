@@ -10,6 +10,7 @@ struct Type1Font {
   mut units_per_em : Int // default 1000 for Type 1
   mut encoding : Array[String] // glyph name per encoding slot (256 entries)
   mut custom_encoding : Bool
+  mut expert_encoding : Bool
   mut charstrings : Map[String, Bytes] // glyph_name -> charstring data
   mut glyph_order : Array[String] // glyph order as stored in /CharStrings
   subrs : Array[Bytes] // subroutine array
@@ -38,6 +39,7 @@ pub fn Type1Font::new() -> Type1Font {
     units_per_em: 1000,
     encoding: [],
     custom_encoding: false,
+    expert_encoding: false,
     charstrings: {},
     glyph_order: [],
     subrs: [],
@@ -163,8 +165,12 @@ pub fn parse_type1_pfb(data : Bytes) -> Type1Font raise @error.FTError {
       "UnderlineThickness",
     )
     // Parse encoding from ASCII segment
-    font.custom_encoding = has_custom_encoding(ascii_parts[0])
-    font.encoding = parse_encoding(ascii_parts[0])
+    let (encoding, custom_encoding, expert_encoding) = parse_encoding(
+      ascii_parts[0],
+    )
+    font.encoding = encoding
+    font.custom_encoding = custom_encoding
+    font.expert_encoding = expert_encoding
   }
   // Decrypt binary segment (eexec encrypted private dict + charstrings)
   if binary_parts.length() > 0 {
@@ -192,8 +198,10 @@ fn parse_type1_pfa(data : Bytes) -> Type1Font {
   font.font_bbox = extract_font_bbox(data)
   font.underline_position = extract_named_int(data, "UnderlinePosition")
   font.underline_thickness = extract_named_int(data, "UnderlineThickness")
-  font.custom_encoding = has_custom_encoding(data)
-  font.encoding = parse_encoding(data)
+  let (encoding, custom_encoding, expert_encoding) = parse_encoding(data)
+  font.encoding = encoding
+  font.custom_encoding = custom_encoding
+  font.expert_encoding = expert_encoding
   // Find "eexec" keyword — everything after it is hex-encoded encrypted data
   let text_len = data.length()
   let mut eexec_pos = -1
@@ -559,15 +567,18 @@ fn bytes_find(data : Bytes, len : Int, pattern : Bytes, from? : Int = 0) -> Int 
 
 ///|
 /// Parse encoding from the ASCII segment.
-/// Looks for "/Encoding StandardEncoding def" or custom "dup N /name put" entries.
-fn parse_encoding(ascii_data : Bytes) -> Array[String] {
+/// Returns the decoded encoding array plus flags for custom and expert
+/// encodings.
+fn parse_encoding(ascii_data : Bytes) -> (Array[String], Bool, Bool) {
   let len = ascii_data.length()
   let encoding : Array[String] = Array::make(256, ".notdef")
   // Byte-level search for encoding keywords (no String conversion)
   let pat_std = b"StandardEncoding"
+  let pat_expert = b"ExpertEncoding"
   let pat_enc = b"/Encoding"
   let pat_enc256 = b"/Encoding 256 array"
   let has_std = bytes_find(ascii_data, len, pat_std) >= 0
+  let has_expert = bytes_find(ascii_data, len, pat_expert) >= 0
   let has_enc = bytes_find(ascii_data, len, pat_enc) >= 0
   let has_enc256 = bytes_find(ascii_data, len, pat_enc256) >= 0
   // Check for StandardEncoding
@@ -582,15 +593,28 @@ fn parse_encoding(ascii_data : Bytes) -> Array[String] {
         }
       }
     }
-    return encoding
+    return (encoding, false, false)
+  }
+  if has_expert && has_enc && !has_enc256 {
+    for i in 0..<256 {
+      let sid = @psnames.expert_encoding_sid(i.reinterpret_as_uint())
+      if sid != 0 {
+        match @psnames.standard_string(sid.reinterpret_as_uint()) {
+          Some(name) => encoding[i] = name
+          None => ()
+        }
+      }
+    }
+    return (encoding, false, true)
   }
   // Look for custom encoding: "dup N /name put" entries
   // Search for "/Encoding" first
   let enc_pos = bytes_find(ascii_data, len, pat_enc)
   if enc_pos < 0 {
-    return encoding
+    return (encoding, false, false)
   }
   let start = enc_pos + pat_enc.length()
+  let mut saw_custom_entry = false
   // Parse "dup N /name put" entries
   let mut i = start
   while i + 10 < len {
@@ -656,6 +680,7 @@ fn parse_encoding(ascii_data : Bytes) -> Array[String] {
         let name = name_buf.to_string()
         if code >= 0 && code < 256 {
           encoding[code] = name
+          saw_custom_entry = true
         }
       }
       // Skip to end of line
@@ -670,18 +695,7 @@ fn parse_encoding(ascii_data : Bytes) -> Array[String] {
       i += 1
     }
   }
-  encoding
-}
-
-///|
-fn has_custom_encoding(ascii_data : Bytes) -> Bool {
-  let len = ascii_data.length()
-  if bytes_find(ascii_data, len, b"StandardEncoding") >= 0 &&
-    bytes_find(ascii_data, len, b"/Encoding 256 array") < 0 {
-    return false
-  }
-  bytes_find(ascii_data, len, b"/Encoding 256 array") >= 0 ||
-  bytes_find(ascii_data, len, b"dup ") >= 0
+  (encoding, has_enc256 || saw_custom_entry, false)
 }
 
 ///|
@@ -940,6 +954,11 @@ pub fn Type1Font::encoding(self : Type1Font) -> Array[String] {
 ///|
 pub fn Type1Font::custom_encoding(self : Type1Font) -> Bool {
   self.custom_encoding
+}
+
+///|
+pub fn Type1Font::expert_encoding(self : Type1Font) -> Bool {
+  self.expert_encoding
 }
 
 ///|

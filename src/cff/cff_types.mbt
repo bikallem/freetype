@@ -298,6 +298,11 @@ pub fn CffTopDict::charset_offset(self : CffTopDict) -> UInt {
 }
 
 ///|
+pub fn CffTopDict::encoding_offset(self : CffTopDict) -> UInt {
+  self.encoding_offset
+}
+
+///|
 pub fn CffTopDict::is_cid(self : CffTopDict) -> Bool {
   self.is_cid
 }

@@ -316,7 +316,7 @@ pub fn parse_bdf_header(data : Bytes) -> BdfFont raise @error.FTError {
         while ge < len && data[ge] != b'\n' && data[ge] != b'\r' {
           ge = ge + 1
         }
-        if bytes_equals(data, gs, ge, "BITMAP") {
+        if bytes_starts_with(data, gs, ge, "BITMAP") {
           // Advance past BITMAP line
           pos = ge
           if pos < len && data[pos] == b'\r' {

@@ -64,6 +64,13 @@ test "parse_top_dict: Private dict" {
 }
 
 ///|
+test "parse_top_dict: encoding offset" {
+  let data : Bytes = [140, 16] // encoding offset 1 (expert)
+  let dict = parse_top_dict(data)
+  inspect(dict.encoding_offset(), content="1")
+}
+
+///|
 test "parse_private_dict: defaultWidthX" {
   // defaultWidthX = 500: 28 0x01 0xF4 20
   let data : Bytes = [28, 0x01, 0xF4, 20]
@@ -145,5 +152,6 @@ test "CffIndex::get_item out of range" {
 test "CffTopDict::new defaults" {
   let dict = CffTopDict::new()
   inspect(dict.charset_offset, content="0")
+  inspect(dict.encoding_offset(), content="0")
   inspect(dict.is_cid, content="false")
 }

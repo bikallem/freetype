@@ -1,0 +1,33 @@
+{
+  "metadata": {
+    "family_name": "",
+    "style_name": "Regular",
+    "num_glyphs": 5,
+    "num_faces": 1,
+    "units_per_em": 0,
+    "ascender": 0,
+    "descender": 0,
+    "height": 0,
+    "max_advance_width": 0,
+    "bbox": { "xMin": 0, "yMin": 0, "xMax": 0, "yMax": 0 },
+    "face_flags": 22,
+    "style_flags": 0,
+    "num_charmaps": 1,
+    "underline_position": 0,
+    "underline_thickness": 0
+  },
+  "charmaps": [
+    {
+      "platform_id": 3,
+      "encoding_id": 1,
+      "entries": [[32,1],[65,2]]
+    }
+  ],
+  "glyphs": [
+
+  ],
+  "rendered_glyphs": [
+  ],
+  "kerning": [],
+  "variations": []
+}

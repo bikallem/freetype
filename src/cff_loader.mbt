@@ -54,9 +54,12 @@ fn load_cff_standalone(data : Bytes) -> @base.FaceRec raise @error.FTError {
     face.charmaps().push(@base.CharMapRec::new(@base.Encoding::Unicode, 3U, 1U))
   }
   if has_encoding {
-    face
-    .charmaps()
-    .push(@base.CharMapRec::new(@base.Encoding::AdobeStandard, 7U, 0U))
+    let encoding_charmap = match cff.top_dict().encoding_offset() {
+      0U => @base.CharMapRec::new(@base.Encoding::AdobeStandard, 7U, 0U)
+      1U => @base.CharMapRec::new(@base.Encoding::AdobeExpert, 7U, 1U)
+      _ => @base.CharMapRec::new(@base.Encoding::AdobeCustom, 7U, 2U)
+    }
+    face.charmaps().push(encoding_charmap)
   }
   if face.charmaps().length() > 0 {
     face.set_active_charmap(0)

@@ -14,6 +14,24 @@ fn render_color_test_font() -> Bytes {
 }
 
 ///|
+fn render_minimal_woff() -> Bytes {
+  try! @fs.read_file_to_bytes("test/fonts/minimal.woff")
+}
+
+///|
+fn fixed_array_slice_to_bytes(
+  bytes : FixedArray[Byte],
+  start : Int,
+  end : Int,
+) -> Bytes {
+  let out : Array[Byte] = Array::new(capacity=(end - start).max(0))
+  for i in start..<end {
+    out.push(bytes[i])
+  }
+  Bytes::from_array(out[:])
+}
+
+///|
 fn corrupt_first_embedded_png_crc(data : Bytes) -> Bytes {
   let signature : Bytes = b"\x89PNG\r\n\x1A\n"
   let bytes = FixedArray::make(data.length(), b'\x00')
@@ -51,8 +69,124 @@ fn corrupt_first_embedded_png_crc(data : Bytes) -> Bytes {
 }
 
 ///|
+fn png_test_crc32_update(crc : UInt, byte : Byte) -> UInt {
+  let mut value = crc ^ byte.to_uint()
+  for _ in 0..<8 {
+    value = if (value & 1U) != 0U {
+      (value >> 1) ^ 0xEDB8_8320U
+    } else {
+      value >> 1
+    }
+  }
+  value
+}
+
+///|
+fn png_test_chunk_crc(tag : Bytes, data : Bytes) -> UInt {
+  let mut crc = 0xFFFF_FFFFU
+  for _, byte in tag {
+    crc = png_test_crc32_update(crc, byte)
+  }
+  for _, byte in data {
+    crc = png_test_crc32_update(crc, byte)
+  }
+  crc ^ 0xFFFF_FFFFU
+}
+
+///|
+fn inject_unknown_critical_png_chunk_type(data : Bytes) -> Bytes {
+  let signature : Bytes = b"\x89PNG\r\n\x1A\n"
+  let replacement_tag : Bytes = b"JDAT"
+  let bytes = FixedArray::make(data.length(), b'\x00')
+  for i in 0..<data.length() {
+    bytes[i] = data[i]
+  }
+  let mut png_start = -1
+  for i in 0..<(data.length() - signature.length() + 1) {
+    let mut match_ = true
+    for j in 0..<signature.length() {
+      if data[i + j] != signature[j] {
+        match_ = false
+        break
+      }
+    }
+    if match_ {
+      png_start = i
+      break
+    }
+  }
+  if png_start < 0 {
+    return data
+  }
+  let mut chunk_offset = png_start + signature.length()
+  while chunk_offset + 12 <= bytes.length() {
+    let chunk_len = (bytes[chunk_offset].to_int() << 24) |
+      (bytes[chunk_offset + 1].to_int() << 16) |
+      (bytes[chunk_offset + 2].to_int() << 8) |
+      bytes[chunk_offset + 3].to_int()
+    let tag_offset = chunk_offset + 4
+    let data_offset = chunk_offset + 8
+    let crc_offset = data_offset + chunk_len
+    if crc_offset + 4 > bytes.length() {
+      return data
+    }
+    let tag = fixed_array_slice_to_bytes(bytes, tag_offset, tag_offset + 4)
+    if tag == b"IDAT" {
+      for i in 0..<4 {
+        bytes[tag_offset + i] = replacement_tag[i]
+      }
+      let chunk_data = fixed_array_slice_to_bytes(
+        bytes,
+        data_offset,
+        data_offset + chunk_len,
+      )
+      let crc = png_test_chunk_crc(replacement_tag, chunk_data)
+      bytes[crc_offset] = ((crc >> 24) & 0xFFU).to_byte()
+      bytes[crc_offset + 1] = ((crc >> 16) & 0xFFU).to_byte()
+      bytes[crc_offset + 2] = ((crc >> 8) & 0xFFU).to_byte()
+      bytes[crc_offset + 3] = (crc & 0xFFU).to_byte()
+      return Bytes::from_array(bytes[:])
+    }
+    chunk_offset = crc_offset + 4
+  }
+  data
+}
+
+///|
 fn render_cbdt_test_font() -> Bytes {
   try! @fs.read_file_to_bytes("test/fonts/minimal_cbdt.ttf")
+}
+
+///|
+fn read_u32_be_bytes(data : Bytes, offset : Int) -> UInt {
+  (data[offset].to_uint() << 24) |
+  (data[offset + 1].to_uint() << 16) |
+  (data[offset + 2].to_uint() << 8) |
+  data[offset + 3].to_uint()
+}
+
+///|
+fn write_u32_be_bytes(
+  buf : FixedArray[Byte],
+  offset : Int,
+  value : UInt,
+) -> Unit {
+  buf[offset] = ((value >> 24) & 0xFFU).to_byte()
+  buf[offset + 1] = ((value >> 16) & 0xFFU).to_byte()
+  buf[offset + 2] = ((value >> 8) & 0xFFU).to_byte()
+  buf[offset + 3] = (value & 0xFFU).to_byte()
+}
+
+///|
+fn corrupt_woff_first_orig_length(data : Bytes) -> Bytes {
+  let out = FixedArray::make(data.length(), b'\x00')
+  for i in 0..<data.length() {
+    out[i] = data[i]
+  }
+  let orig_length_offset = 44 + 12
+  let orig_length = read_u32_be_bytes(data, orig_length_offset)
+  write_u32_be_bytes(out, orig_length_offset, orig_length + 1U)
+  Bytes::from_array(out[:])
 }
 
 ///|
@@ -427,6 +561,44 @@ test "load_glyph: corrupt embedded PNG CRC is rejected" {
     err => Err(err)
   }
   inspect(result, content="Err(InvalidFileFormat)")
+}
+
+///|
+test "load_glyph: embedded PNG with unknown critical chunk is rejected" {
+  let face = from_bytes(
+    inject_unknown_critical_png_chunk_type(render_color_test_font()),
+  )
+  try! set_pixel_sizes(face, 0U, 16U)
+  let gid = get_char_index(face, 65U)
+  let result : Result[Unit, @error.FTError] = Ok(
+    load_glyph(face, gid, load_flags=@base.LOAD_COLOR),
+  ) catch {
+    err => Err(err)
+  }
+  inspect(result, content="Err(InvalidFileFormat)")
+}
+
+///|
+test "from_bytes: malformed WOFF1 table lengths are rejected" {
+  let broken = corrupt_woff_first_orig_length(render_minimal_woff())
+  let result : Result[Unit, @error.FTError] = Ok(
+    {
+      ignore(from_bytes(broken))
+      ()
+    },
+  ) catch {
+    err => Err(err)
+  }
+  inspect(result, content="Err(InvalidTable)")
+}
+
+///|
+test "decompress_woff: malformed WOFF1 table lengths are rejected" {
+  let broken = corrupt_woff_first_orig_length(render_minimal_woff())
+  let result : Result[Bytes, @error.FTError] = Ok(@sfnt.decompress_woff(broken)) catch {
+    err => Err(err)
+  }
+  inspect(result, content="Err(InvalidTable)")
 }
 
 ///|

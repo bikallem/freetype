@@ -7,10 +7,16 @@ Generates:
   mvar.ttf     — Minimal variable TrueType font with MVAR face-metric deltas
   uvs.ttf      — Minimal TrueType font with cmap format 14 variation selectors
   minimal.otf  — Minimal CFF/OpenType font (OTTO signature)
+  minimal_standalone.cff — Minimal standalone CFF font
+  minimal_standalone_expert.cff — Standalone CFF with Expert encoding metadata
+  minimal_standalone_custom.cff — Standalone CFF with custom encoding metadata
   minimal.bdf  — Minimal BDF bitmap font
+  minimal_sparse.bdf — Sparse-encoding BDF bitmap font
+  minimal_chars_mismatch.bdf — BDF with CHARS count larger than parsed glyph set
   minimal.pfb  — Minimal Type 1 PFB font
   minimal_fontmatrix.pfb — Minimal Type 1 PFB font with a non-default FontMatrix
   minimal_type1_encoding_only.pfb — Minimal Type 1 PFB with an encoding-only glyph
+  minimal_type1_expert.pfb — Minimal Type 1 PFB using ExpertEncoding
   minimal.woff — Minimal WOFF1 wrapping of the TTF
   minimal.ttc  — TrueType Collection containing two faces
 
@@ -1742,14 +1748,34 @@ def build_cff_index(items: list) -> bytes:
     return data
 
 
-def build_cff_table() -> bytes:
+CFF_MINIMAL_GLYPH_SIDS = {
+    ".notdef": 0,
+    "space": 1,
+    "A": 34,
+}
+
+
+def build_minimal_cff_encoding_data(encoding_kind: str,
+                                    custom_codes: tuple[int, int]) -> tuple[int | None, bytes]:
+    if encoding_kind == "standard":
+        return None, b""
+    if encoding_kind == "expert":
+        return 1, b""
+    if encoding_kind == "custom":
+        return None, bytes([0, 2, custom_codes[0], custom_codes[1]])
+    raise ValueError(f"unsupported CFF encoding kind: {encoding_kind}")
+
+
+def build_cff_table(*,
+                    font_name: str = "Minimal-Regular",
+                    encoding_kind: str = "standard",
+                    custom_codes: tuple[int, int] = (32, 65)) -> bytes:
     """Build a minimal CFF table with .notdef, space, and A glyphs."""
     # Header
     header = bytes([1, 0, 4, 1])  # major=1, minor=0, hdrSize=4, offSize=1
 
     # Name INDEX
-    font_name = b'Minimal-Regular'
-    name_index = build_cff_index([font_name])
+    name_index = build_cff_index([font_name.encode("ascii")])
 
     # Top DICT
     # We'll build it after we know offsets, using a two-pass approach.
@@ -1776,8 +1802,15 @@ def build_cff_table() -> bytes:
     charstrings_index = build_cff_index([notdef_cs, space_cs, a_cs])
 
     # Charset (format 0): .notdef is implicit (gid 0), then list SIDs for remaining glyphs
-    # space = SID 1 (standard string), A = SID 34 (standard string)
-    charset = bytes([0]) + struct.pack('>HH', 1, 34)  # format 0, SID for gid 1 and gid 2
+    charset = bytes([0]) + struct.pack(
+        '>HH',
+        CFF_MINIMAL_GLYPH_SIDS["space"],
+        CFF_MINIMAL_GLYPH_SIDS["A"],
+    )
+    encoding_dict_value, encoding_data = build_minimal_cff_encoding_data(
+        encoding_kind,
+        custom_codes,
+    )
 
     # Private DICT
     private_dict = b''
@@ -1788,10 +1821,14 @@ def build_cff_table() -> bytes:
     # We need to know the offsets of charset, encoding, charstrings, private dict
     # within the CFF data. Let's do a two-pass.
 
-    def build_top_dict(charset_off, charstrings_off, private_size, private_off):
+    def build_top_dict(charset_off, encoding_off, charstrings_off, private_size, private_off):
         d = b''
         # charset (operator 15)
         d += encode_cff_int(charset_off) + bytes([15])
+        if encoding_off is not None:
+            d += encode_cff_int(encoding_off) + bytes([16])
+        elif encoding_kind == "expert":
+            d += encode_cff_int(1) + bytes([16])
         # charstrings (operator 17)
         d += encode_cff_int(charstrings_off) + bytes([17])
         # Private (operator 18) = size offset
@@ -1803,20 +1840,25 @@ def build_cff_table() -> bytes:
     base = len(header) + len(name_index)
     # top_dict_index size depends on top_dict content, which depends on offsets...
     # Use iterative approach
-    top_dict_data = build_top_dict(0, 0, len(private_dict), 0)
+    top_dict_data = build_top_dict(0, None, 0, len(private_dict), 0)
     top_dict_index = build_cff_index([top_dict_data])
 
     for _ in range(5):  # converge
         after_gsubr = base + len(top_dict_index) + len(string_index) + len(gsubr_index)
         charset_off = after_gsubr
-        charstrings_off = charset_off + len(charset)
+        encoding_off = None
+        after_charset = charset_off + len(charset)
+        if encoding_data:
+            encoding_off = after_charset
+            after_charset += len(encoding_data)
+        charstrings_off = after_charset
         private_off = charstrings_off + len(charstrings_index)
-        top_dict_data = build_top_dict(charset_off, charstrings_off,
+        top_dict_data = build_top_dict(charset_off, encoding_off, charstrings_off,
                                        len(private_dict), private_off)
         top_dict_index = build_cff_index([top_dict_data])
 
     cff = header + name_index + top_dict_index + string_index + gsubr_index
-    cff += charset + charstrings_index + private_dict
+    cff += charset + encoding_data + charstrings_index + private_dict
     return cff
 
 
@@ -1925,6 +1967,100 @@ ENDFONT
 """
 
 
+def generate_sparse_bdf() -> str:
+    return """\
+STARTFONT 2.1
+FONT -Test-Sparse-Medium-R-Normal--8-80-75-75-C-80-ISO10646-1
+SIZE 8 75 75
+FONTBOUNDINGBOX 8 8 0 0
+STARTPROPERTIES 4
+FONT_ASCENT 7
+FONT_DESCENT 1
+CHARSET_REGISTRY "ISO10646"
+CHARSET_ENCODING "1"
+ENDPROPERTIES
+CHARS 2
+STARTCHAR space
+ENCODING 32
+SWIDTH 500 0
+DWIDTH 8 0
+BBX 8 8 0 0
+BITMAP
+00
+00
+00
+00
+00
+00
+00
+00
+ENDCHAR
+STARTCHAR B
+ENCODING 66
+SWIDTH 500 0
+DWIDTH 8 0
+BBX 8 8 0 0
+BITMAP
+7C
+42
+7C
+42
+42
+42
+7C
+00
+ENDCHAR
+ENDFONT
+"""
+
+
+def generate_chars_mismatch_bdf() -> str:
+    return """\
+STARTFONT 2.1
+FONT -Test-Mismatch-Medium-R-Normal--8-80-75-75-C-80-ISO10646-1
+SIZE 8 75 75
+FONTBOUNDINGBOX 8 8 0 0
+STARTPROPERTIES 4
+FONT_ASCENT 7
+FONT_DESCENT 1
+CHARSET_REGISTRY "ISO10646"
+CHARSET_ENCODING "1"
+ENDPROPERTIES
+CHARS 4
+STARTCHAR space
+ENCODING 32
+SWIDTH 500 0
+DWIDTH 8 0
+BBX 8 8 0 0
+BITMAP
+00
+00
+00
+00
+00
+00
+00
+00
+ENDCHAR
+STARTCHAR A
+ENCODING 65
+SWIDTH 500 0
+DWIDTH 8 0
+BBX 8 8 0 0
+BITMAP
+18
+24
+42
+7E
+42
+42
+42
+00
+ENDCHAR
+ENDFONT
+"""
+
+
 # ---------------------------------------------------------------------------
 # Generate minimal.pfb
 # ---------------------------------------------------------------------------
@@ -1933,16 +2069,31 @@ def generate_pfb(*,
                  font_name: str = "Minimal",
                  family_name: str = "Minimal",
                  font_matrix=(0.001, 0.0, 0.0, 0.001, 0.0, 0.0),
+                 encoding_mode: str = "custom",
                  include_encoding_only_glyph: bool = False) -> bytes:
     """Generate a minimal Type 1 font in PFB format."""
     # ASCII segment: header portion of Type 1 font
     font_matrix_text = " ".join(f"{value:g}" for value in font_matrix)
-    encoding_lines = [
-        "dup 32 /space put",
-        "dup 65 /A put",
-    ]
-    if include_encoding_only_glyph:
-        encoding_lines.append("dup 66 /foo put")
+    if encoding_mode == "custom":
+        encoding_lines = [
+            "dup 32 /space put",
+            "dup 65 /A put",
+        ]
+        if include_encoding_only_glyph:
+            encoding_lines.append("dup 66 /foo put")
+        encoding_text = "/Encoding 256 array\n0 1 255 {1 index exch /.notdef put} for\n"
+        encoding_text += "\n".join(encoding_lines)
+        encoding_text += "\nreadonly def"
+    elif encoding_mode == "expert":
+        if include_encoding_only_glyph:
+            raise ValueError("encoding-only glyph fixture requires custom encoding")
+        encoding_text = "/Encoding ExpertEncoding def"
+    elif encoding_mode == "standard":
+        if include_encoding_only_glyph:
+            raise ValueError("encoding-only glyph fixture requires custom encoding")
+        encoding_text = "/Encoding StandardEncoding def"
+    else:
+        raise ValueError(f"unsupported Type 1 encoding mode: {encoding_mode}")
     ascii_part = """%!PS-AdobeFont-1.0: Minimal 001.000
 %%Title: {font_name}
 %%CreationDate: 2025-01-01
@@ -1956,10 +2107,7 @@ end readonly def
 /FontType 1 def
 /FontMatrix [{font_matrix_text}] readonly def
 /FontBBox {{0 -200 500 800}} readonly def
-/Encoding 256 array
-0 1 255 {{1 index exch /.notdef put}} for
-{encoding_lines}
-readonly def
+{encoding_text}
 /PaintType 0 def
 currentdict end
 currentfile eexec
@@ -1967,7 +2115,7 @@ currentfile eexec
         font_name=font_name,
         family_name=family_name,
         font_matrix_text=font_matrix_text,
-        encoding_lines="\n".join(encoding_lines),
+        encoding_text=encoding_text,
     )
 
     # Binary segment: eexec-encrypted portion
@@ -2340,12 +2488,62 @@ def main():
         f.write(otf_data)
     print(f"  Written {len(otf_data)} bytes to {otf_path}")
 
+    print("Generating minimal_standalone.cff...")
+    standalone_cff_data = build_cff_table()
+    standalone_cff_path = os.path.join(SCRIPT_DIR, 'minimal_standalone.cff')
+    with open(standalone_cff_path, 'wb') as f:
+        f.write(standalone_cff_data)
+    print(f"  Written {len(standalone_cff_data)} bytes to {standalone_cff_path}")
+
+    print("Generating minimal_standalone_expert.cff...")
+    standalone_cff_expert_data = build_cff_table(
+        font_name="MinimalStandaloneExpert-Regular",
+        encoding_kind="expert",
+    )
+    standalone_cff_expert_path = os.path.join(
+        SCRIPT_DIR,
+        'minimal_standalone_expert.cff',
+    )
+    with open(standalone_cff_expert_path, 'wb') as f:
+        f.write(standalone_cff_expert_data)
+    print(
+        f"  Written {len(standalone_cff_expert_data)} bytes to {standalone_cff_expert_path}"
+    )
+
+    print("Generating minimal_standalone_custom.cff...")
+    standalone_cff_custom_data = build_cff_table(
+        font_name="MinimalStandaloneCustom-Regular",
+        encoding_kind="custom",
+        custom_codes=(32, 66),
+    )
+    standalone_cff_custom_path = os.path.join(
+        SCRIPT_DIR,
+        'minimal_standalone_custom.cff',
+    )
+    with open(standalone_cff_custom_path, 'wb') as f:
+        f.write(standalone_cff_custom_data)
+    print(
+        f"  Written {len(standalone_cff_custom_data)} bytes to {standalone_cff_custom_path}"
+    )
+
     # BDF
     print("Generating minimal.bdf...")
     bdf_path = os.path.join(SCRIPT_DIR, 'minimal.bdf')
     with open(bdf_path, 'w', newline='\n') as f:
         f.write(generate_bdf())
     print(f"  Written to {bdf_path}")
+
+    print("Generating minimal_sparse.bdf...")
+    sparse_bdf_path = os.path.join(SCRIPT_DIR, 'minimal_sparse.bdf')
+    with open(sparse_bdf_path, 'w', newline='\n') as f:
+        f.write(generate_sparse_bdf())
+    print(f"  Written to {sparse_bdf_path}")
+
+    print("Generating minimal_chars_mismatch.bdf...")
+    mismatch_bdf_path = os.path.join(SCRIPT_DIR, 'minimal_chars_mismatch.bdf')
+    with open(mismatch_bdf_path, 'w', newline='\n') as f:
+        f.write(generate_chars_mismatch_bdf())
+    print(f"  Written to {mismatch_bdf_path}")
 
     # PFB
     print("Generating minimal.pfb...")
@@ -2376,6 +2574,17 @@ def main():
     with open(pfb_encoding_path, 'wb') as f:
         f.write(pfb_encoding_data)
     print(f"  Written {len(pfb_encoding_data)} bytes to {pfb_encoding_path}")
+
+    print("Generating minimal_type1_expert.pfb...")
+    pfb_expert_data = generate_pfb(
+        font_name="MinimalExpertEncoding",
+        family_name="Minimal Expert Encoding",
+        encoding_mode="expert",
+    )
+    pfb_expert_path = os.path.join(SCRIPT_DIR, 'minimal_type1_expert.pfb')
+    with open(pfb_expert_path, 'wb') as f:
+        f.write(pfb_expert_data)
+    print(f"  Written {len(pfb_expert_data)} bytes to {pfb_expert_path}")
 
     # WOFF
     print("Generating minimal.woff...")

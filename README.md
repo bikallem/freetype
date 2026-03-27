@@ -50,7 +50,7 @@ Pure MoonBit port of the [FreeType](https://freetype.org/) font library.
 | Type 1 (PFB/PFA) | `.pfb` `.pfa` | Full | `type1/` — PFB/PFA parsing, eexec, Type 1 charstrings |
 | BDF (bitmap) | `.bdf` | Full | `bdf/` — header + glyph bitmap extraction |
 | PCF (bitmap) | `.pcf` | Full | `pcf/` — TOC, properties, metrics, encodings, bitmaps |
-| Color glyphs | `COLR`/`CPAL`, `sbix`, `CBDT`/`CBLC` | Full | `color/` — BGRA rendering, palettes, COLR v0/v1 paints, FreeType-compatible `sbix` (`png`/`dupe`/`flip`), CBDT/CBLC image formats `1/2/5/6/7/8/9/17/18/19`, CRC-validated PNG decode |
+| Color glyphs | `COLR`/`CPAL`, `sbix`, `CBDT`/`CBLC` | Partial | `color/` — BGRA rendering, palettes, COLR v0/v1 paints, `sbix` graphic types `png`/`dupe`/`flip`, CBDT/CBLC image formats `1/2/5/6/7/8/9/17/18/19`, CRC-validated PNG decode |
 
 Obsolete formats **not supported**: CID-keyed (standalone), Type 42, PFR (Bitstream), Windows FNT/FON.
 CID-keyed fonts inside CFF/OpenType are supported through the CFF driver.

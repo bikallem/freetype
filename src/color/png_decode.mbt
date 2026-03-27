@@ -58,6 +58,12 @@ fn png_chunk_crc(tag : UInt, data : Bytes) -> UInt {
 }
 
 ///|
+fn is_png_critical_chunk(tag : UInt) -> Bool {
+  let first = ((tag >> 24) & 0xFFU).to_int()
+  first >= 'A'.to_int() && first <= 'Z'.to_int()
+}
+
+///|
 fn read_png_chunk(
   reader : @stream.ByteReader,
 ) -> (UInt, UInt, Bytes) raise @error.FTError {
@@ -474,7 +480,10 @@ pub fn decode_png_to_bgra(data : Bytes) -> PngImage raise @error.FTError {
       0x74524E53U => transparency_bytes = Some(chunk_data)
       0x49444154U => idat_parts.push(chunk_data)
       0x49454E44U => saw_iend = true
-      _ => ()
+      _ =>
+        if is_png_critical_chunk(tag) {
+          raise @error.FTError::InvalidFileFormat
+        }
     }
   }
 

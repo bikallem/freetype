@@ -67,6 +67,7 @@ pub fn CffPrivateDict::std_vw(Self) -> Int64
 
 type CffTopDict derive(Show)
 pub fn CffTopDict::charset_offset(Self) -> UInt
+pub fn CffTopDict::encoding_offset(Self) -> UInt
 pub fn CffTopDict::font_bbox(Self) -> Array[Int64]
 pub fn CffTopDict::font_matrix(Self) -> Array[Double]
 pub fn CffTopDict::is_cid(Self) -> Bool
