@@ -37,6 +37,22 @@ test "parse_bdf_header basic" {
 }
 
 ///|
+test "parse_bdf_header captures normalized grayscale bpp" {
+  let bdf_text = "STARTFONT 2.1\nFONT test\nSIZE 8 75 75 3\nFONTBOUNDINGBOX 2 1 0 0\nCHARS 1\nSTARTCHAR gray\nENCODING 65\nSWIDTH 500 0\nDWIDTH 2 0\nBBX 2 1 0 0\nBITMAP\nAF\nENDCHAR\nENDFONT\n"
+  let font = parse_bdf_header(@utf8.encode(bdf_text))
+  inspect(font.bpp(), content="4")
+  inspect(font.glyphs[0].bitmap.length(), content="1")
+  inspect(font.glyphs[0].bitmap[0].to_int(), content="175")
+}
+
+///|
+test "parse_bdf_header captures DEFAULT_CHAR" {
+  let bdf_text = "STARTFONT 2.1\nFONT test\nSIZE 8 75 75\nFONTBOUNDINGBOX 8 8 0 0\nSTARTPROPERTIES 1\nDEFAULT_CHAR 66\nENDPROPERTIES\nCHARS 1\nSTARTCHAR B\nENCODING 66\nSWIDTH 500 0\nDWIDTH 8 0\nBBX 8 8 0 0\nBITMAP\n7C\n42\n7C\n42\n42\n42\n7C\n00\nENDCHAR\nENDFONT\n"
+  let font = parse_bdf_header(@utf8.encode(bdf_text))
+  inspect(font.default_char(), content="66")
+}
+
+///|
 test "parse_bdf_header parses glyphs" {
   let bdf = "STARTFONT 2.1\nFONT test\nSIZE 8 75 75\nFONTBOUNDINGBOX 8 8 0 0\nCHARS 1\nSTARTCHAR A\nENCODING 65\nSWIDTH 500 0\nDWIDTH 8 0\nBBX 8 8 0 0\nBITMAP\n18\n24\n42\n7E\n42\n42\n42\n00\nENDCHAR\nENDFONT\n"
   let data = @utf8.encode(bdf)

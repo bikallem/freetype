@@ -19,6 +19,10 @@ fn load_sfnt(
   // Check table presence (cheap O(1) lookups)
   let has_glyf = sfnt_data.table_dir().find_table(@types.TAG_GLYF) is Some(_)
   let has_cff = sfnt_data.table_dir().find_table(@types.TAG_CFF) is Some(_)
+  let has_cff2 = sfnt_data.table_dir().find_table(@types.TAG_CFF2) is Some(_)
+  if has_cff2 {
+    raise @error.FTError::UnimplementedFeature
+  }
   let color_tables = try
     @color.parse_color_tables(
       data,

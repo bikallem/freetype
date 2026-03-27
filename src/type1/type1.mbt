@@ -154,6 +154,9 @@ pub fn parse_type1_pfb(data : Bytes) -> Type1Font raise @error.FTError {
   }
   // Extract font name and FontBBox from ASCII segment if available
   if ascii_parts.length() > 0 {
+    if has_multiple_master_tokens(ascii_parts[0]) {
+      raise @error.FTError::UnimplementedFeature
+    }
     font.font_name = extract_font_name(ascii_parts[0])
     font.family_name = extract_family_name(ascii_parts[0])
     font.font_matrix = extract_font_matrix(ascii_parts[0])
@@ -178,6 +181,9 @@ pub fn parse_type1_pfb(data : Bytes) -> Type1Font raise @error.FTError {
   // Decrypt binary segment (eexec encrypted private dict + charstrings)
   if binary_parts.length() > 0 {
     let decrypted = eexec_decrypt(binary_parts[0])
+    if has_multiple_master_tokens(decrypted) {
+      raise @error.FTError::UnimplementedFeature
+    }
     // Parse /lenIV from decrypted data
     font.len_iv = extract_len_iv(decrypted)
     // Parse /CharStrings dict from decrypted data
@@ -192,8 +198,11 @@ pub fn parse_type1_pfb(data : Bytes) -> Type1Font raise @error.FTError {
 ///|
 /// Parse a PFA (ASCII) Type 1 font.
 /// The entire file is ASCII; the eexec section is hex-encoded.
-fn parse_type1_pfa(data : Bytes) -> Type1Font {
+fn parse_type1_pfa(data : Bytes) -> Type1Font raise @error.FTError {
   let font = Type1Font::new()
+  if has_multiple_master_tokens(data) {
+    raise @error.FTError::UnimplementedFeature
+  }
   // The whole file is ASCII
   font.font_name = extract_font_name(data)
   font.family_name = extract_family_name(data)
@@ -254,6 +263,9 @@ fn parse_type1_pfa(data : Bytes) -> Type1Font {
       data[eexec_pos:text_len].to_bytes()
     }
     let decrypted = eexec_decrypt(binary_data)
+    if has_multiple_master_tokens(decrypted) {
+      raise @error.FTError::UnimplementedFeature
+    }
     font.len_iv = extract_len_iv(decrypted)
     let (charstrings, glyph_order) = extract_charstrings(decrypted)
     font.charstrings = charstrings
@@ -261,6 +273,21 @@ fn parse_type1_pfa(data : Bytes) -> Type1Font {
   }
   font.units_per_em = units_per_em_from_font_matrix(font.font_matrix)
   font
+}
+
+///|
+fn has_multiple_master_tokens(data : Bytes) -> Bool {
+  let patterns = [
+    b"/BlendDesignPositions", b"/BlendDesignMap", b"/BlendAxisTypes", b"/WeightVector",
+    b"/BuildCharArray",
+  ]
+  let len = data.length()
+  for _, pattern in patterns {
+    if bytes_find(data, len, pattern) >= 0 {
+      return true
+    }
+  }
+  false
 }
 
 ///|

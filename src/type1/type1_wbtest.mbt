@@ -122,3 +122,19 @@ test "parse_type1_pfa recognizes ISOLatin1Encoding" {
   inspect(font.latin1_encoding(), content="true")
   inspect(font.encoding()[0xC1], content="Aacute")
 }
+
+///|
+test "parse_type1_pfa rejects Multiple Master tokens" {
+  let pfa : Bytes = b"%!PS-AdobeFont-1.0: MinimalMM 001.000\n" +
+    b"/FontName /MinimalMM def\n" +
+    b"/Encoding StandardEncoding def\n" +
+    b"/BlendAxisTypes [ /Weight ] def\n"
+  let result : Result[Type1Font, @error.FTError] = Ok(parse_type1_pfa(pfa)) catch {
+    err => Err(err)
+  }
+  inspect(result is Err(_), content="true")
+  match result {
+    Err(err) => inspect(err, content="UnimplementedFeature")
+    _ => ()
+  }
+}

@@ -19,6 +19,26 @@ fn load_nonunicode_bdf_fixture() -> Bytes {
 }
 
 ///|
+fn load_gray2_bdf_fixture() -> Bytes {
+  try! @fs.read_file_to_bytes("test/fonts/minimal_gray2.bdf")
+}
+
+///|
+fn load_gray4_bdf_fixture() -> Bytes {
+  try! @fs.read_file_to_bytes("test/fonts/minimal_gray4.bdf")
+}
+
+///|
+fn load_gray8_bdf_fixture() -> Bytes {
+  try! @fs.read_file_to_bytes("test/fonts/minimal_gray8.bdf")
+}
+
+///|
+fn load_default_char_bdf_fixture() -> Bytes {
+  try! @fs.read_file_to_bytes("test/fonts/minimal_default_char.bdf")
+}
+
+///|
 test "BDF: public API uses DWIDTH for advances" {
   let face = from_bytes(load_bdf_with_wide_advance())
   inspect(face.family_name(), content="Test")
@@ -62,4 +82,50 @@ test "BDF: non-Unicode charset does not publish Unicode metadata" {
   inspect(face.charmaps()[0].encoding_id(), content="0")
   inspect(get_char_index(face, 32U), content="1")
   inspect(get_char_index(face, 65U), content="2")
+}
+
+///|
+test "BDF: gray2 fixture exposes Gray2 bitmap" {
+  let face = from_bytes(load_gray2_bdf_fixture())
+  let r = try? load_glyph(face, 1U)
+  guard r is Ok(_) else { return }
+  inspect(face.glyph().bitmap().pixel_mode(), content="Gray2")
+  inspect(face.glyph().bitmap().pitch(), content="1")
+  inspect(face.glyph().bitmap().num_grays(), content="4")
+  inspect(face.glyph().bitmap().buffer()[0].to_int(), content="27")
+}
+
+///|
+test "BDF: gray4 fixture exposes Gray4 bitmap" {
+  let face = from_bytes(load_gray4_bdf_fixture())
+  let r = try? load_glyph(face, 1U)
+  guard r is Ok(_) else { return }
+  inspect(face.glyph().bitmap().pixel_mode(), content="Gray4")
+  inspect(face.glyph().bitmap().pitch(), content="1")
+  inspect(face.glyph().bitmap().num_grays(), content="16")
+  inspect(face.glyph().bitmap().buffer()[0].to_int(), content="175")
+}
+
+///|
+test "BDF: gray8 fixture exposes Gray bitmap" {
+  let face = from_bytes(load_gray8_bdf_fixture())
+  let r = try? load_glyph(face, 1U)
+  guard r is Ok(_) else { return }
+  inspect(face.glyph().bitmap().pixel_mode(), content="Gray")
+  inspect(face.glyph().bitmap().pitch(), content="2")
+  inspect(face.glyph().bitmap().num_grays(), content="256")
+  inspect(face.glyph().bitmap().buffer()[0].to_int(), content="18")
+  inspect(face.glyph().bitmap().buffer()[1].to_int(), content="254")
+}
+
+///|
+test "BDF: glyph index 0 uses DEFAULT_CHAR fallback" {
+  let face = from_bytes(load_default_char_bdf_fixture())
+  inspect(get_char_index(face, 65U), content="1")
+  inspect(get_char_index(face, 66U), content="2")
+  let r = try? load_glyph(face, 0U)
+  guard r is Ok(_) else { return }
+  inspect(face.glyph().bitmap().pixel_mode(), content="Mono")
+  inspect(face.glyph().bitmap().buffer()[0].to_int(), content="124")
+  inspect(face.glyph().metrics().hori_advance(), content="8")
 }

@@ -42,8 +42,10 @@ struct BdfFont {
   point_size : Int
   x_resolution : Int
   y_resolution : Int
+  bpp : Int
   charset_registry : String
   charset_encoding : String
+  default_char : Int
   glyphs : Array[BdfGlyph]
   num_chars : Int
   bbx_width : Int // global bounding box
@@ -59,8 +61,10 @@ pub fn BdfFont::new() -> BdfFont {
     point_size: 0,
     x_resolution: 0,
     y_resolution: 0,
+    bpp: 1,
     charset_registry: "",
     charset_encoding: "",
+    default_char: -1,
     glyphs: [],
     num_chars: 0,
     bbx_width: 0,
@@ -235,6 +239,19 @@ fn bytes_parse_int_fields(
   }
 }
 
+///|
+fn normalize_bdf_bpp(raw_bpp : Int) -> Int {
+  if raw_bpp > 4 {
+    8
+  } else if raw_bpp > 2 {
+    4
+  } else if raw_bpp > 1 {
+    2
+  } else {
+    1
+  }
+}
+
 // ---------------------------------------------------------------------------
 // Main parser — scans Bytes directly, no String conversion
 // ---------------------------------------------------------------------------
@@ -250,8 +267,10 @@ pub fn parse_bdf_header(data : Bytes) -> BdfFont raise @error.FTError {
   let mut point_size = 0
   let mut x_resolution = 0
   let mut y_resolution = 0
+  let mut bpp = 1
   let mut charset_registry = ""
   let mut charset_encoding = ""
+  let mut default_char = -1
   let mut num_chars = 0
   let mut bbx_width = 0
   let mut bbx_height = 0
@@ -272,11 +291,16 @@ pub fn parse_bdf_header(data : Bytes) -> BdfFont raise @error.FTError {
       font_name = bytes_to_string(data, line_start + 5, line_end)
     } else if bytes_starts_with(data, line_start, line_end, "SIZE ") {
       let fields : Array[Int] = []
-      bytes_parse_int_fields(data, line_start + 5, line_end, fields, 3)
+      bytes_parse_int_fields(data, line_start + 5, line_end, fields, 4)
       if fields.length() >= 3 {
         point_size = fields[0]
         x_resolution = fields[1]
         y_resolution = fields[2]
+      }
+      if fields.length() >= 4 {
+        bpp = normalize_bdf_bpp(fields[3])
+      } else {
+        bpp = 1
       }
     } else if bytes_starts_with(data, line_start, line_end, "FONTBOUNDINGBOX ") {
       let fields : Array[Int] = []
@@ -297,6 +321,12 @@ pub fn parse_bdf_header(data : Bytes) -> BdfFont raise @error.FTError {
       charset_encoding = bytes_parse_property_atom(
         data,
         line_start + 17,
+        line_end,
+      )
+    } else if bytes_starts_with(data, line_start, line_end, "DEFAULT_CHAR ") {
+      default_char = bytes_parse_int(
+        data,
+        bytes_skip_spaces(data, line_start + 13, line_end),
         line_end,
       )
     } else if bytes_starts_with(data, line_start, line_end, "CHARS ") {
@@ -401,7 +431,7 @@ pub fn parse_bdf_header(data : Bytes) -> BdfFont raise @error.FTError {
         }
       }
       // Pre-allocate bitmap based on BBX dimensions and decode hex directly
-      let row_bytes = (glyph.bbx_width + 7) / 8
+      let row_bytes = (glyph.bbx_width * bpp + 7) / 8
       let bitmap_size = row_bytes * glyph.bbx_height
       let bitmap = FixedArray::make(
         if bitmap_size > 0 {
@@ -468,8 +498,10 @@ pub fn parse_bdf_header(data : Bytes) -> BdfFont raise @error.FTError {
     point_size,
     x_resolution,
     y_resolution,
+    bpp,
     charset_registry,
     charset_encoding,
+    default_char,
     glyphs,
     num_chars,
     bbx_width,
@@ -495,6 +527,11 @@ pub fn BdfFont::point_size(self : BdfFont) -> Int {
 }
 
 ///|
+pub fn BdfFont::bpp(self : BdfFont) -> Int {
+  self.bpp
+}
+
+///|
 pub fn BdfFont::glyphs(self : BdfFont) -> Array[BdfGlyph] {
   self.glyphs
 }
@@ -507,6 +544,11 @@ pub fn BdfFont::charset_registry(self : BdfFont) -> String {
 ///|
 pub fn BdfFont::charset_encoding(self : BdfFont) -> String {
   self.charset_encoding
+}
+
+///|
+pub fn BdfFont::default_char(self : BdfFont) -> Int {
+  self.default_char
 }
 
 ///|

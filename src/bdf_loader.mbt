@@ -19,17 +19,46 @@ fn extract_bdf_family_name(font_name : String) -> String {
 }
 
 ///|
-fn make_bdf_bitmap(glyph : @bdf.BdfGlyph) -> @types.Bitmap {
+fn bdf_pitch(width : Int, bpp : Int) -> Int {
+  if width <= 0 {
+    0
+  } else {
+    (width * bpp + 7) / 8
+  }
+}
+
+///|
+fn bdf_pixel_mode(bpp : Int) -> @types.PixelMode {
+  match bpp {
+    2 => @types.PixelMode::Gray2
+    4 => @types.PixelMode::Gray4
+    8 => @types.PixelMode::Gray
+    _ => @types.PixelMode::Mono
+  }
+}
+
+///|
+fn bdf_num_grays(bpp : Int) -> UInt {
+  match bpp {
+    2 => 4U
+    4 => 16U
+    8 => 256U
+    _ => 2U
+  }
+}
+
+///|
+fn make_bdf_bitmap(glyph : @bdf.BdfGlyph, bpp : Int) -> @types.Bitmap {
   let bitmap = @types.Bitmap::new()
   let width = glyph.bbx_width()
   let height = glyph.bbx_height()
-  let pitch = if width <= 0 { 0 } else { (width + 7) / 8 }
+  let pitch = bdf_pitch(width, bpp)
   bitmap.set_rows(height.reinterpret_as_uint())
   bitmap.set_width(width.reinterpret_as_uint())
   bitmap.set_pitch(pitch)
   bitmap.set_buffer(glyph.bitmap())
-  bitmap.set_num_grays(2U)
-  bitmap.set_pixel_mode(@types.PixelMode::Mono)
+  bitmap.set_num_grays(bdf_num_grays(bpp))
+  bitmap.set_pixel_mode(bdf_pixel_mode(bpp))
   bitmap
 }
 
@@ -151,12 +180,18 @@ fn load_bdf(data : Bytes) -> @base.FaceRec raise @error.FTError {
   face.set_active_charmap(0)
 
   let cmap : Map[UInt, UInt] = {}
+  let mut default_glyph_index = -1
   for i, glyph in glyphs {
     let encoding = glyph.encoding()
     if encoding >= 0 {
-      cmap[encoding.reinterpret_as_uint()] = (i + 1).reinterpret_as_uint()
+      let glyph_id = (i + 1).reinterpret_as_uint()
+      cmap[encoding.reinterpret_as_uint()] = glyph_id
+      if encoding == font.default_char() {
+        default_glyph_index = i
+      }
     }
   }
+  let bpp = font.bpp()
   let char_index_fn : (UInt) -> UInt = fn(charcode) {
     match cmap.get(charcode) {
       Some(gid) => gid
@@ -169,6 +204,23 @@ fn load_bdf(data : Bytes) -> @base.FaceRec raise @error.FTError {
   ) raise @error.FTError {
     ignore(load_flags)
     if glyph_index == 0U {
+      if default_glyph_index >= 0 && default_glyph_index < glyphs.length() {
+        let glyph = glyphs[default_glyph_index]
+        let top = glyph.bbx_height() + glyph.bbx_y_offset()
+        let advance = glyph_advance_width(glyph)
+        return @base.BitmapGlyphData::new(
+          @base.GlyphSlotData::new(
+            glyph.bbx_width().to_int64(),
+            glyph.bbx_height().to_int64(),
+            glyph.bbx_x_offset().to_int64(),
+            top.to_int64(),
+            advance.to_int64(),
+          ),
+          make_bdf_bitmap(glyph, bpp),
+          glyph.bbx_x_offset(),
+          top,
+        )
+      }
       return @base.BitmapGlyphData::new(
         @base.GlyphSlotData::new(0L, 0L, 0L, 0L, 0L),
         @types.Bitmap::new(),
@@ -191,7 +243,7 @@ fn load_bdf(data : Bytes) -> @base.FaceRec raise @error.FTError {
         top.to_int64(),
         advance.to_int64(),
       ),
-      make_bdf_bitmap(glyph),
+      make_bdf_bitmap(glyph, bpp),
       glyph.bbx_x_offset(),
       top,
     )

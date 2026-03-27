@@ -42,17 +42,18 @@ Pure MoonBit port of the [FreeType](https://freetype.org/) font library.
 | Format | Extension | Status | Driver |
 |--------|-----------|--------|--------|
 | TrueType | `.ttf` | Full | `truetype/` — glyph loading, bytecode interpreter |
-| OpenType/CFF | `.otf` | Full | `cff/` — CFF INDEX/DICT parsing, Type 2 charstrings |
+| OpenType/CFF (CFF1) | `.otf` | Full | `cff/` — CFF INDEX/DICT parsing, Type 2 charstrings |
 | TrueType Collection | `.ttc` | Full | `sfnt/` — collection header, per-face loading |
 | WOFF1 | `.woff` | Full | `sfnt/woff.mbt` — zlib decompression via `bikallem/compress` |
 | WOFF2 | `.woff2` | Full | `sfnt/woff2.mbt` — Brotli decompression, glyf/loca + hmtx transform reconstruction, collections |
 | Standalone CFF | `.cff` | Full | `cff_loader.mbt` — bare CFF without SFNT container, PS hinting |
-| Type 1 (PFB/PFA) | `.pfb` `.pfa` | Full | `type1/` — PFB/PFA parsing, eexec, Type 1 charstrings |
+| Type 1 (PFB/PFA) | `.pfb` `.pfa` | Partial | `type1/` — single-master PFB/PFA parsing, eexec, Type 1 charstrings |
 | BDF (bitmap) | `.bdf` | Full | `bdf/` — header + glyph bitmap extraction |
 | PCF (bitmap) | `.pcf` | Full | `pcf/` — TOC, properties, metrics, encodings, bitmaps |
 | Color glyphs | `COLR`/`CPAL`, `sbix`, `CBDT`/`CBLC` | Partial | `color/` — BGRA rendering, palettes, COLR v0/v1 paints, `sbix` graphic types `png`/`dupe`/`flip`, CBDT/CBLC image formats `1/2/5/6/7/8/9/17/18/19`, CRC-validated PNG decode |
 
 Obsolete formats **not supported**: CID-keyed (standalone), Type 42, PFR (Bitstream), Windows FNT/FON.
+Other unsupported format variants: CFF2 OpenType and Multiple Master Type 1.
 CID-keyed fonts inside CFF/OpenType are supported through the CFF driver.
 
 ## What Is Not Ported

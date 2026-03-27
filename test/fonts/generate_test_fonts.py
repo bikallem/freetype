@@ -13,10 +13,14 @@ Generates:
   minimal.bdf  — Minimal BDF bitmap font
   minimal_sparse.bdf — Sparse-encoding BDF bitmap font
   minimal_chars_mismatch.bdf — BDF with CHARS count larger than parsed glyph set
+  minimal_gray2.bdf / minimal_gray4.bdf / minimal_gray8.bdf — Grayscale BDF fixtures
+  minimal_default_char.bdf — BDF with DEFAULT_CHAR fallback
   minimal.pfb  — Minimal Type 1 PFB font
   minimal_fontmatrix.pfb — Minimal Type 1 PFB font with a non-default FontMatrix
   minimal_type1_encoding_only.pfb — Minimal Type 1 PFB with an encoding-only glyph
   minimal_type1_expert.pfb — Minimal Type 1 PFB using ExpertEncoding
+  minimal_type1_mm.pfa — Type 1 Multiple Master rejection fixture
+  minimal_cff2.cff2 — OTTO/CFF2-tagged unsupported fixture
   minimal.woff — Minimal WOFF1 wrapping of the TTF
   minimal.ttc  — TrueType Collection containing two faces
 
@@ -2231,6 +2235,97 @@ ENDFONT
 """
 
 
+def generate_gray_bdf(bit_depth: int) -> str:
+    if bit_depth == 2:
+        size_field = "SIZE 8 75 75 2"
+        width = 4
+        bitmap_lines = ["1B"]
+        glyph_name = "gray2"
+    elif bit_depth == 4:
+        size_field = "SIZE 8 75 75 4"
+        width = 2
+        bitmap_lines = ["AF"]
+        glyph_name = "gray4"
+    elif bit_depth == 8:
+        size_field = "SIZE 8 75 75 8"
+        width = 2
+        bitmap_lines = ["12FE"]
+        glyph_name = "gray8"
+    else:
+        raise ValueError(f"unsupported BDF gray depth: {bit_depth}")
+    bitmap_text = "\n".join(bitmap_lines)
+    return f"""\
+STARTFONT 2.1
+FONT -Test-Gray{bit_depth}-Medium-R-Normal--8-80-75-75-C-{width * bit_depth}-ISO10646-1
+{size_field}
+FONTBOUNDINGBOX {width} 1 0 0
+STARTPROPERTIES 4
+FONT_ASCENT 1
+FONT_DESCENT 0
+CHARSET_REGISTRY "ISO10646"
+CHARSET_ENCODING "1"
+ENDPROPERTIES
+CHARS 1
+STARTCHAR {glyph_name}
+ENCODING 65
+SWIDTH 500 0
+DWIDTH {width} 0
+BBX {width} 1 0 0
+BITMAP
+{bitmap_text}
+ENDCHAR
+ENDFONT
+"""
+
+
+def generate_default_char_bdf() -> str:
+    return """\
+STARTFONT 2.1
+FONT -Test-DefaultChar-Medium-R-Normal--8-80-75-75-C-80-ISO10646-1
+SIZE 8 75 75
+FONTBOUNDINGBOX 8 8 0 0
+STARTPROPERTIES 5
+FONT_ASCENT 7
+FONT_DESCENT 1
+DEFAULT_CHAR 66
+CHARSET_REGISTRY "ISO10646"
+CHARSET_ENCODING "1"
+ENDPROPERTIES
+CHARS 2
+STARTCHAR A
+ENCODING 65
+SWIDTH 500 0
+DWIDTH 8 0
+BBX 8 8 0 0
+BITMAP
+18
+24
+42
+7E
+42
+42
+42
+00
+ENDCHAR
+STARTCHAR B
+ENCODING 66
+SWIDTH 500 0
+DWIDTH 8 0
+BBX 8 8 0 0
+BITMAP
+7C
+42
+7C
+42
+42
+42
+7C
+00
+ENDCHAR
+ENDFONT
+"""
+
+
 # ---------------------------------------------------------------------------
 # Generate minimal.pfb
 # ---------------------------------------------------------------------------
@@ -2446,6 +2541,39 @@ currentfile eexec
     pfb += struct.pack('<BB', 0x80, 3)
 
     return pfb
+
+
+def generate_multiple_master_type1_pfa() -> str:
+    return """\
+%!PS-AdobeFont-1.0: MinimalMM 001.000
+%%Title: MinimalMM
+10 dict begin
+/FontInfo 2 dict dup begin
+  /FamilyName (Minimal MM) readonly def
+  /FullName (MinimalMM) readonly def
+end readonly def
+/FontName /MinimalMM def
+/FontType 1 def
+/FontMatrix [0.001 0 0 0.001 0 0] readonly def
+/FontBBox {0 -200 500 800} readonly def
+/Encoding StandardEncoding def
+/BlendAxisTypes [ /Weight ] def
+/BlendDesignPositions [ [400] [700] ] def
+/BlendDesignMap [ [ 0 400 1 700 ] ] def
+/WeightVector [0.5 0.5] def
+currentdict end
+"""
+
+
+def retag_cff_table_as_cff2(otf_data: bytes) -> bytes:
+    out = bytearray(otf_data)
+    num_tables = struct.unpack(">H", out[4:6])[0]
+    for i in range(num_tables):
+        rec_offset = 12 + i * 16
+        if out[rec_offset:rec_offset + 4] == b"CFF ":
+            out[rec_offset:rec_offset + 4] = b"CFF2"
+            return bytes(out)
+    raise ValueError("CFF table not found in minimal.otf")
 
 
 # ---------------------------------------------------------------------------
@@ -2751,6 +2879,19 @@ def main():
         f.write(generate_nonunicode_bdf())
     print(f"  Written to {nonunicode_bdf_path}")
 
+    for bit_depth in (2, 4, 8):
+        print(f"Generating minimal_gray{bit_depth}.bdf...")
+        gray_bdf_path = os.path.join(SCRIPT_DIR, f'minimal_gray{bit_depth}.bdf')
+        with open(gray_bdf_path, 'w', newline='\n') as f:
+            f.write(generate_gray_bdf(bit_depth))
+        print(f"  Written to {gray_bdf_path}")
+
+    print("Generating minimal_default_char.bdf...")
+    default_char_bdf_path = os.path.join(SCRIPT_DIR, 'minimal_default_char.bdf')
+    with open(default_char_bdf_path, 'w', newline='\n') as f:
+        f.write(generate_default_char_bdf())
+    print(f"  Written to {default_char_bdf_path}")
+
     # PFB
     print("Generating minimal.pfb...")
     pfb_data = generate_pfb()
@@ -2802,6 +2943,18 @@ def main():
     with open(pfb_latin1_path, 'wb') as f:
         f.write(pfb_latin1_data)
     print(f"  Written {len(pfb_latin1_data)} bytes to {pfb_latin1_path}")
+
+    print("Generating minimal_type1_mm.pfa...")
+    pfa_mm_path = os.path.join(SCRIPT_DIR, 'minimal_type1_mm.pfa')
+    with open(pfa_mm_path, 'w', newline='\n') as f:
+        f.write(generate_multiple_master_type1_pfa())
+    print(f"  Written to {pfa_mm_path}")
+
+    print("Generating minimal_cff2.cff2...")
+    cff2_path = os.path.join(SCRIPT_DIR, 'minimal_cff2.cff2')
+    with open(cff2_path, 'wb') as f:
+        f.write(retag_cff_table_as_cff2(otf_data))
+    print(f"  Written to {cff2_path}")
 
     # WOFF
     print("Generating minimal.woff...")

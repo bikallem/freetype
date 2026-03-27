@@ -198,10 +198,9 @@ pub fn load_sfnt_face(
   if vhea is Some(_) && table_dir.find_table(@types.TAG_VMTX) is Some(_) {
     face.set_face_flags(face.face_flags() | @base.FACE_FLAG_VERTICAL)
   }
-  // Scalable if has outlines (glyf or CFF table)
+  // Scalable if has outlines through a currently supported outline driver.
   if table_dir.find_table(@types.TAG_GLYF) is Some(_) ||
-    table_dir.find_table(@types.TAG_CFF) is Some(_) ||
-    table_dir.find_table(@types.TAG_CFF2) is Some(_) {
+    table_dir.find_table(@types.TAG_CFF) is Some(_) {
     face.set_face_flags(face.face_flags() | @base.FACE_FLAG_SCALABLE)
   }
   if table_dir.find_table(@types.TAG_KERN) is Some(_) {
