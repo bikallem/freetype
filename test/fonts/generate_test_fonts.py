@@ -19,10 +19,14 @@ Generates:
   minimal_fontmatrix.pfb — Minimal Type 1 PFB font with a non-default FontMatrix
   minimal_type1_encoding_only.pfb — Minimal Type 1 PFB with an encoding-only glyph
   minimal_type1_expert.pfb — Minimal Type 1 PFB using ExpertEncoding
-  minimal_type1_mm.pfa — Type 1 Multiple Master rejection fixture
-  minimal_cff2.cff2 — OTTO/CFF2-tagged unsupported fixture
+  minimal_type1_mm.pfb — Minimal Type 1 Multiple Master PFB font
+  minimal_type1_mm.afm — AFM metrics for the minimal MM Type 1 font
   minimal.woff — Minimal WOFF1 wrapping of the TTF
   minimal.ttc  — TrueType Collection containing two faces
+
+Vendored external fixtures:
+  regular_CFF2.otf / cff2_vf.otf — real CFF2 OpenType fixtures
+  ab_svg.ttf — minimal OT-SVG fixture
 
 Note: minimal.pcf is not generated because it requires the bdftopcf tool.
       To create one: bdftopcf minimal.bdf > minimal.pcf
@@ -2543,25 +2547,47 @@ currentfile eexec
     return pfb
 
 
-def generate_multiple_master_type1_pfa() -> str:
-    return """\
-%!PS-AdobeFont-1.0: MinimalMM 001.000
-%%Title: MinimalMM
-10 dict begin
-/FontInfo 2 dict dup begin
-  /FamilyName (Minimal MM) readonly def
-  /FullName (MinimalMM) readonly def
-end readonly def
-/FontName /MinimalMM def
-/FontType 1 def
-/FontMatrix [0.001 0 0 0.001 0 0] readonly def
-/FontBBox {0 -200 500 800} readonly def
-/Encoding StandardEncoding def
+def inject_type1_multiple_master_header(pfb_data: bytes) -> bytes:
+    assert pfb_data[:2] == b'\x80\x01'
+    ascii_len = struct.unpack('<I', pfb_data[2:6])[0]
+    ascii_part = pfb_data[6:6 + ascii_len]
+    rest = pfb_data[6 + ascii_len:]
+    insert = """\
 /BlendAxisTypes [ /Weight ] def
 /BlendDesignPositions [ [400] [700] ] def
 /BlendDesignMap [ [ 0 400 1 700 ] ] def
 /WeightVector [0.5 0.5] def
-currentdict end
+"""
+    ascii_text = ascii_part.decode('latin-1')
+    ascii_text = ascii_text.replace('/PaintType 0 def\n', '/PaintType 0 def\n' + insert)
+    ascii_bytes = ascii_text.encode('latin-1')
+    return b'\x80\x01' + struct.pack('<I', len(ascii_bytes)) + ascii_bytes + rest
+
+
+def generate_multiple_master_type1_pfb() -> bytes:
+    return inject_type1_multiple_master_header(
+        generate_pfb(
+            font_name="MinimalMM",
+            family_name="Minimal MM",
+            encoding_mode="standard",
+        )
+    )
+
+
+def generate_minimal_type1_afm(font_name: str = "MinimalMM") -> str:
+    return f"""\
+StartFontMetrics 4.1
+FontName {font_name}
+StartCharMetrics 2
+C 32 ; WX 250 ; N space ; B 0 0 0 0 ;
+C 65 ; WX 500 ; N A ; B 50 0 450 700 ;
+EndCharMetrics
+StartKernData
+StartKernPairs 1
+KPX A A -80
+EndKernPairs
+EndKernData
+EndFontMetrics
 """
 
 
@@ -2944,17 +2970,17 @@ def main():
         f.write(pfb_latin1_data)
     print(f"  Written {len(pfb_latin1_data)} bytes to {pfb_latin1_path}")
 
-    print("Generating minimal_type1_mm.pfa...")
-    pfa_mm_path = os.path.join(SCRIPT_DIR, 'minimal_type1_mm.pfa')
-    with open(pfa_mm_path, 'w', newline='\n') as f:
-        f.write(generate_multiple_master_type1_pfa())
-    print(f"  Written to {pfa_mm_path}")
+    print("Generating minimal_type1_mm.pfb...")
+    pfb_mm_path = os.path.join(SCRIPT_DIR, 'minimal_type1_mm.pfb')
+    with open(pfb_mm_path, 'wb') as f:
+        f.write(generate_multiple_master_type1_pfb())
+    print(f"  Written to {pfb_mm_path}")
 
-    print("Generating minimal_cff2.cff2...")
-    cff2_path = os.path.join(SCRIPT_DIR, 'minimal_cff2.cff2')
-    with open(cff2_path, 'wb') as f:
-        f.write(retag_cff_table_as_cff2(otf_data))
-    print(f"  Written to {cff2_path}")
+    print("Generating minimal_type1_mm.afm...")
+    afm_mm_path = os.path.join(SCRIPT_DIR, 'minimal_type1_mm.afm')
+    with open(afm_mm_path, 'w', newline='\n') as f:
+        f.write(generate_minimal_type1_afm())
+    print(f"  Written to {afm_mm_path}")
 
     # WOFF
     print("Generating minimal.woff...")

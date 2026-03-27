@@ -4,6 +4,7 @@ pub(all) enum FontFormat {
   TrueType
   TrueTypeCollection
   CffOpenType // 'OTTO' — CFF inside SFNT
+  Cff2OpenType // 'OTTO' — CFF2 inside SFNT (unsupported)
   CffStandalone // bare CFF (major version 1)
   Woff1
   Woff2
@@ -16,6 +17,60 @@ pub(all) enum FontFormat {
   Pfr
   Unknown
 } derive(Eq, Show)
+
+///|
+fn read_be_u16(data : Bytes, offset : Int) -> UInt? {
+  if offset < 0 || offset + 1 >= data.length() {
+    None
+  } else {
+    Some((data[offset].to_uint() << 8) | data[offset + 1].to_uint())
+  }
+}
+
+///|
+fn read_be_u32(data : Bytes, offset : Int) -> UInt? {
+  if offset < 0 || offset + 3 >= data.length() {
+    None
+  } else {
+    Some(
+      (data[offset].to_uint() << 24) |
+      (data[offset + 1].to_uint() << 16) |
+      (data[offset + 2].to_uint() << 8) |
+      data[offset + 3].to_uint(),
+    )
+  }
+}
+
+///|
+fn detect_otf_sfnt_format(data : Bytes) -> FontFormat {
+  match read_be_u16(data, 4) {
+    Some(num_tables) => {
+      let mut saw_cff = false
+      for i in 0..<num_tables.reinterpret_as_int() {
+        let record_offset = 12 + i * 16
+        match read_be_u32(data, record_offset) {
+          Some(tag) => {
+            if tag == @types.TAG_CFF2 {
+              return Cff2OpenType
+            }
+            if tag == @types.TAG_CFF {
+              saw_cff = true
+            }
+          }
+          None => break
+        }
+      }
+      if saw_cff {
+        CffOpenType
+      } else {
+        // Keep the historical bucket for generic OTTO SFNTs when the table
+        // directory is truncated or does not expose CFF/CFF2 yet.
+        CffOpenType
+      }
+    }
+    None => CffOpenType
+  }
+}
 
 ///|
 /// Detect font format from the first few bytes of the file.
@@ -35,7 +90,7 @@ pub fn detect_format(data : Bytes) -> FontFormat {
   match tag {
     0x00010000U => TrueType // TrueType version 1.0
     t if t == @types.TAG_TRUE => TrueType // 'true' (Apple)
-    t if t == @types.TAG_OTTO => CffOpenType // 'OTTO'
+    t if t == @types.TAG_OTTO => detect_otf_sfnt_format(data) // 'OTTO'
     t if t == @types.TAG_TTCF => TrueTypeCollection // 'ttcf'
     t if t == @types.TAG_WOFF => Woff1 // 'wOFF'
     t if t == @types.TAG_WOF2 => Woff2 // 'wOF2'

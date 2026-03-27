@@ -149,7 +149,8 @@ def font_path_expr(ff):
 def detect_font_format_name(ff):
     path = os.path.join(FONT_DIR, ff)
     with open(path, "rb") as f:
-        header = f.read(4)
+        data = f.read()
+    header = data[:4]
     if len(header) < 4:
         return "Unknown"
     b0, b1, b2, b3 = header
@@ -157,6 +158,14 @@ def detect_font_format_name(ff):
     if tag == 0x00010000 or tag == 0x74727565:
         return "TrueType"
     if tag == 0x4F54544F:
+        if len(data) >= 12:
+            num_tables = int.from_bytes(data[4:6], "big")
+            for i in range(num_tables):
+                off = 12 + i * 16
+                if off + 4 > len(data):
+                    break
+                if data[off:off + 4] == b"CFF2":
+                    return "Cff2OpenType"
         return "CffOpenType"
     if tag == 0x74746366:
         return "TrueTypeCollection"

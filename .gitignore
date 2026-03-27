@@ -7,11 +7,14 @@ target/
 
 # Test fonts (downloaded via script)
 test/fonts/*.ttf
+!test/fonts/ab_svg.ttf
 !test/fonts/mvar.ttf
 !test/fonts/minimal_cbdt_matrix.ttf
 !test/fonts/minimal_sbix_refs.ttf
 !test/fonts/uvs.ttf
 test/fonts/*.otf
+!test/fonts/cff2_vf.otf
+!test/fonts/regular_CFF2.otf
 test/fonts/*.woff
 test/fonts/*.bdf
 !test/fonts/minimal_nonunicode.bdf

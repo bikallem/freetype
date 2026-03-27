@@ -8,19 +8,12 @@ fn load_generated_minimal_sbix_refs_ttf() -> Bytes {
 
 ///|
 test "parity/minimal_sbix_refs.ttf: format" {
-  inspect(
-    @base.detect_format(load_generated_minimal_sbix_refs_ttf())
-    is (TrueType | TrueTypeCollection),
-    content="true",
-  )
+  inspect(@base.detect_format(load_generated_minimal_sbix_refs_ttf()) is (TrueType | TrueTypeCollection), content="true")
 }
 
 ///|
 test "parity/minimal_sbix_refs.ttf: loads" {
-  inspect(
-    (try? @freetype.from_bytes(load_generated_minimal_sbix_refs_ttf())) is Ok(_),
-    content="true",
-  )
+  inspect((try? @freetype.from_bytes(load_generated_minimal_sbix_refs_ttf())) is Ok(_), content="true")
 }
 
 ///|
@@ -72,3 +65,4 @@ test "parity/minimal_sbix_refs.ttf: charmap entries" {
   inspect(@freetype.get_char_index(f, 67U), content="4")
   inspect(@freetype.get_char_index(f, 68U), content="5")
 }
+

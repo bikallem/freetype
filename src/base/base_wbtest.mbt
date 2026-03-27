@@ -39,9 +39,28 @@ test "detect_format: TrueType" {
 }
 
 ///|
-test "detect_format: OTTO" {
-  let data : Bytes = [b'O', b'T', b'T', b'O']
+fn make_minimal_otto_sfnt(table_tag : UInt) -> Bytes {
+  let tag0 = (table_tag >> 24).to_byte()
+  let tag1 = (table_tag >> 16).to_byte()
+  let tag2 = (table_tag >> 8).to_byte()
+  let tag3 = table_tag.to_byte()
+  [
+    b'O', b'T', b'T', b'O', 0x00, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, tag0,
+    tag1, tag2, tag3, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+    0x00, 0x00,
+  ]
+}
+
+///|
+test "detect_format: OTTO with CFF" {
+  let data = make_minimal_otto_sfnt(@types.TAG_CFF)
   inspect(detect_format(data), content="CffOpenType")
+}
+
+///|
+test "detect_format: OTTO with CFF2" {
+  let data = make_minimal_otto_sfnt(@types.TAG_CFF2)
+  inspect(detect_format(data), content="Cff2OpenType")
 }
 
 ///|

@@ -9,6 +9,8 @@ import {
 }
 
 // Values
+pub fn attach_metrics(@base.FaceRec, Bytes) -> Unit raise @error.FTError
+
 pub fn from_bytes(Bytes, face_index? : Int) -> @base.FaceRec raise @error.FTError
 
 pub fn get_char_index(@base.FaceRec, UInt) -> UInt

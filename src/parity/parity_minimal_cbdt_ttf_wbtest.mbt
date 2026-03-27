@@ -8,17 +8,11 @@ fn load_generated_minimal_cbdt_ttf() -> Bytes {
 
 ///|
 test "parity/minimal_cbdt.ttf: format" {
-  inspect(
-    @base.detect_format(load_generated_minimal_cbdt_ttf())
-    is (TrueType | TrueTypeCollection),
-    content="true",
-  )
+  inspect(@base.detect_format(load_generated_minimal_cbdt_ttf()) is (TrueType | TrueTypeCollection), content="true")
 }
 
 ///|
 test "parity/minimal_cbdt.ttf: loads" {
-  inspect(
-    (try? @freetype.from_bytes(load_generated_minimal_cbdt_ttf())) is Ok(_),
-    content="true",
-  )
+  inspect((try? @freetype.from_bytes(load_generated_minimal_cbdt_ttf())) is Ok(_), content="true")
 }
+

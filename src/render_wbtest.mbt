@@ -19,6 +19,11 @@ fn render_color_ref_test_font() -> Bytes {
 }
 
 ///|
+fn render_svg_test_font() -> Bytes {
+  try! @fs.read_file_to_bytes("test/fonts/ab_svg.ttf")
+}
+
+///|
 fn render_minimal_woff() -> Bytes {
   try! @fs.read_file_to_bytes("test/fonts/minimal.woff")
 }
@@ -904,4 +909,27 @@ test "render_glyph: bitmap font can be re-rendered as sdf" {
   inspect(face.glyph().bitmap().rows() > before_rows, content="true")
   inspect(bitmap_has_value_at_most(face.glyph().bitmap(), 16), content="true")
   inspect(bitmap_has_value_at_least(face.glyph().bitmap(), 144), content="true")
+}
+
+///|
+test "load_glyph: OT-SVG glyph stays SVG before render and renders to BGRA natively" {
+  let face = from_bytes(render_svg_test_font())
+  inspect(face.has_color(), content="true")
+  try! set_pixel_sizes(face, 0U, 16U)
+  let gid = get_char_index(face, 97U)
+  if @nativeft.native_available() {
+    try! load_glyph(face, gid, load_flags=@base.LOAD_COLOR)
+    inspect(face.glyph().format(), content="Svg")
+    try! render_glyph(face, mode=Normal)
+    inspect(face.glyph().format(), content="Bitmap")
+    inspect(face.glyph().bitmap().pixel_mode(), content="Bgra")
+    inspect(face.glyph().bitmap().buffer().length() > 0, content="true")
+  } else {
+    let result : Result[Unit, @error.FTError] = Ok(
+      load_glyph(face, gid, load_flags=@base.LOAD_COLOR),
+    ) catch {
+      err => Err(err)
+    }
+    inspect(result, content="Err(UnimplementedFeature)")
+  }
 }

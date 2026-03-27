@@ -1,6 +1,7 @@
 # bikallem/freetype
 
-Pure MoonBit port of the [FreeType](https://freetype.org/) font library.
+MoonBit FreeType-compatible font engine, with pure MoonBit drivers plus a
+native-target fallback for advanced codecs and renderers.
 
 ## Table of Contents
 
@@ -22,6 +23,8 @@ Pure MoonBit port of the [FreeType](https://freetype.org/) font library.
 - Glyph outline loading (TrueType simple/composite, CFF charstrings)
 - Glyph rendering (`render_glyph`, `LOAD_RENDER`) in normal, light, mono,
   LCD, LCD_V, color BGRA, and SDF modes
+- Native-target fallback for CFF2 OpenType, Multiple Master Type 1, AFM/PFM
+  metric attachment, and OT-SVG glyph rendering
 - Pixel size scaling with proper 16.16 fixed-point math
 - Kerning pair lookup
 - TrueType bytecode hinting (~160 opcodes: point movement, zones, projection vectors, rounding, deltas)
@@ -43,31 +46,33 @@ Pure MoonBit port of the [FreeType](https://freetype.org/) font library.
 |--------|-----------|--------|--------|
 | TrueType | `.ttf` | Full | `truetype/` — glyph loading, bytecode interpreter |
 | OpenType/CFF (CFF1) | `.otf` | Full | `cff/` — CFF INDEX/DICT parsing, Type 2 charstrings |
+| OpenType/CFF2 | `.otf` | Full on native target | `nativeft/` — vendored FreeType fallback for CFF2 charstrings and variation support |
 | TrueType Collection | `.ttc` | Full | `sfnt/` — collection header, per-face loading |
 | WOFF1 | `.woff` | Full | `sfnt/woff.mbt` — zlib decompression via `bikallem/compress` |
 | WOFF2 | `.woff2` | Full | `sfnt/woff2.mbt` — Brotli decompression, glyf/loca + hmtx transform reconstruction, collections |
 | Standalone CFF | `.cff` | Full | `cff_loader.mbt` — bare CFF without SFNT container, PS hinting |
-| Type 1 (PFB/PFA) | `.pfb` `.pfa` | Partial | `type1/` — single-master PFB/PFA parsing, eexec, Type 1 charstrings |
+| Type 1 (PFB/PFA) | `.pfb` `.pfa` | Full on native target | `type1/` — pure MoonBit single-master path, `nativeft/` — Multiple Master + AFM/PFM-backed metrics/kerning |
 | BDF (bitmap) | `.bdf` | Full | `bdf/` — header + glyph bitmap extraction |
 | PCF (bitmap) | `.pcf` | Full | `pcf/` — TOC, properties, metrics, encodings, bitmaps |
-| Color glyphs | `COLR`/`CPAL`, `sbix`, `CBDT`/`CBLC` | Partial | `color/` — BGRA rendering, palettes, COLR v0/v1 paints, `sbix` graphic types `png`/`dupe`/`flip`, CBDT/CBLC image formats `1/2/5/6/7/8/9/17/18/19`, CRC-validated PNG decode |
+| Color glyphs | `COLR`/`CPAL`, `sbix`, `CBDT`/`CBLC`, `SVG ` | Full on native target | `color/` — MoonBit COLR/sbix/CBDT path, `nativeft/` — OT-SVG loading/rendering via vendored FreeType + native raster bridge |
 
 Obsolete formats **not supported**: CID-keyed (standalone), Type 42, PFR (Bitstream), Windows FNT/FON.
-Other unsupported format variants: CFF2 OpenType and Multiple Master Type 1.
 CID-keyed fonts inside CFF/OpenType are supported through the CFF driver.
 
 ## What Is Not Ported
 
 The following FreeType subsystems are **excluded** from this port:
 
+The native target is the preferred target for full codec coverage. Non-native
+targets keep using the pure MoonBit implementation and do not include the
+native-backed CFF2, Multiple Master Type 1, or OT-SVG paths.
+
 | Subsystem | Reason |
 |-----------|--------|
 | **File I/O** (`ftsystem.c` file operations) | Accepts `Bytes` instead of file paths; no I/O or OS dependency |
-| **SVG rendering** | Requires external SVG renderer |
 | **FT_Library global state** | Eliminated — API is stateless, no initialization needed |
 | **Memory allocator** (`FT_ALLOC`/`FT_FREE`/`FT_Memory`) | Eliminated — GC handles memory |
 | **FT_Generic** (user data hooks) | Omitted — users wrap `Face` in their own struct |
-| **CFF2 / non-TrueType variations** | TrueType/OpenType variation tables (`fvar`/`avar`/`gvar`/`HVAR`) are supported; CFF2 variation support is not ported |
 
 ## API
 
@@ -168,6 +173,7 @@ src/
   smooth/              # Outline rasterizer: gray, mono, LCD, LCD_V bitmap emission
   color/               # Color font table parsing, BGRA surfaces, bitmap decode helpers
   sdf/                 # Signed-distance-field rasterization
+  nativeft/            # Native-target fallback bridge to vendored FreeType
   sfnt/                # SFNT parsing: table directory, head, hhea, maxp, hmtx, name,
                        #   OS/2, post, cmap (formats 0/2/4/6/8/10/12/13/14), kern,
                        #   WOFF1, WOFF2
@@ -191,8 +197,8 @@ src/
 
 ```bash
 make build     # Compile
-make test      # Run unit tests (774 tests)
-make parity    # Run parity tests against C FreeType golden data (536 tests)
+make test      # Run unit tests
+make parity    # Run parity tests against C FreeType golden data
 make fmt       # Format code + regenerate .mbti files
 make bench     # Run C vs MoonBit benchmark comparison
 make clean     # Remove build artifacts

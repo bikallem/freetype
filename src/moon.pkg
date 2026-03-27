@@ -5,6 +5,7 @@ import {
   "bikallem/freetype/stream",
   "bikallem/freetype/base",
   "bikallem/freetype/color",
+  "bikallem/freetype/nativeft",
   "bikallem/freetype/sdf",
   "bikallem/freetype/smooth",
   "bikallem/freetype/sfnt",

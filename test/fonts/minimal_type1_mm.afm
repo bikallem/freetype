@@ -1,0 +1,12 @@
+StartFontMetrics 4.1
+FontName MinimalMM
+StartCharMetrics 2
+C 32 ; WX 250 ; N space ; B 0 0 0 0 ;
+C 65 ; WX 500 ; N A ; B 50 0 450 700 ;
+EndCharMetrics
+StartKernData
+StartKernPairs 1
+KPX A A -80
+EndKernPairs
+EndKernData
+EndFontMetrics

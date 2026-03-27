@@ -8,19 +8,12 @@ fn load_generated_minimal_standalone_expert_cff() -> Bytes {
 
 ///|
 test "parity/minimal_standalone_expert.cff: format" {
-  inspect(
-    @base.detect_format(load_generated_minimal_standalone_expert_cff()),
-    content="CffStandalone",
-  )
+  inspect(@base.detect_format(load_generated_minimal_standalone_expert_cff()), content="CffStandalone")
 }
 
 ///|
 test "parity/minimal_standalone_expert.cff: loads" {
-  inspect(
-    (try? @freetype.from_bytes(load_generated_minimal_standalone_expert_cff()))
-    is Ok(_),
-    content="true",
-  )
+  inspect((try? @freetype.from_bytes(load_generated_minimal_standalone_expert_cff())) is Ok(_), content="true")
 }
 
 ///|
@@ -170,3 +163,4 @@ test "parity/minimal_standalone_expert.cff: rendered glyph 1 LCD_V char 32" {
   inspect(f.glyph().bitmap_top(), content="1")
   try! assert_buffer_hex(f.glyph().bitmap().buffer(), "")
 }
+

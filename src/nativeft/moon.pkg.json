@@ -1,0 +1,20 @@
+{
+  "import": [
+    "bikallem/freetype/error",
+    "bikallem/freetype/fixed",
+    "bikallem/freetype/types",
+    "bikallem/freetype/base",
+    "moonbitlang/core/encoding/utf8"
+  ],
+  "warn-list": "-20-29",
+  "targets": {
+    "nativeft_native.mbt": ["native"],
+    "nativeft_non_native.mbt": ["js", "wasm", "wasm-gc", "llvm"]
+  },
+  "native-stub": ["native_ft_stub.c"],
+  "link": {
+    "native": {
+      "stub-cc-flags": "-Isrc/nativeft -Ivendor/freetype-c/include -Ivendor/freetype-c/devel -Ivendor/freetype-c/builds/unix"
+    }
+  }
+}

@@ -9,12 +9,13 @@
   "readme": "README.md",
   "repository": "https://github.com/bikallem/freetype",
   "license": "Apache-2.0",
+  "preferred-target": "native",
   "keywords": [
     "font",
     "freetype",
     "truetype",
     "opentype"
   ],
-  "description": "Pure MoonBit port of FreeType font library",
+  "description": "MoonBit FreeType-compatible font engine with native fallback for advanced formats",
   "source": "src"
 }
