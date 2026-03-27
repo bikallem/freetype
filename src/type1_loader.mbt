@@ -138,6 +138,8 @@ fn load_type1_pfb(data : Bytes) -> @base.FaceRec raise @error.FTError {
     @base.CharMapRec::new(@base.Encoding::AdobeCustom, 7U, 2U)
   } else if font.expert_encoding() {
     @base.CharMapRec::new(@base.Encoding::AdobeExpert, 7U, 1U)
+  } else if font.latin1_encoding() {
+    @base.CharMapRec::new(@base.Encoding::AdobeLatin1, 7U, 3U)
   } else {
     @base.CharMapRec::new(@base.Encoding::AdobeStandard, 7U, 0U)
   }

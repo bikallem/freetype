@@ -44,6 +44,67 @@ fn glyph_advance_width(glyph : @bdf.BdfGlyph) -> Int {
 }
 
 ///|
+fn bdf_ascii_lower_code(unit : UInt16) -> UInt16 {
+  let code = unit.to_int()
+  if code >= 'A'.to_int() && code <= 'Z'.to_int() {
+    (code + 32).to_uint16()
+  } else {
+    unit
+  }
+}
+
+///|
+fn bdf_string_eq_ignore_ascii_case(left : String, right : String) -> Bool {
+  if left.length() != right.length() {
+    return false
+  }
+  for i in 0..<left.length() {
+    if bdf_ascii_lower_code(left[i]) != bdf_ascii_lower_code(right[i]) {
+      return false
+    }
+  }
+  true
+}
+
+///|
+fn bdf_string_starts_with_ignore_ascii_case(
+  text : String,
+  prefix : String,
+) -> Bool {
+  if prefix.length() > text.length() {
+    return false
+  }
+  for i in 0..<prefix.length() {
+    if bdf_ascii_lower_code(text[i]) != bdf_ascii_lower_code(prefix[i]) {
+      return false
+    }
+  }
+  true
+}
+
+///|
+fn bdf_has_unicode_charmap(font : @bdf.BdfFont) -> Bool {
+  let registry = font.charset_registry()
+  let encoding = font.charset_encoding()
+  if registry == "" || encoding == "" {
+    return false
+  }
+  if bdf_string_starts_with_ignore_ascii_case(registry, "iso") {
+    let suffix = registry[3:].to_string()
+    return bdf_string_eq_ignore_ascii_case(suffix, "10646") ||
+      (
+        bdf_string_eq_ignore_ascii_case(suffix, "8859") &&
+        bdf_string_eq_ignore_ascii_case(encoding, "1")
+      ) ||
+      (
+        bdf_string_eq_ignore_ascii_case(suffix, "646.1991") &&
+        bdf_string_eq_ignore_ascii_case(encoding, "IRV")
+      )
+  }
+  false
+}
+
+///|
 fn load_bdf(data : Bytes) -> @base.FaceRec raise @error.FTError {
   let font = @bdf.parse_bdf_header(data)
   let face = @base.FaceRec::new()
@@ -74,7 +135,19 @@ fn load_bdf(data : Bytes) -> @base.FaceRec raise @error.FTError {
       strike_ppem,
     ),
   ])
-  face.charmaps().push(@base.CharMapRec::new(@base.Encoding::Unicode, 3U, 1U))
+  if font.charset_registry() != "" && font.charset_encoding() != "" {
+    if bdf_has_unicode_charmap(font) {
+      face
+      .charmaps()
+      .push(@base.CharMapRec::new(@base.Encoding::Unicode, 3U, 1U))
+    } else {
+      face.charmaps().push(@base.CharMapRec::new(@base.Encoding::None, 0U, 0U))
+    }
+  } else {
+    face
+    .charmaps()
+    .push(@base.CharMapRec::new(@base.Encoding::AdobeStandard, 7U, 0U))
+  }
   face.set_active_charmap(0)
 
   let cmap : Map[UInt, UInt] = {}

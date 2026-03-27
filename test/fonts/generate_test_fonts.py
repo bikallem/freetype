@@ -528,15 +528,43 @@ def build_minimal_sbix_png() -> bytes:
     return build_rgba_png(width, height, bytes(pixels))
 
 
-def build_sbix_table(num_glyphs: int, png_data: bytes) -> bytes:
-    """Build a minimal sbix table with one strike and a PNG for glyph 2."""
+def build_sbix_glyph_record(
+    graphic_type: bytes,
+    payload: bytes,
+    *,
+    origin_x: int = 0,
+    origin_y: int = 0,
+) -> bytes:
+    return struct.pack(">hh4s", origin_x, origin_y, graphic_type) + payload
+
+
+def build_sbix_table_entries(num_glyphs: int, glyph_records: dict[int, bytes]) -> bytes:
+    """Build a minimal sbix table for arbitrary per-glyph records."""
     strike_offset = 8 + 4
     strike_header = struct.pack(">HH", 16, 72)
     offsets_base = 4 + (num_glyphs + 1) * 4
-    glyph2 = struct.pack(">hh4s", 0, 0, b"png ") + png_data
-    glyph_offsets = [offsets_base, offsets_base, offsets_base, offsets_base + len(glyph2)]
-    strike = strike_header + b"".join(struct.pack(">I", off) for off in glyph_offsets) + glyph2
+    glyph_offsets = []
+    strike_payload = bytearray()
+    current_offset = offsets_base
+    for glyph_id in range(num_glyphs):
+        glyph_offsets.append(current_offset)
+        record = glyph_records.get(glyph_id)
+        if record:
+            strike_payload.extend(record)
+            current_offset += len(record)
+    glyph_offsets.append(current_offset)
+    strike = (
+        strike_header
+        + b"".join(struct.pack(">I", off) for off in glyph_offsets)
+        + bytes(strike_payload)
+    )
     return struct.pack(">HHI", 1, 3, 1) + struct.pack(">I", strike_offset) + strike
+
+
+def build_sbix_table(num_glyphs: int, png_data: bytes) -> bytes:
+    """Build a minimal sbix table with one strike and a PNG for glyph 2."""
+    glyph2 = build_sbix_glyph_record(b"png ", png_data)
+    return build_sbix_table_entries(num_glyphs, {2: glyph2})
 
 
 def build_cbdt_png_glyph(png_data: bytes) -> bytes:
@@ -758,6 +786,22 @@ def build_cbdt_all_tables(records: list[dict], *, num_glyphs: int, bit_depth: in
             subtable = (
                 struct.pack(">HHI", 1, record["image_format"], image_offset) +
                 struct.pack(">II", 0, image_size)
+            )
+        elif record["index_format"] == 3:
+            if image_size >= 0x10000:
+                raise ValueError("index format 3 requires 16-bit image offsets")
+            subtable = (
+                struct.pack(">HHI", 3, record["image_format"], image_offset) +
+                struct.pack(">HH", 0, image_size)
+            )
+        elif record["index_format"] == 4:
+            if image_size >= 0x10000:
+                raise ValueError("index format 4 requires 16-bit image offsets")
+            subtable = (
+                struct.pack(">HHI", 4, record["image_format"], image_offset) +
+                struct.pack(">I", 1) +
+                struct.pack(">HH", record["glyph_id"], 0) +
+                struct.pack(">HH", record["glyph_id"] + 1, image_size)
             )
         elif record["index_format"] == 2:
             assert record.get("fallback_metrics") is not None
@@ -1400,6 +1444,32 @@ def generate_sbix_ttf() -> bytes:
     return assemble_sfnt(tables, sfnt_version=b'\x00\x01\x00\x00')
 
 
+def generate_sbix_refs_ttf() -> bytes:
+    png = build_minimal_sbix_png()
+    glyph_records = {
+        2: build_sbix_glyph_record(b"png ", png),
+        3: build_sbix_glyph_record(b"dupe", struct.pack(">H", 2)),
+        4: build_sbix_glyph_record(b"flip", struct.pack(">H", 2)),
+        5: build_sbix_glyph_record(b"jpg ", png),
+    }
+    glyf_data, loca_data = build_empty_glyph_font(6)
+    tables = {
+        'head': build_head_table(x_min=0, y_min=0, x_max=450, y_max=700,
+                                 index_to_loc_format=0),
+        'hhea': build_hhea_table(num_hmetrics=6, advance_width_max=500),
+        'maxp': build_maxp_table(num_glyphs=6, max_points=0, max_contours=0),
+        'OS/2': build_os2_table(),
+        'name': build_name_table(family='Minimal SBIX Refs', style='Regular'),
+        'cmap': build_cmap_table_pairs({65: 2, 66: 3, 67: 4, 68: 5}),
+        'post': build_post_table(),
+        'glyf': glyf_data,
+        'loca': loca_data,
+        'hmtx': build_hmtx_table_entries([(500, 0)] * 6),
+        'sbix': build_sbix_table_entries(6, glyph_records),
+    }
+    return assemble_sfnt(tables, sfnt_version=b'\x00\x01\x00\x00')
+
+
 def generate_cbdt_ttf() -> bytes:
     glyf_data, loca_data = build_glyf_and_loca()
     png = build_minimal_sbix_png()
@@ -1549,6 +1619,59 @@ def generate_cbdt_all_ttf() -> bytes:
         'maxp': build_maxp_table(num_glyphs=12, max_points=0, max_contours=0),
         'OS/2': build_os2_table(),
         'name': build_name_table(family='Minimal CBDT All', style='Regular'),
+        'cmap': cmap,
+        'post': build_post_table(),
+        'glyf': glyf_data,
+        'loca': loca_data,
+        'hmtx': hmtx,
+        'CBDT': cbdt_table,
+        'CBLC': cblc_table,
+    }
+    return assemble_sfnt(tables, sfnt_version=b'\x00\x01\x00\x00')
+
+
+def generate_cbdt_matrix_ttf() -> bytes:
+    bit_depth = 8
+    values = [
+        0x00, 0x40, 0x80, 0xC0,
+        0xC0, 0x80, 0x40, 0x00,
+        0x10, 0x50, 0x90, 0xD0,
+        0xD0, 0x90, 0x50, 0x10,
+    ]
+    alt_values = [
+        0x00, 0xFF, 0x00, 0xFF,
+        0x20, 0xDF, 0x20, 0xDF,
+        0x40, 0xBF, 0x40, 0xBF,
+        0x60, 0x9F, 0x60, 0x9F,
+    ]
+    bar_values = [
+        0x00, 0x00, 0xFF, 0xFF,
+        0x00, 0x00, 0xFF, 0xFF,
+        0xFF, 0xFF, 0x00, 0x00,
+        0xFF, 0xFF, 0x00, 0x00,
+    ]
+
+    data1, _ = build_cbdt_sbit_glyph(1, 4, 4, bit_depth, values)
+    data2, _ = build_cbdt_sbit_glyph(2, 4, 4, bit_depth, alt_values)
+    data6, _ = build_cbdt_sbit_glyph(6, 4, 4, bit_depth, bar_values)
+    unsupported_data, _ = build_cbdt_sbit_glyph(1, 4, 4, bit_depth, values)
+    records = [
+        {"glyph_id": 2, "index_format": 3, "image_format": 1, "data": data1},
+        {"glyph_id": 3, "index_format": 4, "image_format": 2, "data": data2},
+        {"glyph_id": 4, "index_format": 1, "image_format": 6, "data": data6},
+        {"glyph_id": 5, "index_format": 1, "image_format": 16, "data": unsupported_data},
+    ]
+
+    glyf_data, loca_data = build_empty_glyph_font(6)
+    hmtx = build_hmtx_table_entries([(500, 0)] * 6)
+    cmap = build_cmap_table_pairs({65: 2, 66: 3, 67: 4, 68: 5})
+    cbdt_table, cblc_table = build_cbdt_all_tables(records, num_glyphs=6, bit_depth=bit_depth)
+    tables = {
+        'head': build_head_table(x_min=0, y_min=0, x_max=4, y_max=4, index_to_loc_format=0),
+        'hhea': build_hhea_table(num_hmetrics=6, advance_width_max=500),
+        'maxp': build_maxp_table(num_glyphs=6, max_points=0, max_contours=0),
+        'OS/2': build_os2_table(),
+        'name': build_name_table(family='Minimal CBDT Matrix', style='Regular'),
         'cmap': cmap,
         'post': build_post_table(),
         'glyf': glyf_data,
@@ -2061,6 +2184,53 @@ ENDFONT
 """
 
 
+def generate_nonunicode_bdf() -> str:
+    return """\
+STARTFONT 2.1
+FONT -Test-NonUnicode-Medium-R-Normal--8-80-75-75-C-80-ADOBE-0
+SIZE 8 75 75
+FONTBOUNDINGBOX 8 8 0 0
+STARTPROPERTIES 4
+FONT_ASCENT 7
+FONT_DESCENT 1
+CHARSET_REGISTRY "ADOBE"
+CHARSET_ENCODING "0"
+ENDPROPERTIES
+CHARS 2
+STARTCHAR space
+ENCODING 32
+SWIDTH 500 0
+DWIDTH 8 0
+BBX 8 8 0 0
+BITMAP
+00
+00
+00
+00
+00
+00
+00
+00
+ENDCHAR
+STARTCHAR A
+ENCODING 65
+SWIDTH 500 0
+DWIDTH 8 0
+BBX 8 8 0 0
+BITMAP
+18
+24
+42
+7E
+42
+42
+42
+00
+ENDCHAR
+ENDFONT
+"""
+
+
 # ---------------------------------------------------------------------------
 # Generate minimal.pfb
 # ---------------------------------------------------------------------------
@@ -2092,6 +2262,10 @@ def generate_pfb(*,
         if include_encoding_only_glyph:
             raise ValueError("encoding-only glyph fixture requires custom encoding")
         encoding_text = "/Encoding StandardEncoding def"
+    elif encoding_mode == "latin1":
+        if include_encoding_only_glyph:
+            raise ValueError("encoding-only glyph fixture requires custom encoding")
+        encoding_text = "/Encoding ISOLatin1Encoding def"
     else:
         raise ValueError(f"unsupported Type 1 encoding mode: {encoding_mode}")
     ascii_part = """%!PS-AdobeFont-1.0: Minimal 001.000
@@ -2203,13 +2377,19 @@ currentfile eexec
     foo_plain += bytes([14])
     foo_enc = charstring_encrypt(foo_plain)
 
+    aacute_plain = cs_encode_int(50) + cs_encode_int(500) + bytes([13])
+    aacute_plain += bytes([14])
+    aacute_enc = charstring_encrypt(aacute_plain)
+
+    include_latin1_glyph = encoding_mode == "latin1"
+    charstring_count = 3 + int(include_encoding_only_glyph) + int(include_latin1_glyph)
     clear_text = f"""dup /Private 5 dict dup begin
 /RD {{string currentfile exch readstring pop}} executeonly def
 /ND {{noaccess def}} executeonly def
 /NP {{noaccess put}} executeonly def
 /lenIV 4 def
 /password 5839 def
-2 index /CharStrings {3 + int(include_encoding_only_glyph)} dict dup begin
+2 index /CharStrings {charstring_count} dict dup begin
 /.notdef {len(notdef_enc)} RD """
 
     clear_bytes = clear_text.encode('latin-1')
@@ -2230,6 +2410,12 @@ currentfile eexec
         foo_line = f"/foo {len(foo_enc)} RD "
         clear_bytes += foo_line.encode('latin-1')
         clear_bytes += foo_enc
+        clear_bytes += b" ND\n"
+
+    if include_latin1_glyph:
+        aacute_line = f"/Aacute {len(aacute_enc)} RD "
+        clear_bytes += aacute_line.encode('latin-1')
+        clear_bytes += aacute_enc
         clear_bytes += b" ND\n"
 
     clear_bytes += b"end\nend\nreadonly put\nnoaccess put\ndup /FontName get exch definefont pop\nmark currentfile closefile\n"
@@ -2422,6 +2608,13 @@ def main():
       f.write(sbix_data)
     print(f"  Written {len(sbix_data)} bytes to {sbix_path}")
 
+    print("Generating minimal_sbix_refs.ttf...")
+    sbix_refs_data = generate_sbix_refs_ttf()
+    sbix_refs_path = os.path.join(SCRIPT_DIR, 'minimal_sbix_refs.ttf')
+    with open(sbix_refs_path, 'wb') as f:
+        f.write(sbix_refs_data)
+    print(f"  Written {len(sbix_refs_data)} bytes to {sbix_refs_path}")
+
     print("Generating minimal_cbdt.ttf...")
     cbdt_data = generate_cbdt_ttf()
     cbdt_path = os.path.join(SCRIPT_DIR, 'minimal_cbdt.ttf')
@@ -2435,6 +2628,13 @@ def main():
     with open(cbdt_all_path, 'wb') as f:
         f.write(cbdt_all_data)
     print(f"  Written {len(cbdt_all_data)} bytes to {cbdt_all_path}")
+
+    print("Generating minimal_cbdt_matrix.ttf...")
+    cbdt_matrix_data = generate_cbdt_matrix_ttf()
+    cbdt_matrix_path = os.path.join(SCRIPT_DIR, 'minimal_cbdt_matrix.ttf')
+    with open(cbdt_matrix_path, 'wb') as f:
+        f.write(cbdt_matrix_data)
+    print(f"  Written {len(cbdt_matrix_data)} bytes to {cbdt_matrix_path}")
 
     print("Generating minimal_colr_v0.ttf...")
     colr_v0_data = generate_colr_v0_ttf()
@@ -2545,6 +2745,12 @@ def main():
         f.write(generate_chars_mismatch_bdf())
     print(f"  Written to {mismatch_bdf_path}")
 
+    print("Generating minimal_nonunicode.bdf...")
+    nonunicode_bdf_path = os.path.join(SCRIPT_DIR, 'minimal_nonunicode.bdf')
+    with open(nonunicode_bdf_path, 'w', newline='\n') as f:
+        f.write(generate_nonunicode_bdf())
+    print(f"  Written to {nonunicode_bdf_path}")
+
     # PFB
     print("Generating minimal.pfb...")
     pfb_data = generate_pfb()
@@ -2585,6 +2791,17 @@ def main():
     with open(pfb_expert_path, 'wb') as f:
         f.write(pfb_expert_data)
     print(f"  Written {len(pfb_expert_data)} bytes to {pfb_expert_path}")
+
+    print("Generating minimal_type1_latin1.pfb...")
+    pfb_latin1_data = generate_pfb(
+        font_name="MinimalLatin1Encoding",
+        family_name="Minimal Latin1 Encoding",
+        encoding_mode="latin1",
+    )
+    pfb_latin1_path = os.path.join(SCRIPT_DIR, 'minimal_type1_latin1.pfb')
+    with open(pfb_latin1_path, 'wb') as f:
+        f.write(pfb_latin1_data)
+    print(f"  Written {len(pfb_latin1_data)} bytes to {pfb_latin1_path}")
 
     # WOFF
     print("Generating minimal.woff...")

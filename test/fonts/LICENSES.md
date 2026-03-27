@@ -24,9 +24,13 @@
 | minimal.woff | WOFF1 | Apache 2.0 | zlib-compressed SFNT |
 | minimal.pfb | Type 1 PFB | Apache 2.0 | eexec+charstring encrypted |
 | minimal_type1_expert.pfb | Type 1 PFB | Apache 2.0 | ExpertEncoding charmap fixture |
+| minimal_type1_latin1.pfb | Type 1 PFB | Apache 2.0 | ISOLatin1Encoding charmap fixture |
 | minimal.bdf | BDF Bitmap | Apache 2.0 | 8×8 bitmap glyphs |
 | minimal_sparse.bdf | BDF Bitmap | Apache 2.0 | sparse encoding map fixture |
 | minimal_chars_mismatch.bdf | BDF Bitmap | Apache 2.0 | CHARS mismatch fixture |
+| minimal_nonunicode.bdf | BDF Bitmap | Apache 2.0 | non-Unicode charset metadata fixture |
+| minimal_sbix_refs.ttf | Color TrueType | Apache 2.0 | sbix `dupe`/`flip`/unsupported graphic-type fixture |
+| minimal_cbdt_matrix.ttf | Color TrueType | Apache 2.0 | CBLC index-format and 8bpp sbit matrix fixture |
 
 ## Why synthetic fonts for TTC and WOFF?
 

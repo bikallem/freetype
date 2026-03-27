@@ -133,6 +133,15 @@ test "expert_encoding_sid: basic lookups" {
 }
 
 ///|
+test "latin1_name: basic lookups" {
+  assert_eq(latin1_name(0x20U), Some("space"))
+  assert_eq(latin1_name(0xA0U), Some("nonbreakingspace"))
+  assert_eq(latin1_name(0xC1U), Some("Aacute"))
+  assert_eq(latin1_name(0xFFU), Some("ydieresis"))
+  assert_eq(latin1_name(0x80U), None)
+}
+
+///|
 test "adobe_glyph_index: known names" {
   assert_eq(adobe_glyph_index("space"), 0x0020U)
   assert_eq(adobe_glyph_index("A"), 0x0041U)

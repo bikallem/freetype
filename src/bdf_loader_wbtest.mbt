@@ -14,6 +14,11 @@ fn load_chars_mismatch_bdf_fixture() -> Bytes {
 }
 
 ///|
+fn load_nonunicode_bdf_fixture() -> Bytes {
+  try! @fs.read_file_to_bytes("test/fonts/minimal_nonunicode.bdf")
+}
+
+///|
 test "BDF: public API uses DWIDTH for advances" {
   let face = from_bytes(load_bdf_with_wide_advance())
   inspect(face.family_name(), content="Test")
@@ -46,4 +51,15 @@ test "BDF: CHARS mismatch still uses parsed glyph set" {
   let r = try? load_glyph(face, 2U)
   guard r is Ok(_) else { return }
   inspect(face.glyph().metrics().hori_advance(), content="8")
+}
+
+///|
+test "BDF: non-Unicode charset does not publish Unicode metadata" {
+  let face = from_bytes(load_nonunicode_bdf_fixture())
+  inspect(face.charmaps().length(), content="1")
+  inspect(face.charmaps()[0].encoding(), content="None")
+  inspect(face.charmaps()[0].platform_id(), content="0")
+  inspect(face.charmaps()[0].encoding_id(), content="0")
+  inspect(get_char_index(face, 32U), content="1")
+  inspect(get_char_index(face, 65U), content="2")
 }

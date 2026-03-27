@@ -353,6 +353,8 @@ fn load_sbix_from_strike(
   let origin_x = reader.read_i16_be()
   let origin_y = reader.read_i16_be()
   let graphic_type = reader.read_u32_be()
+  // Match the vendored FreeType sbix loader: only PNG payloads and the
+  // Apple reference opcodes (`dupe`/`flip`) are accepted intentionally.
   match graphic_type {
     0x706E6720U => {
       let image = decode_png_to_bgra(data[glyph_start + 8:glyph_end].to_bytes())

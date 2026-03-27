@@ -34,6 +34,7 @@ pub fn Type1Font::font_bbox(Self) -> Array[Int]
 pub fn Type1Font::font_matrix(Self) -> Array[Double]
 pub fn Type1Font::font_name(Self) -> String
 pub fn Type1Font::glyph_order(Self) -> Array[String]
+pub fn Type1Font::latin1_encoding(Self) -> Bool
 pub fn Type1Font::len_iv(Self) -> Int
 pub fn Type1Font::new() -> Self
 pub fn Type1Font::other_blues(Self) -> Array[Int]

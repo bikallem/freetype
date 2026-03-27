@@ -42,6 +42,8 @@ struct BdfFont {
   point_size : Int
   x_resolution : Int
   y_resolution : Int
+  charset_registry : String
+  charset_encoding : String
   glyphs : Array[BdfGlyph]
   num_chars : Int
   bbx_width : Int // global bounding box
@@ -57,6 +59,8 @@ pub fn BdfFont::new() -> BdfFont {
     point_size: 0,
     x_resolution: 0,
     y_resolution: 0,
+    charset_registry: "",
+    charset_encoding: "",
     glyphs: [],
     num_chars: 0,
     bbx_width: 0,
@@ -195,6 +199,23 @@ fn bytes_find_token_end(data : Bytes, pos : Int, end : Int) -> Int {
 }
 
 ///|
+fn bytes_parse_property_atom(data : Bytes, start : Int, end : Int) -> String {
+  let token_start = bytes_skip_spaces(data, start, end)
+  if token_start >= end {
+    return ""
+  }
+  if data[token_start] == b'"' {
+    let mut quoted_end = token_start + 1
+    while quoted_end < end && data[quoted_end] != b'"' {
+      quoted_end = quoted_end + 1
+    }
+    return bytes_to_string(data, token_start + 1, quoted_end)
+  }
+  let token_end = bytes_find_token_end(data, token_start, end)
+  bytes_to_string(data, token_start, token_end)
+}
+
+///|
 /// Parse space-separated integers from data[start..end) into out array.
 /// Parses up to `max` integers.
 fn bytes_parse_int_fields(
@@ -229,6 +250,8 @@ pub fn parse_bdf_header(data : Bytes) -> BdfFont raise @error.FTError {
   let mut point_size = 0
   let mut x_resolution = 0
   let mut y_resolution = 0
+  let mut charset_registry = ""
+  let mut charset_encoding = ""
   let mut num_chars = 0
   let mut bbx_width = 0
   let mut bbx_height = 0
@@ -264,6 +287,18 @@ pub fn parse_bdf_header(data : Bytes) -> BdfFont raise @error.FTError {
         bbx_x_offset = fields[2]
         bbx_y_offset = fields[3]
       }
+    } else if bytes_starts_with(data, line_start, line_end, "CHARSET_REGISTRY ") {
+      charset_registry = bytes_parse_property_atom(
+        data,
+        line_start + 17,
+        line_end,
+      )
+    } else if bytes_starts_with(data, line_start, line_end, "CHARSET_ENCODING ") {
+      charset_encoding = bytes_parse_property_atom(
+        data,
+        line_start + 17,
+        line_end,
+      )
     } else if bytes_starts_with(data, line_start, line_end, "CHARS ") {
       num_chars = bytes_parse_int(
         data,
@@ -433,6 +468,8 @@ pub fn parse_bdf_header(data : Bytes) -> BdfFont raise @error.FTError {
     point_size,
     x_resolution,
     y_resolution,
+    charset_registry,
+    charset_encoding,
     glyphs,
     num_chars,
     bbx_width,
@@ -460,6 +497,16 @@ pub fn BdfFont::point_size(self : BdfFont) -> Int {
 ///|
 pub fn BdfFont::glyphs(self : BdfFont) -> Array[BdfGlyph] {
   self.glyphs
+}
+
+///|
+pub fn BdfFont::charset_registry(self : BdfFont) -> String {
+  self.charset_registry
+}
+
+///|
+pub fn BdfFont::charset_encoding(self : BdfFont) -> String {
+  self.charset_encoding
 }
 
 ///|

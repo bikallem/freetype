@@ -16,6 +16,8 @@ pub fn BdfFont::bbx_height(Self) -> Int
 pub fn BdfFont::bbx_width(Self) -> Int
 pub fn BdfFont::bbx_x_offset(Self) -> Int
 pub fn BdfFont::bbx_y_offset(Self) -> Int
+pub fn BdfFont::charset_encoding(Self) -> String
+pub fn BdfFont::charset_registry(Self) -> String
 pub fn BdfFont::font_name(Self) -> String
 pub fn BdfFont::get_glyph(Self, Int) -> BdfGlyph?
 pub fn BdfFont::glyphs(Self) -> Array[BdfGlyph]

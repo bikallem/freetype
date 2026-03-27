@@ -591,6 +591,33 @@ fn build_glyph_unicode_map() -> Map[String, UInt] {
 let glyph_unicode_map : Map[String, UInt] = build_glyph_unicode_map()
 
 ///|
+fn fill_latin1_names_from(
+  source : FixedArray[String],
+  names : FixedArray[String],
+) -> Unit {
+  for _, name in source {
+    let unicode = adobe_glyph_index(name)
+    if unicode != 0U && unicode < 256U {
+      let code = unicode.reinterpret_as_int()
+      if names[code] == ".notdef" {
+        names[code] = name
+      }
+    }
+  }
+}
+
+///|
+fn build_latin1_names() -> FixedArray[String] {
+  let names = FixedArray::make(256, ".notdef")
+  fill_latin1_names_from(sid_names, names)
+  fill_latin1_names_from(mac_names, names)
+  names
+}
+
+///|
+let latin1_names : FixedArray[String] = build_latin1_names()
+
+///|
 /// Look up a glyph name in the Adobe Glyph List (standard subset).
 /// Returns the Unicode value or 0 if not found.
 pub fn adobe_glyph_index(name : String) -> UInt {

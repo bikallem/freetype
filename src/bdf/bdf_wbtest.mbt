@@ -17,7 +17,7 @@ test "BdfGlyph creation" {
 
 ///|
 test "parse_bdf_header basic" {
-  let bdf_text = "STARTFONT 2.1\nFONT -misc-fixed-medium-r-normal--13-120-75-75-C-70-iso8859-1\nSIZE 12 75 75\nFONTBOUNDINGBOX 6 13 0 -2\nCHARS 256\n"
+  let bdf_text = "STARTFONT 2.1\nFONT -misc-fixed-medium-r-normal--13-120-75-75-C-70-iso8859-1\nSIZE 12 75 75\nFONTBOUNDINGBOX 6 13 0 -2\nSTARTPROPERTIES 2\nCHARSET_REGISTRY \"ISO8859\"\nCHARSET_ENCODING \"1\"\nENDPROPERTIES\nCHARS 256\n"
   let data = @utf8.encode(bdf_text)
   let font = parse_bdf_header(data)
   inspect(
@@ -31,6 +31,8 @@ test "parse_bdf_header basic" {
   inspect(font.bbx_height, content="13")
   inspect(font.bbx_x_offset, content="0")
   inspect(font.bbx_y_offset, content="-2")
+  inspect(font.charset_registry(), content="ISO8859")
+  inspect(font.charset_encoding(), content="1")
   inspect(font.num_chars, content="256")
 }
 

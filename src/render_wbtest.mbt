@@ -14,6 +14,11 @@ fn render_color_test_font() -> Bytes {
 }
 
 ///|
+fn render_color_ref_test_font() -> Bytes {
+  try! @fs.read_file_to_bytes("test/fonts/minimal_sbix_refs.ttf")
+}
+
+///|
 fn render_minimal_woff() -> Bytes {
   try! @fs.read_file_to_bytes("test/fonts/minimal.woff")
 }
@@ -192,6 +197,11 @@ fn corrupt_woff_first_orig_length(data : Bytes) -> Bytes {
 ///|
 fn render_cbdt_all_test_font() -> Bytes {
   try! @fs.read_file_to_bytes("test/fonts/minimal_cbdt_all.ttf")
+}
+
+///|
+fn render_cbdt_matrix_test_font() -> Bytes {
+  try! @fs.read_file_to_bytes("test/fonts/minimal_cbdt_matrix.ttf")
 }
 
 ///|
@@ -564,6 +574,40 @@ test "load_glyph: corrupt embedded PNG CRC is rejected" {
 }
 
 ///|
+test "load_glyph: sbix dupe and flip graphic types stay supported" {
+  let face = from_bytes(render_color_ref_test_font())
+  inspect(face.has_color(), content="true")
+  try! set_pixel_sizes(face, 0U, 16U)
+
+  try! load_glyph(face, get_char_index(face, 65U), load_flags=@base.LOAD_COLOR)
+  let base = face.glyph().bitmap().buffer()
+  inspect(face.glyph().bitmap().pixel_mode(), content="Bgra")
+  inspect(base.length(), content="144")
+
+  try! load_glyph(face, get_char_index(face, 66U), load_flags=@base.LOAD_COLOR)
+  inspect(face.glyph().bitmap().pixel_mode(), content="Bgra")
+  inspect(face.glyph().bitmap().buffer() == base, content="true")
+
+  try! load_glyph(face, get_char_index(face, 67U), load_flags=@base.LOAD_COLOR)
+  inspect(face.glyph().bitmap().pixel_mode(), content="Bgra")
+  inspect(face.glyph().bitmap().buffer() == base, content="false")
+  inspect(face.glyph().bitmap().buffer()[0].to_int(), content="0")
+  inspect(face.glyph().bitmap().buffer()[3].to_int(), content="0")
+}
+
+///|
+test "load_glyph: unsupported sbix graphic types fail deliberately" {
+  let face = from_bytes(render_color_ref_test_font())
+  try! set_pixel_sizes(face, 0U, 16U)
+  let result : Result[Unit, @error.FTError] = Ok(
+    load_glyph(face, get_char_index(face, 68U), load_flags=@base.LOAD_COLOR),
+  ) catch {
+    err => Err(err)
+  }
+  inspect(result, content="Err(UnimplementedFeature)")
+}
+
+///|
 test "load_glyph: embedded PNG with unknown critical chunk is rejected" {
   let face = from_bytes(
     inject_unknown_critical_png_chunk_type(render_color_test_font()),
@@ -794,6 +838,37 @@ test "load_glyph: LOAD_COLOR loads CBDT PNG and packed bitmap formats" {
     inspect(face.glyph().bitmap().pixel_mode(), content="Gray4")
     inspect(face.glyph().bitmap().buffer().length() > 0, content="true")
   }
+}
+
+///|
+test "load_glyph: LOAD_COLOR covers extra CBLC index formats and 8bpp sbit" {
+  let face = from_bytes(render_cbdt_matrix_test_font())
+  inspect(face.has_color(), content="true")
+  try! set_pixel_sizes(face, 0U, 16U)
+
+  for code in [65U, 66U, 67U] {
+    try! load_glyph(
+      face,
+      get_char_index(face, code),
+      load_flags=@base.LOAD_COLOR,
+    )
+    inspect(face.glyph().bitmap().pixel_mode(), content="Gray")
+    inspect(face.glyph().bitmap().width(), content="4")
+    inspect(face.glyph().bitmap().rows(), content="4")
+    inspect(face.glyph().bitmap().buffer().length(), content="16")
+  }
+}
+
+///|
+test "load_glyph: unsupported CBDT image formats fail deliberately" {
+  let face = from_bytes(render_cbdt_matrix_test_font())
+  try! set_pixel_sizes(face, 0U, 16U)
+  let result : Result[Unit, @error.FTError] = Ok(
+    load_glyph(face, get_char_index(face, 68U), load_flags=@base.LOAD_COLOR),
+  ) catch {
+    err => Err(err)
+  }
+  inspect(result, content="Err(UnimplementedFeature)")
 }
 
 ///|

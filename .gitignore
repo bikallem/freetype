@@ -8,10 +8,13 @@ target/
 # Test fonts (downloaded via script)
 test/fonts/*.ttf
 !test/fonts/mvar.ttf
+!test/fonts/minimal_cbdt_matrix.ttf
+!test/fonts/minimal_sbix_refs.ttf
 !test/fonts/uvs.ttf
 test/fonts/*.otf
 test/fonts/*.woff
 test/fonts/*.bdf
+!test/fonts/minimal_nonunicode.bdf
 test/fonts/*.pcf
 !test/fonts/minimal.pcf
 test/fonts/*.tar.*

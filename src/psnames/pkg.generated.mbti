@@ -10,6 +10,8 @@ pub fn build_unicode_map(Array[String]) -> Map[UInt, UInt]
 
 pub fn expert_encoding_sid(UInt) -> Int
 
+pub fn latin1_name(UInt) -> String?
+
 pub fn macintosh_name(UInt) -> String
 
 pub fn standard_encoding_sid(UInt) -> Int

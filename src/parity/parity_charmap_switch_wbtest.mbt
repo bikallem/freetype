@@ -19,6 +19,11 @@ fn load_switch_type1_expert_pfb() -> Bytes {
 }
 
 ///|
+fn load_switch_type1_latin1_pfb() -> Bytes {
+  try! @fs.read_file_to_bytes("test/fonts/minimal_type1_latin1.pfb")
+}
+
+///|
 fn load_switch_minimal_standalone_expert_cff() -> Bytes {
   try! @fs.read_file_to_bytes("test/fonts/minimal_standalone_expert.cff")
 }
@@ -78,6 +83,19 @@ test "active charmap: Type1 ExpertEncoding is exposed distinctly" {
   f.set_active_charmap(1)
   inspect(@freetype.get_char_index(f, 32U), content="1")
   inspect(@freetype.get_char_index(f, 65U), content="0")
+}
+
+///|
+test "active charmap: Type1 ISOLatin1Encoding is exposed distinctly" {
+  let f = @freetype.from_bytes(load_switch_type1_latin1_pfb())
+  inspect(f.charmaps().length(), content="2")
+  inspect(f.charmaps()[1].encoding(), content="AdobeLatin1")
+  inspect(f.charmaps()[1].platform_id(), content="7")
+  inspect(f.charmaps()[1].encoding_id(), content="3")
+  f.set_active_charmap(1)
+  inspect(@freetype.get_char_index(f, 32U), content="1")
+  inspect(@freetype.get_char_index(f, 65U), content="2")
+  inspect(@freetype.get_char_index(f, 193U), content="3")
 }
 
 ///|

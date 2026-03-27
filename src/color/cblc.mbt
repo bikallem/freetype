@@ -431,6 +431,8 @@ fn read_cblc_sbit_pixels_in_strike(
     image_start + image_length > cbdt.length() {
     raise @error.FTError::InvalidTable
   }
+  // Match the embedded bitmap formats handled by FreeType's ttsbit path:
+  // packed sbit formats 1/2/5/6/7/8/9 and PNG-backed formats 17/18/19.
   match location.image_format {
     1 | 2 | 5 | 6 | 7 => {
       let (metrics, data_start) = match location.image_format {

@@ -106,3 +106,19 @@ test "parse_type1_pfa recognizes ExpertEncoding" {
   inspect(font.expert_encoding(), content="true")
   inspect(font.encoding()[32], content="space")
 }
+
+///|
+test "parse_type1_pfa recognizes ISOLatin1Encoding" {
+  let pfa : Bytes = b"%!PS-AdobeFont-1.0: Latin1Test 001.000\n" +
+    b"/FontName /Latin1Test def\n" +
+    b"/FamilyName (Latin1 Test) readonly def\n" +
+    b"/FontType 1 def\n" +
+    b"/FontMatrix [0.001 0 0 0.001 0 0] readonly def\n" +
+    b"/FontBBox {0 -200 500 800} readonly def\n" +
+    b"/Encoding ISOLatin1Encoding def\n"
+  let font = parse_type1_pfa(pfa)
+  inspect(font.custom_encoding(), content="false")
+  inspect(font.expert_encoding(), content="false")
+  inspect(font.latin1_encoding(), content="true")
+  inspect(font.encoding()[0xC1], content="Aacute")
+}

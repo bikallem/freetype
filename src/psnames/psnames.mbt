@@ -102,6 +102,21 @@ pub fn expert_encoding_sid(code : UInt) -> Int {
 }
 
 ///|
+/// Return the preferred PostScript glyph name for an ISO-8859-1 code point.
+/// Returns None for unmapped values.
+pub fn latin1_name(code : UInt) -> String? {
+  if code >= 256U {
+    return None
+  }
+  let name = latin1_names[code.reinterpret_as_int()]
+  if name == ".notdef" {
+    None
+  } else {
+    Some(name)
+  }
+}
+
+///|
 /// Build a FreeType-style Unicode charmap from glyph names.
 ///
 /// Base glyphs win over variant glyphs for the same character code. A small
