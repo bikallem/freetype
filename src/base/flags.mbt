@@ -52,6 +52,12 @@ pub const FACE_FLAG_SBIX : Int64 = 131072L
 ///|
 pub const FACE_FLAG_SBIX_OVERLAY : Int64 = 262144L
 
+///|
+pub const PALETTE_FOR_LIGHT_BACKGROUND : UInt = 0x01U
+
+///|
+pub const PALETTE_FOR_DARK_BACKGROUND : UInt = 0x02U
+
 // Style flag constants (FT_STYLE_FLAG_*)
 
 ///|

@@ -1312,3 +1312,15 @@ pub fn render_outline_lcdv(
     lcdv_layout(@base.outline_get_cbox(outline)),
   )
 }
+
+///|
+/// Render a grayscale mask into explicit bitmap bounds.
+pub fn render_outline_gray_mask(
+  outline : @types.Outline,
+  left : Int,
+  top : Int,
+  width : Int,
+  rows : Int,
+) -> Bytes raise @error.FTError {
+  render_gray_plane(outline, left, top, width, rows)
+}

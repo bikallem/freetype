@@ -7,6 +7,8 @@ import {
 }
 
 // Values
+pub fn render_outline_gray_mask(@types.Outline, Int, Int, Int, Int) -> Bytes raise @error.FTError
+
 pub fn render_outline_lcd(@types.Outline) -> (@types.Bitmap, Int, Int) raise @error.FTError
 
 pub fn render_outline_lcdv(@types.Outline) -> (@types.Bitmap, Int, Int) raise @error.FTError

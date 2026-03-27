@@ -1,0 +1,11 @@
+import {
+  "bikallem/freetype/error",
+  "bikallem/freetype/types",
+  "bikallem/freetype/stream",
+  "bikallem/freetype/sfnt",
+  "bikallem/freetype/base",
+  "bikallem/freetype/fixed",
+  "bikallem/compress/zlib" @zlib,
+}
+
+warnings = "-20"

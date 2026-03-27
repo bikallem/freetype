@@ -6,6 +6,7 @@ pub(all) enum RenderMode {
   Mono
   Lcd
   LcdV
+  Sdf
 } derive(Eq, Show)
 
 ///|

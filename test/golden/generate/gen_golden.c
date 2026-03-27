@@ -60,6 +60,9 @@ static const FT_ULong variation_test_charcodes[] = { 'A', 'a' };
 static const FT_ULong render_test_charcodes[] = { ' ', 'A', 'a', 0x4E00 };
 #define NUM_RENDER_TEST_CHARS (sizeof(render_test_charcodes) / sizeof(render_test_charcodes[0]))
 
+static const FT_ULong color_render_test_charcodes[] = { 'A' };
+#define NUM_COLOR_RENDER_TEST_CHARS (sizeof(color_render_test_charcodes) / sizeof(color_render_test_charcodes[0]))
+
 static const struct {
     const char     *load_flag_name;
     FT_Int32        load_flags;
@@ -71,6 +74,7 @@ static const struct {
     { "NO_HINTING", FT_LOAD_NO_HINTING, "MONO",   FT_RENDER_MODE_MONO   },
     { "NO_HINTING", FT_LOAD_NO_HINTING, "LCD",    FT_RENDER_MODE_LCD    },
     { "NO_HINTING", FT_LOAD_NO_HINTING, "LCD_V",  FT_RENDER_MODE_LCD_V  },
+    { "NO_HINTING", FT_LOAD_NO_HINTING, "SDF",    FT_RENDER_MODE_SDF    },
 };
 #define NUM_RENDER_MODES (sizeof(render_mode_matrix) / sizeof(render_mode_matrix[0]))
 
@@ -243,9 +247,16 @@ static void dump_one_rendered_glyph(
 
     FT_Error err = FT_Load_Glyph(face, gindex, load_flags);
     if (err) return;
-    err = FT_Render_Glyph(face->glyph, render_mode);
-    if (err) return;
+    if (face->glyph->format == FT_GLYPH_FORMAT_OUTLINE ||
+        render_mode == FT_RENDER_MODE_SDF)
+    {
+        err = FT_Render_Glyph(face->glyph, render_mode);
+        if (err) return;
+    }
     if (face->glyph->format != FT_GLYPH_FORMAT_BITMAP) return;
+    if ((load_flags & FT_LOAD_COLOR) != 0 &&
+        face->glyph->bitmap.pixel_mode != FT_PIXEL_MODE_BGRA)
+        return;
 
     if (!*first_glyph) fprintf(fp, ",\n");
     *first_glyph = 0;
@@ -293,6 +304,21 @@ static void dump_rendered_glyphs(FILE *fp, FT_Face face) {
                 render_mode_matrix[m].load_flags,
                 render_mode_matrix[m].render_mode_name,
                 render_mode_matrix[m].render_mode,
+                16,
+                &first_glyph
+            );
+        }
+    }
+    if (face->face_flags & FT_FACE_FLAG_COLOR) {
+        for (unsigned c = 0; c < NUM_COLOR_RENDER_TEST_CHARS; c++) {
+            dump_one_rendered_glyph(
+                fp,
+                face,
+                color_render_test_charcodes[c],
+                "COLOR_NO_HINTING",
+                FT_LOAD_COLOR | FT_LOAD_NO_HINTING,
+                "NORMAL",
+                FT_RENDER_MODE_NORMAL,
                 16,
                 &first_glyph
             );

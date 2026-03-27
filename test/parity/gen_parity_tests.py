@@ -17,9 +17,15 @@ FONT_DIR = os.path.join(os.path.dirname(__file__), "..", "fonts")
 # for native hinted width/height behaviour in the underlying scaler.
 SKIP_HINTED_BBOX_FIXTURES = {
     "minimal_collection.woff2",
+    "minimal_colr_v0.ttf",
+    "minimal_colr_v1.ttf",
     "minimal_hmtx.woff2",
     "mvar.ttf",
     "uvs.ttf",
+}
+
+SDF_RENDER_FIXTURES = {
+    "minimal.ttf",
 }
 
 UNICODE_CMAP_PRIORITIES = [
@@ -89,6 +95,7 @@ RENDER_MODE_EXPR = {
     "MONO": "Mono",
     "LCD": "Lcd",
     "LCD_V": "LcdV",
+    "SDF": "Sdf",
 }
 
 PIXEL_MODE_NAME = {
@@ -300,12 +307,17 @@ def gen_font_tests(ff, golden):
             load_flag_expr = {
                 "NO_HINTING": "@base.LOAD_NO_HINTING",
                 "DEFAULT": "0",
+                "COLOR": "@base.LOAD_COLOR",
+                "COLOR_NO_HINTING": "@base.LOAD_COLOR | @base.LOAD_NO_HINTING",
             }.get(render_load_flags, "0")
             render_mode_name = g.get("render_mode", "NORMAL")
+            if render_mode_name == "SDF" and ff not in SDF_RENDER_FIXTURES:
+                continue
             render_mode_expr = RENDER_MODE_EXPR.get(render_mode_name, "Normal")
             pixel_mode_name = PIXEL_MODE_NAME.get(bitmap.get("pixel_mode", 0), "None")
+            load_flag_suffix = "" if render_load_flags in ("DEFAULT", "NO_HINTING") else f" {render_load_flags}"
             L += [f"///|",
-                  f'test "parity/{ff}: rendered glyph {g["glyph_index"]} {render_mode_name} char {g["charcode"]}" {{',
+                  f'test "parity/{ff}: rendered glyph {g["glyph_index"]} {render_mode_name}{load_flag_suffix} char {g["charcode"]}" {{',
                   f"  let f = @freetype.from_bytes({loader_fn}())",
                   f"  try! @freetype.set_pixel_sizes(f, 0U, {g['size_ppem']}U)",
                   f"  let gid = @freetype.get_char_index(f, {g['charcode']}U)",

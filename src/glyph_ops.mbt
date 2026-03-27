@@ -254,20 +254,103 @@ fn clear_slot_bitmap(slot : @base.GlyphSlot) -> Unit {
 }
 
 ///|
+fn set_slot_bitmap_glyph(
+  face : @base.FaceRec,
+  glyph_index : UInt,
+  load_flags : Int,
+  glyph : @base.BitmapGlyphData,
+) -> Unit {
+  let slot = face.glyph()
+  let slot_data = glyph.slot_data()
+  slot.set_glyph_index(glyph_index)
+  slot.set_load_flags(load_flags)
+  slot.set_format(@types.GlyphFormat::Bitmap)
+  slot.set_bitmap(glyph.bitmap())
+  slot.set_bitmap_left(glyph.bitmap_left())
+  slot.set_bitmap_top(glyph.bitmap_top())
+  slot.set_outline(@types.Outline::new())
+  set_slot_metrics(slot, slot_data)
+  finalize_aux_vertical_metrics(face, slot_data, false)
+  set_slot_linear_advances(face, slot_data, load_flags)
+  set_slot_advance_vector(face, load_flags)
+}
+
+///|
 fn render_slot_bitmap(
   face : @base.FaceRec,
   mode : RenderMode,
 ) -> Unit raise @error.FTError {
   let slot = face.glyph()
   match slot.format() {
-    Bitmap => ()
+    Bitmap =>
+      if mode == Sdf {
+        let (bitmap, left, top) = @sdf.bitmap_to_sdf(
+          slot.bitmap(),
+          slot.bitmap_left(),
+          slot.bitmap_top(),
+          face.sdf_spread(),
+        )
+        slot.set_bitmap(bitmap)
+        slot.set_bitmap_left(left)
+        slot.set_bitmap_top(top)
+      }
     Outline => {
+      if (mode == Normal || mode == Sdf) &&
+        (slot.load_flags() & @base.LOAD_COLOR) != 0 &&
+        face.driver_data() is @base.DriverData::SfntDriver(ops) {
+        match
+          ops.load_color_glyph()(
+            slot.glyph_index(),
+            slot.load_flags(),
+            face.size().metrics().x_ppem(),
+            face.size().metrics().y_ppem(),
+            face.palette(),
+            face.foreground_color(),
+          ) {
+          Some(glyph) => {
+            if mode == Normal {
+              set_slot_bitmap_glyph(
+                face,
+                slot.glyph_index(),
+                slot.load_flags(),
+                glyph,
+              )
+            } else {
+              let (bitmap, left, top) = @sdf.bitmap_to_sdf(
+                glyph.bitmap(),
+                glyph.bitmap_left(),
+                glyph.bitmap_top(),
+                face.sdf_spread(),
+              )
+              set_slot_bitmap_glyph(
+                face,
+                slot.glyph_index(),
+                slot.load_flags(),
+                @base.BitmapGlyphData::new(glyph.slot_data(), bitmap, left, top),
+              )
+            }
+            return
+          }
+          None => ()
+        }
+      }
       let (bitmap, left, top) = match mode {
         Normal => @smooth.render_outline_normal(slot.outline())
         Light => @smooth.render_outline_light(slot.outline())
         Mono => @smooth.render_outline_mono(slot.outline())
         Lcd => @smooth.render_outline_lcd(slot.outline())
         LcdV => @smooth.render_outline_lcdv(slot.outline())
+        Sdf => {
+          let (base_bitmap, base_left, base_top) = @smooth.render_outline_normal(
+            slot.outline(),
+          )
+          @sdf.bitmap_to_sdf(
+            base_bitmap,
+            base_left,
+            base_top,
+            face.sdf_spread(),
+          )
+        }
       }
       slot.set_bitmap(bitmap)
       slot.set_bitmap_left(left)
@@ -294,18 +377,7 @@ fn load_bitmap_glyph(
   ops : @base.BitmapOps,
 ) -> Unit raise @error.FTError {
   let glyph = ops.load_glyph()(glyph_index, load_flags)
-  let slot = face.glyph()
-  let slot_data = glyph.slot_data()
-  slot.set_glyph_index(glyph_index)
-  slot.set_format(@types.GlyphFormat::Bitmap)
-  slot.set_bitmap(glyph.bitmap())
-  slot.set_bitmap_left(glyph.bitmap_left())
-  slot.set_bitmap_top(glyph.bitmap_top())
-  slot.set_outline(@types.Outline::new())
-  set_slot_metrics(slot, slot_data)
-  finalize_aux_vertical_metrics(face, slot_data, true)
-  set_slot_linear_advances(face, slot_data, load_flags)
-  set_slot_advance_vector(face, load_flags)
+  set_slot_bitmap_glyph(face, glyph_index, load_flags, glyph)
   if (load_flags & @base.LOAD_RENDER) != 0 {
     render_slot_bitmap(face, render_mode_from_load_flags(load_flags))
   }
@@ -324,6 +396,27 @@ pub fn load_glyph(
       load_bitmap_glyph(face, glyph_index, load_flags, ops)
       return
     }
+    SfntDriver(ops) =>
+      if (load_flags & @base.LOAD_COLOR) != 0 &&
+        (load_flags & @base.LOAD_NO_SCALE) == 0 &&
+        face.size().metrics().x_ppem() != 0U &&
+        face.size().metrics().y_ppem() != 0U {
+        match
+          ops.load_color_glyph()(
+            glyph_index,
+            load_flags,
+            face.size().metrics().x_ppem(),
+            face.size().metrics().y_ppem(),
+            face.palette(),
+            face.foreground_color(),
+          ) {
+          Some(glyph) => {
+            set_slot_bitmap_glyph(face, glyph_index, load_flags, glyph)
+            return
+          }
+          None => ()
+        }
+      }
     _ => ()
   }
   let (slot_data, outline, tt_instructions, tt_phantoms) = match
@@ -340,6 +433,7 @@ pub fn load_glyph(
   let no_scale = (load_flags & @base.LOAD_NO_SCALE) != 0
   let vertical_layout = (load_flags & @base.LOAD_VERTICAL_LAYOUT) != 0
   face.glyph().set_glyph_index(glyph_index)
+  face.glyph().set_load_flags(load_flags)
   clear_slot_bitmap(face.glyph())
   face.glyph().set_format(@types.GlyphFormat::Outline)
   face.glyph().set_outline(outline)

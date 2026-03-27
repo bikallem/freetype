@@ -1,0 +1,19 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "bikallem/freetype/sdf"
+
+import {
+  "bikallem/freetype/types",
+}
+
+// Values
+pub fn bitmap_to_sdf(@types.Bitmap, Int, Int, Int) -> (@types.Bitmap, Int, Int)
+
+// Errors
+
+// Types and methods
+type Edge derive(Show)
+
+// Type aliases
+
+// Traits
+

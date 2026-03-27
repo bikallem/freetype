@@ -19,6 +19,17 @@ fn load_sfnt(
   // Check table presence (cheap O(1) lookups)
   let has_glyf = sfnt_data.table_dir().find_table(@types.TAG_GLYF) is Some(_)
   let has_cff = sfnt_data.table_dir().find_table(@types.TAG_CFF) is Some(_)
+  let color_tables = try
+    @color.parse_color_tables(
+      data,
+      sfnt_data.table_dir(),
+      sfnt_data.maxp().num_glyphs(),
+    )
+  catch {
+    _ => None
+  } noraise {
+    tables => tables
+  }
   // Set FACE_FLAG_HINTER eagerly from table directory (avoids lazy TT init)
   if has_glyf &&
     (
@@ -200,6 +211,32 @@ fn load_sfnt(
   let format14_lookup_done : Ref[Bool] = Ref::new(false)
   let cmap_lookup_cache : Ref[Map[Int, @sfnt.CmapLookup?]] = Ref::new({})
   let synthetic_adobe_charmap_index : Ref[Int] = Ref::new(-1)
+  let palette_data_fn : () -> @types.PaletteData? = fn() {
+    match color_tables {
+      Some(tables) => tables.palette_data()
+      None => None
+    }
+  }
+  let select_palette_fn : (UInt) -> Array[@types.Color]? raise @error.FTError = fn(
+    palette_index,
+  ) {
+    match color_tables {
+      Some(tables) => tables.select_palette(palette_index)
+      None => None
+    }
+  }
+  let bitmap_size_from_ppem = fn(
+    x_ppem : UInt,
+    y_ppem : UInt,
+  ) -> @base.BitmapSize {
+    @base.BitmapSize::new(
+      y_ppem.reinterpret_as_int(),
+      x_ppem.reinterpret_as_int(),
+      y_ppem.to_int64() << 6,
+      x_ppem.to_int64() << 6,
+      y_ppem.to_int64() << 6,
+    )
+  }
   let resolve_cmap_lookup = fn(index : Int) -> @sfnt.CmapLookup? {
     match cmap_lookup_cache.val.get(index) {
       Some(lookup) => lookup
@@ -684,6 +721,202 @@ fn load_sfnt(
       false
     }
   }
+  let scale_design_units_to_pixels = fn(value : Int, ppem : UInt) -> Int {
+    let upem = face.units_per_em().reinterpret_as_int()
+    if upem <= 0 {
+      return value
+    }
+    let num = value * ppem.reinterpret_as_int()
+    if num >= 0 {
+      (num + upem / 2) / upem
+    } else {
+      -((-num + upem / 2) / upem)
+    }
+  }
+  let make_bitmap_slot_data = fn(
+    glyph_index : UInt,
+    bitmap : @types.Bitmap,
+    left : Int,
+    top : Int,
+    x_ppem : UInt,
+    y_ppem : UInt,
+  ) -> @base.GlyphSlotData raise @error.FTError {
+    let hmtx = ensure_hmtx()
+    let (advance_width, _lsb) = hmtx.get_metrics(glyph_index)
+    let hori_advance = scale_design_units_to_pixels(
+      advance_width.reinterpret_as_int(),
+      x_ppem,
+    )
+    let vert_advance = match ensure_vmtx() {
+      Some(vmtx) => {
+        let (advance_height, _top_side_bearing) = vmtx.get_metrics(glyph_index)
+        scale_design_units_to_pixels(
+          advance_height.reinterpret_as_int(),
+          y_ppem,
+        )
+      }
+      None =>
+        scale_design_units_to_pixels(face.ascender() - face.descender(), y_ppem)
+    }
+    @base.GlyphSlotData::new(
+      bitmap.width().reinterpret_as_int().to_int64(),
+      bitmap.rows().reinterpret_as_int().to_int64(),
+      left.to_int64(),
+      top.to_int64(),
+      hori_advance.to_int64(),
+      metrics_vert_bearing_x=left.to_int64(),
+      metrics_vert_bearing_y=0L,
+      metrics_vert_advance=vert_advance.to_int64(),
+    )
+  }
+  let load_scaled_outline_fn : (UInt, Int) -> @types.Outline raise @error.FTError = fn(
+    glyph_index,
+    load_flags,
+  ) raise @error.FTError {
+    let sanitized_flags = load_flags &
+      (-1 ^ @base.LOAD_COLOR) &
+      (-1 ^ @base.LOAD_RENDER)
+    let (_slot_data, outline, tt_instructions, tt_phantoms) = load_glyph_fn(
+      glyph_index, sanitized_flags,
+    )
+    let x_scale = face.size().metrics().x_scale()
+    let y_scale = face.size().metrics().y_scale()
+    if x_scale.val() == 0L || y_scale.val() == 0L {
+      return outline
+    }
+    let no_hinting = (sanitized_flags & @base.LOAD_NO_HINTING) != 0
+    let force_autohint = (sanitized_flags & @base.LOAD_FORCE_AUTOHINT) != 0
+    let did_hint = if !no_hinting && !force_autohint {
+      if tt_instructions.length() > 0 {
+        tt_hint_fn(
+          outline,
+          tt_instructions,
+          tt_phantoms,
+          x_scale,
+          y_scale,
+          face.size().metrics().y_ppem(),
+        )
+      } else {
+        apply_hints_fn(outline, y_scale)
+      }
+    } else {
+      false
+    }
+    if !did_hint {
+      for i in 0..<outline.n_points() {
+        let p = outline.points().unsafe_get(i)
+        let sx = @fixed.mul_fix(x_scale, @fixed.Fixed::from_raw(p.x())).val()
+        let sy = @fixed.mul_fix(y_scale, @fixed.Fixed::from_raw(p.y())).val()
+        outline.points()[i] = @types.Vector::new(sx, sy)
+      }
+      let has_native_hints = (face.face_flags() & @base.FACE_FLAG_HINTER) != 0L
+      let should_autohint = (force_autohint || !has_native_hints) && !no_hinting
+      if should_autohint {
+        let metrics = @autofit.ScriptMetrics::new()
+        metrics.set_scale(x_scale)
+        @autofit.auto_hint_outline(outline, metrics)
+      }
+    }
+    outline
+  }
+  let load_color_glyph_fn : (
+    UInt,
+    Int,
+    UInt,
+    UInt,
+    Array[@types.Color],
+    @types.Color,
+  ) -> @base.BitmapGlyphData? raise @error.FTError = fn(
+    glyph_index,
+    load_flags,
+    x_ppem,
+    y_ppem,
+    _palette,
+    _foreground_color,
+  ) raise @error.FTError {
+    if (load_flags & @base.LOAD_NO_BITMAP) != 0 ||
+      (load_flags & @base.LOAD_NO_SCALE) != 0 ||
+      x_ppem == 0U ||
+      y_ppem == 0U {
+      return None
+    }
+    match color_tables {
+      Some(tables) =>
+        match @color.load_sbix_glyph(tables, glyph_index, x_ppem, y_ppem) {
+          Some((bitmap, left, top)) => {
+            let slot_data = make_bitmap_slot_data(
+              glyph_index, bitmap, left, top, x_ppem, y_ppem,
+            )
+            Some(@base.BitmapGlyphData::new(slot_data, bitmap, left, top))
+          }
+          None =>
+            match tables.cblc() {
+              Some(cblc) =>
+                match
+                  @color.load_cblc_glyph(cblc, glyph_index, x_ppem, y_ppem) {
+                  Some(glyph) => Some(glyph)
+                  None =>
+                    match tables.colr() {
+                      Some(colr) =>
+                        match
+                          render_colr_bitmap_glyph(
+                            colr,
+                            glyph_index,
+                            load_flags,
+                            face.palette(),
+                            face.foreground_color(),
+                            face.size().metrics().x_scale(),
+                            face.size().metrics().y_scale(),
+                            load_scaled_outline_fn,
+                          ) {
+                          Some((bitmap, left, top)) => {
+                            let slot_data = make_bitmap_slot_data(
+                              glyph_index, bitmap, left, top, x_ppem, y_ppem,
+                            )
+                            Some(
+                              @base.BitmapGlyphData::new(
+                                slot_data, bitmap, left, top,
+                              ),
+                            )
+                          }
+                          None => None
+                        }
+                      None => None
+                    }
+                }
+              None =>
+                match tables.colr() {
+                  Some(colr) =>
+                    match
+                      render_colr_bitmap_glyph(
+                        colr,
+                        glyph_index,
+                        load_flags,
+                        face.palette(),
+                        face.foreground_color(),
+                        face.size().metrics().x_scale(),
+                        face.size().metrics().y_scale(),
+                        load_scaled_outline_fn,
+                      ) {
+                      Some((bitmap, left, top)) => {
+                        let slot_data = make_bitmap_slot_data(
+                          glyph_index, bitmap, left, top, x_ppem, y_ppem,
+                        )
+                        Some(
+                          @base.BitmapGlyphData::new(
+                            slot_data, bitmap, left, top,
+                          ),
+                        )
+                      }
+                      None => None
+                    }
+                  None => None
+                }
+            }
+        }
+      None => None
+    }
+  }
   // Lazy kern: defer expensive kern table parsing to first get_kerning() call
   let kern_ref : Ref[@sfnt.KernTable?] = Ref::new(None)
   let kern_parsed : Ref[Bool] = Ref::new(false)
@@ -729,6 +962,78 @@ fn load_sfnt(
     }
     face.set_active_charmap(default_cmap_index)
   }
+  match color_tables {
+    Some(tables) => {
+      if tables.palette_data() is Some(palette_data) {
+        face.set_face_flags(face.face_flags() | @base.FACE_FLAG_COLOR)
+        face.set_palette_data(Some(palette_data))
+        match tables.select_palette(0U) {
+          Some(default_palette) => {
+            face.set_palette(default_palette)
+            face.set_palette_index(0)
+          }
+          None => ()
+        }
+      }
+      if tables.colr() is Some(_) {
+        face.set_face_flags(face.face_flags() | @base.FACE_FLAG_COLOR)
+      }
+      let bitmap_sizes : Array[@base.BitmapSize] = []
+      match tables.sbix() {
+        Some(sbix) => {
+          face.set_face_flags(
+            (
+              face.face_flags() |
+              @base.FACE_FLAG_COLOR |
+              @base.FACE_FLAG_SBIX |
+              @base.FACE_FLAG_FIXED_SIZES
+            ) &
+            (-1L ^ @base.FACE_FLAG_SCALABLE),
+          )
+          for strike in sbix.strikes() {
+            bitmap_sizes.push(
+              bitmap_size_from_ppem(strike.ppem(), strike.ppem()),
+            )
+          }
+          if sbix.flags() == 3U {
+            face.set_face_flags(
+              face.face_flags() | @base.FACE_FLAG_SBIX_OVERLAY,
+            )
+          }
+        }
+        None => ()
+      }
+      match tables.cblc() {
+        Some(cblc) => {
+          face.set_face_flags(
+            face.face_flags() |
+            @base.FACE_FLAG_COLOR |
+            @base.FACE_FLAG_FIXED_SIZES,
+          )
+          for strike in cblc.strikes() {
+            let x_ppem = strike.ppem_x()
+            let y_ppem = strike.ppem_y()
+            let mut duplicate = false
+            for size in bitmap_sizes {
+              if size.x_ppem() == x_ppem.to_int64() << 6 &&
+                size.y_ppem() == y_ppem.to_int64() << 6 {
+                duplicate = true
+                break
+              }
+            }
+            if !duplicate {
+              bitmap_sizes.push(bitmap_size_from_ppem(x_ppem, y_ppem))
+            }
+          }
+        }
+        None => ()
+      }
+      if !bitmap_sizes.is_empty() {
+        face.set_available_sizes(bitmap_sizes)
+      }
+    }
+    None => ()
+  }
   face.set_char_index_fn(char_index_fn)
   face.set_driver_data(
     @base.DriverData::SfntDriver(
@@ -743,6 +1048,9 @@ fn load_sfnt(
         get_kerning=kern_fn,
         apply_hints=apply_hints_fn,
         tt_hint=tt_hint_fn,
+        palette_data=palette_data_fn,
+        select_palette=select_palette_fn,
+        load_color_glyph=load_color_glyph_fn,
         num_glyphs=sfnt_data.maxp().num_glyphs(),
         raw_data=data,
       ),

@@ -159,6 +159,29 @@ fn load_cff_standalone(data : Bytes) -> @base.FaceRec raise @error.FTError {
   let no_variant_selectors : () -> Array[UInt] = fn() { [] }
   let no_variants_of_char : (UInt) -> Array[UInt] = fn(_charcode) { [] }
   let no_chars_of_variant : (UInt) -> Array[UInt] = fn(_selector) { [] }
+  let no_palette_data : () -> @types.PaletteData? = fn() { None }
+  let no_select_palette : (UInt) -> Array[@types.Color]? raise @error.FTError = fn(
+    _palette_index,
+  ) {
+    None
+  }
+  let no_load_color_glyph : (
+    UInt,
+    Int,
+    UInt,
+    UInt,
+    Array[@types.Color],
+    @types.Color,
+  ) -> @base.BitmapGlyphData? raise @error.FTError = fn(
+    _glyph_index,
+    _load_flags,
+    _x_ppem,
+    _y_ppem,
+    _palette,
+    _foreground_color,
+  ) {
+    None
+  }
   let no_tt_hint : (
     @types.Outline,
     Bytes,
@@ -190,6 +213,9 @@ fn load_cff_standalone(data : Bytes) -> @base.FaceRec raise @error.FTError {
         get_kerning=no_kerning,
         apply_hints=apply_hints_fn,
         tt_hint=no_tt_hint,
+        palette_data=no_palette_data,
+        select_palette=no_select_palette,
+        load_color_glyph=no_load_color_glyph,
         num_glyphs=cff.num_glyphs(),
         raw_data=data,
       ),

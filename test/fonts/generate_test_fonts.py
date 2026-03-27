@@ -354,6 +354,294 @@ def build_post_table() -> bytes:
                        0)
 
 
+def build_rgba_png(width: int, height: int, pixels: bytes) -> bytes:
+    """Build a tiny non-interlaced RGBA PNG."""
+    assert len(pixels) == width * height * 4
+    raw = bytearray()
+    stride = width * 4
+    for y in range(height):
+        raw.append(0)  # filter type 0
+        raw.extend(pixels[y * stride:(y + 1) * stride])
+
+    def chunk(tag: bytes, payload: bytes) -> bytes:
+        return (
+            struct.pack(">I", len(payload))
+            + tag
+            + payload
+            + struct.pack(">I", zlib.crc32(tag + payload) & 0xFFFFFFFF)
+        )
+
+    ihdr = struct.pack(">IIBBBBB", width, height, 8, 6, 0, 0, 0)
+    idat = zlib.compress(bytes(raw))
+    return (
+        b"\x89PNG\r\n\x1a\n"
+        + chunk(b"IHDR", ihdr)
+        + chunk(b"IDAT", idat)
+        + chunk(b"IEND", b"")
+    )
+
+
+def build_minimal_sbix_png() -> bytes:
+    """Generate a 6x6 RGBA bitmap with a simple diagonal slash."""
+    width, height = 6, 6
+    pixels = bytearray(width * height * 4)
+    for y in range(height):
+        for x in range(width):
+            off = (y * width + x) * 4
+            if x == y or x == y - 1 or x == y + 1:
+                pixels[off:off + 4] = bytes([0xE0, 0x40, 0x20, 0xFF])  # RGBA
+            else:
+                pixels[off:off + 4] = bytes([0x00, 0x00, 0x00, 0x00])
+    return build_rgba_png(width, height, bytes(pixels))
+
+
+def build_sbix_table(num_glyphs: int, png_data: bytes) -> bytes:
+    """Build a minimal sbix table with one strike and a PNG for glyph 2."""
+    strike_offset = 8 + 4
+    strike_header = struct.pack(">HH", 16, 72)
+    offsets_base = 4 + (num_glyphs + 1) * 4
+    glyph2 = struct.pack(">hh4s", 0, 0, b"png ") + png_data
+    glyph_offsets = [offsets_base, offsets_base, offsets_base, offsets_base + len(glyph2)]
+    strike = strike_header + b"".join(struct.pack(">I", off) for off in glyph_offsets) + glyph2
+    return struct.pack(">HHI", 1, 3, 1) + struct.pack(">I", strike_offset) + strike
+
+
+def build_cbdt_png_glyph(png_data: bytes) -> bytes:
+    """Build a CBDT format 17 glyph record."""
+    return bytes([6, 6, 0, 6, 8]) + struct.pack(">I", len(png_data)) + png_data
+
+
+def build_cbdt_table(png_data: bytes) -> bytes:
+    glyph = build_cbdt_png_glyph(png_data)
+    return struct.pack(">I", 0x00020000) + glyph
+
+
+def build_cblc_table(png_data: bytes) -> bytes:
+    """Build a minimal CBLC table with one strike and one PNG glyph."""
+    glyph = build_cbdt_png_glyph(png_data)
+    header_size = 8
+    bitmap_size_table_offset = header_size
+    bitmap_size_table_size = 48
+    array_offset = bitmap_size_table_offset + bitmap_size_table_size
+    array_size = 8
+    index_subtable_offset = array_size
+    index_subtable = (
+        struct.pack(">HHI", 1, 17, 4) +
+        struct.pack(">II", 0, len(glyph))
+    )
+    index_tables_size = array_size + len(index_subtable)
+    bitmap_size_table = (
+        struct.pack(">I", array_offset) +
+        struct.pack(">I", index_tables_size) +
+        struct.pack(">I", 1) +  # numberOfIndexSubTables
+        struct.pack(">I", 0) +  # colorRef
+        b"\x00" * 24 +         # hori + vert line metrics
+        struct.pack(">HH", 2, 2) +
+        bytes([16, 16, 32, 1])
+    )
+    index_subtable_array = struct.pack(">HHI", 2, 2, index_subtable_offset)
+    return (
+        struct.pack(">II", 0x00020000, 1) +
+        bitmap_size_table +
+        index_subtable_array +
+        index_subtable
+    )
+
+
+def build_cmap_table_pairs(mapping: dict[int, int]) -> bytes:
+    """Build a format 4 cmap for sparse BMP mappings."""
+    import math
+
+    codes = sorted(mapping.keys())
+    seg_count = len(codes) + 1
+    seg_count_x2 = seg_count * 2
+    entry_sel = int(math.floor(math.log2(seg_count)))
+    search_rng = (2 ** entry_sel) * 2
+    range_shift = seg_count_x2 - search_rng
+
+    end_codes = codes + [0xFFFF]
+    start_codes = codes + [0xFFFF]
+    id_deltas = [mapping[code] - code for code in codes] + [1]
+    id_range_offsets = [0] * seg_count
+
+    subtable_data = (
+        struct.pack(">" + "H" * seg_count, *end_codes) +
+        struct.pack(">H", 0) +
+        struct.pack(">" + "H" * seg_count, *start_codes) +
+        struct.pack(">" + "h" * seg_count, *id_deltas) +
+        struct.pack(">" + "H" * seg_count, *id_range_offsets)
+    )
+    subtable = struct.pack(
+        ">HHHHHHH",
+        4,
+        14 + len(subtable_data),
+        0,
+        seg_count_x2,
+        search_rng,
+        entry_sel,
+        range_shift,
+    ) + subtable_data
+    return struct.pack(">HH", 0, 1) + struct.pack(">HHI", 3, 1, 12) + subtable
+
+
+def build_simple_glyph(points: list[tuple[int, int]]) -> bytes:
+    if not points:
+        return pad4(struct.pack(">h", 0) + struct.pack(">hhhh", 0, 0, 0, 0))
+    xs = [p[0] for p in points]
+    ys = [p[1] for p in points]
+    x_min, x_max = min(xs), max(xs)
+    y_min, y_max = min(ys), max(ys)
+    flags = bytes([0x01] * len(points))
+    x_deltas = []
+    y_deltas = []
+    prev_x = 0
+    prev_y = 0
+    for x, y in points:
+        x_deltas.append(x - prev_x)
+        y_deltas.append(y - prev_y)
+        prev_x = x
+        prev_y = y
+    data = (
+        struct.pack(">h", 1) +
+        struct.pack(">hhhh", x_min, y_min, x_max, y_max) +
+        struct.pack(">H", len(points) - 1) +
+        struct.pack(">H", 0) +
+        flags +
+        struct.pack(">" + "h" * len(points), *x_deltas) +
+        struct.pack(">" + "h" * len(points), *y_deltas)
+    )
+    return pad4(data)
+
+
+def build_glyf_and_loca_from_glyphs(glyphs: list[bytes]) -> tuple[bytes, bytes]:
+    glyf_data = b"".join(glyphs)
+    offsets = [0]
+    pos = 0
+    for glyph in glyphs:
+        pos += len(glyph)
+        offsets.append(pos)
+    loca_data = b"".join(struct.pack(">H", offset // 2) for offset in offsets)
+    return glyf_data, loca_data
+
+
+def build_hmtx_table_entries(entries: list[tuple[int, int]]) -> bytes:
+    return b"".join(struct.pack(">Hh", advance, lsb) for advance, lsb in entries)
+
+
+def build_cpal_table(palettes: list[list[tuple[int, int, int, int]]]) -> bytes:
+    num_palette_entries = len(palettes[0])
+    num_palettes = len(palettes)
+    flat_records: list[tuple[int, int, int, int]] = []
+    color_record_indices = []
+    for palette in palettes:
+        assert len(palette) == num_palette_entries
+        color_record_indices.append(len(flat_records))
+        flat_records.extend(palette)
+    color_records_offset = 12 + 2 * num_palettes
+    data = struct.pack(
+        ">HHHHI",
+        0,
+        num_palette_entries,
+        num_palettes,
+        len(flat_records),
+        color_records_offset,
+    )
+    data += b"".join(struct.pack(">H", index) for index in color_record_indices)
+    for blue, green, red, alpha in flat_records:
+        data += bytes([blue, green, red, alpha])
+    return data
+
+
+def build_colr_v0_table(base_glyph_id: int, layers: list[tuple[int, int]]) -> bytes:
+    base_offset = 14
+    layer_offset = base_offset + 6
+    data = struct.pack(">H", 0)
+    data += struct.pack(">H", 1)  # numBaseGlyphRecords
+    data += struct.pack(">I", base_offset)
+    data += struct.pack(">I", layer_offset)
+    data += struct.pack(">H", len(layers))
+    data += struct.pack(">HHH", base_glyph_id, 0, len(layers))
+    for glyph_id, palette_index in layers:
+        data += struct.pack(">HH", glyph_id, palette_index)
+    return data
+
+
+def pack_u24(value: int) -> bytes:
+    return bytes([(value >> 16) & 0xFF, (value >> 8) & 0xFF, value & 0xFF])
+
+
+def build_colr_v1_table() -> bytes:
+    """Build a small COLR v1 table using PaintGlyph, ColrGlyph, Translate, and Scale."""
+    root4 = bytes([1, 2]) + struct.pack(">I", 0)  # PaintColrLayers, 2 layers
+    layer0 = bytes([10]) + pack_u24(6) + struct.pack(">H", 2)
+    layer0_solid = bytes([2]) + struct.pack(">Hh", 0xFFFF, 0x4000)
+    layer1 = bytes([14]) + pack_u24(8) + struct.pack(">hh", 60, 0)
+    layer1_colrglyph = bytes([11]) + struct.pack(">H", 5)
+    root5 = bytes([16]) + pack_u24(8) + struct.pack(">hh", 0x3000, 0x3000)
+    root5_glyph = bytes([10]) + pack_u24(6) + struct.pack(">H", 3)
+    root5_solid = bytes([2]) + struct.pack(">Hh", 1, 0x4000)
+
+    header = (
+        struct.pack(">H", 1) +
+        struct.pack(">H", 0) +
+        struct.pack(">I", 0) +
+        struct.pack(">I", 0) +
+        struct.pack(">H", 0)
+    )
+    base_v1_offset = 34
+    layer_v1_offset = base_v1_offset + 4 + 2 * 6
+    paints_start = layer_v1_offset + 4 + 2 * 4
+    root4_offset = paints_start
+    layer0_offset = root4_offset + len(root4)
+    layer0_solid_offset = layer0_offset + len(layer0)
+    layer1_offset = layer0_solid_offset + len(layer0_solid)
+    layer1_colrglyph_offset = layer1_offset + len(layer1)
+    root5_offset = layer1_colrglyph_offset + len(layer1_colrglyph)
+    root5_glyph_offset = root5_offset + len(root5)
+    root5_solid_offset = root5_glyph_offset + len(root5_glyph)
+
+    root4 = bytes([1, 2]) + struct.pack(">I", 0)
+    layer0 = bytes([10]) + pack_u24(layer0_solid_offset - layer0_offset) + struct.pack(">H", 2)
+    layer1 = bytes([14]) + pack_u24(layer1_colrglyph_offset - layer1_offset) + struct.pack(">hh", 60, 0)
+    root5 = bytes([16]) + pack_u24(root5_glyph_offset - root5_offset) + struct.pack(">hh", 0x3000, 0x3000)
+    root5_glyph = bytes([10]) + pack_u24(root5_solid_offset - root5_glyph_offset) + struct.pack(">H", 3)
+
+    data = header
+    data += struct.pack(">I", base_v1_offset)
+    data += struct.pack(">I", layer_v1_offset)
+    data += struct.pack(">III", 0, 0, 0)
+    data += struct.pack(">I", 2)
+    data += struct.pack(">HI", 4, root4_offset - base_v1_offset)
+    data += struct.pack(">HI", 5, root5_offset - base_v1_offset)
+    data += struct.pack(">I", 2)
+    data += struct.pack(">I", layer0_offset - layer_v1_offset)
+    data += struct.pack(">I", layer1_offset - layer_v1_offset)
+    data += root4 + layer0 + layer0_solid + layer1 + layer1_colrglyph + root5 + root5_glyph + root5_solid
+    return data
+
+
+def build_colr_glyph_set() -> tuple[bytes, bytes, bytes, bytes]:
+    glyphs = [
+        build_simple_glyph([]),  # .notdef
+        build_simple_glyph([]),  # space
+        build_simple_glyph([(50, 0), (250, 700), (450, 0)]),
+        build_simple_glyph([(150, 100), (250, 500), (350, 100)]),
+        build_simple_glyph([(50, 0), (250, 700), (450, 0)]),
+        build_simple_glyph([(150, 100), (250, 500), (350, 100)]),
+    ]
+    glyf_data, loca_data = build_glyf_and_loca_from_glyphs(glyphs)
+    hmtx = build_hmtx_table_entries([
+        (500, 0),
+        (250, 0),
+        (500, 50),
+        (500, 150),
+        (500, 50),
+        (500, 150),
+    ])
+    cmap = build_cmap_table_pairs({32: 1, 65: 4})
+    return glyf_data, loca_data, hmtx, cmap
+
+
 def build_glyf_and_loca():
     """Build glyf and loca tables for 3 glyphs: .notdef (empty), space (empty), A (triangle)."""
     glyphs = []
@@ -590,6 +878,94 @@ def generate_ttf() -> bytes:
         'glyf': glyf_data,
         'loca': loca_data,
         'hmtx': build_hmtx_table(),
+    }
+    return assemble_sfnt(tables, sfnt_version=b'\x00\x01\x00\x00')
+
+
+def generate_sbix_ttf() -> bytes:
+    glyf_data, loca_data = build_glyf_and_loca()
+    tables = {
+        'head': build_head_table(x_min=0, y_min=0, x_max=450, y_max=700,
+                                 index_to_loc_format=0),
+        'hhea': build_hhea_table(num_hmetrics=3, advance_width_max=500),
+        'maxp': build_maxp_table(num_glyphs=3, max_points=3, max_contours=1),
+        'OS/2': build_os2_table(),
+        'name': build_name_table(family='Minimal SBIX', style='Regular'),
+        'cmap': build_cmap_table(),
+        'post': build_post_table(),
+        'glyf': glyf_data,
+        'loca': loca_data,
+        'hmtx': build_hmtx_table(),
+        'sbix': build_sbix_table(3, build_minimal_sbix_png()),
+    }
+    return assemble_sfnt(tables, sfnt_version=b'\x00\x01\x00\x00')
+
+
+def generate_cbdt_ttf() -> bytes:
+    glyf_data, loca_data = build_glyf_and_loca()
+    png = build_minimal_sbix_png()
+    tables = {
+        'head': build_head_table(x_min=0, y_min=0, x_max=450, y_max=700,
+                                 index_to_loc_format=0),
+        'hhea': build_hhea_table(num_hmetrics=3, advance_width_max=500),
+        'maxp': build_maxp_table(num_glyphs=3, max_points=3, max_contours=1),
+        'OS/2': build_os2_table(),
+        'name': build_name_table(family='Minimal CBDT', style='Regular'),
+        'cmap': build_cmap_table(),
+        'post': build_post_table(),
+        'glyf': glyf_data,
+        'loca': loca_data,
+        'hmtx': build_hmtx_table(),
+        'CBDT': build_cbdt_table(png),
+        'CBLC': build_cblc_table(png),
+    }
+    return assemble_sfnt(tables, sfnt_version=b'\x00\x01\x00\x00')
+
+
+def generate_colr_v0_ttf() -> bytes:
+    glyf_data, loca_data, hmtx, cmap = build_colr_glyph_set()
+    palettes = [
+        [(0x00, 0x00, 0xFF, 0xFF), (0xFF, 0x00, 0x00, 0xFF)],  # red, blue
+        [(0x00, 0xFF, 0x00, 0xFF), (0x00, 0xFF, 0xFF, 0xFF)],  # green, yellow
+    ]
+    tables = {
+        'head': build_head_table(x_min=0, y_min=0, x_max=450, y_max=700,
+                                 index_to_loc_format=0),
+        'hhea': build_hhea_table(num_hmetrics=6, advance_width_max=500),
+        'maxp': build_maxp_table(num_glyphs=6, max_points=3, max_contours=1),
+        'OS/2': build_os2_table(),
+        'name': build_name_table(family='Minimal COLR V0', style='Regular'),
+        'cmap': cmap,
+        'post': build_post_table(),
+        'glyf': glyf_data,
+        'loca': loca_data,
+        'hmtx': hmtx,
+        'CPAL': build_cpal_table(palettes),
+        'COLR': build_colr_v0_table(4, [(2, 0), (3, 1)]),
+    }
+    return assemble_sfnt(tables, sfnt_version=b'\x00\x01\x00\x00')
+
+
+def generate_colr_v1_ttf() -> bytes:
+    glyf_data, loca_data, hmtx, cmap = build_colr_glyph_set()
+    palettes = [
+        [(0x00, 0x00, 0xFF, 0xFF), (0xFF, 0x00, 0x00, 0xFF)],
+        [(0x00, 0xFF, 0x00, 0xFF), (0x00, 0xFF, 0xFF, 0xFF)],
+    ]
+    tables = {
+        'head': build_head_table(x_min=0, y_min=0, x_max=450, y_max=700,
+                                 index_to_loc_format=0),
+        'hhea': build_hhea_table(num_hmetrics=6, advance_width_max=500),
+        'maxp': build_maxp_table(num_glyphs=6, max_points=3, max_contours=1),
+        'OS/2': build_os2_table(),
+        'name': build_name_table(family='Minimal COLR V1', style='Regular'),
+        'cmap': cmap,
+        'post': build_post_table(),
+        'glyf': glyf_data,
+        'loca': loca_data,
+        'hmtx': hmtx,
+        'CPAL': build_cpal_table(palettes),
+        'COLR': build_colr_v1_table(),
     }
     return assemble_sfnt(tables, sfnt_version=b'\x00\x01\x00\x00')
 
@@ -1179,6 +1555,34 @@ def main():
     with open(ttf_path, 'wb') as f:
         f.write(ttf_data)
     print(f"  Written {len(ttf_data)} bytes to {ttf_path}")
+
+    print("Generating minimal_sbix.ttf...")
+    sbix_data = generate_sbix_ttf()
+    sbix_path = os.path.join(SCRIPT_DIR, 'minimal_sbix.ttf')
+    with open(sbix_path, 'wb') as f:
+      f.write(sbix_data)
+    print(f"  Written {len(sbix_data)} bytes to {sbix_path}")
+
+    print("Generating minimal_cbdt.ttf...")
+    cbdt_data = generate_cbdt_ttf()
+    cbdt_path = os.path.join(SCRIPT_DIR, 'minimal_cbdt.ttf')
+    with open(cbdt_path, 'wb') as f:
+        f.write(cbdt_data)
+    print(f"  Written {len(cbdt_data)} bytes to {cbdt_path}")
+
+    print("Generating minimal_colr_v0.ttf...")
+    colr_v0_data = generate_colr_v0_ttf()
+    colr_v0_path = os.path.join(SCRIPT_DIR, 'minimal_colr_v0.ttf')
+    with open(colr_v0_path, 'wb') as f:
+        f.write(colr_v0_data)
+    print(f"  Written {len(colr_v0_data)} bytes to {colr_v0_path}")
+
+    print("Generating minimal_colr_v1.ttf...")
+    colr_v1_data = generate_colr_v1_ttf()
+    colr_v1_path = os.path.join(SCRIPT_DIR, 'minimal_colr_v1.ttf')
+    with open(colr_v1_path, 'wb') as f:
+        f.write(colr_v1_data)
+    print(f"  Written {len(colr_v1_data)} bytes to {colr_v1_path}")
 
     # MVAR TTF
     print("Generating mvar.ttf...")

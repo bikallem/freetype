@@ -1,8 +1,8 @@
 {
   "metadata": {
-    "family_name": "Minimal",
+    "family_name": "Minimal COLR V1",
     "style_name": "Regular",
-    "num_glyphs": 3,
+    "num_glyphs": 6,
     "num_faces": 1,
     "units_per_em": 1000,
     "ascender": 800,
@@ -10,7 +10,7 @@
     "height": 1000,
     "max_advance_width": 500,
     "bbox": { "xMin": 0, "yMin": 0, "xMax": 450, "yMax": 700 },
-    "face_flags": 2073,
+    "face_flags": 18457,
     "style_flags": 0,
     "num_charmaps": 1,
     "underline_position": 0,
@@ -20,7 +20,7 @@
     {
       "platform_id": 3,
       "encoding_id": 1,
-      "entries": [[32,1],[65,2]]
+      "entries": [[32,1],[65,4]]
     }
   ],
   "glyphs": [
@@ -45,7 +45,7 @@
       }
     },
     {
-      "glyph_index": 2,
+      "glyph_index": 4,
       "charcode": 65,
       "size_ppem": 12,
       "load_flags": "DEFAULT",
@@ -85,7 +85,7 @@
       }
     },
     {
-      "glyph_index": 2,
+      "glyph_index": 4,
       "charcode": 65,
       "size_ppem": 12,
       "load_flags": "NO_HINTING",
@@ -125,7 +125,7 @@
       }
     },
     {
-      "glyph_index": 2,
+      "glyph_index": 4,
       "charcode": 65,
       "size_ppem": 12,
       "load_flags": "NO_SCALE",
@@ -165,7 +165,7 @@
       }
     },
     {
-      "glyph_index": 2,
+      "glyph_index": 4,
       "charcode": 65,
       "size_ppem": 12,
       "load_flags": "NO_AUTOHINT",
@@ -205,7 +205,7 @@
       }
     },
     {
-      "glyph_index": 2,
+      "glyph_index": 4,
       "charcode": 65,
       "size_ppem": 12,
       "load_flags": "FORCE_AUTOHINT",
@@ -245,7 +245,7 @@
       }
     },
     {
-      "glyph_index": 2,
+      "glyph_index": 4,
       "charcode": 65,
       "size_ppem": 16,
       "load_flags": "DEFAULT",
@@ -285,7 +285,7 @@
       }
     },
     {
-      "glyph_index": 2,
+      "glyph_index": 4,
       "charcode": 65,
       "size_ppem": 16,
       "load_flags": "NO_HINTING",
@@ -325,7 +325,7 @@
       }
     },
     {
-      "glyph_index": 2,
+      "glyph_index": 4,
       "charcode": 65,
       "size_ppem": 16,
       "load_flags": "NO_SCALE",
@@ -365,7 +365,7 @@
       }
     },
     {
-      "glyph_index": 2,
+      "glyph_index": 4,
       "charcode": 65,
       "size_ppem": 16,
       "load_flags": "NO_AUTOHINT",
@@ -405,7 +405,7 @@
       }
     },
     {
-      "glyph_index": 2,
+      "glyph_index": 4,
       "charcode": 65,
       "size_ppem": 16,
       "load_flags": "FORCE_AUTOHINT",
@@ -445,7 +445,7 @@
       }
     },
     {
-      "glyph_index": 2,
+      "glyph_index": 4,
       "charcode": 65,
       "size_ppem": 24,
       "load_flags": "DEFAULT",
@@ -485,7 +485,7 @@
       }
     },
     {
-      "glyph_index": 2,
+      "glyph_index": 4,
       "charcode": 65,
       "size_ppem": 24,
       "load_flags": "NO_HINTING",
@@ -525,7 +525,7 @@
       }
     },
     {
-      "glyph_index": 2,
+      "glyph_index": 4,
       "charcode": 65,
       "size_ppem": 24,
       "load_flags": "NO_SCALE",
@@ -565,7 +565,7 @@
       }
     },
     {
-      "glyph_index": 2,
+      "glyph_index": 4,
       "charcode": 65,
       "size_ppem": 24,
       "load_flags": "NO_AUTOHINT",
@@ -605,7 +605,7 @@
       }
     },
     {
-      "glyph_index": 2,
+      "glyph_index": 4,
       "charcode": 65,
       "size_ppem": 24,
       "load_flags": "FORCE_AUTOHINT",
@@ -645,7 +645,7 @@
       }
     },
     {
-      "glyph_index": 2,
+      "glyph_index": 4,
       "charcode": 65,
       "size_ppem": 48,
       "load_flags": "DEFAULT",
@@ -685,7 +685,7 @@
       }
     },
     {
-      "glyph_index": 2,
+      "glyph_index": 4,
       "charcode": 65,
       "size_ppem": 48,
       "load_flags": "NO_HINTING",
@@ -725,7 +725,7 @@
       }
     },
     {
-      "glyph_index": 2,
+      "glyph_index": 4,
       "charcode": 65,
       "size_ppem": 48,
       "load_flags": "NO_SCALE",
@@ -765,7 +765,7 @@
       }
     },
     {
-      "glyph_index": 2,
+      "glyph_index": 4,
       "charcode": 65,
       "size_ppem": 48,
       "load_flags": "NO_AUTOHINT",
@@ -805,7 +805,7 @@
       }
     },
     {
-      "glyph_index": 2,
+      "glyph_index": 4,
       "charcode": 65,
       "size_ppem": 48,
       "load_flags": "FORCE_AUTOHINT",
@@ -844,7 +844,7 @@
       }
     },
     {
-      "glyph_index": 2,
+      "glyph_index": 4,
       "charcode": 65,
       "size_ppem": 16,
       "load_flags": "NO_HINTING",
@@ -878,7 +878,7 @@
       }
     },
     {
-      "glyph_index": 2,
+      "glyph_index": 4,
       "charcode": 65,
       "size_ppem": 16,
       "load_flags": "NO_HINTING",
@@ -912,7 +912,7 @@
       }
     },
     {
-      "glyph_index": 2,
+      "glyph_index": 4,
       "charcode": 65,
       "size_ppem": 16,
       "load_flags": "NO_HINTING",
@@ -946,7 +946,7 @@
       }
     },
     {
-      "glyph_index": 2,
+      "glyph_index": 4,
       "charcode": 65,
       "size_ppem": 16,
       "load_flags": "NO_HINTING",
@@ -980,7 +980,7 @@
       }
     },
     {
-      "glyph_index": 2,
+      "glyph_index": 4,
       "charcode": 65,
       "size_ppem": 16,
       "load_flags": "NO_HINTING",
@@ -1014,7 +1014,7 @@
       }
     },
     {
-      "glyph_index": 2,
+      "glyph_index": 4,
       "charcode": 65,
       "size_ppem": 16,
       "load_flags": "NO_HINTING",

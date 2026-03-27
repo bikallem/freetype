@@ -1,8 +1,8 @@
 {
   "metadata": {
-    "family_name": "Minimal",
+    "family_name": "Minimal COLR V0",
     "style_name": "Regular",
-    "num_glyphs": 3,
+    "num_glyphs": 6,
     "num_faces": 1,
     "units_per_em": 1000,
     "ascender": 800,
@@ -10,7 +10,7 @@
     "height": 1000,
     "max_advance_width": 500,
     "bbox": { "xMin": 0, "yMin": 0, "xMax": 450, "yMax": 700 },
-    "face_flags": 2073,
+    "face_flags": 18457,
     "style_flags": 0,
     "num_charmaps": 1,
     "underline_position": 0,
@@ -20,7 +20,7 @@
     {
       "platform_id": 3,
       "encoding_id": 1,
-      "entries": [[32,1],[65,2]]
+      "entries": [[32,1],[65,4]]
     }
   ],
   "glyphs": [
@@ -45,7 +45,7 @@
       }
     },
     {
-      "glyph_index": 2,
+      "glyph_index": 4,
       "charcode": 65,
       "size_ppem": 12,
       "load_flags": "DEFAULT",
@@ -85,7 +85,7 @@
       }
     },
     {
-      "glyph_index": 2,
+      "glyph_index": 4,
       "charcode": 65,
       "size_ppem": 12,
       "load_flags": "NO_HINTING",
@@ -125,7 +125,7 @@
       }
     },
     {
-      "glyph_index": 2,
+      "glyph_index": 4,
       "charcode": 65,
       "size_ppem": 12,
       "load_flags": "NO_SCALE",
@@ -165,7 +165,7 @@
       }
     },
     {
-      "glyph_index": 2,
+      "glyph_index": 4,
       "charcode": 65,
       "size_ppem": 12,
       "load_flags": "NO_AUTOHINT",
@@ -205,7 +205,7 @@
       }
     },
     {
-      "glyph_index": 2,
+      "glyph_index": 4,
       "charcode": 65,
       "size_ppem": 12,
       "load_flags": "FORCE_AUTOHINT",
@@ -245,7 +245,7 @@
       }
     },
     {
-      "glyph_index": 2,
+      "glyph_index": 4,
       "charcode": 65,
       "size_ppem": 16,
       "load_flags": "DEFAULT",
@@ -285,7 +285,7 @@
       }
     },
     {
-      "glyph_index": 2,
+      "glyph_index": 4,
       "charcode": 65,
       "size_ppem": 16,
       "load_flags": "NO_HINTING",
@@ -325,7 +325,7 @@
       }
     },
     {
-      "glyph_index": 2,
+      "glyph_index": 4,
       "charcode": 65,
       "size_ppem": 16,
       "load_flags": "NO_SCALE",
@@ -365,7 +365,7 @@
       }
     },
     {
-      "glyph_index": 2,
+      "glyph_index": 4,
       "charcode": 65,
       "size_ppem": 16,
       "load_flags": "NO_AUTOHINT",
@@ -405,7 +405,7 @@
       }
     },
     {
-      "glyph_index": 2,
+      "glyph_index": 4,
       "charcode": 65,
       "size_ppem": 16,
       "load_flags": "FORCE_AUTOHINT",
@@ -445,7 +445,7 @@
       }
     },
     {
-      "glyph_index": 2,
+      "glyph_index": 4,
       "charcode": 65,
       "size_ppem": 24,
       "load_flags": "DEFAULT",
@@ -485,7 +485,7 @@
       }
     },
     {
-      "glyph_index": 2,
+      "glyph_index": 4,
       "charcode": 65,
       "size_ppem": 24,
       "load_flags": "NO_HINTING",
@@ -525,7 +525,7 @@
       }
     },
     {
-      "glyph_index": 2,
+      "glyph_index": 4,
       "charcode": 65,
       "size_ppem": 24,
       "load_flags": "NO_SCALE",
@@ -565,7 +565,7 @@
       }
     },
     {
-      "glyph_index": 2,
+      "glyph_index": 4,
       "charcode": 65,
       "size_ppem": 24,
       "load_flags": "NO_AUTOHINT",
@@ -605,7 +605,7 @@
       }
     },
     {
-      "glyph_index": 2,
+      "glyph_index": 4,
       "charcode": 65,
       "size_ppem": 24,
       "load_flags": "FORCE_AUTOHINT",
@@ -645,7 +645,7 @@
       }
     },
     {
-      "glyph_index": 2,
+      "glyph_index": 4,
       "charcode": 65,
       "size_ppem": 48,
       "load_flags": "DEFAULT",
@@ -685,7 +685,7 @@
       }
     },
     {
-      "glyph_index": 2,
+      "glyph_index": 4,
       "charcode": 65,
       "size_ppem": 48,
       "load_flags": "NO_HINTING",
@@ -725,7 +725,7 @@
       }
     },
     {
-      "glyph_index": 2,
+      "glyph_index": 4,
       "charcode": 65,
       "size_ppem": 48,
       "load_flags": "NO_SCALE",
@@ -765,7 +765,7 @@
       }
     },
     {
-      "glyph_index": 2,
+      "glyph_index": 4,
       "charcode": 65,
       "size_ppem": 48,
       "load_flags": "NO_AUTOHINT",
@@ -805,7 +805,7 @@
       }
     },
     {
-      "glyph_index": 2,
+      "glyph_index": 4,
       "charcode": 65,
       "size_ppem": 48,
       "load_flags": "FORCE_AUTOHINT",
@@ -844,7 +844,7 @@
       }
     },
     {
-      "glyph_index": 2,
+      "glyph_index": 4,
       "charcode": 65,
       "size_ppem": 16,
       "load_flags": "NO_HINTING",
@@ -878,7 +878,7 @@
       }
     },
     {
-      "glyph_index": 2,
+      "glyph_index": 4,
       "charcode": 65,
       "size_ppem": 16,
       "load_flags": "NO_HINTING",
@@ -912,7 +912,7 @@
       }
     },
     {
-      "glyph_index": 2,
+      "glyph_index": 4,
       "charcode": 65,
       "size_ppem": 16,
       "load_flags": "NO_HINTING",
@@ -946,7 +946,7 @@
       }
     },
     {
-      "glyph_index": 2,
+      "glyph_index": 4,
       "charcode": 65,
       "size_ppem": 16,
       "load_flags": "NO_HINTING",
@@ -980,7 +980,7 @@
       }
     },
     {
-      "glyph_index": 2,
+      "glyph_index": 4,
       "charcode": 65,
       "size_ppem": 16,
       "load_flags": "NO_HINTING",
@@ -1014,7 +1014,7 @@
       }
     },
     {
-      "glyph_index": 2,
+      "glyph_index": 4,
       "charcode": 65,
       "size_ppem": 16,
       "load_flags": "NO_HINTING",
@@ -1028,6 +1028,23 @@
         "left": -8,
         "top": 20,
         "buffer_hex": "00000000000000000000000000000000000000000000000000000000000000000005090b0b090500000000000000000000000000000000050d14191b1b19140d050000000000000000000000000006111b23282b2b28231b1106000000000000000000000004111d2831383b3b3831281d1104000000000000000000000c1a27343e474b4b473e34271a0c000000000000000000031221303e4a555b5b554a3e302112030000000000000000071726364553616a6a6153453626170700000000000000000c1b2b3a49596877776859493a2b1b0c000000000000000110202f3e4e5d6d7c7c6d5d4e3e2f2010010000000000000515243343526271808071625243332415050000000000000a192838475766758484756657473828190a0000000000000e1d2d3c4c5b6a7a88887a6a5b4c3c2d1d0e00000000000312223141505f6f7e8c8c7e6f5f504131221203000000000717263645546473829191827364544536261707000000000c1b2b3a4959687886959586786859493a2b1b0c0000000110202f3e4e5d6d7c8a9a9a8a7c6d5d4e3e2f20100100000515243343526271808f9e9e8f80716252433324150500000919283847576675849398989384756657473828190900000b1b2b3b4b5b6a7a8888888888887a6a5b4b3b2b1b0b00000b1b2b3b4b5b6a77787878787878776a5b4b3b2b1b0b0000091928384755616868686868686868615547382819090000051423313e4a535858585858585858534a3e312314050000000d1b28343e454848484848484848453e34281b0d0000000005111d27303638383838383838383630271d1105000000000006111a2126282828282828282826211a110600000000000000040c1216181818181818181816120c0400000000000000000000030708080808080808080703000000000000"
+      }
+    },
+    {
+      "glyph_index": 4,
+      "charcode": 65,
+      "size_ppem": 16,
+      "load_flags": "COLOR_NO_HINTING",
+      "render_mode": "NORMAL",
+      "bitmap": {
+        "width": 8,
+        "rows": 12,
+        "pitch": 32,
+        "pixel_mode": 7,
+        "num_grays": 256,
+        "left": 0,
+        "top": 12,
+        "buffer_hex": "0000000000000000000000000000010100000101000000000000000000000000000000000000000000000000000034340000333300000000000000000000000000000000000000000000000000007d7d00007c7c0000000000000000000000000000000000000000000000000000c6c60000c5c50000000000000000000000000000000000000000000012121f00ddfc1f00ddfc00001111000000000000000000000000000000000000585860009fff5f00a0ff00005757000000000000000000000000000000000000a2a2a0005fff9f0060ff0000a1a1000000000000000000000000000001010000e9e9df0020ffde0021ff0000e9e9000001010000000000000000000034341e00e1ffff0000ffff0000ff1e00e1ff00003333000000000000000000007d7d5f00a0ffff0000ffff0000ff5e00a1ff00007c7c00000000000000000000c6c63800c7ff680097ff680097ff3800c7ff0000c5c500000000000012120000fcfc0000ffff0000ffff0000ffff0000ffff0000fcfc00001212"
       }
     }
   ],

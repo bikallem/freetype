@@ -5,6 +5,7 @@ import {
   "bikallem/freetype/base",
   "bikallem/freetype/error",
   "bikallem/freetype/fixed",
+  "bikallem/freetype/types",
 }
 
 // Values
@@ -18,7 +19,15 @@ pub fn get_char_variant_is_default(@base.FaceRec, UInt, UInt) -> Int
 
 pub fn get_chars_of_variant(@base.FaceRec, UInt) -> Array[UInt]
 
+pub fn get_foreground_color(@base.FaceRec) -> @types.Color
+
 pub fn get_kerning(@base.FaceRec, UInt, UInt) -> (Int64, Int64)
+
+pub fn get_palette(@base.FaceRec) -> Array[@types.Color]
+
+pub fn get_palette_data(@base.FaceRec) -> @types.PaletteData?
+
+pub fn get_sdf_spread(@base.FaceRec) -> Int
 
 pub fn get_variant_selectors(@base.FaceRec) -> Array[UInt]
 
@@ -28,19 +37,28 @@ pub fn load_glyph(@base.FaceRec, UInt, load_flags? : Int) -> Unit raise @error.F
 
 pub fn render_glyph(@base.FaceRec, mode? : RenderMode) -> Unit raise @error.FTError
 
+pub fn select_palette(@base.FaceRec, UInt) -> Array[@types.Color] raise @error.FTError
+
+pub fn set_foreground_color(@base.FaceRec, @types.Color) -> Unit
+
 pub fn set_pixel_sizes(@base.FaceRec, UInt, UInt) -> Unit raise @error.FTError
+
+pub fn set_sdf_spread(@base.FaceRec, Int) -> Unit raise @error.FTError
 
 pub fn set_var_design_coordinates(@base.FaceRec, Array[(@fixed.Fixed, UInt)]) -> Unit raise @error.FTError
 
 // Errors
 
 // Types and methods
+type PaintTransform derive(Show)
+
 pub(all) enum RenderMode {
   Normal
   Light
   Mono
   Lcd
   LcdV
+  Sdf
 } derive(Eq, Show)
 
 // Type aliases

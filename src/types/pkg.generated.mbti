@@ -222,6 +222,13 @@ pub fn Bitmap::set_rows(Self, UInt) -> Unit
 pub fn Bitmap::set_width(Self, UInt) -> Unit
 pub fn Bitmap::width(Self) -> UInt
 
+type Color derive(Eq, Show)
+pub fn Color::alpha(Self) -> Byte
+pub fn Color::blue(Self) -> Byte
+pub fn Color::green(Self) -> Byte
+pub fn Color::new(Byte, Byte, Byte, Byte) -> Self
+pub fn Color::red(Self) -> Byte
+
 pub(all) enum CurveTag {
   On
   Conic
@@ -271,6 +278,14 @@ pub fn Outline::set_flags(Self, Int) -> Unit
 pub fn Outline::set_points(Self, FixedArray[Vector]) -> Unit
 pub fn Outline::set_tags(Self, FixedArray[Byte]) -> Unit
 pub fn Outline::tags(Self) -> FixedArray[Byte]
+
+type PaletteData derive(Eq, Show)
+pub fn PaletteData::new(UInt, Array[UInt], Array[UInt], UInt, Array[UInt]) -> Self
+pub fn PaletteData::num_palette_entries(Self) -> UInt
+pub fn PaletteData::num_palettes(Self) -> UInt
+pub fn PaletteData::palette_entry_name_ids(Self) -> Array[UInt]
+pub fn PaletteData::palette_flags(Self) -> Array[UInt]
+pub fn PaletteData::palette_name_ids(Self) -> Array[UInt]
 
 pub(all) enum PixelMode {
   None

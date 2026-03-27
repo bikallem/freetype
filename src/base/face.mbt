@@ -20,6 +20,31 @@ pub fn BitmapSize::new(
 }
 
 ///|
+pub fn BitmapSize::height(self : BitmapSize) -> Int {
+  self.height
+}
+
+///|
+pub fn BitmapSize::width(self : BitmapSize) -> Int {
+  self.width
+}
+
+///|
+pub fn BitmapSize::size(self : BitmapSize) -> Int64 {
+  self.size
+}
+
+///|
+pub fn BitmapSize::x_ppem(self : BitmapSize) -> Int64 {
+  self.x_ppem
+}
+
+///|
+pub fn BitmapSize::y_ppem(self : BitmapSize) -> Int64 {
+  self.y_ppem
+}
+
+///|
 /// Core face record containing font metadata and state.
 /// Replaces C's FT_FaceRec. Mutable because glyph loading mutates state.
 struct FaceRec {
@@ -63,6 +88,15 @@ struct FaceRec {
   // --- Font variations ---
   mut var_coords : Array[Int] // normalized variation coordinates (empty = default instance)
 
+  // --- Color glyph / palette state ---
+  mut palette_data : @types.PaletteData?
+  mut palette : Array[@types.Color]
+  mut palette_index : Int
+  mut foreground_color : @types.Color
+
+  // --- SDF rendering state ---
+  mut sdf_spread : Int
+
   // --- Direct char_index function (avoids enum dispatch per call) ---
   mut char_index_fn : (UInt) -> UInt
 
@@ -102,6 +136,7 @@ struct GlyphSlot {
   mut bitmap_left : Int
   mut bitmap_top : Int
   mut outline : @types.Outline
+  mut load_flags : Int
   mut lsb_delta : Int64
   mut rsb_delta : Int64
   mut num_subglyphs : UInt
@@ -121,6 +156,7 @@ pub fn GlyphSlot::new() -> GlyphSlot {
     bitmap_left: 0,
     bitmap_top: 0,
     outline: @types.Outline::new(),
+    load_flags: 0,
     lsb_delta: 0L,
     rsb_delta: 0L,
     num_subglyphs: 0U,
@@ -198,6 +234,9 @@ struct SfntOps {
     @fixed.Fixed,
     UInt,
   ) -> Bool // (outline, instructions, tt phantoms, x_scale, y_scale, ppem) → true if TT hints were applied
+  palette_data : () -> @types.PaletteData?
+  select_palette : (UInt) -> Array[@types.Color]? raise @error.FTError
+  load_color_glyph : (UInt, Int, UInt, UInt, Array[@types.Color], @types.Color) -> BitmapGlyphData? raise @error.FTError
   num_glyphs : UInt
   raw_data : Bytes // font file bytes (for re-parsing if needed)
 }
@@ -226,6 +265,9 @@ pub fn SfntOps::new(
     @fixed.Fixed,
     UInt,
   ) -> Bool,
+  palette_data~ : () -> @types.PaletteData?,
+  select_palette~ : (UInt) -> Array[@types.Color]? raise @error.FTError,
+  load_color_glyph~ : (UInt, Int, UInt, UInt, Array[@types.Color], @types.Color) -> BitmapGlyphData? raise @error.FTError,
   num_glyphs~ : UInt,
   raw_data~ : Bytes,
 ) -> SfntOps {
@@ -240,6 +282,9 @@ pub fn SfntOps::new(
     get_kerning,
     apply_hints,
     tt_hint,
+    palette_data,
+    select_palette,
+    load_color_glyph,
     num_glyphs,
     raw_data,
   }
@@ -374,6 +419,11 @@ pub fn FaceRec::new(
     underline_position: 0,
     underline_thickness: 0,
     var_coords: [],
+    palette_data: None,
+    palette: [],
+    palette_index: -1,
+    foreground_color: @types.Color::new(b'\x00', b'\x00', b'\x00', b'\xFF'),
+    sdf_spread: 8,
     char_index_fn: fn(_c) { 0U },
     glyph: GlyphSlot::new(),
     size: SizeRec::new(),
@@ -543,6 +593,34 @@ pub fn FaceRec::set_var_coords(self : FaceRec, v : Array[Int]) -> Unit {
   self.var_coords = v
 }
 
+///|
+pub fn FaceRec::set_palette_data(
+  self : FaceRec,
+  v : @types.PaletteData?,
+) -> Unit {
+  self.palette_data = v
+}
+
+///|
+pub fn FaceRec::set_palette(self : FaceRec, v : Array[@types.Color]) -> Unit {
+  self.palette = v
+}
+
+///|
+pub fn FaceRec::set_palette_index(self : FaceRec, v : Int) -> Unit {
+  self.palette_index = v
+}
+
+///|
+pub fn FaceRec::set_foreground_color(self : FaceRec, v : @types.Color) -> Unit {
+  self.foreground_color = v
+}
+
+///|
+pub fn FaceRec::set_sdf_spread(self : FaceRec, v : Int) -> Unit {
+  self.sdf_spread = v
+}
+
 // --- GlyphSlot setters (for external packages) ---
 
 ///|
@@ -558,6 +636,11 @@ pub fn GlyphSlot::set_format(self : GlyphSlot, v : @types.GlyphFormat) -> Unit {
 ///|
 pub fn GlyphSlot::set_outline(self : GlyphSlot, v : @types.Outline) -> Unit {
   self.outline = v
+}
+
+///|
+pub fn GlyphSlot::set_load_flags(self : GlyphSlot, v : Int) -> Unit {
+  self.load_flags = v
 }
 
 ///|
@@ -729,6 +812,31 @@ pub fn FaceRec::var_coords(self : FaceRec) -> Array[Int] {
 }
 
 ///|
+pub fn FaceRec::palette_data(self : FaceRec) -> @types.PaletteData? {
+  self.palette_data
+}
+
+///|
+pub fn FaceRec::palette(self : FaceRec) -> Array[@types.Color] {
+  self.palette
+}
+
+///|
+pub fn FaceRec::palette_index(self : FaceRec) -> Int {
+  self.palette_index
+}
+
+///|
+pub fn FaceRec::foreground_color(self : FaceRec) -> @types.Color {
+  self.foreground_color
+}
+
+///|
+pub fn FaceRec::sdf_spread(self : FaceRec) -> Int {
+  self.sdf_spread
+}
+
+///|
 pub fn FaceRec::driver_data(self : FaceRec) -> DriverData {
   self.driver_data
 }
@@ -783,6 +891,11 @@ pub fn GlyphSlot::bitmap_top(self : GlyphSlot) -> Int {
 ///|
 pub fn GlyphSlot::outline(self : GlyphSlot) -> @types.Outline {
   self.outline
+}
+
+///|
+pub fn GlyphSlot::load_flags(self : GlyphSlot) -> Int {
+  self.load_flags
 }
 
 ///|
@@ -944,6 +1057,25 @@ pub fn SfntOps::tt_hint(
 ///|
 pub fn SfntOps::num_glyphs(self : SfntOps) -> UInt {
   self.num_glyphs
+}
+
+///|
+pub fn SfntOps::palette_data(self : SfntOps) -> () -> @types.PaletteData? {
+  self.palette_data
+}
+
+///|
+pub fn SfntOps::select_palette(
+  self : SfntOps,
+) -> (UInt) -> Array[@types.Color]? raise @error.FTError {
+  self.select_palette
+}
+
+///|
+pub fn SfntOps::load_color_glyph(
+  self : SfntOps,
+) -> (UInt, Int, UInt, UInt, Array[@types.Color], @types.Color) -> BitmapGlyphData? raise @error.FTError {
+  self.load_color_glyph
 }
 
 ///|

@@ -90,6 +90,10 @@ pub const LOAD_TARGET_NORMAL : Int = 0
 
 pub const LOAD_VERTICAL_LAYOUT : Int = 16
 
+pub const PALETTE_FOR_DARK_BACKGROUND : UInt = 0x02
+
+pub const PALETTE_FOR_LIGHT_BACKGROUND : UInt = 0x01
+
 pub const STYLE_FLAG_BOLD : Int = 2
 
 pub const STYLE_FLAG_ITALIC : Int = 1
@@ -126,7 +130,12 @@ pub fn BitmapOps::new(load_glyph~ : (UInt, Int) -> BitmapGlyphData raise @error.
 pub impl Show for BitmapOps
 
 type BitmapSize derive(Eq, Show)
+pub fn BitmapSize::height(Self) -> Int
 pub fn BitmapSize::new(Int, Int, Int64, Int64, Int64) -> Self
+pub fn BitmapSize::size(Self) -> Int64
+pub fn BitmapSize::width(Self) -> Int
+pub fn BitmapSize::x_ppem(Self) -> Int64
+pub fn BitmapSize::y_ppem(Self) -> Int64
 
 type CharMapRec derive(Eq, Show)
 pub fn CharMapRec::encoding(Self) -> Encoding
@@ -173,6 +182,7 @@ pub fn FaceRec::driver_data(Self) -> DriverData
 pub fn FaceRec::face_flags(Self) -> Int64
 pub fn FaceRec::face_index(Self) -> Int64
 pub fn FaceRec::family_name(Self) -> String
+pub fn FaceRec::foreground_color(Self) -> @types.Color
 pub fn FaceRec::glyph(Self) -> GlyphSlot
 pub fn FaceRec::has_color(Self) -> Bool
 pub fn FaceRec::has_fixed_sizes(Self) -> Bool
@@ -191,6 +201,10 @@ pub fn FaceRec::max_advance_width(Self) -> Int
 pub fn FaceRec::new(num_faces? : Int64, face_index? : Int64) -> Self
 pub fn FaceRec::num_faces(Self) -> Int64
 pub fn FaceRec::num_glyphs(Self) -> Int64
+pub fn FaceRec::palette(Self) -> Array[@types.Color]
+pub fn FaceRec::palette_data(Self) -> @types.PaletteData?
+pub fn FaceRec::palette_index(Self) -> Int
+pub fn FaceRec::sdf_spread(Self) -> Int
 pub fn FaceRec::set_active_charmap(Self, Int) -> Unit
 pub fn FaceRec::set_ascender(Self, Int) -> Unit
 pub fn FaceRec::set_available_sizes(Self, Array[BitmapSize]) -> Unit
@@ -200,10 +214,15 @@ pub fn FaceRec::set_descender(Self, Int) -> Unit
 pub fn FaceRec::set_driver_data(Self, DriverData) -> Unit
 pub fn FaceRec::set_face_flags(Self, Int64) -> Unit
 pub fn FaceRec::set_family_name(Self, String) -> Unit
+pub fn FaceRec::set_foreground_color(Self, @types.Color) -> Unit
 pub fn FaceRec::set_height(Self, Int) -> Unit
 pub fn FaceRec::set_max_advance_height(Self, Int) -> Unit
 pub fn FaceRec::set_max_advance_width(Self, Int) -> Unit
 pub fn FaceRec::set_num_glyphs(Self, Int64) -> Unit
+pub fn FaceRec::set_palette(Self, Array[@types.Color]) -> Unit
+pub fn FaceRec::set_palette_data(Self, @types.PaletteData?) -> Unit
+pub fn FaceRec::set_palette_index(Self, Int) -> Unit
+pub fn FaceRec::set_sdf_spread(Self, Int) -> Unit
 pub fn FaceRec::set_style_flags(Self, Int) -> Unit
 pub fn FaceRec::set_style_name(Self, String) -> Unit
 pub fn FaceRec::set_underline_position(Self, Int) -> Unit
@@ -254,6 +273,7 @@ pub fn GlyphSlot::format(Self) -> @types.GlyphFormat
 pub fn GlyphSlot::glyph_index(Self) -> UInt
 pub fn GlyphSlot::linear_hori_advance(Self) -> @fixed.Fixed
 pub fn GlyphSlot::linear_vert_advance(Self) -> @fixed.Fixed
+pub fn GlyphSlot::load_flags(Self) -> Int
 pub fn GlyphSlot::lsb_delta(Self) -> Int64
 pub fn GlyphSlot::metrics(Self) -> @types.GlyphMetrics
 pub fn GlyphSlot::new() -> Self
@@ -268,6 +288,7 @@ pub fn GlyphSlot::set_format(Self, @types.GlyphFormat) -> Unit
 pub fn GlyphSlot::set_glyph_index(Self, UInt) -> Unit
 pub fn GlyphSlot::set_linear_hori_advance(Self, @fixed.Fixed) -> Unit
 pub fn GlyphSlot::set_linear_vert_advance(Self, @fixed.Fixed) -> Unit
+pub fn GlyphSlot::set_load_flags(Self, Int) -> Unit
 pub fn GlyphSlot::set_lsb_delta(Self, Int64) -> Unit
 pub fn GlyphSlot::set_num_subglyphs(Self, UInt) -> Unit
 pub fn GlyphSlot::set_outline(Self, @types.Outline) -> Unit
@@ -296,10 +317,13 @@ pub fn SfntOps::char_variant_index(Self) -> (UInt, UInt) -> UInt
 pub fn SfntOps::char_variant_is_default(Self) -> (UInt, UInt) -> Int
 pub fn SfntOps::chars_of_variant(Self) -> (UInt) -> Array[UInt]
 pub fn SfntOps::get_kerning(Self) -> (UInt, UInt) -> Int
+pub fn SfntOps::load_color_glyph(Self) -> (UInt, Int, UInt, UInt, Array[@types.Color], @types.Color) -> BitmapGlyphData? raise @error.FTError
 pub fn SfntOps::load_glyph(Self) -> (UInt, Int) -> (GlyphSlotData, @types.Outline, Bytes, Array[@types.Vector]) raise @error.FTError
-pub fn SfntOps::new(char_index~ : (UInt) -> UInt, char_variant_index~ : (UInt, UInt) -> UInt, char_variant_is_default~ : (UInt, UInt) -> Int, variant_selectors~ : () -> Array[UInt], variants_of_char~ : (UInt) -> Array[UInt], chars_of_variant~ : (UInt) -> Array[UInt], load_glyph~ : (UInt, Int) -> (GlyphSlotData, @types.Outline, Bytes, Array[@types.Vector]) raise @error.FTError, get_kerning~ : (UInt, UInt) -> Int, apply_hints~ : (@types.Outline, @fixed.Fixed) -> Bool, tt_hint~ : (@types.Outline, Bytes, Array[@types.Vector], @fixed.Fixed, @fixed.Fixed, UInt) -> Bool, num_glyphs~ : UInt, raw_data~ : Bytes) -> Self
+pub fn SfntOps::new(char_index~ : (UInt) -> UInt, char_variant_index~ : (UInt, UInt) -> UInt, char_variant_is_default~ : (UInt, UInt) -> Int, variant_selectors~ : () -> Array[UInt], variants_of_char~ : (UInt) -> Array[UInt], chars_of_variant~ : (UInt) -> Array[UInt], load_glyph~ : (UInt, Int) -> (GlyphSlotData, @types.Outline, Bytes, Array[@types.Vector]) raise @error.FTError, get_kerning~ : (UInt, UInt) -> Int, apply_hints~ : (@types.Outline, @fixed.Fixed) -> Bool, tt_hint~ : (@types.Outline, Bytes, Array[@types.Vector], @fixed.Fixed, @fixed.Fixed, UInt) -> Bool, palette_data~ : () -> @types.PaletteData?, select_palette~ : (UInt) -> Array[@types.Color]? raise @error.FTError, load_color_glyph~ : (UInt, Int, UInt, UInt, Array[@types.Color], @types.Color) -> BitmapGlyphData? raise @error.FTError, num_glyphs~ : UInt, raw_data~ : Bytes) -> Self
 pub fn SfntOps::num_glyphs(Self) -> UInt
+pub fn SfntOps::palette_data(Self) -> () -> @types.PaletteData?
 pub fn SfntOps::raw_data(Self) -> Bytes
+pub fn SfntOps::select_palette(Self) -> (UInt) -> Array[@types.Color]? raise @error.FTError
 pub fn SfntOps::tt_hint(Self) -> (@types.Outline, Bytes, Array[@types.Vector], @fixed.Fixed, @fixed.Fixed, UInt) -> Bool
 pub fn SfntOps::variant_selectors(Self) -> () -> Array[UInt]
 pub fn SfntOps::variants_of_char(Self) -> (UInt) -> Array[UInt]

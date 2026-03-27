@@ -1,0 +1,161 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "bikallem/freetype/color"
+
+import {
+  "bikallem/freetype/base",
+  "bikallem/freetype/error",
+  "bikallem/freetype/fixed",
+  "bikallem/freetype/sfnt",
+  "bikallem/freetype/types",
+}
+
+// Values
+pub fn blend_premul_pixel(FixedArray[Byte], Int, Byte, Byte, Byte, Byte) -> Unit
+
+pub fn decode_png_to_bgra(Bytes) -> PngImage raise @error.FTError
+
+pub fn empty_bgra_bitmap() -> @types.Bitmap
+
+pub fn flip_bgra_horizontal(Bytes, Int, Int) -> Bytes
+
+pub fn gray_mask_from_bitmap(@types.Bitmap, Int, Int) -> GrayMaskSurface
+
+pub fn load_cblc_glyph(CblcTable, UInt, UInt, UInt) -> @base.BitmapGlyphData? raise @error.FTError
+
+pub fn load_sbix_glyph(ColorTables, UInt, UInt, UInt) -> (@types.Bitmap, Int, Int)? raise @error.FTError
+
+pub fn make_bgra_bitmap(Int, Int, Bytes) -> @types.Bitmap
+
+pub fn make_bitmap_glyph_data(@types.Bitmap, Int, Int, Int, vert_advance? : Int, vert_bearing_x? : Int, vert_bearing_y? : Int) -> @base.BitmapGlyphData
+
+pub fn parse_cblc(Bytes, @sfnt.TableRecord, @sfnt.TableRecord) -> CblcTable raise @error.FTError
+
+pub fn parse_color_tables(Bytes, @sfnt.TableDirectory, UInt) -> ColorTables? raise @error.FTError
+
+pub fn parse_colr(Bytes, @sfnt.TableRecord) -> ColrTable raise @error.FTError
+
+pub fn premultiply_bgra(@types.Color, Int) -> (Byte, Byte, Byte, Byte)
+
+pub fn surface_from_mask(GrayMaskSurface, @types.Color, alpha_scale? : Int) -> BgraSurface
+
+// Errors
+
+// Types and methods
+pub struct BgraSurface {
+  mut left : Int
+  mut top : Int
+  mut width : Int
+  mut rows : Int
+  mut pixels : FixedArray[Byte]
+} derive(Show)
+pub fn BgraSurface::apply_mask(Self, GrayMaskSurface) -> Unit
+pub fn BgraSurface::blend_mask(Self, GrayMaskSurface, @types.Color, alpha_scale? : Int) -> Unit
+pub fn BgraSurface::blend_surface(Self, Self, composite_mode? : Int) -> Unit
+pub fn BgraSurface::is_empty(Self) -> Bool
+pub fn BgraSurface::left(Self) -> Int
+pub fn BgraSurface::new() -> Self
+pub fn BgraSurface::rows(Self) -> Int
+pub fn BgraSurface::to_bitmap(Self) -> (@types.Bitmap, Int, Int)
+pub fn BgraSurface::top(Self) -> Int
+pub fn BgraSurface::width(Self) -> Int
+
+type CblcMetrics derive(Show)
+
+type CblcStrike derive(Show)
+pub fn CblcStrike::bit_depth(Self) -> Int
+pub fn CblcStrike::ppem_x(Self) -> UInt
+pub fn CblcStrike::ppem_y(Self) -> UInt
+
+type CblcTable derive(Show)
+pub fn CblcTable::strikes(Self) -> Array[CblcStrike]
+
+pub struct ColorTables {
+  cpal : CpalTable?
+  sbix : SbixTable?
+  cblc : CblcTable?
+  colr : ColrTable?
+} derive(Show)
+pub fn ColorTables::cblc(Self) -> CblcTable?
+pub fn ColorTables::colr(Self) -> ColrTable?
+pub fn ColorTables::has_cblc(Self) -> Bool
+pub fn ColorTables::has_sbix(Self) -> Bool
+pub fn ColorTables::palette_data(Self) -> @types.PaletteData?
+pub fn ColorTables::sbix(Self) -> SbixTable?
+pub fn ColorTables::select_palette(Self, UInt) -> Array[@types.Color]?
+
+pub(all) enum ColrPaint {
+  ColrLayers(Int, Int)
+  Solid(UInt, Int)
+  Glyph(Int, UInt)
+  ColrGlyph(UInt)
+  Transform(Int, @fixed.Matrix, Int64, Int64)
+  Translate(Int, Int64, Int64)
+  Scale(Int, @fixed.Fixed, @fixed.Fixed, Int64, Int64)
+  Rotate(Int, @fixed.Fixed, Int64, Int64)
+  Skew(Int, @fixed.Fixed, @fixed.Fixed, Int64, Int64)
+  Composite(Int, Int, Int)
+  Unsupported(Int)
+} derive(Show)
+
+pub struct ColrTable {
+  data : Bytes
+  version : Int
+  num_base_glyphs : Int
+  base_glyphs_offset : Int
+  layer_records_offset : Int
+  num_layers : Int
+  num_base_glyphs_v1 : Int
+  base_glyphs_offset_v1 : Int
+  num_layers_v1 : Int
+  layers_offset_v1 : Int
+  paints_start_v1 : Int
+} derive(Show)
+pub fn ColrTable::read_paint(Self, Int) -> ColrPaint raise @error.FTError
+pub fn ColrTable::v0_layers(Self, UInt) -> Array[ColrV0Layer] raise @error.FTError
+pub fn ColrTable::v1_layer_paint_offsets(Self, Int, Int) -> Array[Int] raise @error.FTError
+pub fn ColrTable::v1_root_paint_offset(Self, UInt) -> Int? raise @error.FTError
+pub fn ColrTable::version(Self) -> Int
+
+type ColrV0Layer derive(Eq, Show)
+pub fn ColrV0Layer::glyph_id(Self) -> UInt
+pub fn ColrV0Layer::palette_index(Self) -> UInt
+
+type CpalTable derive(Show)
+
+pub struct GrayMaskSurface {
+  left : Int
+  top : Int
+  width : Int
+  rows : Int
+  buffer : Bytes
+} derive(Eq, Show)
+pub fn GrayMaskSurface::buffer(Self) -> Bytes
+pub fn GrayMaskSurface::empty() -> Self
+pub fn GrayMaskSurface::is_empty(Self) -> Bool
+pub fn GrayMaskSurface::left(Self) -> Int
+pub fn GrayMaskSurface::new(Int, Int, Int, Int, Bytes) -> Self
+pub fn GrayMaskSurface::rows(Self) -> Int
+pub fn GrayMaskSurface::top(Self) -> Int
+pub fn GrayMaskSurface::width(Self) -> Int
+
+type PngImage derive(Eq, Show)
+pub fn PngImage::buffer(Self) -> Bytes
+pub fn PngImage::height(Self) -> Int
+pub fn PngImage::new(Int, Int, Bytes) -> Self
+pub fn PngImage::width(Self) -> Int
+
+type SbixStrike derive(Show)
+pub fn SbixStrike::glyph_offsets(Self) -> Array[Int]
+pub fn SbixStrike::offset(Self) -> Int
+pub fn SbixStrike::ppem(Self) -> UInt
+pub fn SbixStrike::resolution(Self) -> UInt
+
+type SbixTable derive(Show)
+pub fn SbixTable::data(Self) -> Bytes
+pub fn SbixTable::flags(Self) -> UInt
+pub fn SbixTable::strikes(Self) -> Array[SbixStrike]
+
+// Type aliases
+
+// Traits
+
