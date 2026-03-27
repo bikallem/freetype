@@ -32,13 +32,42 @@ fn paeth_predictor(a : Int, b : Int, c : Int) -> Int {
 }
 
 ///|
+fn png_crc32_update(crc : UInt, byte : Byte) -> UInt {
+  let mut value = crc ^ byte.to_uint()
+  for _ in 0..<8 {
+    value = if (value & 1U) != 0U {
+      (value >> 1) ^ 0xEDB8_8320U
+    } else {
+      value >> 1
+    }
+  }
+  value
+}
+
+///|
+fn png_chunk_crc(tag : UInt, data : Bytes) -> UInt {
+  let mut crc = 0xFFFF_FFFFU
+  crc = png_crc32_update(crc, ((tag >> 24) & 0xFFU).to_byte())
+  crc = png_crc32_update(crc, ((tag >> 16) & 0xFFU).to_byte())
+  crc = png_crc32_update(crc, ((tag >> 8) & 0xFFU).to_byte())
+  crc = png_crc32_update(crc, (tag & 0xFFU).to_byte())
+  for _, byte in data {
+    crc = png_crc32_update(crc, byte)
+  }
+  crc ^ 0xFFFF_FFFFU
+}
+
+///|
 fn read_png_chunk(
   reader : @stream.ByteReader,
 ) -> (UInt, UInt, Bytes) raise @error.FTError {
   let length = reader.read_u32_be()
   let tag = reader.read_u32_be()
   let data = reader.read_bytes(length.reinterpret_as_int())
-  ignore(reader.read_u32_be())
+  let expected_crc = reader.read_u32_be()
+  if png_chunk_crc(tag, data) != expected_crc {
+    raise @error.FTError::InvalidFileFormat
+  }
   (length, tag, data)
 }
 

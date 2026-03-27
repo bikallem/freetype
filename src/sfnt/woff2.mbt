@@ -425,14 +425,15 @@ fn build_ttc_font_collection(
   resolved_tables : Array[Bytes],
 ) -> Bytes {
   let num_fonts = fonts.length()
-  let ttc_version = if version == 0x00020000U || version == 0U {
-    0x00010000U
+  let ttc_version = if version == 0U { 0x00010000U } else { version }
+  let header_size = if ttc_version == 0x00020000U {
+    24 + num_fonts * 4
   } else {
-    version
+    12 + num_fonts * 4
   }
   let sorted_indices : Array[Array[Int]] = Array::new(capacity=num_fonts)
   let font_offsets : Array[Int] = Array::new(capacity=num_fonts)
-  let mut dir_offset = 12 + num_fonts * 4
+  let mut dir_offset = header_size
   for _, font in fonts {
     let indices = sorted_font_table_indices(font, entries)
     sorted_indices.push(indices)
@@ -453,6 +454,12 @@ fn build_ttc_font_collection(
   write_u32_be(ttc, 8, num_fonts.reinterpret_as_uint())
   for i, font_offset in font_offsets {
     write_u32_be(ttc, 12 + i * 4, font_offset.reinterpret_as_uint())
+  }
+  if ttc_version == 0x00020000U {
+    let dsig_offset = 12 + num_fonts * 4
+    write_u32_be(ttc, dsig_offset, 0U)
+    write_u32_be(ttc, dsig_offset + 4, 0U)
+    write_u32_be(ttc, dsig_offset + 8, 0U)
   }
   for font_index, font in fonts {
     let indices = sorted_indices[font_index]

@@ -255,6 +255,23 @@ fn reverse_byte_bits(byte : Byte) -> Byte {
 }
 
 ///|
+fn swap_scan_unit_bytes(bytes : FixedArray[Byte], scan_unit : Int) -> Unit {
+  if scan_unit <= 1 {
+    return
+  }
+  for i = 0; i + scan_unit - 1 < bytes.length(); {
+    let last = i + scan_unit - 1
+    for left = i, right = last; left < right; {
+      let tmp = bytes[left]
+      bytes[left] = bytes[right]
+      bytes[right] = tmp
+      continue left + 1, right - 1
+    }
+    continue i + scan_unit
+  }
+}
+
+///|
 pub fn PcfFont::bitmap_for_glyph(self : PcfFont, glyph_index : Int) -> Bytes {
   if glyph_index < 0 || glyph_index >= self.bitmap_offsets.length() {
     b""
@@ -286,26 +303,7 @@ pub fn PcfFont::bitmap_for_glyph(self : PcfFont, glyph_index : Int) -> Bytes {
           }
         }
         if byte_order_is_msb != bit_order_is_msb {
-          match scan_unit {
-            2 =>
-              for i = 0; i + 1 < transformed.length(); {
-                let tmp = transformed[i]
-                transformed[i] = transformed[i + 1]
-                transformed[i + 1] = tmp
-                continue i + 2
-              }
-            4 =>
-              for i = 0; i + 3 < transformed.length(); {
-                let a = transformed[i]
-                let b = transformed[i + 1]
-                transformed[i] = transformed[i + 3]
-                transformed[i + 1] = transformed[i + 2]
-                transformed[i + 2] = b
-                transformed[i + 3] = a
-                continue i + 4
-              }
-            _ => ()
-          }
+          swap_scan_unit_bytes(transformed, scan_unit)
         }
         Bytes::from_array(transformed[:])
       }

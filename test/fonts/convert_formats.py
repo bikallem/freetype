@@ -6,12 +6,13 @@ Produces:
   DejaVuSans.woff  — real WOFF1 wrapping DejaVuSans.ttf (6253 glyphs)
   DejaVuSans.ttc   — real TTC containing DejaVuSans.ttf as 2 faces
   minimal_collection.woff2 — synthetic WOFF2 collection wrapping minimal.ttc
+  minimal_collection_v2.woff2 — synthetic WOFF2 collection wrapping a TTC v2 header
 
 These are genuine production font data in alternate container formats,
 except for the small WOFF2 collection fixture used for decoder coverage.
 """
 
-import struct, zlib, os, sys
+import struct, zlib, os, sys, shutil, subprocess
 try:
     import brotli
 except ImportError:
@@ -38,6 +39,39 @@ def read_font(name):
         return None
     with open(path, "rb") as f:
         return f.read()
+
+
+def brotli_font_available():
+    return brotli is not None or shutil.which("node") is not None
+
+
+def brotli_compress_font(data):
+    if brotli is not None:
+        return brotli.compress(data, quality=11, mode=brotli.MODE_FONT)
+    if shutil.which("node") is None:
+        raise RuntimeError("brotli encoder not available")
+    script = r"""
+const z = require('zlib');
+const chunks = [];
+process.stdin.on('data', (chunk) => chunks.push(chunk));
+process.stdin.on('end', () => {
+  const out = z.brotliCompressSync(Buffer.concat(chunks), {
+    params: {
+      [z.constants.BROTLI_PARAM_QUALITY]: 11,
+      [z.constants.BROTLI_PARAM_MODE]: z.constants.BROTLI_MODE_FONT,
+    },
+  });
+  process.stdout.write(out);
+});
+"""
+    completed = subprocess.run(
+        ["node", "-e", script],
+        input=data,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        check=True,
+    )
+    return completed.stdout
 
 
 def parse_sfnt_tables(data):
@@ -104,8 +138,6 @@ def reorder_tables_for_woff2_collection(tables):
 
 
 def build_woff2_collection(ttc_data):
-    if brotli is None:
-        raise RuntimeError("brotli module is required")
     version, fonts = parse_ttc_fonts(ttc_data)
     entries = []
     index_by_offset = {}
@@ -121,7 +153,7 @@ def build_woff2_collection(ttc_data):
         collection_fonts.append((sfnt_version, indices))
 
     raw_stream = b"".join(table for _, _, table in entries)
-    compressed = brotli.compress(raw_stream, quality=11, mode=brotli.MODE_FONT)
+    compressed = brotli_compress_font(raw_stream)
 
     table_directory = bytearray()
     for tag, _, table in entries:
@@ -228,11 +260,13 @@ def build_woff(sfnt_data):
     return bytes(woff)
 
 
-def build_ttc(fonts):
+def build_ttc(fonts, *, version=0x00010000, dsig=(0, 0, 0)):
     """Build a TTC from a list of SFNT font data blobs."""
     num_fonts = len(fonts)
-    # TTC header: 12 bytes + 4 bytes per font offset
+    # TTC header: 12 bytes + 4 bytes per font offset, plus DSIG fields for TTC v2.
     header_size = 12 + num_fonts * 4
+    if version == 0x00020000:
+        header_size += 12
 
     # Each font's table directory is placed sequentially after the header.
     # Table data follows all directories.
@@ -269,11 +303,13 @@ def build_ttc(fonts):
     # Build TTC
     ttc = bytearray()
     # TTC header
-    ttc += struct.pack(">4sI", b'ttcf', 0x00010000)  # tag, version 1.0
+    ttc += struct.pack(">4sI", b'ttcf', version)
     ttc += struct.pack(">I", num_fonts)
     # Font offsets
     for dir_off, _, _, _ in font_dirs:
         ttc += struct.pack(">I", dir_off)
+    if version == 0x00020000:
+        ttc += struct.pack(">III", *dsig)
 
     # Font table directories
     for fi, (_, sfnt_version, num_tables, tables) in enumerate(font_dirs):
@@ -342,8 +378,8 @@ def main():
 
     # === WOFF2 collection from minimal.ttc ===
     minimal_ttc = read_font("minimal.ttc")
-    if brotli is None:
-        print("  [skip] minimal_collection.woff2 (python brotli module not available)")
+    if not brotli_font_available():
+        print("  [skip] minimal_collection.woff2 (brotli encoder not available)")
     elif minimal_ttc:
         woff2_path = os.path.join(FONT_DIR, "minimal_collection.woff2")
         if os.path.exists(woff2_path):
@@ -355,6 +391,26 @@ def main():
             print(f"  [created] minimal_collection.woff2 ({len(woff2):,} bytes from {len(minimal_ttc):,} byte TTC)")
     else:
         print("  [skip] minimal_collection.woff2 (minimal.ttc not found)")
+
+    # === WOFF2 collection from a synthetic TTC v2 ===
+    minimal_ttf = read_font("minimal.ttf")
+    if not brotli_font_available():
+        print("  [skip] minimal_collection_v2.woff2 (brotli encoder not available)")
+    elif minimal_ttf:
+        woff2_v2_path = os.path.join(FONT_DIR, "minimal_collection_v2.woff2")
+        if os.path.exists(woff2_v2_path):
+            print("  [skip] minimal_collection_v2.woff2")
+        else:
+            minimal_ttc_v2 = build_ttc([minimal_ttf, minimal_ttf], version=0x00020000)
+            woff2_v2 = build_woff2_collection(minimal_ttc_v2)
+            with open(woff2_v2_path, "wb") as f:
+                f.write(woff2_v2)
+            print(
+                f"  [created] minimal_collection_v2.woff2 "
+                f"({len(woff2_v2):,} bytes from {len(minimal_ttc_v2):,} byte TTC)"
+            )
+    else:
+        print("  [skip] minimal_collection_v2.woff2 (minimal.ttf not found)")
 
 
 if __name__ == "__main__":

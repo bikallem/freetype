@@ -76,3 +76,18 @@ test "Type1Font creation" {
   inspect(font.charstrings.length(), content="0")
   inspect(font.subrs.length(), content="0")
 }
+
+///|
+test "parse_type1_pfa captures non-default FontMatrix and units_per_em" {
+  let pfa : Bytes = b"%!PS-AdobeFont-1.0: MatrixTest 001.000\n" +
+    b"/FontName /MatrixTest def\n" +
+    b"/FamilyName (Matrix Test) readonly def\n" +
+    b"/FontType 1 def\n" +
+    b"/FontMatrix [0.0005 0 0 0.0005 0 0] readonly def\n" +
+    b"/FontBBox {0 -200 500 800} readonly def\n" +
+    b"/Encoding StandardEncoding def\n"
+  let font = parse_type1_pfa(pfa)
+  inspect((1.0 / font.font_matrix[0]).round().to_int(), content="2000")
+  inspect((1.0 / font.font_matrix[3]).round().to_int(), content="2000")
+  inspect(font.units_per_em, content="2000")
+}

@@ -19,11 +19,20 @@ fn load_minimal_collection_woff2() -> Bytes {
 }
 
 ///|
+fn load_minimal_collection_v2_woff2() -> Bytes {
+  try! @fs.read_file_to_bytes("test/fonts/minimal_collection_v2.woff2")
+}
+
+///|
 test "WOFF2: format detection" {
   inspect(@base.detect_format(load_minimal_woff2()), content="Woff2")
   inspect(@base.detect_format(load_dejavusans_woff2()), content="Woff2")
   inspect(@base.detect_format(load_minimal_hmtx_woff2()), content="Woff2")
   inspect(@base.detect_format(load_minimal_collection_woff2()), content="Woff2")
+  inspect(
+    @base.detect_format(load_minimal_collection_v2_woff2()),
+    content="Woff2",
+  )
 }
 
 ///|
@@ -142,4 +151,25 @@ test "WOFF2: collection face selection works" {
   inspect(face0.num_glyphs(), content="3")
   inspect(face1.num_glyphs(), content="3")
   inspect(face1.family_name(), content="Minimal")
+}
+
+///|
+test "WOFF2: TTC v2 collections preserve header version" {
+  let data = @sfnt.decompress_woff2(load_minimal_collection_v2_woff2())
+  inspect(data[0].to_int(), content="116")
+  inspect(data[1].to_int(), content="116")
+  inspect(data[2].to_int(), content="99")
+  inspect(data[3].to_int(), content="102")
+  let version = ((data[4].to_uint() << 24) |
+  (data[5].to_uint() << 16) |
+  (data[6].to_uint() << 8) |
+  data[7].to_uint()).reinterpret_as_int()
+  inspect(version, content="131072")
+  let face0 = @freetype.from_bytes(load_minimal_collection_v2_woff2())
+  let face1 = @freetype.from_bytes(
+    load_minimal_collection_v2_woff2(),
+    face_index=1,
+  )
+  inspect(face0.num_faces(), content="2")
+  inspect(face1.num_glyphs(), content="3")
 }

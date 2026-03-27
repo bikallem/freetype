@@ -9,6 +9,11 @@ fn load_switch_nimbussans_pfb() -> Bytes {
 }
 
 ///|
+fn load_switch_type1_encoding_only_pfb() -> Bytes {
+  try! @fs.read_file_to_bytes("test/fonts/minimal_type1_encoding_only.pfb")
+}
+
+///|
 fn load_switch_sourcecodepro_standalone_cff() -> Bytes {
   try! @fs.read_file_to_bytes("test/fonts/SourceCodePro_standalone.cff")
 }
@@ -38,13 +43,24 @@ test "active charmap: Type1 switches between Unicode and Adobe encoding" {
 }
 
 ///|
+test "active charmap: Type1 Unicode miss does not fall back to encoding" {
+  let f = @freetype.from_bytes(load_switch_type1_encoding_only_pfb())
+  f.set_active_charmap(0)
+  inspect(@freetype.get_char_index(f, 66U), content="0")
+  f.set_active_charmap(1)
+  inspect(@freetype.get_char_index(f, 66U), content="3")
+}
+
+///|
 test "active charmap: standalone CFF switches between Unicode and Adobe encoding" {
   let f = @freetype.from_bytes(load_switch_sourcecodepro_standalone_cff())
   f.set_active_charmap(0)
   inspect(@freetype.get_char_index(f, 0x394U), content="609")
+  inspect(@freetype.get_char_index(f, 178U), content="0")
   f.set_active_charmap(1)
   inspect(@freetype.get_char_index(f, 0x394U), content="0")
   inspect(@freetype.get_char_index(f, 65U), content="2")
+  inspect(@freetype.get_char_index(f, 178U), content="972")
 }
 
 ///|

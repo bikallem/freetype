@@ -9,6 +9,8 @@ Generates:
   minimal.otf  — Minimal CFF/OpenType font (OTTO signature)
   minimal.bdf  — Minimal BDF bitmap font
   minimal.pfb  — Minimal Type 1 PFB font
+  minimal_fontmatrix.pfb — Minimal Type 1 PFB font with a non-default FontMatrix
+  minimal_type1_encoding_only.pfb — Minimal Type 1 PFB with an encoding-only glyph
   minimal.woff — Minimal WOFF1 wrapping of the TTF
   minimal.ttc  — TrueType Collection containing two faces
 
@@ -1927,31 +1929,46 @@ ENDFONT
 # Generate minimal.pfb
 # ---------------------------------------------------------------------------
 
-def generate_pfb() -> bytes:
+def generate_pfb(*,
+                 font_name: str = "Minimal",
+                 family_name: str = "Minimal",
+                 font_matrix=(0.001, 0.0, 0.0, 0.001, 0.0, 0.0),
+                 include_encoding_only_glyph: bool = False) -> bytes:
     """Generate a minimal Type 1 font in PFB format."""
     # ASCII segment: header portion of Type 1 font
+    font_matrix_text = " ".join(f"{value:g}" for value in font_matrix)
+    encoding_lines = [
+        "dup 32 /space put",
+        "dup 65 /A put",
+    ]
+    if include_encoding_only_glyph:
+        encoding_lines.append("dup 66 /foo put")
     ascii_part = """%!PS-AdobeFont-1.0: Minimal 001.000
-%%Title: Minimal
+%%Title: {font_name}
 %%CreationDate: 2025-01-01
 10 dict begin
 /FontInfo 3 dict dup begin
-  /FamilyName (Minimal) readonly def
-  /FullName (Minimal) readonly def
+  /FamilyName ({family_name}) readonly def
+  /FullName ({font_name}) readonly def
   /isFixedPitch false def
 end readonly def
-/FontName /Minimal def
+/FontName /{font_name} def
 /FontType 1 def
-/FontMatrix [0.001 0 0 0.001 0 0] readonly def
-/FontBBox {0 -200 500 800} readonly def
+/FontMatrix [{font_matrix_text}] readonly def
+/FontBBox {{0 -200 500 800}} readonly def
 /Encoding 256 array
-0 1 255 {1 index exch /.notdef put} for
-dup 32 /space put
-dup 65 /A put
+0 1 255 {{1 index exch /.notdef put}} for
+{encoding_lines}
 readonly def
 /PaintType 0 def
 currentdict end
 currentfile eexec
-"""
+""".format(
+        font_name=font_name,
+        family_name=family_name,
+        font_matrix_text=font_matrix_text,
+        encoding_lines="\n".join(encoding_lines),
+    )
 
     # Binary segment: eexec-encrypted portion
     # We need to create charstrings and encrypt them
@@ -2034,13 +2051,17 @@ currentfile eexec
     a_plain += bytes([14]) # endchar
     a_enc = charstring_encrypt(a_plain)
 
+    foo_plain = cs_encode_int(50) + cs_encode_int(500) + bytes([13])
+    foo_plain += bytes([14])
+    foo_enc = charstring_encrypt(foo_plain)
+
     clear_text = f"""dup /Private 5 dict dup begin
 /RD {{string currentfile exch readstring pop}} executeonly def
 /ND {{noaccess def}} executeonly def
 /NP {{noaccess put}} executeonly def
 /lenIV 4 def
 /password 5839 def
-2 index /CharStrings 3 dict dup begin
+2 index /CharStrings {3 + int(include_encoding_only_glyph)} dict dup begin
 /.notdef {len(notdef_enc)} RD """
 
     clear_bytes = clear_text.encode('latin-1')
@@ -2056,6 +2077,12 @@ currentfile eexec
     clear_bytes += a_line.encode('latin-1')
     clear_bytes += a_enc
     clear_bytes += b" ND\n"
+
+    if include_encoding_only_glyph:
+        foo_line = f"/foo {len(foo_enc)} RD "
+        clear_bytes += foo_line.encode('latin-1')
+        clear_bytes += foo_enc
+        clear_bytes += b" ND\n"
 
     clear_bytes += b"end\nend\nreadonly put\nnoaccess put\ndup /FontName get exch definefont pop\nmark currentfile closefile\n"
 
@@ -2327,6 +2354,28 @@ def main():
     with open(pfb_path, 'wb') as f:
         f.write(pfb_data)
     print(f"  Written {len(pfb_data)} bytes to {pfb_path}")
+
+    print("Generating minimal_fontmatrix.pfb...")
+    pfb_fontmatrix_data = generate_pfb(
+        font_name="MinimalFontMatrix",
+        family_name="Minimal FontMatrix",
+        font_matrix=(0.0005, 0.0, 0.0, 0.0005, 0.0, 0.0),
+    )
+    pfb_fontmatrix_path = os.path.join(SCRIPT_DIR, 'minimal_fontmatrix.pfb')
+    with open(pfb_fontmatrix_path, 'wb') as f:
+        f.write(pfb_fontmatrix_data)
+    print(f"  Written {len(pfb_fontmatrix_data)} bytes to {pfb_fontmatrix_path}")
+
+    print("Generating minimal_type1_encoding_only.pfb...")
+    pfb_encoding_data = generate_pfb(
+        font_name="MinimalEncodingOnly",
+        family_name="Minimal Encoding Only",
+        include_encoding_only_glyph=True,
+    )
+    pfb_encoding_path = os.path.join(SCRIPT_DIR, 'minimal_type1_encoding_only.pfb')
+    with open(pfb_encoding_path, 'wb') as f:
+        f.write(pfb_encoding_data)
+    print(f"  Written {len(pfb_encoding_data)} bytes to {pfb_encoding_path}")
 
     # WOFF
     print("Generating minimal.woff...")

@@ -14,6 +14,43 @@ fn render_color_test_font() -> Bytes {
 }
 
 ///|
+fn corrupt_first_embedded_png_crc(data : Bytes) -> Bytes {
+  let signature : Bytes = b"\x89PNG\r\n\x1A\n"
+  let bytes = FixedArray::make(data.length(), b'\x00')
+  for i in 0..<data.length() {
+    bytes[i] = data[i]
+  }
+  let mut png_start = -1
+  for i in 0..<(data.length() - signature.length() + 1) {
+    let mut match_ = true
+    for j in 0..<signature.length() {
+      if data[i + j] != signature[j] {
+        match_ = false
+        break
+      }
+    }
+    if match_ {
+      png_start = i
+      break
+    }
+  }
+  if png_start < 0 || png_start + 16 > bytes.length() {
+    return data
+  }
+  let length_offset = png_start + signature.length()
+  let chunk_len = (bytes[length_offset].to_int() << 24) |
+    (bytes[length_offset + 1].to_int() << 16) |
+    (bytes[length_offset + 2].to_int() << 8) |
+    bytes[length_offset + 3].to_int()
+  let crc_offset = length_offset + 8 + chunk_len
+  if crc_offset + 3 >= bytes.length() {
+    return data
+  }
+  bytes[crc_offset + 3] = bytes[crc_offset + 3] ^ b'\x01'
+  Bytes::from_array(bytes[:])
+}
+
+///|
 fn render_cbdt_test_font() -> Bytes {
   try! @fs.read_file_to_bytes("test/fonts/minimal_cbdt.ttf")
 }
@@ -375,6 +412,21 @@ test "render_glyph: color bitmap slot is stable" {
     face.glyph().bitmap().buffer()[0].to_hex(),
     content=before[0].to_hex(),
   )
+}
+
+///|
+test "load_glyph: corrupt embedded PNG CRC is rejected" {
+  let face = from_bytes(
+    corrupt_first_embedded_png_crc(render_color_test_font()),
+  )
+  try! set_pixel_sizes(face, 0U, 16U)
+  let gid = get_char_index(face, 65U)
+  let result : Result[Unit, @error.FTError] = Ok(
+    load_glyph(face, gid, load_flags=@base.LOAD_COLOR),
+  ) catch {
+    err => Err(err)
+  }
+  inspect(result, content="Err(InvalidFileFormat)")
 }
 
 ///|

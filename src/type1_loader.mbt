@@ -1,8 +1,53 @@
 ///|
+fn round_double_to_int(value : Double) -> Int {
+  if value < 0.0 {
+    (value - 0.5).to_int()
+  } else {
+    (value + 0.5).to_int()
+  }
+}
+
+///|
+fn double_to_fixed(value : Double) -> @fixed.Fixed {
+  @fixed.Fixed::from_raw(round_double_to_int(value * 65536.0).to_int64())
+}
+
+///|
+fn type1_font_transform(
+  font_matrix : Array[Double],
+) -> (@fixed.Matrix, Int64, Int64) {
+  if font_matrix.length() < 6 {
+    return (@fixed.Matrix::identity(), 0L, 0L)
+  }
+  let scale = if font_matrix[3] < 0.0 {
+    -font_matrix[3]
+  } else {
+    font_matrix[3]
+  }
+  if scale <= 0.0 {
+    return (@fixed.Matrix::identity(), 0L, 0L)
+  }
+  let yy = if font_matrix[3] < 0.0 { -1.0 } else { 1.0 }
+  (
+    @fixed.Matrix::new(
+      double_to_fixed(font_matrix[0] / scale),
+      double_to_fixed(font_matrix[2] / scale),
+      double_to_fixed(font_matrix[1] / scale),
+      double_to_fixed(yy),
+    ),
+    (font_matrix[4] / scale).to_int().to_int64(),
+    (font_matrix[5] / scale).to_int().to_int64(),
+  )
+}
+
+///|
 /// Load a Type 1 PFB font.
 fn load_type1_pfb(data : Bytes) -> @base.FaceRec raise @error.FTError {
   let font = @type1.parse_type1_pfb(data)
   let face = @base.FaceRec::new()
+  let (font_transform, font_offset_x, font_offset_y) = type1_font_transform(
+    font.font_matrix(),
+  )
   let family_name = font.family_name()
   face.set_family_name(
     if family_name != "" {
@@ -30,8 +75,16 @@ fn load_type1_pfb(data : Bytes) -> @base.FaceRec raise @error.FTError {
     )
     face.set_ascender(font.font_bbox()[3])
     face.set_descender(font.font_bbox()[1])
-    face.set_height(font.font_bbox()[3] - font.font_bbox()[1])
   }
+  let bbox_height = face.ascender() - face.descender()
+  let default_height = font.units_per_em() * 12 / 10
+  face.set_height(
+    if default_height > bbox_height {
+      default_height
+    } else {
+      bbox_height
+    },
+  )
   face.set_underline_position(font.underline_position())
   face.set_underline_thickness(font.underline_thickness())
   let glyph_names = if font.glyph_order().length() > 0 {
@@ -81,9 +134,12 @@ fn load_type1_pfb(data : Bytes) -> @base.FaceRec raise @error.FTError {
   if has_unicode {
     face.charmaps().push(@base.CharMapRec::new(@base.Encoding::Unicode, 3U, 1U))
   }
-  face
-  .charmaps()
-  .push(@base.CharMapRec::new(@base.Encoding::AdobeStandard, 7U, 0U))
+  let encoding_charmap = if font.custom_encoding() {
+    @base.CharMapRec::new(@base.Encoding::AdobeCustom, 7U, 2U)
+  } else {
+    @base.CharMapRec::new(@base.Encoding::AdobeStandard, 7U, 0U)
+  }
+  face.charmaps().push(encoding_charmap)
   if face.charmaps().length() > 0 {
     face.set_active_charmap(0)
   }
@@ -92,12 +148,7 @@ fn load_type1_pfb(data : Bytes) -> @base.FaceRec raise @error.FTError {
   let unicode_char_index_fn : (UInt) -> UInt = fn(charcode) {
     match unicode_cmap.get(charcode) {
       Some(gid) => gid
-      None =>
-        if charcode < 256U {
-          cached_cmap.unsafe_get(charcode.reinterpret_as_int())
-        } else {
-          0U
-        }
+      None => 0U
     }
   }
   let encoding_char_index_fn : (UInt) -> UInt = fn(charcode) {
@@ -154,7 +205,21 @@ fn load_type1_pfb(data : Bytes) -> @base.FaceRec raise @error.FTError {
     }
     let name = glyph_names[idx]
     let no_hinting = (load_flags & @base.LOAD_NO_HINTING) != 0
-    let (outline, width, hh, hv) = @type1.load_type1_glyph_full_data(font, name)
+    let (outline, raw_width, hh, hv) = @type1.load_type1_glyph_full_data(
+      font, name,
+    )
+    let has_transform = font_transform.xx().val() != 0x10000L ||
+      font_transform.xy().val() != 0L ||
+      font_transform.yx().val() != 0L ||
+      font_transform.yy().val() != 0x10000L
+    if has_transform {
+      @base.outline_transform(outline, font_transform)
+    }
+    if font_offset_x != 0L || font_offset_y != 0L {
+      @base.outline_translate(outline, font_offset_x, font_offset_y)
+    }
+    let width = @fixed.mul_div(raw_width, font_transform.xx().val(), 0x10000L) +
+      font_offset_x
     if no_hinting {
       hint_has_hints.val = false
     } else {

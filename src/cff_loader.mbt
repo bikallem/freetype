@@ -64,12 +64,7 @@ fn load_cff_standalone(data : Bytes) -> @base.FaceRec raise @error.FTError {
   let unicode_char_index_fn : (UInt) -> UInt = fn(charcode) {
     match unicode_cmap.get(charcode) {
       Some(glyph_index) => glyph_index
-      None =>
-        if charcode < 256U {
-          encoding_glyphs[charcode.reinterpret_as_int()]
-        } else {
-          0U
-        }
+      None => 0U
     }
   }
   let encoding_char_index_fn : (UInt) -> UInt = fn(charcode) {

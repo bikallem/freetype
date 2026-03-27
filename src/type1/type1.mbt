@@ -9,6 +9,7 @@ struct Type1Font {
   mut family_name : String
   mut units_per_em : Int // default 1000 for Type 1
   mut encoding : Array[String] // glyph name per encoding slot (256 entries)
+  mut custom_encoding : Bool
   mut charstrings : Map[String, Bytes] // glyph_name -> charstring data
   mut glyph_order : Array[String] // glyph order as stored in /CharStrings
   subrs : Array[Bytes] // subroutine array
@@ -21,7 +22,7 @@ struct Type1Font {
   nominal_width_x : Int64 // nominalWidthX
   mut len_iv : Int // lenIV for charstring decryption (default 4)
   paint_type : Int // PaintType (0 = fill, 2 = stroke)
-  font_matrix : Array[Double] // FontMatrix (6 elements)
+  mut font_matrix : Array[Double] // FontMatrix (6 elements)
   mut font_bbox : Array[Int] // FontBBox [llx lly urx ury]
   mut underline_position : Int
   mut underline_thickness : Int
@@ -36,6 +37,7 @@ pub fn Type1Font::new() -> Type1Font {
     family_name: "",
     units_per_em: 1000,
     encoding: [],
+    custom_encoding: false,
     charstrings: {},
     glyph_order: [],
     subrs: [],
@@ -150,6 +152,7 @@ pub fn parse_type1_pfb(data : Bytes) -> Type1Font raise @error.FTError {
   if ascii_parts.length() > 0 {
     font.font_name = extract_font_name(ascii_parts[0])
     font.family_name = extract_family_name(ascii_parts[0])
+    font.font_matrix = extract_font_matrix(ascii_parts[0])
     font.font_bbox = extract_font_bbox(ascii_parts[0])
     font.underline_position = extract_named_int(
       ascii_parts[0],
@@ -160,6 +163,7 @@ pub fn parse_type1_pfb(data : Bytes) -> Type1Font raise @error.FTError {
       "UnderlineThickness",
     )
     // Parse encoding from ASCII segment
+    font.custom_encoding = has_custom_encoding(ascii_parts[0])
     font.encoding = parse_encoding(ascii_parts[0])
   }
   // Decrypt binary segment (eexec encrypted private dict + charstrings)
@@ -172,7 +176,7 @@ pub fn parse_type1_pfb(data : Bytes) -> Type1Font raise @error.FTError {
     font.charstrings = charstrings
     font.glyph_order = glyph_order
   }
-  font.units_per_em = 1000
+  font.units_per_em = units_per_em_from_font_matrix(font.font_matrix)
   font
 }
 
@@ -184,9 +188,11 @@ fn parse_type1_pfa(data : Bytes) -> Type1Font {
   // The whole file is ASCII
   font.font_name = extract_font_name(data)
   font.family_name = extract_family_name(data)
+  font.font_matrix = extract_font_matrix(data)
   font.font_bbox = extract_font_bbox(data)
   font.underline_position = extract_named_int(data, "UnderlinePosition")
   font.underline_thickness = extract_named_int(data, "UnderlineThickness")
+  font.custom_encoding = has_custom_encoding(data)
   font.encoding = parse_encoding(data)
   // Find "eexec" keyword — everything after it is hex-encoded encrypted data
   let text_len = data.length()
@@ -239,7 +245,7 @@ fn parse_type1_pfa(data : Bytes) -> Type1Font {
     font.charstrings = charstrings
     font.glyph_order = glyph_order
   }
-  font.units_per_em = 1000
+  font.units_per_em = units_per_em_from_font_matrix(font.font_matrix)
   font
 }
 
@@ -365,6 +371,102 @@ fn extract_named_int(ascii_data : Bytes, key : String) -> Int {
     }
   }
   0
+}
+
+///|
+fn extract_font_matrix(ascii_data : Bytes) -> Array[Double] {
+  let len = ascii_data.length()
+  for i in 0..<(len - 11) {
+    if ascii_data[i] != b'/' {
+      continue
+    }
+    let keyword = "FontMatrix"
+    let mut match_ = true
+    for j in 0..<keyword.length() {
+      if ascii_data[i + 1 + j] != keyword[j].to_byte() {
+        match_ = false
+        break
+      }
+    }
+    if !match_ {
+      continue
+    }
+    let mut pos = i + 1 + keyword.length()
+    while pos < len && (ascii_data[pos] == b' ' || ascii_data[pos] == b'\t') {
+      pos += 1
+    }
+    if pos >= len || (ascii_data[pos] != b'[' && ascii_data[pos] != b'{') {
+      continue
+    }
+    pos += 1
+    let values : Array[Double] = []
+    while pos < len && values.length() < 6 {
+      while pos < len &&
+            (
+              ascii_data[pos] == b' ' ||
+              ascii_data[pos] == b'\t' ||
+              ascii_data[pos] == b'\n' ||
+              ascii_data[pos] == b'\r'
+            ) {
+        pos += 1
+      }
+      if pos >= len || ascii_data[pos] == b']' || ascii_data[pos] == b'}' {
+        break
+      }
+      let start = pos
+      if ascii_data[pos] == b'+' || ascii_data[pos] == b'-' {
+        pos += 1
+      }
+      while pos < len &&
+            (
+              (ascii_data[pos] >= b'0' && ascii_data[pos] <= b'9') ||
+              ascii_data[pos] == b'.' ||
+              ascii_data[pos] == b'e' ||
+              ascii_data[pos] == b'E' ||
+              ascii_data[pos] == b'+' ||
+              ascii_data[pos] == b'-'
+            ) {
+        pos += 1
+      }
+      let buf = StringBuilder::new()
+      for j in start..<pos {
+        buf.write_char(Int::unsafe_to_char(ascii_data[j].to_int()))
+      }
+      let token = buf.to_string()
+      let value = @string.parse_double(token) catch { _ => 0.0 }
+      values.push(value)
+    }
+    if values.length() == 6 {
+      return values
+    }
+    break
+  }
+  [0.001, 0.0, 0.0, 0.001, 0.0, 0.0]
+}
+
+///|
+fn units_per_em_from_font_matrix(font_matrix : Array[Double]) -> Int {
+  if font_matrix.length() < 4 {
+    return 1000
+  }
+  let yy = font_matrix[3]
+  let scale = (if yy < 0.0 { -yy } else { yy }) * 1000.0
+  if scale <= 0.0 {
+    1000
+  } else {
+    let upem = 1000.0 / scale
+    if upem < 1.0 {
+      1
+    } else if upem < 32767.0 {
+      if upem < 0.0 {
+        (upem - 0.5).to_int()
+      } else {
+        (upem + 0.5).to_int()
+      }
+    } else {
+      32767
+    }
+  }
 }
 
 ///|
@@ -569,6 +671,17 @@ fn parse_encoding(ascii_data : Bytes) -> Array[String] {
     }
   }
   encoding
+}
+
+///|
+fn has_custom_encoding(ascii_data : Bytes) -> Bool {
+  let len = ascii_data.length()
+  if bytes_find(ascii_data, len, b"StandardEncoding") >= 0 &&
+    bytes_find(ascii_data, len, b"/Encoding 256 array") < 0 {
+    return false
+  }
+  bytes_find(ascii_data, len, b"/Encoding 256 array") >= 0 ||
+  bytes_find(ascii_data, len, b"dup ") >= 0
 }
 
 ///|
@@ -825,6 +938,11 @@ pub fn Type1Font::encoding(self : Type1Font) -> Array[String] {
 }
 
 ///|
+pub fn Type1Font::custom_encoding(self : Type1Font) -> Bool {
+  self.custom_encoding
+}
+
+///|
 pub fn Type1Font::subrs(self : Type1Font) -> Array[Bytes] {
   self.subrs
 }
@@ -852,6 +970,11 @@ pub fn Type1Font::len_iv(self : Type1Font) -> Int {
 ///|
 pub fn Type1Font::paint_type(self : Type1Font) -> Int {
   self.paint_type
+}
+
+///|
+pub fn Type1Font::font_matrix(self : Type1Font) -> Array[Double] {
+  self.font_matrix
 }
 
 ///|

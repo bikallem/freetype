@@ -4,6 +4,7 @@ import {
   "bikallem/freetype/types",
   "bikallem/freetype/psaux",
   "bikallem/freetype/psnames",
+  "moonbitlang/core/string",
 }
 
 warnings = "-20"

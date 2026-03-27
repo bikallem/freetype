@@ -18,6 +18,7 @@ FONT_DIR = os.path.join(os.path.dirname(__file__), "..", "fonts")
 SKIP_HINTED_BBOX_FIXTURES = {
     "Nabla[EDPT,EHLT].ttf",
     "minimal_collection.woff2",
+    "minimal_collection_v2.woff2",
     "minimal_colr_v0.ttf",
     "minimal_colr_v1.ttf",
     "minimal_colr_v1_gradients.ttf",

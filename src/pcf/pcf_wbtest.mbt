@@ -37,3 +37,21 @@ test "parse_pcf_header invalid signature" {
   }
   inspect(result is Err(_), content="true")
 }
+
+///|
+test "bitmap_for_glyph swaps 8-byte scan units when bit and byte order differ" {
+  let font = PcfFont::new()
+  font.bitmap_offsets = [0]
+  font.bitmap_data = [1, 2, 3, 4, 5, 6, 7, 8]
+  font.bitmaps_format = 0x38U
+  let bitmap = font.bitmap_for_glyph(0)
+  inspect(bitmap.length(), content="8")
+  inspect(bitmap[0].to_int(), content="8")
+  inspect(bitmap[1].to_int(), content="7")
+  inspect(bitmap[2].to_int(), content="6")
+  inspect(bitmap[3].to_int(), content="5")
+  inspect(bitmap[4].to_int(), content="4")
+  inspect(bitmap[5].to_int(), content="3")
+  inspect(bitmap[6].to_int(), content="2")
+  inspect(bitmap[7].to_int(), content="1")
+}

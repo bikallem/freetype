@@ -296,10 +296,10 @@ test "outline_decompose: invalid contour metadata returns InvalidOutline" {
     1,
   )
   let funcs = OutlineFuncs::new(
-    move_to=fn(_) {},
-    line_to=fn(_) {},
-    conic_to=fn(_, _) {},
-    cubic_to=fn(_, _, _) {},
+    move_to=fn(_) {  },
+    line_to=fn(_) {  },
+    conic_to=fn(_, _) {  },
+    cubic_to=fn(_, _, _) {  },
   )
   let result = try? outline_decompose(outline, funcs)
   inspect(result, content="Err(InvalidOutline)")

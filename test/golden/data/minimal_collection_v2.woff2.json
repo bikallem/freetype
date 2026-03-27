@@ -3,7 +3,7 @@
     "family_name": "Minimal",
     "style_name": "Regular",
     "num_glyphs": 3,
-    "num_faces": 1,
+    "num_faces": 2,
     "units_per_em": 1000,
     "ascender": 800,
     "descender": -200,
@@ -13,8 +13,8 @@
     "face_flags": 2073,
     "style_flags": 0,
     "num_charmaps": 1,
-    "underline_position": 0,
-    "underline_thickness": 0
+    "underline_position": -125,
+    "underline_thickness": 50
   },
   "charmaps": [
     {

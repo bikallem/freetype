@@ -26,9 +26,11 @@ pub fn parse_type1_pfb(Bytes) -> Type1Font raise @error.FTError
 type Type1Font derive(Show)
 pub fn Type1Font::blue_values(Self) -> Array[Int]
 pub fn Type1Font::charstrings(Self) -> Map[String, Bytes]
+pub fn Type1Font::custom_encoding(Self) -> Bool
 pub fn Type1Font::encoding(Self) -> Array[String]
 pub fn Type1Font::family_name(Self) -> String
 pub fn Type1Font::font_bbox(Self) -> Array[Int]
+pub fn Type1Font::font_matrix(Self) -> Array[Double]
 pub fn Type1Font::font_name(Self) -> String
 pub fn Type1Font::glyph_order(Self) -> Array[String]
 pub fn Type1Font::len_iv(Self) -> Int
