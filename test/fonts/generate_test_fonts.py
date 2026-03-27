@@ -354,30 +354,155 @@ def build_post_table() -> bytes:
                        0)
 
 
+def png_chunk(tag: bytes, payload: bytes) -> bytes:
+    return (
+        struct.pack(">I", len(payload))
+        + tag
+        + payload
+        + struct.pack(">I", zlib.crc32(tag + payload) & 0xFFFFFFFF)
+    )
+
+
+def pack_png_samples(samples: list[int], bit_depth: int) -> bytes:
+    if bit_depth == 8:
+        return bytes(samples)
+    if bit_depth == 16:
+        out = bytearray()
+        for sample in samples:
+            out.extend(struct.pack(">H", sample))
+        return bytes(out)
+    if bit_depth not in (1, 2, 4):
+        raise ValueError(f"unsupported packed PNG bit depth {bit_depth}")
+    max_sample = (1 << bit_depth) - 1
+    out = bytearray()
+    acc = 0
+    bits = 0
+    for sample in samples:
+        if not 0 <= sample <= max_sample:
+            raise ValueError(f"sample {sample} out of range for bit depth {bit_depth}")
+        acc = (acc << bit_depth) | sample
+        bits += bit_depth
+        if bits == 8:
+            out.append(acc)
+            acc = 0
+            bits = 0
+    if bits:
+        out.append(acc << (8 - bits))
+    return bytes(out)
+
+
+def build_png_from_packed_rows(
+    width: int,
+    height: int,
+    color_type: int,
+    bit_depth: int,
+    packed_rows: list[bytes],
+    *,
+    palette: list[tuple[int, int, int]] | None = None,
+    transparency: bytes | None = None,
+    interlace: int = 0,
+) -> bytes:
+    assert len(packed_rows) == height
+    raw = bytearray()
+    for row in packed_rows:
+        raw.append(0)
+        raw.extend(row)
+    ihdr = struct.pack(">IIBBBBB", width, height, bit_depth, color_type, 0, 0, interlace)
+    chunks = [png_chunk(b"IHDR", ihdr)]
+    if palette is not None:
+        plte = bytearray()
+        for red, green, blue in palette:
+            plte.extend(bytes([red, green, blue]))
+        chunks.append(png_chunk(b"PLTE", bytes(plte)))
+    if transparency is not None:
+        chunks.append(png_chunk(b"tRNS", transparency))
+    chunks.append(png_chunk(b"IDAT", zlib.compress(bytes(raw))))
+    chunks.append(png_chunk(b"IEND", b""))
+    return b"\x89PNG\r\n\x1a\n" + b"".join(chunks)
+
+
 def build_rgba_png(width: int, height: int, pixels: bytes) -> bytes:
     """Build a tiny non-interlaced RGBA PNG."""
     assert len(pixels) == width * height * 4
+    rows = [
+        pixels[y * width * 4:(y + 1) * width * 4]
+        for y in range(height)
+    ]
+    return build_png_from_packed_rows(width, height, 6, 8, rows)
+
+
+def build_graya_png(width: int, height: int, pixels: bytes) -> bytes:
+    assert len(pixels) == width * height * 2
+    rows = [
+        pixels[y * width * 2:(y + 1) * width * 2]
+        for y in range(height)
+    ]
+    return build_png_from_packed_rows(width, height, 4, 8, rows)
+
+
+def build_gray_png(width: int, height: int, values: list[int], bit_depth: int = 8) -> bytes:
+    assert len(values) == width * height
+    rows = [
+        pack_png_samples(values[y * width:(y + 1) * width], bit_depth)
+        for y in range(height)
+    ]
+    return build_png_from_packed_rows(width, height, 0, bit_depth, rows)
+
+
+def build_indexed_png(
+    width: int,
+    height: int,
+    indexes: list[int],
+    palette: list[tuple[int, int, int]],
+    *,
+    alphas: list[int] | None = None,
+    bit_depth: int = 8,
+) -> bytes:
+    assert len(indexes) == width * height
+    rows = [
+        pack_png_samples(indexes[y * width:(y + 1) * width], bit_depth)
+        for y in range(height)
+    ]
+    transparency = None if alphas is None else bytes(alphas)
+    return build_png_from_packed_rows(
+        width,
+        height,
+        3,
+        bit_depth,
+        rows,
+        palette=palette,
+        transparency=transparency,
+    )
+
+
+def build_interlaced_rgba_png(width: int, height: int, pixels: bytes) -> bytes:
+    assert len(pixels) == width * height * 4
+    passes = [
+        (0, 0, 8, 8),
+        (4, 0, 8, 8),
+        (0, 4, 4, 8),
+        (2, 0, 4, 4),
+        (0, 2, 2, 4),
+        (1, 0, 2, 2),
+        (0, 1, 1, 2),
+    ]
     raw = bytearray()
-    stride = width * 4
-    for y in range(height):
-        raw.append(0)  # filter type 0
-        raw.extend(pixels[y * stride:(y + 1) * stride])
-
-    def chunk(tag: bytes, payload: bytes) -> bytes:
-        return (
-            struct.pack(">I", len(payload))
-            + tag
-            + payload
-            + struct.pack(">I", zlib.crc32(tag + payload) & 0xFFFFFFFF)
-        )
-
-    ihdr = struct.pack(">IIBBBBB", width, height, 8, 6, 0, 0, 0)
-    idat = zlib.compress(bytes(raw))
+    for start_x, start_y, step_x, step_y in passes:
+        cols = list(range(start_x, width, step_x))
+        rows = list(range(start_y, height, step_y))
+        if not cols or not rows:
+            continue
+        for y in rows:
+            raw.append(0)
+            for x in cols:
+                off = (y * width + x) * 4
+                raw.extend(pixels[off:off + 4])
+    ihdr = struct.pack(">IIBBBBB", width, height, 8, 6, 0, 0, 1)
     return (
         b"\x89PNG\r\n\x1a\n"
-        + chunk(b"IHDR", ihdr)
-        + chunk(b"IDAT", idat)
-        + chunk(b"IEND", b"")
+        + png_chunk(b"IHDR", ihdr)
+        + png_chunk(b"IDAT", zlib.compress(bytes(raw)))
+        + png_chunk(b"IEND", b"")
     )
 
 
@@ -446,6 +571,228 @@ def build_cblc_table(png_data: bytes) -> bytes:
         index_subtable_array +
         index_subtable
     )
+
+
+def build_small_metrics_bytes(
+    width: int,
+    height: int,
+    hori_bearing_x: int,
+    hori_bearing_y: int,
+    hori_advance: int,
+) -> bytes:
+    return bytes([
+        width & 0xFF,
+        height & 0xFF,
+        hori_bearing_x & 0xFF,
+        hori_bearing_y & 0xFF,
+        hori_advance & 0xFF,
+    ])
+
+
+def build_big_metrics_bytes(
+    width: int,
+    height: int,
+    hori_bearing_x: int,
+    hori_bearing_y: int,
+    hori_advance: int,
+    vert_bearing_x: int,
+    vert_bearing_y: int,
+    vert_advance: int,
+) -> bytes:
+    return bytes([
+        width & 0xFF,
+        height & 0xFF,
+        hori_bearing_x & 0xFF,
+        hori_bearing_y & 0xFF,
+        hori_advance & 0xFF,
+        vert_bearing_x & 0xFF,
+        vert_bearing_y & 0xFF,
+        vert_advance & 0xFF,
+    ])
+
+
+def pack_sbit_pixels(
+    width: int,
+    height: int,
+    bit_depth: int,
+    values: list[int],
+    *,
+    byte_aligned: bool,
+) -> bytes:
+    assert len(values) == width * height
+    if byte_aligned:
+        rows = []
+        for y in range(height):
+            rows.append(pack_png_samples(values[y * width:(y + 1) * width], bit_depth))
+        return b"".join(rows)
+    return pack_png_samples(values, bit_depth)
+
+
+def build_cbdt_sbit_glyph(
+    image_format: int,
+    width: int,
+    height: int,
+    bit_depth: int,
+    values: list[int],
+    *,
+    hori_bearing_x: int = 0,
+    hori_bearing_y: int | None = None,
+    hori_advance: int | None = None,
+    vert_bearing_x: int = 0,
+    vert_bearing_y: int = 0,
+    vert_advance: int | None = None,
+) -> tuple[bytes, bytes | None]:
+    if hori_bearing_y is None:
+        hori_bearing_y = height
+    if hori_advance is None:
+        hori_advance = width + 1
+    if vert_advance is None:
+        vert_advance = height + 2
+    if image_format in (1, 2):
+        data = build_small_metrics_bytes(
+            width, height, hori_bearing_x, hori_bearing_y, hori_advance,
+        )
+        data += pack_sbit_pixels(width, height, bit_depth, values, byte_aligned=(image_format == 1))
+        return data, None
+    if image_format == 5:
+        big = build_big_metrics_bytes(
+            width,
+            height,
+            hori_bearing_x,
+            hori_bearing_y,
+            hori_advance,
+            vert_bearing_x,
+            vert_bearing_y,
+            vert_advance,
+        )
+        data = pack_sbit_pixels(width, height, bit_depth, values, byte_aligned=False)
+        return data, big
+    if image_format in (6, 7):
+        data = build_big_metrics_bytes(
+            width,
+            height,
+            hori_bearing_x,
+            hori_bearing_y,
+            hori_advance,
+            vert_bearing_x,
+            vert_bearing_y,
+            vert_advance,
+        )
+        data += pack_sbit_pixels(width, height, bit_depth, values, byte_aligned=(image_format == 6))
+        return data, None
+    raise ValueError(f"unsupported CBDT sbit format {image_format}")
+
+
+def build_cbdt_compound_glyph(
+    image_format: int,
+    width: int,
+    height: int,
+    components: list[tuple[int, int, int]],
+    *,
+    hori_bearing_x: int = 0,
+    hori_bearing_y: int | None = None,
+    hori_advance: int | None = None,
+    vert_bearing_x: int = 0,
+    vert_bearing_y: int = 0,
+    vert_advance: int | None = None,
+) -> bytes:
+    if hori_bearing_y is None:
+        hori_bearing_y = height
+    if hori_advance is None:
+        hori_advance = width + 1
+    if vert_advance is None:
+        vert_advance = height + 2
+    comp = struct.pack(">H", len(components))
+    for glyph_id, dx, dy in components:
+        comp += struct.pack(">Hbb", glyph_id, dx, dy)
+    if image_format == 8:
+        return (
+            build_small_metrics_bytes(width, height, hori_bearing_x, hori_bearing_y, hori_advance)
+            + b"\x00"
+            + comp
+        )
+    if image_format == 9:
+        return (
+            build_big_metrics_bytes(
+                width,
+                height,
+                hori_bearing_x,
+                hori_bearing_y,
+                hori_advance,
+                vert_bearing_x,
+                vert_bearing_y,
+                vert_advance,
+            )
+            + comp
+        )
+    raise ValueError(f"unsupported CBDT compound format {image_format}")
+
+
+def build_cbdt_all_tables(records: list[dict], *, num_glyphs: int, bit_depth: int = 4, ppem: int = 16) -> tuple[bytes, bytes]:
+    cbdt = bytearray(struct.pack(">I", 0x00020000))
+    glyph_offsets = {}
+    for record in records:
+        glyph_offsets[record["glyph_id"]] = len(cbdt)
+        cbdt.extend(record["data"])
+
+    header_size = 8
+    bitmap_size_table_offset = header_size
+    bitmap_size_table_size = 48
+    array_offset = bitmap_size_table_offset + bitmap_size_table_size
+    array_size = len(records) * 8
+    subtable_base = array_offset + array_size
+
+    subtables = []
+    for record in records:
+        image_offset = glyph_offsets[record["glyph_id"]]
+        image_size = len(record["data"])
+        if record["index_format"] == 1:
+            subtable = (
+                struct.pack(">HHI", 1, record["image_format"], image_offset) +
+                struct.pack(">II", 0, image_size)
+            )
+        elif record["index_format"] == 2:
+            assert record.get("fallback_metrics") is not None
+            subtable = (
+                struct.pack(">HHI", 2, record["image_format"], image_offset) +
+                struct.pack(">I", image_size) +
+                record["fallback_metrics"]
+            )
+        elif record["index_format"] == 5:
+            assert record.get("fallback_metrics") is not None
+            subtable = (
+                struct.pack(">HHI", 5, record["image_format"], image_offset) +
+                struct.pack(">I", image_size) +
+                record["fallback_metrics"] +
+                struct.pack(">I", 1) +
+                struct.pack(">H", record["glyph_id"])
+            )
+        else:
+            raise ValueError(f"unsupported index format {record['index_format']}")
+        subtables.append(subtable)
+
+    array_entries = bytearray()
+    subtable_offset = array_size
+    for record, subtable in zip(records, subtables):
+        array_entries.extend(struct.pack(">HHI", record["glyph_id"], record["glyph_id"], subtable_offset))
+        subtable_offset += len(subtable)
+
+    bitmap_size_table = (
+        struct.pack(">I", array_offset) +
+        struct.pack(">I", array_size + sum(len(subtable) for subtable in subtables)) +
+        struct.pack(">I", len(records)) +
+        struct.pack(">I", 0) +
+        b"\x00" * 24 +
+        struct.pack(">HH", min(record["glyph_id"] for record in records), max(record["glyph_id"] for record in records)) +
+        bytes([ppem, ppem, bit_depth, 1])
+    )
+
+    cblc = bytearray(struct.pack(">II", 0x00020000, 1))
+    cblc.extend(bitmap_size_table)
+    cblc.extend(array_entries)
+    for subtable in subtables:
+        cblc.extend(subtable)
+    return bytes(cbdt), bytes(cblc)
 
 
 def build_cmap_table_pairs(mapping: dict[int, int]) -> bytes:
@@ -570,6 +917,10 @@ def pack_u24(value: int) -> bytes:
     return bytes([(value >> 16) & 0xFF, (value >> 8) & 0xFF, value & 0xFF])
 
 
+def patch_u24(buf: bytearray, offset: int, value: int) -> None:
+    buf[offset:offset + 3] = pack_u24(value)
+
+
 def build_colr_v1_table() -> bytes:
     """Build a small COLR v1 table using PaintGlyph, ColrGlyph, Translate, and Scale."""
     root4 = bytes([1, 2]) + struct.pack(">I", 0)  # PaintColrLayers, 2 layers
@@ -618,6 +969,146 @@ def build_colr_v1_table() -> bytes:
     data += struct.pack(">I", layer1_offset - layer_v1_offset)
     data += root4 + layer0 + layer0_solid + layer1 + layer1_colrglyph + root5 + root5_glyph + root5_solid
     return data
+
+
+def build_color_line(stops: list[tuple[int, int, int]], extend: int = 0) -> bytes:
+    data = bytearray([extend])
+    data.extend(struct.pack(">H", len(stops)))
+    for stop_offset, palette_index, alpha in stops:
+        data.extend(struct.pack(">hHh", stop_offset, palette_index, alpha))
+    return bytes(data)
+
+
+def build_colr_v1_gradients_table() -> bytes:
+    items: dict[str, bytearray] = {
+        "root4": bytearray(bytes([1, 2]) + struct.pack(">I", 0)),
+        "layer4a": bytearray(bytes([10]) + b"\x00\x00\x00" + struct.pack(">H", 2)),
+        "layer4b": bytearray(bytes([14]) + b"\x00\x00\x00" + struct.pack(">hh", 48, 0)),
+        "linear": bytearray(bytes([4]) + b"\x00\x00\x00" + struct.pack(">hhhhhh", 50, 0, 450, 0, 50, 400)),
+        "glyph3_radial": bytearray(bytes([10]) + b"\x00\x00\x00" + struct.pack(">H", 3)),
+        "radial": bytearray(bytes([6]) + b"\x00\x00\x00" + struct.pack(">hhhhhh", 220, 220, 40, 250, 250, 220)),
+        "root5": bytearray(bytes([32]) + b"\x00\x00\x00" + bytes([23]) + b"\x00\x00\x00"),
+        "source_rotate": bytearray(bytes([26]) + b"\x00\x00\x00" + struct.pack(">hhh", 0x1000, 250, 300)),
+        "source_skew": bytearray(bytes([30]) + b"\x00\x00\x00" + struct.pack(">hhhh", 0x0800, 0, 250, 250)),
+        "source_glyph": bytearray(bytes([10]) + b"\x00\x00\x00" + struct.pack(">H", 3)),
+        "sweep": bytearray(bytes([8]) + b"\x00\x00\x00" + struct.pack(">hhhh", 250, 250, 0, 0x4000)),
+        "backdrop_scale": bytearray(bytes([22]) + b"\x00\x00\x00" + struct.pack(">hhh", 0x3800, 250, 250)),
+        "backdrop_colrglyph": bytearray(bytes([11]) + struct.pack(">H", 4)),
+        "linear_line": bytearray(build_color_line([(0, 0, 0x4000), (0x2000, 1, 0x4000), (0x4000, 2, 0x4000)])),
+        "radial_line": bytearray(build_color_line([(0, 1, 0x4000), (0x4000, 0, 0x4000)])),
+        "sweep_line": bytearray(build_color_line([(0, 2, 0x4000), (0x2000, 1, 0x3000), (0x4000, 0, 0x4000)], extend=1)),
+    }
+    order = list(items.keys())
+
+    header = (
+        struct.pack(">H", 1) +
+        struct.pack(">H", 0) +
+        struct.pack(">I", 0) +
+        struct.pack(">I", 0) +
+        struct.pack(">H", 0)
+    )
+    base_v1_offset = 34
+    layer_v1_offset = base_v1_offset + 4 + 2 * 6
+    paints_start = layer_v1_offset + 4 + 2 * 4
+    offsets = {}
+    pos = paints_start
+    for name in order:
+        offsets[name] = pos
+        pos += len(items[name])
+
+    patch_u24(items["layer4a"], 1, offsets["linear"] - offsets["layer4a"])
+    patch_u24(items["layer4b"], 1, offsets["glyph3_radial"] - offsets["layer4b"])
+    patch_u24(items["linear"], 1, offsets["linear_line"] - offsets["linear"])
+    patch_u24(items["glyph3_radial"], 1, offsets["radial"] - offsets["glyph3_radial"])
+    patch_u24(items["radial"], 1, offsets["radial_line"] - offsets["radial"])
+    patch_u24(items["root5"], 1, offsets["source_rotate"] - offsets["root5"])
+    patch_u24(items["root5"], 5, offsets["backdrop_scale"] - offsets["root5"])
+    patch_u24(items["source_rotate"], 1, offsets["source_skew"] - offsets["source_rotate"])
+    patch_u24(items["source_skew"], 1, offsets["source_glyph"] - offsets["source_skew"])
+    patch_u24(items["source_glyph"], 1, offsets["sweep"] - offsets["source_glyph"])
+    patch_u24(items["sweep"], 1, offsets["sweep_line"] - offsets["sweep"])
+    patch_u24(items["backdrop_scale"], 1, offsets["backdrop_colrglyph"] - offsets["backdrop_scale"])
+
+    clip_list_offset = pos
+    clip_box_offset = clip_list_offset + 5 + 7
+    clip_list = (
+        bytes([1]) +
+        struct.pack(">I", 1) +
+        struct.pack(">HH", 5, 5) +
+        pack_u24(clip_box_offset - clip_list_offset)
+    )
+    clip_box = bytes([1]) + struct.pack(">hhhh", 100, 80, 400, 560)
+
+    data = bytearray(header)
+    data.extend(struct.pack(">I", base_v1_offset))
+    data.extend(struct.pack(">I", layer_v1_offset))
+    data.extend(struct.pack(">I", clip_list_offset))
+    data.extend(struct.pack(">II", 0, 0))
+    data.extend(struct.pack(">I", 2))
+    data.extend(struct.pack(">HI", 4, offsets["root4"] - base_v1_offset))
+    data.extend(struct.pack(">HI", 5, offsets["root5"] - base_v1_offset))
+    data.extend(struct.pack(">I", 2))
+    data.extend(struct.pack(">I", offsets["layer4a"] - layer_v1_offset))
+    data.extend(struct.pack(">I", offsets["layer4b"] - layer_v1_offset))
+    for name in order:
+        data.extend(items[name])
+    data.extend(clip_list)
+    data.extend(clip_box)
+    return bytes(data)
+
+
+def build_item_var_store_short(deltas: list[int]) -> bytes:
+    region_list = (
+        struct.pack(">HH", 1, 1) +
+        struct.pack(">hhh", 0, 0x4000, 0x4000)
+    )
+    item_data = (
+        struct.pack(">HHH", len(deltas), 1, 1) +
+        struct.pack(">H", 0) +
+        b"".join(struct.pack(">h", delta) for delta in deltas)
+    )
+    return (
+        struct.pack(">HIH", 1, 12, 1) +
+        struct.pack(">I", 12 + len(region_list)) +
+        region_list +
+        item_data
+    )
+
+
+def build_colr_v1_var_table() -> bytes:
+    root = bytearray(bytes([15]) + b"\x00\x00\x00" + struct.pack(">hhI", 0, 0, 0))
+    glyph = bytearray(bytes([10]) + b"\x00\x00\x00" + struct.pack(">H", 2))
+    solid = bytearray(bytes([2]) + struct.pack(">Hh", 0, 0x4000))
+    header = (
+        struct.pack(">H", 1) +
+        struct.pack(">H", 0) +
+        struct.pack(">I", 0) +
+        struct.pack(">I", 0) +
+        struct.pack(">H", 0)
+    )
+    base_v1_offset = 34
+    layer_v1_offset = base_v1_offset + 4 + 1 * 6
+    paints_start = layer_v1_offset + 4
+    root_offset = paints_start
+    glyph_offset = root_offset + len(root)
+    solid_offset = glyph_offset + len(glyph)
+    patch_u24(root, 1, glyph_offset - root_offset)
+    patch_u24(glyph, 1, solid_offset - glyph_offset)
+    item_var_store_offset = solid_offset + len(solid)
+    item_var_store = build_item_var_store_short([120, 0])
+
+    data = bytearray(header)
+    data.extend(struct.pack(">I", base_v1_offset))
+    data.extend(struct.pack(">I", layer_v1_offset))
+    data.extend(struct.pack(">III", 0, 0, item_var_store_offset))
+    data.extend(struct.pack(">I", 1))
+    data.extend(struct.pack(">HI", 4, root_offset - base_v1_offset))
+    data.extend(struct.pack(">I", 0))
+    data.extend(root)
+    data.extend(glyph)
+    data.extend(solid)
+    data.extend(item_var_store)
+    return bytes(data)
 
 
 def build_colr_glyph_set() -> tuple[bytes, bytes, bytes, bytes]:
@@ -922,6 +1413,145 @@ def generate_cbdt_ttf() -> bytes:
     return assemble_sfnt(tables, sfnt_version=b'\x00\x01\x00\x00')
 
 
+def build_empty_glyph_font(num_glyphs: int) -> tuple[bytes, bytes]:
+    glyphs = [build_simple_glyph([]) for _ in range(num_glyphs)]
+    return build_glyf_and_loca_from_glyphs(glyphs)
+
+
+def generate_cbdt_all_ttf() -> bytes:
+    bit_depth = 4
+    png_gray = build_gray_png(
+        4,
+        4,
+        [
+            0x0, 0x5, 0xA, 0xF,
+            0xF, 0xA, 0x5, 0x0,
+            0x0, 0x5, 0xA, 0xF,
+            0xF, 0xA, 0x5, 0x0,
+        ],
+        bit_depth=4,
+    )
+    png_indexed = build_indexed_png(
+        4,
+        4,
+        [
+            0, 1, 2, 3,
+            3, 2, 1, 0,
+            0, 1, 2, 3,
+            3, 2, 1, 0,
+        ],
+        palette=[
+            (0x00, 0x00, 0x00),
+            (0xE0, 0x40, 0x20),
+            (0x20, 0xA0, 0xE0),
+            (0xF0, 0xE0, 0x20),
+        ],
+        alphas=[0x00, 0xFF, 0xC0, 0xFF],
+        bit_depth=2,
+    )
+    interlace_pixels = bytearray(4 * 4 * 4)
+    for y in range(4):
+        for x in range(4):
+            off = (y * 4 + x) * 4
+            if x == y or x + y == 3:
+                interlace_pixels[off:off + 4] = bytes([0x10, 0xA0, 0xF0, 0xFF])
+            else:
+                interlace_pixels[off:off + 4] = bytes([0x00, 0x00, 0x00, 0x00])
+    png_interlaced = build_interlaced_rgba_png(4, 4, bytes(interlace_pixels))
+
+    grayscale_values = [
+        0x0, 0x4, 0x8, 0xC,
+        0xC, 0x8, 0x4, 0x0,
+        0x0, 0x4, 0x8, 0xC,
+        0xC, 0x8, 0x4, 0x0,
+    ]
+    grayscale_alt = [
+        0x0, 0xF, 0x0, 0xF,
+        0x4, 0xB, 0x4, 0xB,
+        0x8, 0x7, 0x8, 0x7,
+        0xC, 0x3, 0xC, 0x3,
+    ]
+    grayscale_bar = [
+        0x0, 0x0, 0xF, 0xF,
+        0x0, 0x0, 0xF, 0xF,
+        0xF, 0xF, 0x0, 0x0,
+        0xF, 0xF, 0x0, 0x0,
+    ]
+
+    records = []
+    records.append({
+        "glyph_id": 2,
+        "index_format": 1,
+        "image_format": 17,
+        "data": build_cbdt_png_glyph(png_gray),
+    })
+    format18 = build_big_metrics_bytes(4, 4, 0, 4, 5, 0, 0, 6) + struct.pack(">I", len(png_indexed)) + png_indexed
+    records.append({
+        "glyph_id": 3,
+        "index_format": 1,
+        "image_format": 18,
+        "data": format18,
+    })
+    records.append({
+        "glyph_id": 4,
+        "index_format": 2,
+        "image_format": 19,
+        "data": struct.pack(">I", len(png_interlaced)) + png_interlaced,
+        "fallback_metrics": build_big_metrics_bytes(4, 4, 0, 4, 5, 0, 0, 6),
+    })
+    data1, _ = build_cbdt_sbit_glyph(1, 4, 4, bit_depth, grayscale_values)
+    records.append({"glyph_id": 5, "index_format": 1, "image_format": 1, "data": data1})
+    data2, _ = build_cbdt_sbit_glyph(2, 4, 4, bit_depth, grayscale_alt)
+    records.append({"glyph_id": 6, "index_format": 1, "image_format": 2, "data": data2})
+    data5, metrics5 = build_cbdt_sbit_glyph(5, 4, 4, bit_depth, grayscale_bar)
+    records.append({
+        "glyph_id": 7,
+        "index_format": 5,
+        "image_format": 5,
+        "data": data5,
+        "fallback_metrics": metrics5,
+    })
+    data6, _ = build_cbdt_sbit_glyph(6, 4, 4, bit_depth, grayscale_values)
+    records.append({"glyph_id": 8, "index_format": 1, "image_format": 6, "data": data6})
+    data7, _ = build_cbdt_sbit_glyph(7, 4, 4, bit_depth, grayscale_alt)
+    records.append({"glyph_id": 9, "index_format": 1, "image_format": 7, "data": data7})
+    data8 = build_cbdt_compound_glyph(8, 4, 4, [(5, 0, 0), (6, 0, 0)])
+    records.append({"glyph_id": 10, "index_format": 1, "image_format": 8, "data": data8})
+    data9 = build_cbdt_compound_glyph(9, 4, 4, [(8, 0, 0), (9, 0, 0)])
+    records.append({"glyph_id": 11, "index_format": 1, "image_format": 9, "data": data9})
+
+    glyf_data, loca_data = build_empty_glyph_font(12)
+    hmtx = build_hmtx_table_entries([(500, 0)] * 12)
+    cmap = build_cmap_table_pairs({
+        65: 2,
+        66: 3,
+        67: 4,
+        68: 5,
+        69: 6,
+        97: 7,
+        98: 8,
+        99: 9,
+        100: 10,
+        101: 11,
+    })
+    cbdt_table, cblc_table = build_cbdt_all_tables(records, num_glyphs=12, bit_depth=bit_depth)
+    tables = {
+        'head': build_head_table(x_min=0, y_min=0, x_max=4, y_max=4, index_to_loc_format=0),
+        'hhea': build_hhea_table(num_hmetrics=12, advance_width_max=500),
+        'maxp': build_maxp_table(num_glyphs=12, max_points=0, max_contours=0),
+        'OS/2': build_os2_table(),
+        'name': build_name_table(family='Minimal CBDT All', style='Regular'),
+        'cmap': cmap,
+        'post': build_post_table(),
+        'glyf': glyf_data,
+        'loca': loca_data,
+        'hmtx': hmtx,
+        'CBDT': cbdt_table,
+        'CBLC': cblc_table,
+    }
+    return assemble_sfnt(tables, sfnt_version=b'\x00\x01\x00\x00')
+
+
 def generate_colr_v0_ttf() -> bytes:
     glyf_data, loca_data, hmtx, cmap = build_colr_glyph_set()
     palettes = [
@@ -966,6 +1596,60 @@ def generate_colr_v1_ttf() -> bytes:
         'hmtx': hmtx,
         'CPAL': build_cpal_table(palettes),
         'COLR': build_colr_v1_table(),
+    }
+    return assemble_sfnt(tables, sfnt_version=b'\x00\x01\x00\x00')
+
+
+def generate_colr_v1_gradients_ttf() -> bytes:
+    glyf_data, loca_data, hmtx, _ = build_colr_glyph_set()
+    cmap = build_cmap_table_pairs({32: 1, 65: 4, 97: 5})
+    palettes = [
+        [
+            (0x00, 0x00, 0xFF, 0xFF),
+            (0x00, 0xFF, 0x00, 0xFF),
+            (0xFF, 0x00, 0x00, 0xFF),
+        ],
+        [
+            (0xFF, 0xFF, 0x00, 0xFF),
+            (0xFF, 0x00, 0xFF, 0xFF),
+            (0x00, 0xFF, 0xFF, 0xFF),
+        ],
+    ]
+    tables = {
+        'head': build_head_table(x_min=0, y_min=0, x_max=450, y_max=700, index_to_loc_format=0),
+        'hhea': build_hhea_table(num_hmetrics=6, advance_width_max=500),
+        'maxp': build_maxp_table(num_glyphs=6, max_points=3, max_contours=1),
+        'OS/2': build_os2_table(),
+        'name': build_name_table(family='Minimal COLR V1 Gradients', style='Regular'),
+        'cmap': cmap,
+        'post': build_post_table(),
+        'glyf': glyf_data,
+        'loca': loca_data,
+        'hmtx': hmtx,
+        'CPAL': build_cpal_table(palettes),
+        'COLR': build_colr_v1_gradients_table(),
+    }
+    return assemble_sfnt(tables, sfnt_version=b'\x00\x01\x00\x00')
+
+
+def generate_colr_v1_var_ttf() -> bytes:
+    glyf_data, loca_data, hmtx, _ = build_colr_glyph_set()
+    cmap = build_cmap_table_pairs({32: 1, 65: 4})
+    palettes = [[(0x00, 0x00, 0xFF, 0xFF)]]
+    tables = {
+        'head': build_head_table(x_min=0, y_min=0, x_max=450, y_max=700, index_to_loc_format=0),
+        'hhea': build_hhea_table(num_hmetrics=6, advance_width_max=500),
+        'maxp': build_maxp_table(num_glyphs=6, max_points=3, max_contours=1),
+        'OS/2': build_os2_table(),
+        'name': build_name_table(family='Minimal COLR V1 Var', style='Regular'),
+        'cmap': cmap,
+        'post': build_post_table(),
+        'glyf': glyf_data,
+        'loca': loca_data,
+        'hmtx': hmtx,
+        'fvar': build_fvar_table(),
+        'CPAL': build_cpal_table(palettes),
+        'COLR': build_colr_v1_var_table(),
     }
     return assemble_sfnt(tables, sfnt_version=b'\x00\x01\x00\x00')
 
@@ -1570,6 +2254,13 @@ def main():
         f.write(cbdt_data)
     print(f"  Written {len(cbdt_data)} bytes to {cbdt_path}")
 
+    print("Generating minimal_cbdt_all.ttf...")
+    cbdt_all_data = generate_cbdt_all_ttf()
+    cbdt_all_path = os.path.join(SCRIPT_DIR, 'minimal_cbdt_all.ttf')
+    with open(cbdt_all_path, 'wb') as f:
+        f.write(cbdt_all_data)
+    print(f"  Written {len(cbdt_all_data)} bytes to {cbdt_all_path}")
+
     print("Generating minimal_colr_v0.ttf...")
     colr_v0_data = generate_colr_v0_ttf()
     colr_v0_path = os.path.join(SCRIPT_DIR, 'minimal_colr_v0.ttf')
@@ -1583,6 +2274,20 @@ def main():
     with open(colr_v1_path, 'wb') as f:
         f.write(colr_v1_data)
     print(f"  Written {len(colr_v1_data)} bytes to {colr_v1_path}")
+
+    print("Generating minimal_colr_v1_gradients.ttf...")
+    colr_v1_gradients_data = generate_colr_v1_gradients_ttf()
+    colr_v1_gradients_path = os.path.join(SCRIPT_DIR, 'minimal_colr_v1_gradients.ttf')
+    with open(colr_v1_gradients_path, 'wb') as f:
+        f.write(colr_v1_gradients_data)
+    print(f"  Written {len(colr_v1_gradients_data)} bytes to {colr_v1_gradients_path}")
+
+    print("Generating minimal_colr_v1_var.ttf...")
+    colr_v1_var_data = generate_colr_v1_var_ttf()
+    colr_v1_var_path = os.path.join(SCRIPT_DIR, 'minimal_colr_v1_var.ttf')
+    with open(colr_v1_var_path, 'wb') as f:
+        f.write(colr_v1_var_data)
+    print(f"  Written {len(colr_v1_var_data)} bytes to {colr_v1_var_path}")
 
     # MVAR TTF
     print("Generating mvar.ttf...")

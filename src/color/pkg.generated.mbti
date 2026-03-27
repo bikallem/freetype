@@ -38,6 +38,8 @@ pub fn premultiply_bgra(@types.Color, Int) -> (Byte, Byte, Byte, Byte)
 
 pub fn surface_from_mask(GrayMaskSurface, @types.Color, alpha_scale? : Int) -> BgraSurface
 
+pub fn surface_from_mask_sampler(GrayMaskSurface, (Int, Int, Int) -> (Byte, Byte, Byte, Byte)) -> BgraSurface
+
 // Errors
 
 // Types and methods
@@ -58,6 +60,8 @@ pub fn BgraSurface::rows(Self) -> Int
 pub fn BgraSurface::to_bitmap(Self) -> (@types.Bitmap, Int, Int)
 pub fn BgraSurface::top(Self) -> Int
 pub fn BgraSurface::width(Self) -> Int
+
+type CblcGlyphLocation derive(Show)
 
 type CblcMetrics derive(Show)
 
@@ -83,9 +87,40 @@ pub fn ColorTables::palette_data(Self) -> @types.PaletteData?
 pub fn ColorTables::sbix(Self) -> SbixTable?
 pub fn ColorTables::select_palette(Self, UInt) -> Array[@types.Color]?
 
+pub(all) struct ColrClipBox {
+  x_min : Int64
+  y_min : Int64
+  x_max : Int64
+  y_max : Int64
+} derive(Eq, Show)
+pub fn ColrClipBox::x_max(Self) -> Int64
+pub fn ColrClipBox::x_min(Self) -> Int64
+pub fn ColrClipBox::y_max(Self) -> Int64
+pub fn ColrClipBox::y_min(Self) -> Int64
+
+pub(all) struct ColrColorLine {
+  extend : Int
+  stops : Array[ColrColorStop]
+} derive(Show)
+pub fn ColrColorLine::extend(Self) -> Int
+pub fn ColrColorLine::stops(Self) -> Array[ColrColorStop]
+
+pub(all) struct ColrColorStop {
+  stop_offset : @fixed.Fixed
+  palette_index : UInt
+  alpha : Int
+  order : Int
+} derive(Eq, Show)
+pub fn ColrColorStop::alpha(Self) -> Int
+pub fn ColrColorStop::palette_index(Self) -> UInt
+pub fn ColrColorStop::stop_offset(Self) -> @fixed.Fixed
+
 pub(all) enum ColrPaint {
   ColrLayers(Int, Int)
   Solid(UInt, Int)
+  LinearGradient(ColrColorLine, Int64, Int64, Int64, Int64, Int64, Int64)
+  RadialGradient(ColrColorLine, Int64, Int64, Int64, Int64, Int64, Int64)
+  SweepGradient(ColrColorLine, Int64, Int64, @fixed.Fixed, @fixed.Fixed)
   Glyph(Int, UInt)
   ColrGlyph(UInt)
   Transform(Int, @fixed.Matrix, Int64, Int64)
@@ -108,9 +143,16 @@ pub struct ColrTable {
   base_glyphs_offset_v1 : Int
   num_layers_v1 : Int
   layers_offset_v1 : Int
+  clip_list_offset : Int
+  var_index_map_offset : Int
+  item_var_store_offset : Int
   paints_start_v1 : Int
+  regions : Array[Array[RegionAxisCoordinates]]
+  item_data : Array[ItemVariationData?]
+  delta_set_index_map : DeltaSetIndexMap?
 } derive(Show)
-pub fn ColrTable::read_paint(Self, Int) -> ColrPaint raise @error.FTError
+pub fn ColrTable::clip_box(Self, UInt, normalized_coords? : Array[Int]) -> ColrClipBox? raise @error.FTError
+pub fn ColrTable::read_paint(Self, Int, normalized_coords? : Array[Int]) -> ColrPaint raise @error.FTError
 pub fn ColrTable::v0_layers(Self, UInt) -> Array[ColrV0Layer] raise @error.FTError
 pub fn ColrTable::v1_layer_paint_offsets(Self, Int, Int) -> Array[Int] raise @error.FTError
 pub fn ColrTable::v1_root_paint_offset(Self, UInt) -> Int? raise @error.FTError
@@ -121,6 +163,10 @@ pub fn ColrV0Layer::glyph_id(Self) -> UInt
 pub fn ColrV0Layer::palette_index(Self) -> UInt
 
 type CpalTable derive(Show)
+
+type DeltaSetIndexMap derive(Show)
+
+type DeltaSetIndexMapEntry derive(Show)
 
 pub struct GrayMaskSurface {
   left : Int
@@ -138,11 +184,19 @@ pub fn GrayMaskSurface::rows(Self) -> Int
 pub fn GrayMaskSurface::top(Self) -> Int
 pub fn GrayMaskSurface::width(Self) -> Int
 
+type ItemVariationData derive(Show)
+
 type PngImage derive(Eq, Show)
 pub fn PngImage::buffer(Self) -> Bytes
 pub fn PngImage::height(Self) -> Int
 pub fn PngImage::new(Int, Int, Bytes) -> Self
 pub fn PngImage::width(Self) -> Int
+
+type PngPaletteEntry derive(Show)
+
+type PngTruecolorTransparent derive(Show)
+
+type RegionAxisCoordinates derive(Show)
 
 type SbixStrike derive(Show)
 pub fn SbixStrike::glyph_offsets(Self) -> Array[Int]

@@ -50,6 +50,7 @@ Pure MoonBit port of the [FreeType](https://freetype.org/) font library.
 | Type 1 (PFB/PFA) | `.pfb` `.pfa` | Full | `type1/` — PFB/PFA parsing, eexec, Type 1 charstrings |
 | BDF (bitmap) | `.bdf` | Full | `bdf/` — header + glyph bitmap extraction |
 | PCF (bitmap) | `.pcf` | Full | `pcf/` — TOC, properties, metrics, encodings, bitmaps |
+| Color glyphs | `COLR`/`CPAL`, `sbix`, `CBDT`/`CBLC` | Full | `color/` — BGRA rendering, palettes, COLR v0/v1 paints, FreeType-compatible `sbix` (`png`/`dupe`/`flip`), PNG + sbit bitmap decode |
 
 Obsolete formats **not supported**: CID-keyed (standalone), Type 42, PFR (Bitstream), Windows FNT/FON.
 CID-keyed fonts inside CFF/OpenType are supported through the CFF driver.
@@ -60,7 +61,6 @@ The following FreeType subsystems are **excluded** from this port:
 
 | Subsystem | Reason |
 |-----------|--------|
-| **Color / SDF rendering** | Outline rasterization is implemented for `Normal`, `Light`, `Mono`, `Lcd`, `LcdV`, and `Sdf`; embedded color bitmaps (`sbix`, `CBDT`/`CBLC`) and `COLR`/`CPAL` glyph rendering produce BGRA bitmaps |
 | **File I/O** (`ftsystem.c` file operations) | Accepts `Bytes` instead of file paths; no I/O or OS dependency |
 | **SVG rendering** | Requires external SVG renderer |
 | **FT_Library global state** | Eliminated — API is stateless, no initialization needed |
@@ -226,7 +226,8 @@ Parity tests verify that the MoonBit port produces identical results to the vend
 | minimal | Standalone CFF | 3 | Extracted CFF table |
 | Nimbus Sans | Type 1 PFB | 855 | URW base35 |
 | GNU Unifont | BDF | 57,087 | unifoundry.com |
-| minimal SBIX / CBDT / COLR | Color TrueType | 3-6 | Synthetic BGRA and COLR render fixtures |
+| Nabla | TrueType / COLR v1 | 3,655 | Google Fonts real-world COLR v1 gradient fixture |
+| minimal SBIX / CBDT / COLR | Color TrueType | 3-6 | Synthetic BGRA, COLR v0/v1, and bitmap-format edge-case fixtures |
 | uvs / mvar | TrueType | 4-5 | Synthetic UVS and metric-variation fixtures |
 
 **What's verified per font:**

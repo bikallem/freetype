@@ -179,6 +179,7 @@ fn render_colr_glyph_surface(
   colr : @color.ColrTable,
   glyph_id : UInt,
   clips : Array[@color.GrayMaskSurface],
+  normalized_coords : Array[Int],
   transform : PaintTransform,
   load_flags : Int,
   palette : Array[@types.Color],
@@ -191,12 +192,28 @@ fn render_colr_glyph_surface(
   if depth > 16 {
     raise @error.FTError::InvalidTable
   }
+  let local_clips : Array[@color.GrayMaskSurface] = []
+  for clip in clips {
+    local_clips.push(clip)
+  }
+  match colr.clip_box(glyph_id, normalized_coords~) {
+    Some(clip_box) => {
+      let clip_mask = render_clip_box_mask(
+        clip_box, transform, x_scale, y_scale,
+      )
+      if !clip_mask.is_empty() {
+        local_clips.push(clip_mask)
+      }
+    }
+    None => ()
+  }
   match colr.v1_root_paint_offset(glyph_id) {
     Some(root) =>
       render_colr_paint_surface(
         colr,
         root,
-        clips,
+        local_clips,
+        normalized_coords,
         transform,
         load_flags,
         palette,
@@ -212,7 +229,8 @@ fn render_colr_glyph_surface(
       for layer in layers {
         surface.blend_surface(
           render_v0_layer_surface(
-            layer, clips, transform, load_flags, palette, foreground_color, load_scaled_outline,
+            layer, local_clips, transform, load_flags, palette, foreground_color,
+            load_scaled_outline,
           ),
         )
       }
@@ -226,6 +244,7 @@ fn render_colr_paint_surface(
   colr : @color.ColrTable,
   paint_offset : Int,
   clips : Array[@color.GrayMaskSurface],
+  normalized_coords : Array[Int],
   transform : PaintTransform,
   load_flags : Int,
   palette : Array[@types.Color],
@@ -238,7 +257,7 @@ fn render_colr_paint_surface(
   if depth > 24 {
     raise @error.FTError::InvalidTable
   }
-  match colr.read_paint(paint_offset) {
+  match colr.read_paint(paint_offset, normalized_coords~) {
     ColrLayers(num_layers, first_layer_index) => {
       let surface = @color.BgraSurface::new()
       for
@@ -250,6 +269,7 @@ fn render_colr_paint_surface(
             colr,
             child_offset,
             clips,
+            normalized_coords,
             transform,
             load_flags,
             palette,
@@ -276,11 +296,71 @@ fn render_colr_paint_surface(
           base_color,
           alpha_scale~,
         )
-        if clips.length() > 1 {
-          for i in 0..<(clips.length() - 1) {
-            surface.apply_mask(clips[i])
-          }
-        }
+        apply_parent_clips(surface, clips)
+        surface
+      }
+    LinearGradient(color_line, p0x, p0y, p1x, p1y, p2x, p2y) =>
+      if clips.is_empty() {
+        @color.BgraSurface::new()
+      } else {
+        let surface = render_linear_gradient_surface(
+          clips[clips.length() - 1],
+          color_line,
+          palette,
+          foreground_color,
+          transform,
+          p0x,
+          p0y,
+          p1x,
+          p1y,
+          p2x,
+          p2y,
+          x_scale,
+          y_scale,
+        )
+        apply_parent_clips(surface, clips)
+        surface
+      }
+    RadialGradient(color_line, c0x, c0y, r0, c1x, c1y, r1) =>
+      if clips.is_empty() {
+        @color.BgraSurface::new()
+      } else {
+        let surface = render_radial_gradient_surface(
+          clips[clips.length() - 1],
+          color_line,
+          palette,
+          foreground_color,
+          transform,
+          c0x,
+          c0y,
+          r0,
+          c1x,
+          c1y,
+          r1,
+          x_scale,
+          y_scale,
+        )
+        apply_parent_clips(surface, clips)
+        surface
+      }
+    SweepGradient(color_line, center_x, center_y, start_angle, end_angle) =>
+      if clips.is_empty() {
+        @color.BgraSurface::new()
+      } else {
+        let surface = render_sweep_gradient_surface(
+          clips[clips.length() - 1],
+          color_line,
+          palette,
+          foreground_color,
+          transform,
+          center_x,
+          center_y,
+          start_angle,
+          end_angle,
+          x_scale,
+          y_scale,
+        )
+        apply_parent_clips(surface, clips)
         surface
       }
     Glyph(child_paint_offset, glyph_id) => {
@@ -295,6 +375,7 @@ fn render_colr_paint_surface(
         colr,
         child_paint_offset,
         next_clips,
+        normalized_coords,
         transform,
         load_flags,
         palette,
@@ -310,6 +391,7 @@ fn render_colr_paint_surface(
         colr,
         glyph_id,
         clips,
+        normalized_coords,
         transform,
         load_flags,
         palette,
@@ -325,6 +407,7 @@ fn render_colr_paint_surface(
         colr,
         child_offset,
         clips,
+        normalized_coords,
         compose_paint_transform(transform, matrix, sdx, sdy),
         load_flags,
         palette,
@@ -341,6 +424,7 @@ fn render_colr_paint_surface(
         colr,
         child_offset,
         clips,
+        normalized_coords,
         compose_paint_transform(transform, @fixed.Matrix::identity(), sdx, sdy),
         load_flags,
         palette,
@@ -364,6 +448,7 @@ fn render_colr_paint_surface(
         colr,
         child_offset,
         clips,
+        normalized_coords,
         compose_paint_transform(transform, matrix, dx, dy),
         load_flags,
         palette,
@@ -382,6 +467,7 @@ fn render_colr_paint_surface(
         colr,
         child_offset,
         clips,
+        normalized_coords,
         compose_paint_transform(transform, matrix, dx, dy),
         load_flags,
         palette,
@@ -400,6 +486,7 @@ fn render_colr_paint_surface(
         colr,
         child_offset,
         clips,
+        normalized_coords,
         compose_paint_transform(transform, matrix, dx, dy),
         load_flags,
         palette,
@@ -415,6 +502,7 @@ fn render_colr_paint_surface(
         colr,
         backdrop_offset,
         clips,
+        normalized_coords,
         transform,
         load_flags,
         palette,
@@ -428,6 +516,7 @@ fn render_colr_paint_surface(
         colr,
         source_offset,
         clips,
+        normalized_coords,
         transform,
         load_flags,
         palette,
@@ -452,6 +541,7 @@ fn render_colr_bitmap_glyph(
   load_flags : Int,
   palette : Array[@types.Color],
   foreground_color : @types.Color,
+  normalized_coords : Array[Int],
   x_scale : @fixed.Fixed,
   y_scale : @fixed.Fixed,
   load_scaled_outline : (UInt, Int) -> @types.Outline raise @error.FTError,
@@ -460,6 +550,7 @@ fn render_colr_bitmap_glyph(
     colr,
     glyph_index,
     [],
+    normalized_coords,
     PaintTransform::identity(),
     load_flags,
     palette,

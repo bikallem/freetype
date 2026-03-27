@@ -19,6 +19,11 @@ fn render_cbdt_test_font() -> Bytes {
 }
 
 ///|
+fn render_cbdt_all_test_font() -> Bytes {
+  try! @fs.read_file_to_bytes("test/fonts/minimal_cbdt_all.ttf")
+}
+
+///|
 fn render_colr_v0_test_font() -> Bytes {
   try! @fs.read_file_to_bytes("test/fonts/minimal_colr_v0.ttf")
 }
@@ -26,6 +31,21 @@ fn render_colr_v0_test_font() -> Bytes {
 ///|
 fn render_colr_v1_test_font() -> Bytes {
   try! @fs.read_file_to_bytes("test/fonts/minimal_colr_v1.ttf")
+}
+
+///|
+fn render_colr_v1_gradients_test_font() -> Bytes {
+  try! @fs.read_file_to_bytes("test/fonts/minimal_colr_v1_gradients.ttf")
+}
+
+///|
+fn render_colr_v1_var_test_font() -> Bytes {
+  try! @fs.read_file_to_bytes("test/fonts/minimal_colr_v1_var.ttf")
+}
+
+///|
+fn render_nabla_test_font() -> Bytes {
+  try! @fs.read_file_to_bytes("test/fonts/Nabla[EDPT,EHLT].ttf")
 }
 
 ///|
@@ -46,6 +66,23 @@ fn has_bgra_pixel(
       buf[i + 1] == green &&
       buf[i + 2] == red &&
       buf[i + 3] == alpha {
+      return true
+    }
+    i += 4
+  }
+  false
+}
+
+///|
+fn bitmap_has_colored_bgra_pixel(bitmap : @types.Bitmap) -> Bool {
+  if bitmap.pixel_mode() != @types.PixelMode::Bgra {
+    return false
+  }
+  let buf = bitmap.buffer()
+  let mut i = 0
+  while i + 3 < buf.length() {
+    if buf[i + 3] != b'\x00' &&
+      (buf[i] != buf[i + 1] || buf[i + 1] != buf[i + 2]) {
       return true
     }
     i += 4
@@ -423,6 +460,116 @@ test "load_glyph: LOAD_COLOR renders COLR v1 with foreground color" {
     has_bgra_pixel(face.glyph().bitmap(), b'\x00', b'\xFF', b'\xFF', b'\xFF'),
     content="true",
   )
+}
+
+///|
+test "load_glyph: LOAD_COLOR renders COLR v1 gradients and composites" {
+  let face = from_bytes(render_colr_v1_gradients_test_font())
+  inspect(face.has_color(), content="true")
+  try! set_pixel_sizes(face, 0U, 16U)
+
+  let gid_a = get_char_index(face, 65U)
+  inspect(gid_a, content="4")
+  try! load_glyph(face, gid_a, load_flags=@base.LOAD_COLOR)
+  inspect(face.glyph().format(), content="Bitmap")
+  inspect(face.glyph().bitmap().pixel_mode(), content="Bgra")
+  inspect(face.glyph().bitmap().buffer().length() > 0, content="true")
+
+  let gid_a2 = get_char_index(face, 97U)
+  inspect(gid_a2, content="5")
+  try! load_glyph(face, gid_a2, load_flags=@base.LOAD_COLOR)
+  inspect(face.glyph().format(), content="Bitmap")
+  inspect(face.glyph().bitmap().pixel_mode(), content="Bgra")
+  inspect(face.glyph().bitmap().buffer().length() > 0, content="true")
+}
+
+///|
+test "load_glyph: LOAD_COLOR applies COLR v1 variation deltas" {
+  let face = from_bytes(render_colr_v1_var_test_font())
+  inspect(face.has_color(), content="true")
+  inspect(face.has_multiple_masters(), content="true")
+  try! set_pixel_sizes(face, 0U, 16U)
+  let gid = get_char_index(face, 65U)
+  inspect(gid, content="4")
+
+  try! load_glyph(face, gid, load_flags=@base.LOAD_COLOR)
+  let default_left = face.glyph().bitmap_left()
+  let default_buffer = face.glyph().bitmap().buffer()
+
+  try! set_var_design_coordinates(face, [
+    (@fixed.Fixed::from_int(900), 0x77676874U),
+  ])
+  try! load_glyph(face, gid, load_flags=@base.LOAD_COLOR)
+  inspect(face.is_variation(), content="true")
+  inspect(face.glyph().bitmap_left() > default_left, content="true")
+  inspect(face.glyph().bitmap().buffer() == default_buffer, content="false")
+}
+
+///|
+test "load_glyph: real COLR v1 font renders BGRA bitmap" {
+  let face = from_bytes(render_nabla_test_font())
+  inspect(face.has_color(), content="true")
+  inspect(face.has_multiple_masters(), content="true")
+  try! set_pixel_sizes(face, 0U, 16U)
+  let gid = get_char_index(face, 65U)
+  inspect(gid > 0U, content="true")
+  try! load_glyph(face, gid, load_flags=@base.LOAD_COLOR)
+  inspect(face.glyph().format(), content="Bitmap")
+  inspect(face.glyph().bitmap().pixel_mode(), content="Bgra")
+  inspect(face.glyph().bitmap().buffer().length() > 0, content="true")
+  inspect(bitmap_has_colored_bgra_pixel(face.glyph().bitmap()), content="true")
+}
+
+///|
+test "load_glyph: real COLR v1 variation changes BGRA output" {
+  let face = from_bytes(render_nabla_test_font())
+  inspect(face.has_color(), content="true")
+  inspect(face.has_multiple_masters(), content="true")
+  try! set_pixel_sizes(face, 0U, 16U)
+  let gid = get_char_index(face, 65U)
+  inspect(gid > 0U, content="true")
+
+  try! load_glyph(face, gid, load_flags=@base.LOAD_COLOR)
+  let default_buffer = face.glyph().bitmap().buffer()
+
+  try! set_var_design_coordinates(face, [
+    (@fixed.Fixed::from_int(200), 0x45445054U),
+    (@fixed.Fixed::from_int(24), 0x45484C54U),
+  ])
+  try! load_glyph(face, gid, load_flags=@base.LOAD_COLOR)
+  inspect(face.is_variation(), content="true")
+  inspect(face.glyph().bitmap().pixel_mode(), content="Bgra")
+  inspect(face.glyph().bitmap().buffer() == default_buffer, content="false")
+  inspect(bitmap_has_colored_bgra_pixel(face.glyph().bitmap()), content="true")
+}
+
+///|
+test "load_glyph: LOAD_COLOR loads CBDT PNG and packed bitmap formats" {
+  let face = from_bytes(render_cbdt_all_test_font())
+  inspect(face.has_color(), content="true")
+  try! set_pixel_sizes(face, 0U, 16U)
+
+  try! load_glyph(face, get_char_index(face, 65U), load_flags=@base.LOAD_COLOR)
+  inspect(face.glyph().bitmap().pixel_mode(), content="Bgra")
+  inspect(face.glyph().bitmap().buffer().length() > 0, content="true")
+
+  try! load_glyph(face, get_char_index(face, 66U), load_flags=@base.LOAD_COLOR)
+  inspect(face.glyph().bitmap().pixel_mode(), content="Bgra")
+  inspect(face.glyph().bitmap().buffer().length() > 0, content="true")
+
+  try! load_glyph(face, get_char_index(face, 67U), load_flags=@base.LOAD_COLOR)
+  inspect(face.glyph().bitmap().pixel_mode(), content="Bgra")
+  inspect(face.glyph().bitmap().buffer().length() > 0, content="true")
+
+  for code in [68U, 69U, 97U, 98U, 99U, 100U, 101U] {
+    try! load_glyph(
+      face,
+      get_char_index(face, code),
+      load_flags=@base.LOAD_COLOR,
+    )
+    inspect(face.glyph().bitmap().pixel_mode(), content="Gray4")
+    inspect(face.glyph().bitmap().buffer().length() > 0, content="true")
+  }
 }
 
 ///|

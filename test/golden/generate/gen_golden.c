@@ -60,7 +60,9 @@ static const FT_ULong variation_test_charcodes[] = { 'A', 'a' };
 static const FT_ULong render_test_charcodes[] = { ' ', 'A', 'a', 0x4E00 };
 #define NUM_RENDER_TEST_CHARS (sizeof(render_test_charcodes) / sizeof(render_test_charcodes[0]))
 
-static const FT_ULong color_render_test_charcodes[] = { 'A' };
+static const FT_ULong color_render_test_charcodes[] = {
+    'A', 'B', 'C', 'D', 'E', 'a', 'b', 'c', 'd', 'e'
+};
 #define NUM_COLOR_RENDER_TEST_CHARS (sizeof(color_render_test_charcodes) / sizeof(color_render_test_charcodes[0]))
 
 static const struct {
@@ -254,10 +256,6 @@ static void dump_one_rendered_glyph(
         if (err) return;
     }
     if (face->glyph->format != FT_GLYPH_FORMAT_BITMAP) return;
-    if ((load_flags & FT_LOAD_COLOR) != 0 &&
-        face->glyph->bitmap.pixel_mode != FT_PIXEL_MODE_BGRA)
-        return;
-
     if (!*first_glyph) fprintf(fp, ",\n");
     *first_glyph = 0;
 

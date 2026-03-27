@@ -6,6 +6,7 @@
 |------|--------|--------|---------|--------|
 | DejaVu Sans | TrueType | 6,253 | Bitstream Vera + Arev | [dejavu-fonts](https://github.com/dejavu-fonts/dejavu-fonts) |
 | Roboto Variable | TrueType | 1,326 | Apache 2.0 | [Google Fonts](https://github.com/google/fonts) |
+| Nabla | TrueType / COLR v1 | 1,381 | SIL OFL 1.1 | [Google Fonts](https://github.com/google/fonts) |
 | Source Code Pro | CFF/OpenType | 1,568 | SIL OFL 1.1 | [Adobe](https://github.com/adobe-fonts/source-code-pro) |
 | Nimbus Sans | Type 1 PFB | 855 | AGPL + font exception | [URW base35](https://github.com/ArtifexSoftware/urw-base35-fonts) |
 | GNU Unifont | BDF | 57,087 | GPL + font embedding | [unifoundry.com](https://unifoundry.com/unifont/) |

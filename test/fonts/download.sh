@@ -38,6 +38,10 @@ fi
 download \
   "https://github.com/google/fonts/raw/main/ofl/roboto/Roboto%5Bwdth%2Cwght%5D.ttf" \
   "$FONT_DIR/Roboto[wdth,wght].ttf"
+# Nabla — real-world COLR v1 variable color font with gradients (Google Fonts)
+download \
+  "https://github.com/google/fonts/raw/main/ofl/nabla/Nabla%5BEDPT%2CEHLT%5D.ttf" \
+  "$FONT_DIR/Nabla[EDPT,EHLT].ttf"
 
 echo ""
 

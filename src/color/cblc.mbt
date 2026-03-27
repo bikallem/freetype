@@ -78,6 +78,14 @@ struct CblcTable {
 } derive(Show)
 
 ///|
+struct CblcGlyphLocation {
+  image_format : Int
+  absolute_start : Int
+  image_length : Int
+  fallback_metrics : CblcMetrics?
+} derive(Show)
+
+///|
 pub fn CblcTable::strikes(self : CblcTable) -> Array[CblcStrike] {
   self.strikes
 }
@@ -223,68 +231,61 @@ fn parse_big_metrics(
 }
 
 ///|
-fn read_cblc_png_glyph(
-  table : CblcTable,
+fn uses_byte_aligned_rows(
   image_format : Int,
-  image_start : Int,
-  image_length : Int,
-  fallback_metrics? : CblcMetrics? = None,
-) -> @base.BitmapGlyphData? raise @error.FTError {
-  if image_start < 0 ||
-    image_length <= 0 ||
-    image_start + image_length > table.cbdt_data.length() {
-    raise @error.FTError::InvalidTable
+  width : Int,
+  height : Int,
+  bit_depth : Int,
+  data_length : Int,
+) -> Bool {
+  if image_format == 1 || image_format == 6 {
+    return true
   }
-  let cbdt = table.cbdt_data
-  let (metrics, png_offset) = match image_format {
-    17 => (parse_small_metrics(cbdt, image_start), image_start + 5)
-    18 => (parse_big_metrics(cbdt, image_start), image_start + 8)
-    19 =>
-      match fallback_metrics {
-        Some(m) => (m, image_start)
-        None => raise @error.FTError::InvalidTable
-      }
-    _ => raise @error.FTError::UnimplementedFeature
+  if image_format != 2 && image_format != 7 {
+    return false
   }
-  if png_offset + 4 > cbdt.length() || png_offset > image_start + image_length {
-    raise @error.FTError::InvalidTable
-  }
-  let png_reader = @stream.ByteReader::new(cbdt)
-  png_reader.seek(png_offset)
-  let png_len = png_reader.read_u32_be().reinterpret_as_int()
-  let png_data_offset = png_offset + 4
-  if png_len < 0 ||
-    png_data_offset + png_len > cbdt.length() ||
-    png_data_offset + png_len > image_start + image_length {
-    raise @error.FTError::InvalidTable
-  }
-  let image = decode_png_to_bgra(
-    cbdt[png_data_offset:png_data_offset + png_len].to_bytes(),
-  )
-  Some(
-    make_bitmap_glyph_data(
-      make_bgra_bitmap(image.width(), image.height(), image.buffer()),
-      metrics.hori_bearing_x,
-      metrics.hori_bearing_y,
-      metrics.hori_advance,
-      vert_advance=metrics.vert_advance,
-      vert_bearing_x=metrics.vert_bearing_x,
-      vert_bearing_y=metrics.vert_bearing_y,
-    ),
-  )
+  let row_pitch = cblc_row_pitch(width, bit_depth)
+  let byte_size = row_pitch * height
+  let bit_size = (width * height * bit_depth + 7) >> 3
+  bit_size < byte_size && data_length == byte_size
 }
 
 ///|
-pub fn load_cblc_glyph(
-  table : CblcTable,
-  glyph_index : UInt,
-  x_ppem : UInt,
-  y_ppem : UInt,
-) -> @base.BitmapGlyphData? raise @error.FTError {
-  let strike = match choose_cblc_strike(table.strikes(), x_ppem, y_ppem) {
-    Some(strike) => strike
-    None => return None
+fn blend_sbit_pixels(
+  dest : FixedArray[Byte],
+  dest_width : Int,
+  dest_height : Int,
+  src : FixedArray[Byte],
+  src_width : Int,
+  src_height : Int,
+  dx : Int,
+  dy : Int,
+) -> Unit {
+  for row in 0..<src_height {
+    let dst_row = row + dy
+    if dst_row < 0 || dst_row >= dest_height {
+      continue
+    }
+    for x in 0..<src_width {
+      let dst_x = x + dx
+      if dst_x < 0 || dst_x >= dest_width {
+        continue
+      }
+      let src_value = src[row * src_width + x]
+      if src_value != b'\x00' {
+        let dst_index = dst_row * dest_width + dst_x
+        dest[dst_index] = (dest[dst_index].to_int() | src_value.to_int()).to_byte()
+      }
+    }
   }
+}
+
+///|
+fn locate_cblc_glyph_in_strike(
+  table : CblcTable,
+  strike : CblcStrike,
+  glyph_index : UInt,
+) -> CblcGlyphLocation? raise @error.FTError {
   let cblc = table.cblc_data
   let array_base = strike.index_subtable_array_offset()
   let mut entry_pos = -1
@@ -388,17 +389,233 @@ pub fn load_cblc_glyph(
         }
       }
     }
+    2 | 19 => {
+      let image_size = reader.read_u32_be().reinterpret_as_int()
+      fallback_metrics = Some(parse_big_metrics(cblc, subtable_pos + 12))
+      image_start = image_size * glyph_delta
+      image_end = image_start + image_size
+    }
     _ => return None
   }
 
   if image_start < 0 || image_end <= image_start {
     return None
   }
-  read_cblc_png_glyph(
-    table,
+  Some({
     image_format,
-    image_data_offset + image_start,
-    image_end - image_start,
-    fallback_metrics~,
+    absolute_start: image_data_offset + image_start,
+    image_length: image_end - image_start,
+    fallback_metrics,
+  })
+}
+
+///|
+fn read_cblc_sbit_pixels_in_strike(
+  table : CblcTable,
+  strike : CblcStrike,
+  glyph_index : UInt,
+  recurse_count : Int,
+) -> (CblcMetrics, FixedArray[Byte])? raise @error.FTError {
+  if recurse_count > 16 {
+    raise @error.FTError::InvalidComposite
+  }
+  let location = match locate_cblc_glyph_in_strike(table, strike, glyph_index) {
+    Some(v) => v
+    None => return None
+  }
+  let cbdt = table.cbdt_data
+  let image_start = location.absolute_start
+  let image_length = location.image_length
+  if image_start < 0 ||
+    image_length <= 0 ||
+    image_start + image_length > cbdt.length() {
+    raise @error.FTError::InvalidTable
+  }
+  match location.image_format {
+    1 | 2 | 5 | 6 | 7 => {
+      let (metrics, data_start) = match location.image_format {
+        1 | 2 => (parse_small_metrics(cbdt, image_start), image_start + 5)
+        6 | 7 => (parse_big_metrics(cbdt, image_start), image_start + 8)
+        5 =>
+          match location.fallback_metrics {
+            Some(v) => (v, image_start)
+            None => raise @error.FTError::InvalidTable
+          }
+        _ => raise @error.FTError::UnimplementedFeature
+      }
+      let data_length = image_length - (data_start - image_start)
+      if data_length < 0 || data_start + data_length > cbdt.length() {
+        raise @error.FTError::InvalidTable
+      }
+      let byte_aligned = uses_byte_aligned_rows(
+        location.image_format,
+        metrics.width,
+        metrics.height,
+        strike.bit_depth(),
+        data_length,
+      )
+      Some(
+        (
+          metrics,
+          decode_packed_sbit_pixels(
+            cbdt[data_start:data_start + data_length].to_bytes(),
+            metrics.width,
+            metrics.height,
+            strike.bit_depth(),
+            byte_aligned,
+          ),
+        ),
+      )
+    }
+    8 | 9 => {
+      let (metrics, data_start) = if location.image_format == 8 {
+        let start = image_start + 6
+        if start > cbdt.length() {
+          raise @error.FTError::InvalidTable
+        }
+        (parse_small_metrics(cbdt, image_start), start)
+      } else {
+        (parse_big_metrics(cbdt, image_start), image_start + 8)
+      }
+      if data_start + 2 > cbdt.length() ||
+        data_start > image_start + image_length {
+        raise @error.FTError::InvalidTable
+      }
+      let reader = @stream.ByteReader::new(cbdt)
+      reader.seek(data_start)
+      let num_components = reader.read_u16_be().reinterpret_as_int()
+      if data_start + 2 + num_components * 4 > image_start + image_length {
+        raise @error.FTError::InvalidTable
+      }
+      let pixels = FixedArray::make(metrics.width * metrics.height, b'\x00')
+      for _ in 0..<num_components {
+        let component_glyph = reader.read_u16_be()
+        let dx = signed_byte(reader.read_byte())
+        let dy = signed_byte(reader.read_byte())
+        match
+          read_cblc_sbit_pixels_in_strike(
+            table,
+            strike,
+            component_glyph,
+            recurse_count + 1,
+          ) {
+          Some((child_metrics, child_pixels)) =>
+            blend_sbit_pixels(
+              pixels,
+              metrics.width,
+              metrics.height,
+              child_pixels,
+              child_metrics.width,
+              child_metrics.height,
+              dx,
+              dy,
+            )
+          None => raise @error.FTError::InvalidComposite
+        }
+      }
+      Some((metrics, pixels))
+    }
+    17 | 18 | 19 => None
+    _ => raise @error.FTError::UnimplementedFeature
+  }
+}
+
+///|
+fn read_cblc_png_glyph(
+  table : CblcTable,
+  image_format : Int,
+  image_start : Int,
+  image_length : Int,
+  fallback_metrics? : CblcMetrics? = None,
+) -> @base.BitmapGlyphData? raise @error.FTError {
+  if image_start < 0 ||
+    image_length <= 0 ||
+    image_start + image_length > table.cbdt_data.length() {
+    raise @error.FTError::InvalidTable
+  }
+  let cbdt = table.cbdt_data
+  let (metrics, png_offset) = match image_format {
+    17 => (parse_small_metrics(cbdt, image_start), image_start + 5)
+    18 => (parse_big_metrics(cbdt, image_start), image_start + 8)
+    19 =>
+      match fallback_metrics {
+        Some(m) => (m, image_start)
+        None => raise @error.FTError::InvalidTable
+      }
+    _ => raise @error.FTError::UnimplementedFeature
+  }
+  if png_offset + 4 > cbdt.length() || png_offset > image_start + image_length {
+    raise @error.FTError::InvalidTable
+  }
+  let png_reader = @stream.ByteReader::new(cbdt)
+  png_reader.seek(png_offset)
+  let png_len = png_reader.read_u32_be().reinterpret_as_int()
+  let png_data_offset = png_offset + 4
+  if png_len < 0 ||
+    png_data_offset + png_len > cbdt.length() ||
+    png_data_offset + png_len > image_start + image_length {
+    raise @error.FTError::InvalidTable
+  }
+  let image = decode_png_to_bgra(
+    cbdt[png_data_offset:png_data_offset + png_len].to_bytes(),
   )
+  Some(
+    make_bitmap_glyph_data(
+      make_bgra_bitmap(image.width(), image.height(), image.buffer()),
+      metrics.hori_bearing_x,
+      metrics.hori_bearing_y,
+      metrics.hori_advance,
+      vert_advance=metrics.vert_advance,
+      vert_bearing_x=metrics.vert_bearing_x,
+      vert_bearing_y=metrics.vert_bearing_y,
+    ),
+  )
+}
+
+///|
+pub fn load_cblc_glyph(
+  table : CblcTable,
+  glyph_index : UInt,
+  x_ppem : UInt,
+  y_ppem : UInt,
+) -> @base.BitmapGlyphData? raise @error.FTError {
+  let strike = match choose_cblc_strike(table.strikes(), x_ppem, y_ppem) {
+    Some(strike) => strike
+    None => return None
+  }
+  let location = match locate_cblc_glyph_in_strike(table, strike, glyph_index) {
+    Some(v) => v
+    None => return None
+  }
+  match location.image_format {
+    17 | 18 | 19 =>
+      read_cblc_png_glyph(
+        table,
+        location.image_format,
+        location.absolute_start,
+        location.image_length,
+        fallback_metrics=location.fallback_metrics,
+      )
+    _ =>
+      match read_cblc_sbit_pixels_in_strike(table, strike, glyph_index, 0) {
+        Some((metrics, pixels)) =>
+          Some(
+            make_bitmap_glyph_data(
+              make_sbit_bitmap(
+                metrics.width,
+                metrics.height,
+                strike.bit_depth(),
+                pixels,
+              ),
+              metrics.hori_bearing_x,
+              metrics.hori_bearing_y,
+              metrics.hori_advance,
+              vert_advance=metrics.vert_advance,
+              vert_bearing_x=metrics.vert_bearing_x,
+              vert_bearing_y=metrics.vert_bearing_y,
+            ),
+          )
+        None => None
+      }
+  }
 }

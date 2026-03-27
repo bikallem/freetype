@@ -50,6 +50,10 @@ pub fn set_var_design_coordinates(@base.FaceRec, Array[(@fixed.Fixed, UInt)]) ->
 // Errors
 
 // Types and methods
+type GradientLineSample derive(Show)
+
+type GradientStopSample derive(Show)
+
 type PaintTransform derive(Show)
 
 pub(all) enum RenderMode {

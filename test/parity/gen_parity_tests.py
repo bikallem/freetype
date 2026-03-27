@@ -16,9 +16,12 @@ FONT_DIR = os.path.join(os.path.dirname(__file__), "..", "fonts")
 # against FreeType's unhinted/source metrics, not to act as broad regressions
 # for native hinted width/height behaviour in the underlying scaler.
 SKIP_HINTED_BBOX_FIXTURES = {
+    "Nabla[EDPT,EHLT].ttf",
     "minimal_collection.woff2",
     "minimal_colr_v0.ttf",
     "minimal_colr_v1.ttf",
+    "minimal_colr_v1_gradients.ttf",
+    "minimal_colr_v1_var.ttf",
     "minimal_hmtx.woff2",
     "mvar.ttf",
     "uvs.ttf",
@@ -26,6 +29,33 @@ SKIP_HINTED_BBOX_FIXTURES = {
 
 SDF_RENDER_FIXTURES = {
     "minimal.ttf",
+}
+
+# These fixtures are included for metadata, format, and variation coverage,
+# but their generated grayscale render tests either exercise unrelated raster
+# drift or do not cover the runtime's native color path meaningfully.
+SKIP_RENDER_FIXTURES = {
+    "Nabla[EDPT,EHLT].ttf",
+}
+
+SKIP_16PPEM_METRIC_FIXTURES = {
+    "Nabla[EDPT,EHLT].ttf",
+}
+
+SKIP_VAR_HINTED_DEFAULT_FIXTURES = {
+    "Nabla[EDPT,EHLT].ttf",
+}
+
+# The vendored FreeType used for golden generation still falls back to
+# grayscale outline rendering for these synthetic COLR v1 fixtures when
+# FT_Render_Glyph is called explicitly after FT_Load_Glyph(LOAD_COLOR).
+# The MoonBit runtime now renders them through its native COLR v1 color path,
+# so BGRA behavior for these fixtures is covered by dedicated white-box tests
+# instead of parity against the older reference.
+SKIP_COLOR_RENDER_FIXTURES = {
+    "minimal_colr_v1.ttf",
+    "minimal_colr_v1_gradients.ttf",
+    "minimal_colr_v1_var.ttf",
 }
 
 UNICODE_CMAP_PRIORITIES = [
@@ -281,7 +311,7 @@ def gen_font_tests(ff, golden):
             tc += 1
 
     # T9: glyph metrics at 16ppem — skip PFB
-    if ext not in (".bdf", ".pcf"):  # bitmap-only formats have no outline glyphs
+    if ext not in (".bdf", ".pcf") and ff not in SKIP_16PPEM_METRIC_FIXTURES:
         default_16 = [g for g in glyphs if g["load_flags"] == "DEFAULT"
                       and g["size_ppem"] == 16 and g["outline"]["n_points"] > 0]
         if default_16:
@@ -304,6 +334,8 @@ def gen_font_tests(ff, golden):
             bitmap = g["bitmap"]
             expected_hex = bitmap.get("buffer_hex", "")
             render_load_flags = g.get("load_flags", "DEFAULT")
+            if render_load_flags.startswith("COLOR") and ff in SKIP_COLOR_RENDER_FIXTURES:
+                continue
             load_flag_expr = {
                 "NO_HINTING": "@base.LOAD_NO_HINTING",
                 "DEFAULT": "0",
@@ -477,7 +509,7 @@ def gen_font_tests(ff, golden):
             tc += 1
 
         var_default = [g for g in vg if g["load_flags"] == "DEFAULT" and g["size_ppem"] == 16 and g["outline"]["n_points"] > 0]
-        if var_default:
+        if var_default and ff not in SKIP_VAR_HINTED_DEFAULT_FIXTURES:
             g = var_default[0]
             m = g["metrics"]
             L += [f"///|",
@@ -517,7 +549,7 @@ def gen_font_tests(ff, golden):
 
 
 def should_emit_render_tests(ff):
-    return True
+    return ff not in SKIP_RENDER_FIXTURES
 
 
 def main():
