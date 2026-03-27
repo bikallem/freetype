@@ -119,6 +119,94 @@ fn parse_afm_kerning_pairs(
 }
 
 ///|
+fn read_u16_le(data : Bytes, offset : Int) -> Int? {
+  if offset < 0 || offset + 1 >= data.length() {
+    None
+  } else {
+    Some(data[offset].to_int() | (data[offset + 1].to_int() << 8))
+  }
+}
+
+///|
+fn read_u32_le(data : Bytes, offset : Int) -> Int? {
+  if offset < 0 || offset + 3 >= data.length() {
+    None
+  } else {
+    Some(
+      data[offset].to_int() |
+      (data[offset + 1].to_int() << 8) |
+      (data[offset + 2].to_int() << 16) |
+      (data[offset + 3].to_int() << 24),
+    )
+  }
+}
+
+///|
+fn read_i16_le(data : Bytes, offset : Int) -> Int? {
+  match read_u16_le(data, offset) {
+    Some(value) => Some(if value >= 0x8000 { value - 0x10000 } else { value })
+    None => None
+  }
+}
+
+///|
+fn looks_like_pfm_metrics(data : Bytes) -> Bool {
+  if data.length() <= 6 || data[1] >= b'\x04' {
+    return false
+  }
+  match read_u32_le(data, 2) {
+    Some(size) => size == data.length()
+    None => false
+  }
+}
+
+///|
+fn parse_pfm_kerning_pairs(
+  data : Bytes,
+  char_index_for_code : (UInt) -> UInt,
+) -> Map[Int64, Int] raise @error.FTError {
+  let width_table_length = match read_u16_le(data, 99) {
+    Some(value) => value
+    None => raise @error.FTError::InvalidFileFormat
+  }
+  let extension_offset = 99 + 2 + 18 + width_table_length
+  match read_u16_le(data, extension_offset) {
+    Some(size) if size >= 0x12 => ()
+    Some(_) => return {}
+    None => return {}
+  }
+  let kerning_offset = match read_u32_le(data, extension_offset + 14) {
+    Some(value) => value
+    None => raise @error.FTError::InvalidFileFormat
+  }
+  if kerning_offset == 0 {
+    return {}
+  }
+  let pair_count = match read_u16_le(data, kerning_offset) {
+    Some(value) => value
+    None => raise @error.FTError::InvalidFileFormat
+  }
+  let pair_data_start = kerning_offset + 2
+  if pair_data_start + pair_count * 4 > data.length() {
+    raise @error.FTError::InvalidFileFormat
+  }
+  let pairs : Map[Int64, Int] = {}
+  for pair_index in 0..<pair_count {
+    let pos = pair_data_start + pair_index * 4
+    let left = char_index_for_code(data[pos].to_uint())
+    let right = char_index_for_code(data[pos + 1].to_uint())
+    match read_i16_le(data, pos + 2) {
+      Some(value) =>
+        if left != 0U && right != 0U {
+          pairs[afm_pair_key(left, right)] = value
+        }
+      None => raise @error.FTError::InvalidFileFormat
+    }
+  }
+  pairs
+}
+
+///|
 fn normalize_mm_design_coord(
   value : @fixed.Fixed,
   min_value : @fixed.Fixed,
@@ -350,7 +438,9 @@ fn load_type1_pfb(data : Bytes) -> @base.FaceRec raise @error.FTError {
     let name = glyph_names[idx]
     let no_hinting = (load_flags & @base.LOAD_NO_HINTING) != 0
     let (outline, raw_width, hh, hv) = @type1.load_type1_glyph_full_data(
-      font, name,
+      font,
+      name,
+      normalized_coords=face.var_coords(),
     )
     let has_transform = font_transform.xx().val() != 0x10000L ||
       font_transform.xy().val() != 0L ||
@@ -458,15 +548,26 @@ fn load_type1_pfb(data : Bytes) -> @base.FaceRec raise @error.FTError {
           let parsed_pairs = parse_afm_kerning_pairs(
             metrics_data, name_to_index,
           )
-          if parsed_pairs.is_empty() {
+          let final_pairs = if !parsed_pairs.is_empty() {
+            parsed_pairs
+          } else if looks_like_pfm_metrics(metrics_data) {
+            parse_pfm_kerning_pairs(metrics_data, encoding_char_index_fn)
+          } else {
+            {}
+          }
+          if parsed_pairs.is_empty() &&
+            final_pairs.is_empty() &&
+            !looks_like_pfm_metrics(metrics_data) {
             raise @error.FTError::InvalidFileFormat
           }
           let merged = attached_kerning.val
-          for pair, value in parsed_pairs {
+          for pair, value in final_pairs {
             merged[pair] = value
           }
           attached_kerning.val = merged
-          face.set_face_flags(face.face_flags() | @base.FACE_FLAG_KERNING)
+          if !final_pairs.is_empty() {
+            face.set_face_flags(face.face_flags() | @base.FACE_FLAG_KERNING)
+          }
         },
       ),
     ),

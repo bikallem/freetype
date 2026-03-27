@@ -5,11 +5,23 @@ priv struct Type1State {
   mut in_seac : Bool
   flex_points : Array[(Int64, Int64)]
   othersubr_results : Array[Int64]
+  mm_weight_vector : Array[Int64]
+  buildchar : Array[Int64]
 }
 
 ///|
-fn Type1State::new() -> Type1State {
-  { in_flex: false, in_seac: false, flex_points: [], othersubr_results: [] }
+fn Type1State::new(
+  mm_weight_vector? : Array[Int64] = [],
+  buildchar_len? : Int = 0,
+) -> Type1State {
+  {
+    in_flex: false,
+    in_seac: false,
+    flex_points: [],
+    othersubr_results: [],
+    mm_weight_vector,
+    buildchar: Array::make(buildchar_len.max(0), 0L),
+  }
 }
 
 ///|
@@ -25,14 +37,37 @@ pub fn execute_type1(
     Array[StemHint],
     Array[StemHint],
   ) raise @error.FTError,
+  mm_weight_vector? : Array[Int64] = [],
+  buildchar_len? : Int = 0,
 ) -> (@types.Outline, Int64, Array[StemHint], Array[StemHint]) raise @error.FTError {
   let interp = PsInterp::new()
   interp.width = default_width
   interp.local_subrs = subrs
-  let state = Type1State::new()
+  let state = Type1State::new(mm_weight_vector~, buildchar_len~)
   exec_type1_code(interp, charstring, state, load_seac_component)
   let outline = interp.finalize()
   (outline, interp.width, interp.hints_h, interp.hints_v)
+}
+
+///|
+fn type1_fixed_mul(a : Int64, b : Int64) -> Int64 {
+  @fixed.mul_div(a, b, 0x10000L)
+}
+
+///|
+fn type1_fixed_div(a : Int64, b : Int64) -> Int64 {
+  if b == 0L {
+    0L
+  } else {
+    @fixed.mul_div(a, 0x10000L, b)
+  }
+}
+
+///|
+fn push_othersubr_results(state : Type1State, values : Array[Int64]) -> Unit {
+  for i in 0..<values.length() {
+    state.othersubr_results.push(values[values.length() - 1 - i])
+  }
 }
 
 ///|
@@ -475,6 +510,114 @@ fn exec_type1_op2(
         3 =>
           // Hint replacement — push 1 to OtherSubrs results for pop
           state.othersubr_results.push(1L)
+        14 | 15 | 16 | 17 | 18 => {
+          let num_points = if othersubr_num == 18 {
+            6
+          } else {
+            othersubr_num - 13
+          }
+          let num_designs = state.mm_weight_vector.length()
+          if num_points <= 0 ||
+            num_designs == 0 ||
+            n_args != num_points * num_designs {
+            raise @error.FTError::SyntaxError
+          }
+          let blended : Array[Int64] = []
+          for point_index in 0..<num_points {
+            let mut value = args[point_index]
+            let mut delta_index = num_points + point_index
+            for design_index in 1..<num_designs {
+              value += type1_fixed_mul(
+                args[delta_index],
+                state.mm_weight_vector[design_index],
+              )
+              delta_index += num_points
+            }
+            blended.push(value)
+          }
+          push_othersubr_results(state, blended)
+        }
+        19 => {
+          if n_args != 1 || state.mm_weight_vector.is_empty() {
+            raise @error.FTError::SyntaxError
+          }
+          let idx = args[0].to_int()
+          if idx < 0 ||
+            idx + state.mm_weight_vector.length() > state.buildchar.length() {
+            raise @error.FTError::SyntaxError
+          }
+          for i in 0..<state.mm_weight_vector.length() {
+            state.buildchar[idx + i] = state.mm_weight_vector[i]
+          }
+        }
+        20 => {
+          if n_args != 2 {
+            raise @error.FTError::SyntaxError
+          }
+          push_othersubr_results(state, [args[0] + args[1]])
+        }
+        21 => {
+          if n_args != 2 {
+            raise @error.FTError::SyntaxError
+          }
+          push_othersubr_results(state, [args[0] - args[1]])
+        }
+        22 => {
+          if n_args != 2 {
+            raise @error.FTError::SyntaxError
+          }
+          push_othersubr_results(state, [type1_fixed_mul(args[0], args[1])])
+        }
+        23 => {
+          if n_args != 2 || args[1] == 0L {
+            raise @error.FTError::SyntaxError
+          }
+          push_othersubr_results(state, [type1_fixed_div(args[0], args[1])])
+        }
+        24 => {
+          if n_args != 2 || state.mm_weight_vector.is_empty() {
+            raise @error.FTError::SyntaxError
+          }
+          let idx = args[1].to_int()
+          if idx < 0 || idx >= state.buildchar.length() {
+            raise @error.FTError::SyntaxError
+          }
+          state.buildchar[idx] = args[0]
+        }
+        25 => {
+          if n_args != 1 || state.mm_weight_vector.is_empty() {
+            raise @error.FTError::SyntaxError
+          }
+          let idx = args[0].to_int()
+          if idx < 0 || idx >= state.buildchar.length() {
+            raise @error.FTError::SyntaxError
+          }
+          push_othersubr_results(state, [state.buildchar[idx]])
+        }
+        27 => {
+          if n_args != 4 {
+            raise @error.FTError::SyntaxError
+          }
+          let result = if args[2] > args[3] { args[1] } else { args[0] }
+          push_othersubr_results(state, [result])
+        }
+        28 => {
+          if n_args != 0 {
+            raise @error.FTError::SyntaxError
+          }
+          let mut rand = interp.random_state
+          if rand >= 0x8000L {
+            rand += 1L
+          }
+          push_othersubr_results(state, [rand])
+          interp.random_state = type1_fixed_mul(
+            interp.random_state,
+            0x10000L - interp.random_state,
+          )
+          if interp.random_state == 0L {
+            interp.random_state = 0x2873L
+          }
+        }
         _ =>
           // Unknown othersubr — push all args to results for pop
           for a in args {

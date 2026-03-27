@@ -16,10 +16,12 @@ fn load_sfnt(
   let gvar_ref : Ref[@truetype.GvarTable??] = Ref::new(None)
   let hvar_ref : Ref[@truetype.HvarTable??] = Ref::new(None)
   let hint_globals_ref : Ref[@pshinter.PsGlobals?] = Ref::new(None)
+  let native_svg_face_ref : Ref[@base.FaceRec?] = Ref::new(None)
   // Check table presence (cheap O(1) lookups)
   let has_glyf = sfnt_data.table_dir().find_table(@types.TAG_GLYF) is Some(_)
   let has_cff = sfnt_data.table_dir().find_table(@types.TAG_CFF) is Some(_)
   let has_cff2 = sfnt_data.table_dir().find_table(@types.TAG_CFF2) is Some(_)
+  let has_svg = sfnt_data.table_dir().find_table(@types.TAG_SVG) is Some(_)
   let color_tables = try
     @color.parse_color_tables(
       data,
@@ -183,6 +185,75 @@ fn load_sfnt(
       }
     }
     false
+  }
+  let ensure_native_svg_face = fn() -> @base.FaceRec raise @error.FTError {
+    match native_svg_face_ref.val {
+      Some(native_face) => native_face
+      None => {
+        let native_face = @nativeft.load_sfnt_face_native(data, face_index)
+        native_svg_face_ref.val = Some(native_face)
+        native_face
+      }
+    }
+  }
+  let copy_var_coords = fn(source : Array[Int]) -> Array[Int] {
+    let copied : Array[Int] = []
+    for _, coord in source {
+      copied.push(coord)
+    }
+    copied
+  }
+  let sync_native_svg_face : (@base.FaceRec, @base.FaceRec) -> Unit raise @error.FTError = fn(
+    native_face,
+    source_face,
+  ) raise @error.FTError {
+    native_face.set_active_charmap(source_face.active_charmap())
+    native_face.set_var_coords(copy_var_coords(source_face.var_coords()))
+    native_face.set_palette(source_face.palette())
+    native_face.set_palette_index(source_face.palette_index())
+    native_face.set_foreground_color(source_face.foreground_color())
+    let x_ppem = source_face.size().metrics().x_ppem()
+    let y_ppem = source_face.size().metrics().y_ppem()
+    if x_ppem != 0U || y_ppem != 0U {
+      set_pixel_sizes(native_face, x_ppem, y_ppem)
+    }
+  }
+  let load_native_svg_slot_fn : (@base.FaceRec, UInt, Int) -> Bool raise @error.FTError = fn(
+    target_face,
+    glyph_index,
+    load_flags,
+  ) raise @error.FTError {
+    if !has_svg ||
+      !@nativeft.native_available() ||
+      (load_flags & @base.LOAD_NO_SVG) != 0 {
+      return false
+    }
+    let native_face = ensure_native_svg_face()
+    sync_native_svg_face(native_face, target_face)
+    match native_face.driver_data() {
+      @base.DriverData::SfntDriver(native_ops) => {
+        if !native_ops.load_native_slot()(native_face, glyph_index, load_flags) {
+          return false
+        }
+        let native_format = native_face.glyph().format()
+        if native_format == @types.GlyphFormat::Svg ||
+          native_format == @types.GlyphFormat::Outline ||
+          (
+            native_format == @types.GlyphFormat::Bitmap &&
+            (
+              (load_flags & @base.LOAD_COLOR) != 0 ||
+              (load_flags & @base.LOAD_RENDER) != 0
+            )
+          ) {
+          sync_native_svg_face(native_face, target_face)
+          return native_ops.load_native_slot()(
+            target_face, glyph_index, load_flags,
+          )
+        }
+        false
+      }
+      _ => false
+    }
   }
   // Reusable glyph loading buffers (captured by load_glyph_fn closure)
   let glyph_bufs = @truetype.GlyphBufs::new()
@@ -981,6 +1052,11 @@ fn load_sfnt(
     }
     face.set_active_charmap(default_cmap_index)
   }
+  if has_svg {
+    face.set_face_flags(
+      face.face_flags() | @base.FACE_FLAG_COLOR | @base.FACE_FLAG_SVG,
+    )
+  }
   match color_tables {
     Some(tables) => {
       if tables.palette_data() is Some(palette_data) {
@@ -1067,6 +1143,7 @@ fn load_sfnt(
         get_kerning=kern_fn,
         apply_hints=apply_hints_fn,
         tt_hint=tt_hint_fn,
+        load_native_slot=load_native_svg_slot_fn,
         palette_data=palette_data_fn,
         select_palette=select_palette_fn,
         load_color_glyph=load_color_glyph_fn,

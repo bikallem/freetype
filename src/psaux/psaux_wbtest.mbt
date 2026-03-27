@@ -234,6 +234,62 @@ test "Type1: seac composes outlines and shifts hints" {
 }
 
 ///|
+fn encode_type1_test_int(value : Int) -> Bytes {
+  if value >= -107 && value <= 107 {
+    [(value + 139).to_byte()]
+  } else if value >= 108 && value <= 1131 {
+    let adjusted = value - 108
+    [(247 + adjusted / 256).to_byte(), (adjusted % 256).to_byte()]
+  } else if value >= -1131 && value <= -108 {
+    let adjusted = -value - 108
+    [(251 + adjusted / 256).to_byte(), (adjusted % 256).to_byte()]
+  } else {
+    [
+      b'\xFF',
+      ((value >> 24) & 0xFF).to_byte(),
+      ((value >> 16) & 0xFF).to_byte(),
+      ((value >> 8) & 0xFF).to_byte(),
+      (value & 0xFF).to_byte(),
+    ]
+  }
+}
+
+///|
+test "Type1: MM othersubr blends width values" {
+  let cs_bytes : Array[Byte] = []
+  for
+    chunk in [
+      encode_type1_test_int(50), // lsb
+      encode_type1_test_int(400), // base width
+      encode_type1_test_int(200), // delta to master 1
+      encode_type1_test_int(2), // arg count
+      encode_type1_test_int(14), // MM othersubr #14 => one blended result
+      Bytes::from_array([b'\x0C', b'\x10']), // callothersubr
+      Bytes::from_array([b'\x0C', b'\x11']), // pop blended width
+      Bytes::from_array([b'\x0D', b'\x0E']), // hsbw, endchar
+    ] {
+    for byte in chunk {
+      cs_bytes.push(byte)
+    }
+  }
+  let cs = Bytes::from_array(cs_bytes[:])
+  let no_seac : (String) -> (
+    @types.Outline,
+    Int64,
+    Array[StemHint],
+    Array[StemHint],
+  ) raise @error.FTError = _name => raise @error.FTError::InvalidGlyphIndex
+  let (_, default_width, _, _) = execute_type1(cs, [], 0L, no_seac, mm_weight_vector=[
+    0x8000L, 0x8000L,
+  ])
+  inspect(default_width, content="500")
+  let (_, bold_width, _, _) = execute_type1(cs, [], 0L, no_seac, mm_weight_vector=[
+    0L, 0x10000L,
+  ])
+  inspect(bold_width, content="600")
+}
+
+///|
 test "Type2: flex operators produce two curves" {
   let flex : Bytes = [
     139, 139, 21, // rmoveto(0, 0)

@@ -34,6 +34,15 @@ struct Type1Font {
   mut mm_axis_mins : Array[@fixed.Fixed]
   mut mm_axis_defaults : Array[@fixed.Fixed]
   mut mm_axis_maxs : Array[@fixed.Fixed]
+  mut mm_design_maps : Array[Type1MMDesignMap]
+  mut mm_default_weights : Array[@fixed.Fixed]
+  mut buildchar_len : Int
+} derive(Show)
+
+///|
+struct Type1MMDesignMap {
+  design_points : Array[Int]
+  blend_points : Array[@fixed.Fixed]
 } derive(Show)
 
 ///|
@@ -68,6 +77,9 @@ pub fn Type1Font::new() -> Type1Font {
     mm_axis_mins: [],
     mm_axis_defaults: [],
     mm_axis_maxs: [],
+    mm_design_maps: [],
+    mm_default_weights: [],
+    buildchar_len: 0,
   }
 }
 
@@ -185,6 +197,7 @@ pub fn parse_type1_pfb(data : Bytes) -> Type1Font raise @error.FTError {
     font.expert_encoding = expert_encoding
     font.latin1_encoding = latin1_encoding
     apply_multiple_master_metadata(font, ascii_parts[0])
+    font.buildchar_len = extract_buildchar_len(ascii_parts[0])
   }
   // Decrypt binary segment (eexec encrypted private dict + charstrings)
   if binary_parts.length() > 0 {
@@ -220,6 +233,7 @@ fn parse_type1_pfa(data : Bytes) -> Type1Font {
   font.expert_encoding = expert_encoding
   font.latin1_encoding = latin1_encoding
   apply_multiple_master_metadata(font, data)
+  font.buildchar_len = extract_buildchar_len(data)
   // Find "eexec" keyword — everything after it is hex-encoded encrypted data
   let text_len = data.length()
   let mut eexec_pos = -1
@@ -308,6 +322,88 @@ fn fixed_from_double(value : Double) -> @fixed.Fixed {
 }
 
 ///|
+fn type1_mm_map_from_parts(
+  design_points : Array[Int],
+  blend_points : Array[@fixed.Fixed],
+) -> Type1MMDesignMap {
+  { design_points, blend_points }
+}
+
+///|
+fn extract_blend_design_map(ascii_data : Bytes) -> Array[Type1MMDesignMap] {
+  let start = find_ps_array_start(ascii_data, b"/BlendDesignMap")
+  if start < 0 {
+    return []
+  }
+  let maps : Array[Type1MMDesignMap] = []
+  let mut pos = start + 1
+  while pos < ascii_data.length() {
+    pos = skip_ascii_ws(ascii_data, pos)
+    if pos >= ascii_data.length() || ascii_data[pos] == b']' {
+      break
+    }
+    if ascii_data[pos] != b'[' {
+      pos += 1
+      continue
+    }
+    pos += 1
+    let design_points : Array[Int] = []
+    let blend_points : Array[@fixed.Fixed] = []
+    let mut pending_design : Int? = None
+    while pos < ascii_data.length() {
+      pos = skip_ascii_ws(ascii_data, pos)
+      if pos >= ascii_data.length() || ascii_data[pos] == b']' {
+        break
+      }
+      if ascii_data[pos] == b'[' {
+        pos += 1
+        let (design_value, next_pos0, ok_design) = read_ps_number_token(
+          ascii_data, pos,
+        )
+        let (blend_value, next_pos1, ok_blend) = read_ps_number_token(
+          ascii_data, next_pos0,
+        )
+        let mut pair_end = next_pos1
+        while pair_end < ascii_data.length() && ascii_data[pair_end] != b']' {
+          pair_end += 1
+        }
+        if pair_end < ascii_data.length() && ascii_data[pair_end] == b']' {
+          pair_end += 1
+        }
+        pos = pair_end
+        if ok_design && ok_blend {
+          design_points.push(round_double_to_int_local(design_value))
+          blend_points.push(fixed_from_double(blend_value))
+        }
+        pending_design = None
+        continue
+      }
+      let (value, next_pos, ok) = read_ps_number_token(ascii_data, pos)
+      if !ok {
+        break
+      }
+      pos = next_pos
+      match pending_design {
+        None => pending_design = Some(round_double_to_int_local(value))
+        Some(design_value) => {
+          design_points.push(design_value)
+          blend_points.push(fixed_from_double(value))
+          pending_design = None
+        }
+      }
+    }
+    if pos < ascii_data.length() && ascii_data[pos] == b']' {
+      pos += 1
+    }
+    if !design_points.is_empty() &&
+      design_points.length() == blend_points.length() {
+      maps.push(type1_mm_map_from_parts(design_points, blend_points))
+    }
+  }
+  maps
+}
+
+///|
 fn skip_ascii_ws(data : Bytes, start : Int) -> Int {
   let mut pos = start
   while pos < data.length() &&
@@ -357,6 +453,29 @@ fn read_ps_name_token(data : Bytes, start : Int) -> (String, Int) {
     buf.write_char(Int::unsafe_to_char(data[i].to_int()))
   }
   (buf.to_string(), pos)
+}
+
+///|
+fn extract_buildchar_len(ascii_data : Bytes) -> Int {
+  let start = find_ps_array_start(ascii_data, b"/BuildCharArray")
+  if start < 0 {
+    return 0
+  }
+  let mut count = 0
+  let mut pos = start + 1
+  while pos < ascii_data.length() {
+    pos = skip_ascii_ws(ascii_data, pos)
+    if pos >= ascii_data.length() || ascii_data[pos] == b']' {
+      break
+    }
+    let (_value, next_pos, ok) = read_ps_number_token(ascii_data, pos)
+    if !ok {
+      break
+    }
+    count += 1
+    pos = next_pos
+  }
+  count
 }
 
 ///|
@@ -477,11 +596,15 @@ fn extract_weight_vector(ascii_data : Bytes) -> Array[Double] {
 fn apply_multiple_master_metadata(font : Type1Font, ascii_data : Bytes) -> Unit {
   let axis_tags = extract_axis_types(ascii_data)
   let design_positions = extract_blend_design_positions(ascii_data)
-  if axis_tags.is_empty() || design_positions.is_empty() {
+  let design_maps = extract_blend_design_map(ascii_data)
+  let weight_vector = extract_weight_vector(ascii_data)
+  if axis_tags.is_empty() ||
+    design_positions.is_empty() ||
+    design_maps.length() != axis_tags.length() ||
+    weight_vector.length() != design_positions.length() {
     return
   }
   let axis_count = axis_tags.length()
-  let weight_vector = extract_weight_vector(ascii_data)
   let mins : Array[Double] = Array::make(axis_count, 0.0)
   let maxs : Array[Double] = Array::make(axis_count, 0.0)
   let defaults : Array[Double] = Array::make(axis_count, 0.0)
@@ -520,16 +643,137 @@ fn apply_multiple_master_metadata(font : Type1Font, ascii_data : Bytes) -> Unit 
   let axis_mins : Array[@fixed.Fixed] = []
   let axis_defaults : Array[@fixed.Fixed] = []
   let axis_maxs : Array[@fixed.Fixed] = []
+  let default_weights : Array[@fixed.Fixed] = []
   for axis in 0..<axis_count {
     axis_mins.push(fixed_from_double(mins[axis]))
     axis_defaults.push(fixed_from_double(defaults[axis] / denom))
     axis_maxs.push(fixed_from_double(maxs[axis]))
+  }
+  for weight in weight_vector {
+    default_weights.push(fixed_from_double(weight))
   }
   font.multiple_master = true
   font.mm_axis_tags = axis_tags
   font.mm_axis_mins = axis_mins
   font.mm_axis_defaults = axis_defaults
   font.mm_axis_maxs = axis_maxs
+  font.mm_design_maps = design_maps
+  font.mm_default_weights = default_weights
+}
+
+///|
+fn round_double_to_int_local(value : Double) -> Int {
+  if value < 0.0 {
+    (value - 0.5).to_int()
+  } else {
+    (value + 0.5).to_int()
+  }
+}
+
+///|
+fn design_coord_from_normalized(
+  norm : Int,
+  min_value : @fixed.Fixed,
+  default_value : @fixed.Fixed,
+  max_value : @fixed.Fixed,
+) -> @fixed.Fixed {
+  let raw_norm = norm.to_int64()
+  let raw = if raw_norm < 0L {
+    default_value.val() +
+    @fixed.mul_div(raw_norm, default_value.val() - min_value.val(), 0x4000L)
+  } else {
+    default_value.val() +
+    @fixed.mul_div(raw_norm, max_value.val() - default_value.val(), 0x4000L)
+  }
+  @fixed.Fixed::from_raw(raw)
+}
+
+///|
+fn design_coord_to_blend(
+  design_map : Type1MMDesignMap,
+  design_value : @fixed.Fixed,
+) -> Int64 {
+  if design_map.design_points.is_empty() || design_map.blend_points.is_empty() {
+    return 0L
+  }
+  let design = design_value.to_int()
+  let last = design_map.design_points.length() - 1
+  if design <= design_map.design_points[0] {
+    return design_map.blend_points[0].val()
+  }
+  for i in 1..<=last {
+    let point = design_map.design_points[i]
+    if design <= point {
+      let prev_design = design_map.design_points[i - 1]
+      let prev_blend = design_map.blend_points[i - 1].val()
+      let curr_blend = design_map.blend_points[i].val()
+      let denom = (point - prev_design).to_int64()
+      if denom == 0L {
+        return curr_blend
+      }
+      return prev_blend +
+        @fixed.mul_div(
+          (design - prev_design).to_int64(),
+          curr_blend - prev_blend,
+          denom,
+        )
+    }
+  }
+  design_map.blend_points[last].val()
+}
+
+///|
+fn mm_weight_vector_for_normalized_coords(
+  font : Type1Font,
+  normalized_coords : Array[Int],
+) -> Array[Int64] {
+  if !font.multiple_master ||
+    font.mm_axis_tags.is_empty() ||
+    font.mm_default_weights.is_empty() ||
+    font.mm_design_maps.length() != font.mm_axis_tags.length() {
+    return []
+  }
+  let axis_blends : Array[Int64] = []
+  for axis_index in 0..<font.mm_axis_tags.length() {
+    let design_value = if axis_index < normalized_coords.length() {
+      design_coord_from_normalized(
+        normalized_coords[axis_index],
+        font.mm_axis_mins[axis_index],
+        font.mm_axis_defaults[axis_index],
+        font.mm_axis_maxs[axis_index],
+      )
+    } else {
+      font.mm_axis_defaults[axis_index]
+    }
+    let blend = design_coord_to_blend(
+      font.mm_design_maps[axis_index],
+      design_value,
+    )
+    axis_blends.push(blend.max(0L).min(0x10000L))
+  }
+  let weights : Array[Int64] = []
+  for design_index in 0..<font.mm_default_weights.length() {
+    let mut result = 0x10000L
+    for axis_index in 0..<font.mm_axis_tags.length() {
+      let mut factor = if axis_index < axis_blends.length() {
+        axis_blends[axis_index]
+      } else {
+        0x8000L
+      }
+      if (design_index & (1 << axis_index)) == 0 {
+        factor = 0x10000L - factor
+      }
+      if factor <= 0L {
+        result = 0L
+        break
+      }
+      if factor < 0x10000L {
+        result = @fixed.mul_div(result, factor, 0x10000L)
+      }
+    }
+    weights.push(result)
+  }
+  weights
 }
 
 ///|
@@ -1158,12 +1402,16 @@ pub fn load_type1_glyph_full_data(
   font : Type1Font,
   glyph_name : String,
   allow_seac? : Bool = true,
+  normalized_coords? : Array[Int] = [],
 ) -> (@types.Outline, Int64, Array[@psaux.StemHint], Array[@psaux.StemHint]) raise @error.FTError {
   let charstring = match font.charstrings.get(glyph_name) {
     Some(cs) => cs
     None => raise @error.FTError::InvalidGlyphIndex
   }
   let decrypted = charstring_decrypt(charstring, len_iv=font.len_iv)
+  let mm_weight_vector = mm_weight_vector_for_normalized_coords(
+    font, normalized_coords,
+  )
   let load_seac_component : (String) -> (
     @types.Outline,
     Int64,
@@ -1173,13 +1421,20 @@ pub fn load_type1_glyph_full_data(
     if !allow_seac {
       raise @error.FTError::SyntaxError
     }
-    load_type1_glyph_full_data(font, component_name, allow_seac=false)
+    load_type1_glyph_full_data(
+      font,
+      component_name,
+      allow_seac=false,
+      normalized_coords~,
+    )
   }
   @psaux.execute_type1(
     decrypted,
     font.subrs,
     font.default_width_x,
     load_seac_component,
+    mm_weight_vector~,
+    buildchar_len=font.buildchar_len,
   )
 }
 

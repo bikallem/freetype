@@ -130,6 +130,7 @@ test "parse_type1_pfa captures Multiple Master metadata" {
     b"/Encoding StandardEncoding def\n" +
     b"/BlendAxisTypes [ /Weight ] def\n" +
     b"/BlendDesignPositions [ [400] [700] ] def\n" +
+    b"/BlendDesignMap [ [ 0 400 1 700 ] ] def\n" +
     b"/WeightVector [0.5 0.5] def\n"
   let font = parse_type1_pfa(pfa)
   inspect(font.multiple_master(), content="true")
@@ -139,4 +140,88 @@ test "parse_type1_pfa captures Multiple Master metadata" {
   inspect(font.mm_axis_mins()[0].to_int(), content="400")
   inspect(font.mm_axis_defaults()[0].to_int(), content="550")
   inspect(font.mm_axis_maxs()[0].to_int(), content="700")
+}
+
+///|
+fn encode_type1_test_int(value : Int) -> Bytes {
+  let byte_of = fn(n : Int) { n.to_byte() }
+  if value >= -107 && value <= 107 {
+    Bytes::from_array([byte_of(value + 139)])
+  } else if value >= 108 && value <= 1131 {
+    let adjusted = value - 108
+    Bytes::from_array([byte_of(247 + adjusted / 256), byte_of(adjusted % 256)])
+  } else if value >= -1131 && value <= -108 {
+    let adjusted = -value - 108
+    Bytes::from_array([byte_of(251 + adjusted / 256), byte_of(adjusted % 256)])
+  } else {
+    Bytes::from_array([
+      b'\xFF',
+      byte_of((value >> 24) & 0xFF),
+      byte_of((value >> 16) & 0xFF),
+      byte_of((value >> 8) & 0xFF),
+      byte_of(value & 0xFF),
+    ])
+  }
+}
+
+///|
+fn concat_type1_test_bytes(chunks : Array[Bytes]) -> Bytes {
+  let out : Array[Byte] = []
+  for chunk in chunks {
+    for byte in chunk {
+      out.push(byte)
+    }
+  }
+  Bytes::from_array(out[:])
+}
+
+///|
+fn encrypt_type1_test_charstring(plaintext : Bytes, len_iv : Int) -> Bytes {
+  let mut key : UInt = 4330U
+  let out : Array[Byte] = []
+  for _ in 0..<len_iv {
+    let cipher = (key >> 8).to_byte()
+    out.push(cipher)
+    key = ((cipher.to_uint() + key) * 52845U + 22719U) & 0xFFFFU
+  }
+  for byte in plaintext {
+    let cipher = (byte.to_uint() ^ (key >> 8)).to_byte()
+    out.push(cipher)
+    key = ((cipher.to_uint() + key) * 52845U + 22719U) & 0xFFFFU
+  }
+  Bytes::from_array(out[:])
+}
+
+///|
+test "load_type1_glyph_full_data applies normalized MM coordinates" {
+  let font = Type1Font::new()
+  font.multiple_master = true
+  font.mm_axis_tags = [@types.make_tag(b'w', b'g', b'h', b't')]
+  font.mm_axis_mins = [@fixed.Fixed::from_int(400)]
+  font.mm_axis_defaults = [@fixed.Fixed::from_int(550)]
+  font.mm_axis_maxs = [@fixed.Fixed::from_int(700)]
+  font.mm_design_maps = [
+    {
+      design_points: [400, 700],
+      blend_points: [@fixed.Fixed::from_int(0), @fixed.Fixed::from_int(1)],
+    },
+  ]
+  font.mm_default_weights = [fixed_from_double(0.5), fixed_from_double(0.5)]
+  let plain = concat_type1_test_bytes([
+    encode_type1_test_int(50),
+    encode_type1_test_int(400),
+    encode_type1_test_int(200),
+    encode_type1_test_int(2),
+    encode_type1_test_int(14),
+    Bytes::from_array([b'\x0C', b'\x10']),
+    Bytes::from_array([b'\x0C', b'\x11']),
+    Bytes::from_array([b'\x0D', b'\x0E']),
+  ])
+  font.charstrings["A"] = encrypt_type1_test_charstring(plain, 4)
+  let (_, default_width, _, _) = load_type1_glyph_full_data(font, "A")
+  inspect(default_width, content="500")
+  let (_, max_width, _, _) = load_type1_glyph_full_data(font, "A", normalized_coords=[
+    0x4000,
+  ])
+  inspect(max_width, content="600")
 }

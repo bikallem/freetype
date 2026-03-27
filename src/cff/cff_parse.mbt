@@ -897,6 +897,37 @@ pub fn load_cff2(
   for i in 0..<global_count {
     cached_global_subrs.push(global_subrs.get_item(i))
   }
+  let (private_dict, private_data, local_subrs, cached_local_subrs) = if top_dict.private_size >
+    0U {
+    let priv_start = offset + top_dict.private_offset.reinterpret_as_int()
+    let priv_size = top_dict.private_size.reinterpret_as_int()
+    reader.seek(priv_start)
+    let priv_data = reader.read_bytes(priv_size)
+    let parsed_private = parse_private_dict_cff2(priv_data, vstore~)
+    let maybe_local_subrs = if parsed_private.subrs_offset > 0U {
+      let subrs_abs = offset +
+        top_dict.private_offset.reinterpret_as_int() +
+        parsed_private.subrs_offset.reinterpret_as_int()
+      reader.seek(subrs_abs)
+      Some(parse_cff2_index(reader))
+    } else {
+      None
+    }
+    let cached_subrs : Array[Bytes] = match maybe_local_subrs {
+      Some(idx) => {
+        let count = idx.count.reinterpret_as_int()
+        let subrs : Array[Bytes] = []
+        for i in 0..<count {
+          subrs.push(idx.get_item(i))
+        }
+        subrs
+      }
+      None => []
+    }
+    (parsed_private, Some(priv_data), maybe_local_subrs, cached_subrs)
+  } else {
+    (CffPrivateDict::new(), None, None, [])
+  }
   let fd_private_dicts : Array[CffPrivateDict] = []
   let fd_private_data : Array[Bytes] = []
   let fd_local_subrs : Array[Array[Bytes]] = []
@@ -971,16 +1002,6 @@ pub fn load_cff2(
       _ => raise @error.FTError::InvalidTable
     }
   }
-  let private_dict = if fd_private_dicts.length() > 0 {
-    fd_private_dicts[0]
-  } else {
-    CffPrivateDict::new()
-  }
-  let cached_local_subrs = if fd_local_subrs.length() > 0 {
-    fd_local_subrs[0]
-  } else {
-    []
-  }
   {
     header,
     name: "",
@@ -990,10 +1011,10 @@ pub fn load_cff2(
     is_fixed_pitch: false,
     top_dict,
     private_dict,
-    private_data: None,
+    private_data,
     charstrings,
     global_subrs,
-    local_subrs: None,
+    local_subrs,
     num_glyphs,
     custom_strings: [],
     glyph_names: [],
@@ -1022,9 +1043,9 @@ pub fn load_cff_glyph(
   }
   let private_dict = if cff.is_cff2() {
     let fd_idx = cff.fd_index_for_glyph(glyph_index)
-    let maybe_private_data = if cff.top_dict().is_cid() &&
-      fd_idx >= 0 &&
-      fd_idx < cff.fd_private_data().length() {
+    let maybe_private_data = if fd_idx >= 0 &&
+      fd_idx < cff.fd_private_data().length() &&
+      cff.fd_private_data()[fd_idx].length() > 0 {
       Some(cff.fd_private_data()[fd_idx])
     } else {
       cff.private_data()

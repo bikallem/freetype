@@ -426,22 +426,18 @@ pub fn load_glyph(
   load_flags? : Int = 0,
 ) -> Unit raise @error.FTError {
   match face.driver_data() {
-    SfntDriver(ops) =>
-      if ops.load_native_slot()(face, glyph_index, load_flags) {
-        return
-      }
     Type1Ops(ops) =>
       if ops.load_native_slot()(face, glyph_index, load_flags) {
         return
       }
-    Empty | BitmapOps(_) => ()
+    Empty | BitmapOps(_) | SfntDriver(_) => ()
   }
   match face.driver_data() {
     BitmapOps(ops) => {
       load_bitmap_glyph(face, glyph_index, load_flags, ops)
       return
     }
-    SfntDriver(ops) =>
+    SfntDriver(ops) => {
       if (load_flags & @base.LOAD_COLOR) != 0 &&
         (load_flags & @base.LOAD_NO_SCALE) == 0 &&
         face.size().metrics().x_ppem() != 0U &&
@@ -462,6 +458,10 @@ pub fn load_glyph(
           None => ()
         }
       }
+      if ops.load_native_slot()(face, glyph_index, load_flags) {
+        return
+      }
+    }
     _ => ()
   }
   let (slot_data, outline, tt_instructions, tt_phantoms) = match

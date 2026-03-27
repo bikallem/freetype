@@ -9,7 +9,7 @@ import {
 // Values
 pub fn calc_subr_bias(Int) -> Int
 
-pub fn execute_type1(Bytes, Array[Bytes], Int64, (String) -> (@types.Outline, Int64, Array[StemHint], Array[StemHint]) raise @error.FTError) -> (@types.Outline, Int64, Array[StemHint], Array[StemHint]) raise @error.FTError
+pub fn execute_type1(Bytes, Array[Bytes], Int64, (String) -> (@types.Outline, Int64, Array[StemHint], Array[StemHint]) raise @error.FTError, mm_weight_vector? : Array[Int64], buildchar_len? : Int) -> (@types.Outline, Int64, Array[StemHint], Array[StemHint]) raise @error.FTError
 
 pub fn execute_type2(Bytes, Int64, Int64, local_subrs? : Array[Bytes], global_subrs? : Array[Bytes], is_cff2? : Bool, default_vsindex? : Int, blend_vectors? : Array[Array[Int64]?]) -> (@types.Outline, Int64, Array[StemHint], Array[StemHint]) raise @error.FTError
 
