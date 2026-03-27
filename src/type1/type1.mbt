@@ -218,24 +218,10 @@ pub fn parse_type1_pfb(data : Bytes) -> Type1Font raise @error.FTError {
 /// The entire file is ASCII; the eexec section is hex-encoded.
 fn parse_type1_pfa(data : Bytes) -> Type1Font {
   let font = Type1Font::new()
-  // The whole file is ASCII
-  font.font_name = extract_font_name(data)
-  font.family_name = extract_family_name(data)
-  font.font_matrix = extract_font_matrix(data)
-  font.font_bbox = extract_font_bbox(data)
-  font.underline_position = extract_named_int(data, "UnderlinePosition")
-  font.underline_thickness = extract_named_int(data, "UnderlineThickness")
-  let (encoding, custom_encoding, expert_encoding, latin1_encoding) = parse_encoding(
-    data,
-  )
-  font.encoding = encoding
-  font.custom_encoding = custom_encoding
-  font.expert_encoding = expert_encoding
-  font.latin1_encoding = latin1_encoding
-  apply_multiple_master_metadata(font, data)
-  font.buildchar_len = extract_buildchar_len(data)
-  // Find "eexec" keyword — everything after it is hex-encoded encrypted data
   let text_len = data.length()
+  // Find "eexec" keyword first — everything after it is encrypted data that
+  // must not be fed to the clear-text extraction helpers (binary bytes after
+  // eexec can contain false-positive matches for keywords like "/Encoding").
   let mut eexec_pos = -1
   for i in 0..<(text_len - 5) {
     if data[i] == b'e' &&
@@ -256,6 +242,25 @@ fn parse_type1_pfa(data : Bytes) -> Type1Font {
       break
     }
   }
+  // Use only the clear-text portion (before eexec) for metadata extraction
+  // so that binary/hex eexec data cannot confuse keyword searches.
+  let clear_len = if eexec_pos >= 0 { eexec_pos } else { text_len }
+  let clear_text = data[0:clear_len].to_bytes()
+  font.font_name = extract_font_name(clear_text)
+  font.family_name = extract_family_name(clear_text)
+  font.font_matrix = extract_font_matrix(clear_text)
+  font.font_bbox = extract_font_bbox(clear_text)
+  font.underline_position = extract_named_int(clear_text, "UnderlinePosition")
+  font.underline_thickness = extract_named_int(clear_text, "UnderlineThickness")
+  let (encoding, custom_encoding, expert_encoding, latin1_encoding) = parse_encoding(
+    clear_text,
+  )
+  font.encoding = encoding
+  font.custom_encoding = custom_encoding
+  font.expert_encoding = expert_encoding
+  font.latin1_encoding = latin1_encoding
+  apply_multiple_master_metadata(font, clear_text)
+  font.buildchar_len = extract_buildchar_len(clear_text)
   if eexec_pos >= 0 {
     // Decode hex characters to binary
     let binary : Array[Byte] = []

@@ -619,11 +619,46 @@ fn make_bitmap(layout : RasterLayout, buffer : Bytes) -> @types.Bitmap {
 }
 
 ///|
+/// Compute bitmap layout from outline cbox for anti-aliased rendering.
+///
+/// Mirrors C FreeType's ft_glyphslot_preset_bitmap two-step approach:
+///  1. Split each cbox coordinate into a pixel part (>> 6) and a
+///     sub-pixel remainder (& 63).
+///  2. For NORMAL mode the pixel box is:
+///       xMin += remainder.xMin >> 6          (always 0)
+///       yMin += remainder.yMin >> 6          (always 0)
+///       xMax += (remainder.xMax + 63) >> 6   (0 or 1)
+///       yMax += (remainder.yMax + 63) >> 6   (0 or 1)
+///
+/// The key difference from a plain floor/ceil is that C FreeType uses
+/// arithmetic-right-shift (>>) and bitwise-AND (&) on the *original*
+/// 26.6 coordinates.  Signed right-shift and signed division can
+/// disagree when the operand is negative and not a multiple of 64,
+/// because >> floors while / truncates toward zero.  To stay
+/// bit-identical we replicate the shift-and-mask arithmetic here.
 fn normal_layout(cbox : @types.BBox) -> RasterLayout {
-  let x_min = floor_div(cbox.x_min(), 64L).to_int()
-  let y_min = floor_div(cbox.y_min(), 64L).to_int()
-  let x_max = ceil_div(cbox.x_max(), 64L).to_int()
-  let y_max = ceil_div(cbox.y_max(), 64L).to_int()
+  // Step 1 – pixel-grid estimate (arithmetic right shift by 6)
+  let mut px_x_min = cbox.x_min() >> 6
+  let mut px_y_min = cbox.y_min() >> 6
+  let mut px_x_max = cbox.x_max() >> 6
+  let mut px_y_max = cbox.y_max() >> 6
+
+  // Step 2 – sub-pixel remainder (low 6 bits, always 0..63)
+  let rx_min = cbox.x_min() & 63L
+  let ry_min = cbox.y_min() & 63L
+  let rx_max = cbox.x_max() & 63L
+  let ry_max = cbox.y_max() & 63L
+
+  // Step 3 – adjust pixel box for NORMAL (gray) mode
+  px_x_min += rx_min >> 6 // always 0
+  px_y_min += ry_min >> 6 // always 0
+  px_x_max += (rx_max + 63L) >> 6 // 0 or 1
+  px_y_max += (ry_max + 63L) >> 6 // 0 or 1
+
+  let x_min = px_x_min.to_int()
+  let y_min = px_y_min.to_int()
+  let x_max = px_x_max.to_int()
+  let y_max = px_y_max.to_int()
   let width = x_max - x_min
   let rows = y_max - y_min
   RasterLayout::new(
