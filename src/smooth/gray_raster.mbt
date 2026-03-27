@@ -522,52 +522,793 @@ fn sweep_worker(
 }
 
 ///|
-pub fn render_outline_normal(
-  outline : @types.Outline,
-) -> (@types.Bitmap, Int, Int) raise @error.FTError {
-  let cbox = @base.outline_get_cbox(outline)
+priv struct RasterLayout {
+  left : Int
+  top : Int
+  base_width : Int
+  base_rows : Int
+  width : Int
+  rows : Int
+  pitch : Int
+  pixel_mode : @types.PixelMode
+  num_grays : UInt
+}
+
+///|
+fn RasterLayout::new(
+  left : Int,
+  top : Int,
+  base_width : Int,
+  base_rows : Int,
+  width : Int,
+  rows : Int,
+  pitch : Int,
+  pixel_mode : @types.PixelMode,
+  num_grays : UInt,
+) -> RasterLayout {
+  {
+    left,
+    top,
+    base_width,
+    base_rows,
+    width,
+    rows,
+    pitch,
+    pixel_mode,
+    num_grays,
+  }
+}
+
+///|
+fn pad_ceil(value : Int, align : Int) -> Int {
+  if value <= 0 {
+    0
+  } else {
+    (value + align - 1) / align * align
+  }
+}
+
+///|
+fn clone_outline(outline : @types.Outline) -> @types.Outline {
+  let points : Array[@types.Vector] = []
+  let tags : Array[Byte] = []
+  let contours : Array[UInt] = []
+  for i in 0..<outline.n_points() {
+    points.push(outline.points()[i])
+    tags.push(outline.tags()[i])
+  }
+  for i in 0..<outline.n_contours() {
+    contours.push(outline.contours()[i])
+  }
+  let copy = @types.Outline::create_with_counts(
+    FixedArray::from_array(points),
+    FixedArray::from_array(tags),
+    FixedArray::from_array(contours),
+    outline.n_points(),
+    outline.n_contours(),
+  )
+  copy.set_flags(outline.flags())
+  copy
+}
+
+///|
+fn make_bitmap(layout : RasterLayout, buffer : Bytes) -> @types.Bitmap {
+  let bitmap = @types.Bitmap::new()
+  bitmap.set_width(
+    if layout.width > 0 {
+      layout.width.reinterpret_as_uint()
+    } else {
+      0U
+    },
+  )
+  bitmap.set_rows(
+    if layout.rows > 0 {
+      layout.rows.reinterpret_as_uint()
+    } else {
+      0U
+    },
+  )
+  bitmap.set_pitch(layout.pitch)
+  bitmap.set_num_grays(layout.num_grays)
+  bitmap.set_pixel_mode(layout.pixel_mode)
+  bitmap.set_buffer(buffer)
+  bitmap
+}
+
+///|
+fn normal_layout(cbox : @types.BBox) -> RasterLayout {
   let x_min = floor_div(cbox.x_min(), 64L).to_int()
   let y_min = floor_div(cbox.y_min(), 64L).to_int()
   let x_max = ceil_div(cbox.x_max(), 64L).to_int()
   let y_max = ceil_div(cbox.y_max(), 64L).to_int()
   let width = x_max - x_min
   let rows = y_max - y_min
-  let bitmap = @types.Bitmap::new()
-  bitmap.set_width(if width > 0 { width.reinterpret_as_uint() } else { 0U })
-  bitmap.set_rows(if rows > 0 { rows.reinterpret_as_uint() } else { 0U })
-  bitmap.set_pitch(if width > 0 { width } else { 0 })
-  bitmap.set_num_grays(256U)
-  bitmap.set_pixel_mode(@types.PixelMode::Gray)
-
-  if width <= 0 ||
-    rows <= 0 ||
-    outline.n_points() == 0 ||
-    outline.n_contours() == 0 {
-    bitmap.set_buffer(b"")
-    return (bitmap, x_min, y_max)
-  }
-
-  @base.outline_translate(
-    outline,
-    (-x_min).to_int64() << 6,
-    (-y_min).to_int64() << 6,
+  RasterLayout::new(
+    x_min,
+    y_max,
+    width,
+    rows,
+    width,
+    rows,
+    if width > 0 {
+      width
+    } else {
+      0
+    },
+    @types.PixelMode::Gray,
+    256U,
   )
-  let worker = GrayWorker::new(outline, width, rows)
-  let render_result : Result[Unit, @error.FTError] = Ok(worker.render()) catch {
-    err => Err(err)
-  }
-  @base.outline_translate(outline, x_min.to_int64() << 6, y_min.to_int64() << 6)
-  match render_result {
-    Ok(_) => ()
-    Err(err) => raise err
+}
+
+///|
+fn mono_bound(value : Int64, offset : Int) -> Int {
+  let pixel = floor_div(value, 64L).to_int()
+  let remainder = (value - pixel.to_int64() * 64L).to_int()
+  pixel + ((remainder + offset) >> 6)
+}
+
+///|
+fn mono_collapsed_adjust(lo_value : Int64, hi_value : Int64) -> Int {
+  let lo_pixel = floor_div(lo_value, 64L).to_int()
+  let hi_pixel = floor_div(hi_value, 64L).to_int()
+  let lo_remainder = (lo_value - lo_pixel.to_int64() * 64L).to_int()
+  let hi_remainder = (hi_value - hi_pixel.to_int64() * 64L).to_int()
+  ((lo_remainder + 31) & 63) - 31 + (((hi_remainder + 32) & 63) - 32)
+}
+
+///|
+fn mono_layout(cbox : @types.BBox) -> RasterLayout {
+  let mut x_min = mono_bound(cbox.x_min(), 31)
+  let mut x_max = mono_bound(cbox.x_max(), 32)
+  if x_min == x_max {
+    if mono_collapsed_adjust(cbox.x_min(), cbox.x_max()) < 0 {
+      x_min -= 1
+    } else {
+      x_max += 1
+    }
   }
 
+  let mut y_min = mono_bound(cbox.y_min(), 31)
+  let mut y_max = mono_bound(cbox.y_max(), 32)
+  if y_min == y_max {
+    if mono_collapsed_adjust(cbox.y_min(), cbox.y_max()) < 0 {
+      y_min -= 1
+    } else {
+      y_max += 1
+    }
+  }
+
+  let width = x_max - x_min
+  let rows = y_max - y_min
+  RasterLayout::new(
+    x_min,
+    y_max,
+    width,
+    rows,
+    width,
+    rows,
+    if width > 0 {
+      (width + 15) >> 4 << 1
+    } else {
+      0
+    },
+    @types.PixelMode::Mono,
+    256U,
+  )
+}
+
+///|
+fn lcd_layout(cbox : @types.BBox) -> RasterLayout {
+  let padded = @types.BBox::new(
+    cbox.x_min() - 21L,
+    cbox.y_min(),
+    cbox.x_max() + 21L,
+    cbox.y_max(),
+  )
+  let x_min = floor_div(padded.x_min(), 64L).to_int()
+  let y_min = floor_div(padded.y_min(), 64L).to_int()
+  let x_max = ceil_div(padded.x_max(), 64L).to_int()
+  let y_max = ceil_div(padded.y_max(), 64L).to_int()
+  let base_width = x_max - x_min
+  let base_rows = y_max - y_min
+  let width = if base_width > 0 { base_width * 3 } else { 0 }
+  RasterLayout::new(
+    x_min,
+    y_max,
+    base_width,
+    base_rows,
+    width,
+    base_rows,
+    pad_ceil(width, 4),
+    @types.PixelMode::Lcd,
+    256U,
+  )
+}
+
+///|
+fn lcdv_layout(cbox : @types.BBox) -> RasterLayout {
+  let padded = @types.BBox::new(
+    cbox.x_min(),
+    cbox.y_min() - 21L,
+    cbox.x_max(),
+    cbox.y_max() + 21L,
+  )
+  let x_min = floor_div(padded.x_min(), 64L).to_int()
+  let y_min = floor_div(padded.y_min(), 64L).to_int()
+  let x_max = ceil_div(padded.x_max(), 64L).to_int()
+  let y_max = ceil_div(padded.y_max(), 64L).to_int()
+  let base_width = x_max - x_min
+  let base_rows = y_max - y_min
+  let rows = if base_rows > 0 { base_rows * 3 } else { 0 }
+  RasterLayout::new(
+    x_min,
+    y_max,
+    base_width,
+    base_rows,
+    base_width,
+    rows,
+    if base_width > 0 {
+      base_width
+    } else {
+      0
+    },
+    @types.PixelMode::LcdV,
+    256U,
+  )
+}
+
+///|
+fn render_gray_plane(
+  outline : @types.Outline,
+  left : Int,
+  top : Int,
+  width : Int,
+  rows : Int,
+  origin_rows? : Int = rows,
+  shift_x? : Int64 = 0L,
+  shift_y? : Int64 = 0L,
+  scale_x? : Int = 1,
+  scale_y? : Int = 1,
+) -> Bytes raise @error.FTError {
+  if width <= 0 || rows <= 0 {
+    return b""
+  }
+  if outline.n_points() == 0 || outline.n_contours() == 0 {
+    return Bytes::from_array(FixedArray::make(width * rows, b'\x00')[:])
+  }
+
+  let copy = clone_outline(outline)
+  @base.outline_translate(
+    copy,
+    ((-left).to_int64() << 6) + shift_x,
+    ((origin_rows - top).to_int64() << 6) + shift_y,
+  )
+  if scale_x != 1 || scale_y != 1 {
+    for i in 0..<copy.n_points() {
+      let p = copy.points()[i]
+      copy.points()[i] = @types.Vector::new(
+        p.x() * scale_x.to_int64(),
+        p.y() * scale_y.to_int64(),
+      )
+    }
+  }
+  let worker = GrayWorker::new(copy, width, rows)
+  worker.render()
   let pixels = FixedArray::make(width * rows, b'\x00')
   sweep_worker(
     worker,
     pixels,
     (outline.flags() & @types.OUTLINE_EVEN_ODD_FILL) != 0,
   )
-  bitmap.set_buffer(Bytes::from_array(pixels[:]))
-  (bitmap, x_min, y_max)
+  Bytes::from_array(pixels[:])
+}
+
+///|
+fn same_vector(a : @types.Vector, b : @types.Vector) -> Bool {
+  a.x() == b.x() && a.y() == b.y()
+}
+
+///|
+fn midpoint(a : @types.Vector, b : @types.Vector) -> @types.Vector {
+  @types.Vector::new((a.x() + b.x()) / 2L, (a.y() + b.y()) / 2L)
+}
+
+///|
+fn conic_flat_enough(
+  p0 : @types.Vector,
+  p1 : @types.Vector,
+  p2 : @types.Vector,
+) -> Bool {
+  let bx = p1.x() - p0.x()
+  let by = p1.y() - p0.y()
+  let ax = p2.x() - p1.x() - bx
+  let ay = p2.y() - p1.y() - by
+  let mut dx = abs_i64(ax)
+  let dy = abs_i64(ay)
+  if dx < dy {
+    dx = dy
+  }
+  dx <= one_pixel_i64 / 4L
+}
+
+///|
+fn cubic_flat_enough(
+  p0 : @types.Vector,
+  p1 : @types.Vector,
+  p2 : @types.Vector,
+  p3 : @types.Vector,
+) -> Bool {
+  abs_i64(2L * p0.x() - 3L * p1.x() + p3.x()) <= one_pixel_i64 / 2L &&
+  abs_i64(2L * p0.y() - 3L * p1.y() + p3.y()) <= one_pixel_i64 / 2L &&
+  abs_i64(p0.x() - 3L * p2.x() + 2L * p3.x()) <= one_pixel_i64 / 2L &&
+  abs_i64(p0.y() - 3L * p2.y() + 2L * p3.y()) <= one_pixel_i64 / 2L
+}
+
+///|
+priv struct MonoBuilder {
+  contours : Array[Array[@types.Vector]]
+  mut current : Array[@types.Vector]
+  mut current_point : @types.Vector
+  mut has_current : Bool
+}
+
+///|
+fn MonoBuilder::new() -> MonoBuilder {
+  {
+    contours: [],
+    current: [],
+    current_point: @types.Vector::new(0L, 0L),
+    has_current: false,
+  }
+}
+
+///|
+fn MonoBuilder::push_point(self : MonoBuilder, point : @types.Vector) -> Unit {
+  let last_index = self.current.length() - 1
+  if self.current.is_empty() || !same_vector(self.current[last_index], point) {
+    self.current.push(point)
+  }
+  self.current_point = point
+  self.has_current = true
+}
+
+///|
+fn MonoBuilder::finish_contour(self : MonoBuilder) -> Unit {
+  if !self.has_current || self.current.length() < 2 {
+    self.current = []
+    self.has_current = false
+    return
+  }
+  let last_index = self.current.length() - 1
+  if !same_vector(self.current[0], self.current[last_index]) {
+    self.current.push(self.current[0])
+  }
+  self.contours.push(self.current)
+  self.current = []
+  self.has_current = false
+}
+
+///|
+fn flatten_conic_to(
+  builder : MonoBuilder,
+  p0 : @types.Vector,
+  p1 : @types.Vector,
+  p2 : @types.Vector,
+) -> Unit {
+  if conic_flat_enough(p0, p1, p2) {
+    builder.push_point(p2)
+    return
+  }
+  let p01 = midpoint(p0, p1)
+  let p12 = midpoint(p1, p2)
+  let p012 = midpoint(p01, p12)
+  flatten_conic_to(builder, p0, p01, p012)
+  flatten_conic_to(builder, p012, p12, p2)
+}
+
+///|
+fn flatten_cubic_to(
+  builder : MonoBuilder,
+  p0 : @types.Vector,
+  p1 : @types.Vector,
+  p2 : @types.Vector,
+  p3 : @types.Vector,
+) -> Unit {
+  if cubic_flat_enough(p0, p1, p2, p3) {
+    builder.push_point(p3)
+    return
+  }
+  let p01 = midpoint(p0, p1)
+  let p12 = midpoint(p1, p2)
+  let p23 = midpoint(p2, p3)
+  let p012 = midpoint(p01, p12)
+  let p123 = midpoint(p12, p23)
+  let p0123 = midpoint(p012, p123)
+  flatten_cubic_to(builder, p0, p01, p012, p0123)
+  flatten_cubic_to(builder, p0123, p123, p23, p3)
+}
+
+///|
+fn flatten_outline(
+  outline : @types.Outline,
+  left : Int,
+  top : Int,
+  rows : Int,
+) -> Array[Array[@types.Vector]] raise @error.FTError {
+  if outline.n_points() == 0 || outline.n_contours() == 0 {
+    return []
+  }
+  let copy = clone_outline(outline)
+  @base.outline_translate(
+    copy,
+    (-left).to_int64() << 6,
+    (rows - top).to_int64() << 6,
+  )
+  let builder = MonoBuilder::new()
+  let funcs = @base.OutlineFuncs::new(
+    move_to=fn(to) {
+      builder.finish_contour()
+      builder.push_point(to)
+    },
+    line_to=fn(to) { builder.push_point(to) },
+    conic_to=fn(control, to) {
+      flatten_conic_to(builder, builder.current_point, control, to)
+    },
+    cubic_to=fn(control1, control2, to) {
+      flatten_cubic_to(builder, builder.current_point, control1, control2, to)
+    },
+  )
+  @base.outline_decompose(copy, funcs)
+  builder.finish_contour()
+  builder.contours
+}
+
+///|
+fn edge_intersection_x(
+  p0 : @types.Vector,
+  p1 : @types.Vector,
+  y : Int64,
+) -> Int64 {
+  p0.x() + (y - p0.y()) * (p1.x() - p0.x()) / (p1.y() - p0.y())
+}
+
+///|
+fn insert_intersection(
+  xs : Array[Int64],
+  deltas : Array[Int],
+  x : Int64,
+  delta : Int,
+) -> Unit {
+  let mut i = 0
+  while i < xs.length() && xs[i] <= x {
+    i += 1
+  }
+  xs.insert(i, x)
+  deltas.insert(i, delta)
+}
+
+///|
+fn set_mono_bit(packed : FixedArray[Byte], dst_offset : Int, x : Int) -> Unit {
+  let byte_index = dst_offset + (x >> 3)
+  packed[byte_index] = packed[byte_index] | (0x80 >> (x & 7)).to_byte()
+}
+
+///|
+fn fill_mono_span(
+  packed : FixedArray[Byte],
+  dst_offset : Int,
+  width : Int,
+  x_start : Int64,
+  x_end : Int64,
+) -> Bool {
+  let mut filled = false
+  for x in 0..<width {
+    let x_center = (x << 6).to_int64() + 32L
+    if x_start < x_center && x_center < x_end {
+      set_mono_bit(packed, dst_offset, x)
+      filled = true
+    }
+  }
+  filled
+}
+
+///|
+fn fill_mono_span_with_dropout(
+  packed : FixedArray[Byte],
+  dst_offset : Int,
+  width : Int,
+  x_start : Int64,
+  x_end : Int64,
+  allow_dropout : Bool,
+) -> Unit {
+  if x_end <= x_start {
+    return
+  }
+  if fill_mono_span(packed, dst_offset, width, x_start, x_end) {
+    return
+  }
+  if !allow_dropout {
+    return
+  }
+  let drop_x = floor_div((x_start + x_end) / 2L, 64L).to_int()
+  if drop_x >= 0 && drop_x < width {
+    set_mono_bit(packed, dst_offset, drop_x)
+  }
+}
+
+///|
+fn rasterize_mono_scanline(
+  packed : FixedArray[Byte],
+  dst_offset : Int,
+  width : Int,
+  contours : Array[Array[@types.Vector]],
+  y : Int64,
+  even_odd : Bool,
+  allow_dropout : Bool,
+) -> Unit {
+  let xs : Array[Int64] = []
+  let deltas : Array[Int] = []
+  for contour in contours {
+    for i in 1..<contour.length() {
+      let p0 = contour[i - 1]
+      let p1 = contour[i]
+      if p0.y() <= y && y < p1.y() {
+        insert_intersection(xs, deltas, edge_intersection_x(p0, p1, y), 1)
+      } else if p1.y() <= y && y < p0.y() {
+        insert_intersection(xs, deltas, edge_intersection_x(p0, p1, y), -1)
+      }
+    }
+  }
+  if even_odd {
+    let mut i = 0
+    while i + 1 < xs.length() {
+      fill_mono_span_with_dropout(
+        packed,
+        dst_offset,
+        width,
+        xs[i],
+        xs[i + 1],
+        allow_dropout,
+      )
+      i += 2
+    }
+    return
+  }
+
+  let mut winding = 0
+  let mut span_start = 0L
+  let mut active = false
+  for i in 0..<xs.length() {
+    let prev = winding
+    winding += deltas[i]
+    if prev == 0 && winding != 0 {
+      span_start = xs[i]
+      active = true
+    } else if active && prev != 0 && winding == 0 {
+      fill_mono_span_with_dropout(
+        packed,
+        dst_offset,
+        width,
+        span_start,
+        xs[i],
+        allow_dropout,
+      )
+      active = false
+    }
+  }
+}
+
+///|
+fn render_mono_plane(
+  outline : @types.Outline,
+  left : Int,
+  top : Int,
+  width : Int,
+  rows : Int,
+  pitch : Int,
+) -> Bytes raise @error.FTError {
+  if width <= 0 || rows <= 0 {
+    return b""
+  }
+  let packed = FixedArray::make(rows * pitch, b'\x00')
+  if outline.n_points() == 0 || outline.n_contours() == 0 {
+    return Bytes::from_array(packed[:])
+  }
+  let contours = flatten_outline(outline, left, top, rows)
+  let even_odd = (outline.flags() & @types.OUTLINE_EVEN_ODD_FILL) != 0
+  for row in 0..<rows {
+    let y = ((rows - 1 - row) << 6).to_int64() + 31L
+    let dst_offset = row * pitch
+    rasterize_mono_scanline(
+      packed,
+      dst_offset,
+      width,
+      contours,
+      y,
+      even_odd,
+      row > 0 && row + 1 < rows,
+    )
+  }
+  Bytes::from_array(packed[:])
+}
+
+///|
+fn interleave_lcd_horizontal(
+  plane0 : Bytes,
+  plane1 : Bytes,
+  plane2 : Bytes,
+  width : Int,
+  rows : Int,
+  pitch : Int,
+) -> Bytes {
+  let interleaved = FixedArray::make(rows * pitch, b'\x00')
+  for row in 0..<rows {
+    let src_offset = row * width
+    let dst_offset = row * pitch
+    for x in 0..<width {
+      let dst = dst_offset + x * 3
+      interleaved[dst] = plane0[src_offset + x]
+      interleaved[dst + 1] = plane1[src_offset + x]
+      interleaved[dst + 2] = plane2[src_offset + x]
+    }
+  }
+  Bytes::from_array(interleaved[:])
+}
+
+///|
+fn interleave_lcd_vertical(
+  plane0 : Bytes,
+  plane1 : Bytes,
+  plane2 : Bytes,
+  width : Int,
+  rows : Int,
+  pitch : Int,
+) -> Bytes {
+  let interleaved = FixedArray::make(rows * 3 * pitch, b'\x00')
+  for y in 0..<rows {
+    let src_offset = y * width
+    let dst0 = y * 3 * pitch
+    let dst1 = dst0 + pitch
+    let dst2 = dst1 + pitch
+    for x in 0..<width {
+      interleaved[dst0 + x] = plane0[src_offset + x]
+      interleaved[dst1 + x] = plane1[src_offset + x]
+      interleaved[dst2 + x] = plane2[src_offset + x]
+    }
+  }
+  Bytes::from_array(interleaved[:])
+}
+
+///|
+fn render_outline_with_layout(
+  outline : @types.Outline,
+  layout : RasterLayout,
+) -> (@types.Bitmap, Int, Int) raise @error.FTError {
+  if layout.width <= 0 || layout.rows <= 0 {
+    return (make_bitmap(layout, b""), layout.left, layout.top)
+  }
+
+  let gray = render_gray_plane(
+    outline,
+    layout.left,
+    layout.top,
+    layout.base_width,
+    layout.base_rows,
+  )
+  let buffer = match layout.pixel_mode {
+    @types.PixelMode::Gray => gray
+    @types.PixelMode::Mono =>
+      render_mono_plane(
+        outline,
+        layout.left,
+        layout.top,
+        layout.base_width,
+        layout.base_rows,
+        layout.pitch,
+      )
+    @types.PixelMode::Lcd => {
+      let left_plane = render_gray_plane(
+        outline,
+        layout.left,
+        layout.top,
+        layout.base_width,
+        layout.base_rows,
+        shift_x=21L,
+      )
+      let right_plane = render_gray_plane(
+        outline,
+        layout.left,
+        layout.top,
+        layout.base_width,
+        layout.base_rows,
+        shift_x=-21L,
+      )
+      interleave_lcd_horizontal(
+        left_plane,
+        gray,
+        right_plane,
+        layout.base_width,
+        layout.base_rows,
+        layout.pitch,
+      )
+    }
+    @types.PixelMode::LcdV => {
+      let top_plane = render_gray_plane(
+        outline,
+        layout.left,
+        layout.top,
+        layout.base_width,
+        layout.base_rows,
+        shift_y=-21L,
+      )
+      let bottom_plane = render_gray_plane(
+        outline,
+        layout.left,
+        layout.top,
+        layout.base_width,
+        layout.base_rows,
+        shift_y=21L,
+      )
+      interleave_lcd_vertical(
+        top_plane,
+        gray,
+        bottom_plane,
+        layout.base_width,
+        layout.base_rows,
+        layout.pitch,
+      )
+    }
+    _ => b""
+  }
+  (make_bitmap(layout, buffer), layout.left, layout.top)
+}
+
+///|
+pub fn render_outline_normal(
+  outline : @types.Outline,
+) -> (@types.Bitmap, Int, Int) raise @error.FTError {
+  render_outline_with_layout(
+    outline,
+    normal_layout(@base.outline_get_cbox(outline)),
+  )
+}
+
+///|
+pub fn render_outline_light(
+  outline : @types.Outline,
+) -> (@types.Bitmap, Int, Int) raise @error.FTError {
+  render_outline_with_layout(
+    outline,
+    normal_layout(@base.outline_get_cbox(outline)),
+  )
+}
+
+///|
+pub fn render_outline_mono(
+  outline : @types.Outline,
+) -> (@types.Bitmap, Int, Int) raise @error.FTError {
+  render_outline_with_layout(
+    outline,
+    mono_layout(@base.outline_get_cbox(outline)),
+  )
+}
+
+///|
+pub fn render_outline_lcd(
+  outline : @types.Outline,
+) -> (@types.Bitmap, Int, Int) raise @error.FTError {
+  render_outline_with_layout(
+    outline,
+    lcd_layout(@base.outline_get_cbox(outline)),
+  )
+}
+
+///|
+pub fn render_outline_lcdv(
+  outline : @types.Outline,
+) -> (@types.Bitmap, Int, Int) raise @error.FTError {
+  render_outline_with_layout(
+    outline,
+    lcdv_layout(@base.outline_get_cbox(outline)),
+  )
 }

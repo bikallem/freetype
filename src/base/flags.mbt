@@ -99,6 +99,24 @@ pub const LOAD_IGNORE_TRANSFORM : Int = 2048
 pub const LOAD_MONOCHROME : Int = 4096
 
 ///|
+pub const LOAD_TARGET_MODE_MASK : Int = 15 << 16
+
+///|
+pub const LOAD_TARGET_NORMAL : Int = 0 << 16
+
+///|
+pub const LOAD_TARGET_LIGHT : Int = 1 << 16
+
+///|
+pub const LOAD_TARGET_MONO : Int = 2 << 16
+
+///|
+pub const LOAD_TARGET_LCD : Int = 3 << 16
+
+///|
+pub const LOAD_TARGET_LCD_V : Int = 4 << 16
+
+///|
 pub const LOAD_LINEAR_DESIGN : Int = 8192
 
 ///|

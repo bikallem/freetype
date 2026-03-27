@@ -79,16 +79,28 @@ def representative_charmap_entries(entries, limit=50):
                 break
     return selected
 
-
-def hex_bytes(text):
-    if not text:
-        return []
-    return list(bytes.fromhex(text))
-
-
 FMT = {".ttf": "TrueType", ".otf": "CffOpenType", ".ttc": "TrueTypeCollection",
        ".woff": "Woff1", ".woff2": "Woff2", ".pfb": "Type1Pfb", ".bdf": "Bdf",
        ".pcf": "Pcf", ".cff": "CffStandalone"}
+
+RENDER_MODE_EXPR = {
+    "NORMAL": "Normal",
+    "LIGHT": "Light",
+    "MONO": "Mono",
+    "LCD": "Lcd",
+    "LCD_V": "LcdV",
+}
+
+PIXEL_MODE_NAME = {
+    0: "None",
+    1: "Mono",
+    2: "Gray",
+    3: "Gray2",
+    4: "Gray4",
+    5: "Lcd",
+    6: "LcdV",
+    7: "Bgra",
+}
 
 
 def font_path_expr(ff):
@@ -281,32 +293,37 @@ def gen_font_tests(ff, golden):
 
     # T9b: rendered bitmap parity
     if rendered_glyphs and should_emit_render_tests(ff):
-        for g in rendered_glyphs[:4]:
+        for g in rendered_glyphs:
             bitmap = g["bitmap"]
-            expected = hex_bytes(bitmap.get("buffer_hex", ""))
+            expected_hex = bitmap.get("buffer_hex", "")
             render_load_flags = g.get("load_flags", "DEFAULT")
             load_flag_expr = {
                 "NO_HINTING": "@base.LOAD_NO_HINTING",
                 "DEFAULT": "0",
             }.get(render_load_flags, "0")
+            render_mode_name = g.get("render_mode", "NORMAL")
+            render_mode_expr = RENDER_MODE_EXPR.get(render_mode_name, "Normal")
+            pixel_mode_name = PIXEL_MODE_NAME.get(bitmap.get("pixel_mode", 0), "None")
             L += [f"///|",
-                  f'test "parity/{ff}: rendered glyph {g["glyph_index"]} char {g["charcode"]}" {{',
+                  f'test "parity/{ff}: rendered glyph {g["glyph_index"]} {render_mode_name} char {g["charcode"]}" {{',
                   f"  let f = @freetype.from_bytes({loader_fn}())",
                   f"  try! @freetype.set_pixel_sizes(f, 0U, {g['size_ppem']}U)",
                   f"  let gid = @freetype.get_char_index(f, {g['charcode']}U)",
                   f'  inspect(gid, content="{g["glyph_index"]}")',
                   f"  try! @freetype.load_glyph(f, gid, load_flags={load_flag_expr})",
-                  f"  try! @freetype.render_glyph(f)",
+                  f"  try! @freetype.render_glyph(f, mode={render_mode_expr})",
                   f'  inspect(f.glyph().format(), content="Bitmap")',
+                  f'  inspect(f.glyph().bitmap().pixel_mode(), content="{pixel_mode_name}")',
                   f'  inspect(f.glyph().bitmap().width(), content="{bitmap["width"]}")',
                   f'  inspect(f.glyph().bitmap().rows(), content="{bitmap["rows"]}")',
                   f'  inspect(f.glyph().bitmap().pitch(), content="{bitmap["pitch"]}")',
                   f'  inspect(f.glyph().bitmap().num_grays(), content="{bitmap["num_grays"]}")',
                   f'  inspect(f.glyph().bitmap_left(), content="{bitmap["left"]}")',
-                  f'  inspect(f.glyph().bitmap_top(), content="{bitmap["top"]}")',
-                  f'  inspect(f.glyph().bitmap().buffer().length(), content="{len(expected)}")']
-            for i, byte in enumerate(expected):
-                L += [f'  inspect(f.glyph().bitmap().buffer()[{i}].to_int(), content="{byte}")']
+                  f'  inspect(f.glyph().bitmap_top(), content="{bitmap["top"]}")']
+            if render_mode_name == "MONO" and expected_hex:
+                L += [f'  inspect(f.glyph().bitmap().buffer().length(), content="{len(expected_hex) // 2}")']
+            else:
+                L += [f'  try! assert_buffer_hex(f.glyph().bitmap().buffer(), "{expected_hex}")']
             L += ["}", ""]
             tc += 1
 
@@ -488,21 +505,7 @@ def gen_font_tests(ff, golden):
 
 
 def should_emit_render_tests(ff):
-    name = os.path.basename(ff)
-    return name in {
-        "DejaVuSans.ttc",
-        "DejaVuSans.ttf",
-        "DejaVuSans.woff",
-        "DejaVuSans.woff2",
-        "NimbusSans-Regular.pfb",
-        "Roboto[wdth,wght].ttf",
-        "minimal.woff2",
-        "minimal_collection.woff2",
-        "minimal_hmtx.woff2",
-        "minimal_standalone.cff",
-        "mvar.ttf",
-        "uvs.ttf",
-    }
+    return True
 
 
 def main():

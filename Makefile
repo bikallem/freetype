@@ -1,4 +1,4 @@
-.PHONY: all build test fmt clean parity bench check
+.PHONY: all build test fmt clean parity parity-tests bench check
 
 # Default: build, format, and test (no bench — it's slow)
 all: build fmt test parity info
@@ -45,7 +45,7 @@ GOLDEN_GEN  := test/golden/generate/gen_golden
 GOLDEN_DATA := test/golden/data
 FONT_DIR    := test/fonts
 
-parity: parity-golden parity-report
+parity: parity-golden parity-tests parity-report
 
 parity-golden: | $(FONT_DIR)/.downloaded
 	@mkdir -p $(GOLDEN_DATA)
@@ -53,11 +53,11 @@ parity-golden: | $(FONT_DIR)/.downloaded
 		$(MAKE) -C test/golden/generate gen_golden 2>/dev/null || true; \
 	fi
 	@if [ -x $(GOLDEN_GEN) ]; then \
-		fonts=$$(find $(FONT_DIR) -maxdepth 1 \( -name '*.ttf' -o -name '*.otf' -o -name '*.bdf' -o -name '*.pfb' -o -name '*.woff' -o -name '*.ttc' \) 2>/dev/null); \
-		if [ -n "$$fonts" ]; then \
-			$(GOLDEN_GEN) $(FONT_DIR) $(GOLDEN_DATA) >/dev/null; \
-		fi; \
+		python3 test/golden/generate/generate.py $(FONT_DIR) $(GOLDEN_DATA) >/dev/null; \
 	fi
+
+parity-tests: parity-golden
+	@python3 test/parity/gen_parity_tests.py >/dev/null
 
 parity-report: parity-golden
 	@python3 test/parity/report.py

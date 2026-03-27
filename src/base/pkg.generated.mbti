@@ -76,6 +76,18 @@ pub const LOAD_RENDER : Int = 4
 
 pub const LOAD_SBITS_ONLY : Int = 16384
 
+pub const LOAD_TARGET_LCD : Int = 196608
+
+pub const LOAD_TARGET_LCD_V : Int = 262144
+
+pub const LOAD_TARGET_LIGHT : Int = 65536
+
+pub const LOAD_TARGET_MODE_MASK : Int = 983040
+
+pub const LOAD_TARGET_MONO : Int = 131072
+
+pub const LOAD_TARGET_NORMAL : Int = 0
+
 pub const LOAD_VERTICAL_LAYOUT : Int = 16
 
 pub const STYLE_FLAG_BOLD : Int = 2

@@ -7,6 +7,14 @@ import {
 }
 
 // Values
+pub fn render_outline_lcd(@types.Outline) -> (@types.Bitmap, Int, Int) raise @error.FTError
+
+pub fn render_outline_lcdv(@types.Outline) -> (@types.Bitmap, Int, Int) raise @error.FTError
+
+pub fn render_outline_light(@types.Outline) -> (@types.Bitmap, Int, Int) raise @error.FTError
+
+pub fn render_outline_mono(@types.Outline) -> (@types.Bitmap, Int, Int) raise @error.FTError
+
 pub fn render_outline_normal(@types.Outline) -> (@types.Bitmap, Int, Int) raise @error.FTError
 
 // Errors

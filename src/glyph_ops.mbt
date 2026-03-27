@@ -260,15 +260,14 @@ fn render_slot_bitmap(
 ) -> Unit raise @error.FTError {
   let slot = face.glyph()
   match slot.format() {
-    Bitmap =>
-      match mode {
-        Normal | Light => ()
-        Mono | Lcd | LcdV => raise @error.FTError::CannotRenderGlyph
-      }
+    Bitmap => ()
     Outline => {
       let (bitmap, left, top) = match mode {
-        Normal | Light => @smooth.render_outline_normal(slot.outline())
-        Mono | Lcd | LcdV => raise @error.FTError::CannotRenderGlyph
+        Normal => @smooth.render_outline_normal(slot.outline())
+        Light => @smooth.render_outline_light(slot.outline())
+        Mono => @smooth.render_outline_mono(slot.outline())
+        Lcd => @smooth.render_outline_lcd(slot.outline())
+        LcdV => @smooth.render_outline_lcdv(slot.outline())
       }
       slot.set_bitmap(bitmap)
       slot.set_bitmap_left(left)
@@ -307,6 +306,9 @@ fn load_bitmap_glyph(
   finalize_aux_vertical_metrics(face, slot_data, true)
   set_slot_linear_advances(face, slot_data, load_flags)
   set_slot_advance_vector(face, load_flags)
+  if (load_flags & @base.LOAD_RENDER) != 0 {
+    render_slot_bitmap(face, render_mode_from_load_flags(load_flags))
+  }
 }
 
 ///|

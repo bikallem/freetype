@@ -60,6 +60,20 @@ static const FT_ULong variation_test_charcodes[] = { 'A', 'a' };
 static const FT_ULong render_test_charcodes[] = { ' ', 'A', 'a', 0x4E00 };
 #define NUM_RENDER_TEST_CHARS (sizeof(render_test_charcodes) / sizeof(render_test_charcodes[0]))
 
+static const struct {
+    const char     *load_flag_name;
+    FT_Int32        load_flags;
+    const char     *render_mode_name;
+    FT_Render_Mode  render_mode;
+} render_mode_matrix[] = {
+    { "NO_HINTING", FT_LOAD_NO_HINTING, "NORMAL", FT_RENDER_MODE_NORMAL },
+    { "NO_HINTING", FT_LOAD_NO_HINTING, "LIGHT",  FT_RENDER_MODE_LIGHT  },
+    { "NO_HINTING", FT_LOAD_NO_HINTING, "MONO",   FT_RENDER_MODE_MONO   },
+    { "NO_HINTING", FT_LOAD_NO_HINTING, "LCD",    FT_RENDER_MODE_LCD    },
+    { "NO_HINTING", FT_LOAD_NO_HINTING, "LCD_V",  FT_RENDER_MODE_LCD_V  },
+};
+#define NUM_RENDER_MODES (sizeof(render_mode_matrix) / sizeof(render_mode_matrix[0]))
+
 static void dump_face_metadata(FILE *fp, FT_Face face) {
     fprintf(fp, "  \"metadata\": {\n");
     fprintf(fp, "    \"family_name\": \"%s\",\n", face->family_name ? face->family_name : "");
@@ -215,6 +229,10 @@ static void dump_one_rendered_glyph(
     FILE *fp,
     FT_Face face,
     FT_ULong charcode,
+    const char *load_flag_name,
+    FT_Int32 load_flags,
+    const char *render_mode_name,
+    FT_Render_Mode render_mode,
     int size_ppem,
     int *first_glyph
 ) {
@@ -223,9 +241,9 @@ static void dump_one_rendered_glyph(
     FT_UInt gindex = FT_Get_Char_Index(face, charcode);
     if (gindex == 0) return;
 
-    FT_Error err = FT_Load_Glyph(face, gindex, FT_LOAD_NO_HINTING);
+    FT_Error err = FT_Load_Glyph(face, gindex, load_flags);
     if (err) return;
-    err = FT_Render_Glyph(face->glyph, FT_RENDER_MODE_NORMAL);
+    err = FT_Render_Glyph(face->glyph, render_mode);
     if (err) return;
     if (face->glyph->format != FT_GLYPH_FORMAT_BITMAP) return;
 
@@ -240,8 +258,8 @@ static void dump_one_rendered_glyph(
     fprintf(fp, "      \"glyph_index\": %u,\n", gindex);
     fprintf(fp, "      \"charcode\": %lu,\n", charcode);
     fprintf(fp, "      \"size_ppem\": %d,\n", size_ppem);
-    fprintf(fp, "      \"load_flags\": \"NO_HINTING\",\n");
-    fprintf(fp, "      \"render_mode\": \"NORMAL\",\n");
+    fprintf(fp, "      \"load_flags\": \"%s\",\n", load_flag_name);
+    fprintf(fp, "      \"render_mode\": \"%s\",\n", render_mode_name);
     fprintf(fp, "      \"bitmap\": {\n");
     fprintf(fp, "        \"width\": %u,\n", bitmap->width);
     fprintf(fp, "        \"rows\": %u,\n", bitmap->rows);
@@ -265,8 +283,20 @@ static void dump_rendered_glyphs(FILE *fp, FT_Face face) {
     }
 
     int first_glyph = 1;
-    for (unsigned c = 0; c < NUM_RENDER_TEST_CHARS; c++) {
-        dump_one_rendered_glyph(fp, face, render_test_charcodes[c], 16, &first_glyph);
+    for (unsigned m = 0; m < NUM_RENDER_MODES; m++) {
+        for (unsigned c = 0; c < NUM_RENDER_TEST_CHARS; c++) {
+            dump_one_rendered_glyph(
+                fp,
+                face,
+                render_test_charcodes[c],
+                render_mode_matrix[m].load_flag_name,
+                render_mode_matrix[m].load_flags,
+                render_mode_matrix[m].render_mode_name,
+                render_mode_matrix[m].render_mode,
+                16,
+                &first_glyph
+            );
+        }
     }
     fprintf(fp, "\n  ]");
 }
@@ -386,7 +416,17 @@ static void process_font(FT_Library library, const char *font_path, const char *
     const char *basename = strrchr(font_path, '/');
     basename = basename ? basename + 1 : font_path;
     char output_path[2048];
-    snprintf(output_path, sizeof(output_path), "%s/%s.json", output_dir, basename);
+    size_t output_len = strlen(output_dir);
+    size_t base_len = strlen(basename);
+    if (output_len + 1 + base_len + 5 >= sizeof(output_path)) {
+        fprintf(stderr, "Output path too long for %s\n", font_path);
+        FT_Done_Face(face);
+        return;
+    }
+    memcpy(output_path, output_dir, output_len);
+    output_path[output_len] = '/';
+    memcpy(output_path + output_len + 1, basename, base_len);
+    memcpy(output_path + output_len + 1 + base_len, ".json", 6);
 
     FILE *fp = fopen(output_path, "w");
     if (!fp) {

@@ -20,7 +20,8 @@ Pure MoonBit port of the [FreeType](https://freetype.org/) font library.
 - Font loading from `Bytes` (in-memory, no file I/O)
 - Character-to-glyph mapping (cmap formats 0, 2, 4, 6, 8, 10, 12, 13)
 - Glyph outline loading (TrueType simple/composite, CFF charstrings)
-- Grayscale glyph rendering (`render_glyph`, `LOAD_RENDER`, smooth rasterizer)
+- Glyph rendering (`render_glyph`, `LOAD_RENDER`) in normal, light, mono,
+  LCD, and LCD_V modes
 - Pixel size scaling with proper 16.16 fixed-point math
 - Kerning pair lookup
 - TrueType bytecode hinting (~160 opcodes: point movement, zones, projection vectors, rounding, deltas)
@@ -59,7 +60,7 @@ The following FreeType subsystems are **excluded** from this port:
 
 | Subsystem | Reason |
 |-----------|--------|
-| **Rendering/rasterization** | Grayscale `render_glyph` / `LOAD_RENDER` is implemented via `src/smooth/`; monochrome, LCD, and SDF rasterizers are not ported |
+| **Color / SDF rendering** | Outline rasterization is implemented for `Normal`, `Light`, `Mono`, `Lcd`, and `LcdV`; SVG, BGRA color glyph rendering, and SDF rasterizers are not ported |
 | **File I/O** (`ftsystem.c` file operations) | Accepts `Bytes` instead of file paths; no I/O or OS dependency |
 | **SVG rendering** | Requires external SVG renderer |
 | **FT_Library global state** | Eliminated — API is stateless, no initialization needed |
@@ -107,7 +108,7 @@ println(outline.points()[0].x())  // first point x coordinate
 println(face.glyph().metrics().hori_advance())  // advance width in 26.6
 ```
 
-### Render grayscale bitmaps
+### Render glyph bitmaps
 
 ```moonbit
 @freetype.set_pixel_sizes(face, 0U, 16U)
@@ -120,6 +121,17 @@ println(face.glyph().bitmap().rows())
 @freetype.render_glyph(face)
 println(face.glyph().bitmap_left())
 println(face.glyph().bitmap_top())
+
+// Explicit render modes.
+@freetype.render_glyph(face, mode=Mono)
+@freetype.render_glyph(face, mode=Lcd)
+
+// LOAD_RENDER also honors FreeType-style load targets.
+@freetype.load_glyph(
+  face,
+  glyph_index,
+  load_flags=@base.LOAD_RENDER | @base.LOAD_TARGET_LCD,
+)
 ```
 
 ### Kerning
@@ -147,8 +159,10 @@ src/
   types/               # Shared types: Vector, BBox, Outline, Bitmap, GlyphMetrics, tags
   stream/              # ByteReader: position-tracked Bytes reader
   base/                # FaceRec, GlyphSlot, GlyphLoader, outline ops, format detection
+  smooth/              # Outline rasterizer: gray, mono, LCD, LCD_V bitmap emission
   sfnt/                # SFNT parsing: table directory, head, hhea, maxp, hmtx, name,
-                       #   OS/2, post, cmap (formats 0/4/6/12), kern, WOFF1, WOFF2
+                       #   OS/2, post, cmap (formats 0/2/4/6/8/10/12/13/14), kern,
+                       #   WOFF1, WOFF2
   truetype/            # TrueType: glyph loading, loca, bytecode interpreter
   cff/                 # CFF: INDEX/DICT parsing, charstring loading
   psaux/               # PostScript charstring interpreter (Type 2)
@@ -169,8 +183,8 @@ src/
 
 ```bash
 make build     # Compile
-make test      # Run unit tests (319 tests)
-make parity    # Run parity tests against C FreeType golden data (122 tests)
+make test      # Run unit tests (713 tests)
+make parity    # Run parity tests against C FreeType golden data (483 tests)
 make fmt       # Format code + regenerate .mbti files
 make bench     # Run C vs MoonBit benchmark comparison
 make clean     # Remove build artifacts
@@ -216,6 +230,7 @@ Parity tests verify that the MoonBit port produces identical results to the vend
 - Character-to-glyph mapping (up to 50 charcodes per font)
 - Glyph outlines in font units: point count, contour count, point coordinates
 - Glyph metrics at 16 ppem: horizontal advance
+- Rendered bitmap parity: pixel mode, dimensions, bearings, buffer bytes
 - TTC multi-face loading
 - Kerning pair values (up to 20 pairs)
 
@@ -226,17 +241,18 @@ $ make parity
 
   PARITY REPORT: MoonBit FreeType Port vs C FreeType
 
-  Total: 122 tests, 122 passed, 0 failed
+  Total: 483 tests, 483 passed, 0 failed
 
   Format coverage:
-     FULL  TrueType
-     FULL  CFF/OpenType
-     FULL  TrueType Collection
-     FULL  WOFF1
-     FULL  WOFF2
-     FULL  Standalone CFF
-     FULL  Type 1 PFB
-     LOAD  BDF Bitmap
+     FULL  TrueType                  .ttf
+     FULL  CFF/OpenType              .otf
+     FULL  TrueType Collection       .ttc
+     FULL  WOFF1                     .woff
+     FULL  WOFF2                     .woff2
+     FULL  Standalone CFF            .cff
+     FULL  Type 1 PFB                .pfb
+     FULL  BDF Bitmap                .bdf
+     FULL  PCF Bitmap                .pcf
 ```
 
 ## Performance

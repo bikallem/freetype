@@ -12,8 +12,9 @@ PROJECT_ROOT = os.path.join(os.path.dirname(__file__), "..", "..")
 
 FMT_NAMES = {
     ".ttf": "TrueType", ".otf": "CFF/OpenType", ".ttc": "TrueType Collection",
-    ".woff": "WOFF1", ".pfb": "Type 1 PFB", ".bdf": "BDF Bitmap",
-    ".pcf": "PCF Bitmap", ".fnt": "Windows FNT",
+    ".woff": "WOFF1", ".woff2": "WOFF2", ".cff": "Standalone CFF",
+    ".pfb": "Type 1 PFB", ".bdf": "BDF Bitmap", ".pcf": "PCF Bitmap",
+    ".fnt": "Windows FNT",
 }
 
 
@@ -94,6 +95,7 @@ def main():
         ("charmap entries", "charmap entries"),
         ("glyph outline", "outline NO_SCALE"),
         ("glyph metrics", "glyph metrics"),
+        ("rendered bitmap", "rendered glyph"),
         ("hinted (DEFAULT)", "hinted outline DEFAULT"),
         ("unhinted (NO_HINT)", "outline NO_HINTING"),
         ("auto-hinted", "outline FORCE_AUTOHINT"),
@@ -154,6 +156,7 @@ def main():
         ("from_bytes(data)", "loads", "Font loading from raw bytes"),
         ("get_char_index(face, charcode)", "charmap entries", "Charcode → glyph index mapping"),
         ("load_glyph(face, gid, flags)", "outline NO_SCALE", "Glyph outline loading"),
+        ("render_glyph(face, mode)", "rendered glyph", "Bitmap rendering from loaded outlines"),
         ("set_pixel_sizes(face, w, h)", "glyph metrics", "Size-dependent glyph scaling"),
         ("get_kerning(face, l, r)", "kerning", "Kerning pair lookup"),
     ]
@@ -169,16 +172,25 @@ def main():
     print("  " + "-" * 74)
     all_fmts = [
         (".ttf", "TrueType"), (".otf", "CFF/OpenType"), (".ttc", "TrueType Collection"),
-        (".woff", "WOFF1"), (".pfb", "Type 1 PFB"), (".bdf", "BDF Bitmap"),
+        (".woff", "WOFF1"), (".woff2", "WOFF2"), (".cff", "Standalone CFF"),
+        (".pfb", "Type 1 PFB"), (".bdf", "BDF Bitmap"), (".pcf", "PCF Bitmap"),
     ]
     for ext, name in all_fmts:
         has_font = any(f.endswith(ext) for f in fonts_tested)
         load_ok = any(f"parity/{f}: loads" in passed_tests for f in fonts_tested if f.endswith(ext))
         glyph_ok = any(any(t.startswith(f"parity/{f}: glyph") and "outline" in t for t in passed_tests) for f in fonts_tested if f.endswith(ext))
-        status = "FULL" if (load_ok and glyph_ok) else ("LOAD" if load_ok else ("FONT" if has_font else "MISSING"))
+        render_ok = any(any(t.startswith(f"parity/{f}: rendered glyph") for t in passed_tests) for f in fonts_tested if f.endswith(ext))
+        if load_ok and (glyph_ok or ext in {".bdf", ".pcf"}) and (render_ok or ext in {".bdf", ".pcf"}) :
+            status = "FULL"
+        elif load_ok:
+            status = "LOAD"
+        elif has_font:
+            status = "FONT"
+        else:
+            status = "MISSING"
         print(f"  {status:>7s}  {name:<25s} {ext}")
     print("  " + "-" * 74)
-    print("  FULL = load + glyph parity | LOAD = loads but no glyph test | MISSING = no test font")
+    print("  FULL = load + glyph/render parity | LOAD = loads but lacks some parity coverage | MISSING = no test font")
     print()
     print("=" * 78)
 

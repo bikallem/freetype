@@ -205,13 +205,18 @@ fn exec_type2_code(
       19 | 20 => {
         // hintmask / cntrmask: consume (num_hints + 7) / 8 bytes
         consume_width(interp, interp.stack.length() % 2 == 1)
-        let num_hints = interp.hints_h.length() + interp.hints_v.length()
-        // First, consume any remaining stem hints on stack
+        // Any stem arguments left on the stack are implicit vstem hints.
+        let mut pos = 0L
         let pairs_on_stack = interp.stack.length() / 2
-        for _ in 0..<pairs_on_stack {
-          ignore(interp.pop())
-          ignore(interp.pop())
+        for i in 0..<pairs_on_stack {
+          let d1 = type2_stack_value(interp, i * 2)
+          let d2 = type2_stack_value(interp, i * 2 + 1)
+          pos += d1
+          interp.hints_v.push({ position: pos, width: d2 })
+          pos += d2
         }
+        let num_hints = interp.hints_h.length() + interp.hints_v.length()
+        interp.stack = []
         let mask_bytes = (num_hints + 7) / 8
         next_ip += mask_bytes
       }
@@ -481,6 +486,16 @@ fn exec_type2_op(
         interp.curve_to(x1, y1, x2, y2, x3, y3)
       }
       interp.stack = []
+      ip
+    }
+    26 => {
+      // vvcurveto
+      op_vvcurveto(interp)
+      ip
+    }
+    27 => {
+      // hhcurveto
+      op_hhcurveto(interp)
       ip
     }
     29 => {
@@ -780,6 +795,66 @@ fn op_hvcurveto(interp : PsInterp) -> Unit {
       let step = if dy3 != 0L { 5 } else { 4 }
       continue i + step, 1 - phase
     }
+  }
+  interp.stack = []
+}
+
+///|
+/// vvcurveto: curves with vertical tangents.
+fn op_vvcurveto(interp : PsInterp) -> Unit {
+  let sp = interp.stack.length()
+  let mut i = 0
+  let mut first_dx = 0L
+  if sp % 2 == 1 {
+    first_dx = type2_stack_value(interp, 0)
+    i = 1
+  }
+  let mut first_curve = true
+  while i + 3 < sp {
+    let dx1 = if first_curve { first_dx } else { 0L }
+    let dy1 = type2_stack_value(interp, i)
+    let dx2 = type2_stack_value(interp, i + 1)
+    let dy2 = type2_stack_value(interp, i + 2)
+    let dy3 = type2_stack_value(interp, i + 3)
+    let x1 = interp.current_x + dx1
+    let y1 = interp.current_y + dy1
+    let x2 = x1 + dx2
+    let y2 = y1 + dy2
+    let x3 = x2
+    let y3 = y2 + dy3
+    interp.curve_to(x1, y1, x2, y2, x3, y3)
+    i += 4
+    first_curve = false
+  }
+  interp.stack = []
+}
+
+///|
+/// hhcurveto: curves with horizontal tangents.
+fn op_hhcurveto(interp : PsInterp) -> Unit {
+  let sp = interp.stack.length()
+  let mut i = 0
+  let mut first_dy = 0L
+  if sp % 2 == 1 {
+    first_dy = type2_stack_value(interp, 0)
+    i = 1
+  }
+  let mut first_curve = true
+  while i + 3 < sp {
+    let dy1 = if first_curve { first_dy } else { 0L }
+    let dx1 = type2_stack_value(interp, i)
+    let dx2 = type2_stack_value(interp, i + 1)
+    let dy2 = type2_stack_value(interp, i + 2)
+    let dx3 = type2_stack_value(interp, i + 3)
+    let x1 = interp.current_x + dx1
+    let y1 = interp.current_y + dy1
+    let x2 = x1 + dx2
+    let y2 = y1 + dy2
+    let x3 = x2 + dx3
+    let y3 = y2
+    interp.curve_to(x1, y1, x2, y2, x3, y3)
+    i += 4
+    first_curve = false
   }
   interp.stack = []
 }
