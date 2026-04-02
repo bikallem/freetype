@@ -206,7 +206,7 @@ test "parity/SourceCodePro_standalone.cff: glyph metrics at 16ppem" {
 }
 
 ///|
-test "parity/SourceCodePro_standalone.cff: rendered glyph 1 NORMAL char 32" {
+test "parity/SourceCodePro_standalone.cff: rendered glyph 1 NORMAL NO_HINTING char 32" {
   let f = @freetype.from_bytes(load_generated_sourcecodepro_standalone_cff())
   try! @freetype.set_pixel_sizes(f, 0U, 16U)
   let gid = @freetype.get_char_index(f, 32U)
@@ -225,7 +225,7 @@ test "parity/SourceCodePro_standalone.cff: rendered glyph 1 NORMAL char 32" {
 }
 
 ///|
-test "parity/SourceCodePro_standalone.cff: rendered glyph 2 NORMAL char 65" {
+test "parity/SourceCodePro_standalone.cff: rendered glyph 2 NORMAL NO_HINTING char 65" {
   let f = @freetype.from_bytes(load_generated_sourcecodepro_standalone_cff())
   try! @freetype.set_pixel_sizes(f, 0U, 16U)
   let gid = @freetype.get_char_index(f, 65U)
@@ -244,7 +244,7 @@ test "parity/SourceCodePro_standalone.cff: rendered glyph 2 NORMAL char 65" {
 }
 
 ///|
-test "parity/SourceCodePro_standalone.cff: rendered glyph 28 NORMAL char 97" {
+test "parity/SourceCodePro_standalone.cff: rendered glyph 28 NORMAL NO_HINTING char 97" {
   let f = @freetype.from_bytes(load_generated_sourcecodepro_standalone_cff())
   try! @freetype.set_pixel_sizes(f, 0U, 16U)
   let gid = @freetype.get_char_index(f, 97U)
@@ -263,7 +263,7 @@ test "parity/SourceCodePro_standalone.cff: rendered glyph 28 NORMAL char 97" {
 }
 
 ///|
-test "parity/SourceCodePro_standalone.cff: rendered glyph 1 LIGHT char 32" {
+test "parity/SourceCodePro_standalone.cff: rendered glyph 1 LIGHT NO_HINTING char 32" {
   let f = @freetype.from_bytes(load_generated_sourcecodepro_standalone_cff())
   try! @freetype.set_pixel_sizes(f, 0U, 16U)
   let gid = @freetype.get_char_index(f, 32U)
@@ -282,7 +282,7 @@ test "parity/SourceCodePro_standalone.cff: rendered glyph 1 LIGHT char 32" {
 }
 
 ///|
-test "parity/SourceCodePro_standalone.cff: rendered glyph 2 LIGHT char 65" {
+test "parity/SourceCodePro_standalone.cff: rendered glyph 2 LIGHT NO_HINTING char 65" {
   let f = @freetype.from_bytes(load_generated_sourcecodepro_standalone_cff())
   try! @freetype.set_pixel_sizes(f, 0U, 16U)
   let gid = @freetype.get_char_index(f, 65U)
@@ -301,7 +301,7 @@ test "parity/SourceCodePro_standalone.cff: rendered glyph 2 LIGHT char 65" {
 }
 
 ///|
-test "parity/SourceCodePro_standalone.cff: rendered glyph 28 LIGHT char 97" {
+test "parity/SourceCodePro_standalone.cff: rendered glyph 28 LIGHT NO_HINTING char 97" {
   let f = @freetype.from_bytes(load_generated_sourcecodepro_standalone_cff())
   try! @freetype.set_pixel_sizes(f, 0U, 16U)
   let gid = @freetype.get_char_index(f, 97U)
@@ -320,7 +320,7 @@ test "parity/SourceCodePro_standalone.cff: rendered glyph 28 LIGHT char 97" {
 }
 
 ///|
-test "parity/SourceCodePro_standalone.cff: rendered glyph 1 MONO char 32" {
+test "parity/SourceCodePro_standalone.cff: rendered glyph 1 MONO NO_HINTING char 32" {
   let f = @freetype.from_bytes(load_generated_sourcecodepro_standalone_cff())
   try! @freetype.set_pixel_sizes(f, 0U, 16U)
   let gid = @freetype.get_char_index(f, 32U)
@@ -339,7 +339,7 @@ test "parity/SourceCodePro_standalone.cff: rendered glyph 1 MONO char 32" {
 }
 
 ///|
-test "parity/SourceCodePro_standalone.cff: rendered glyph 2 MONO char 65" {
+test "parity/SourceCodePro_standalone.cff: rendered glyph 2 MONO NO_HINTING char 65" {
   let f = @freetype.from_bytes(load_generated_sourcecodepro_standalone_cff())
   try! @freetype.set_pixel_sizes(f, 0U, 16U)
   let gid = @freetype.get_char_index(f, 65U)
@@ -358,7 +358,7 @@ test "parity/SourceCodePro_standalone.cff: rendered glyph 2 MONO char 65" {
 }
 
 ///|
-test "parity/SourceCodePro_standalone.cff: rendered glyph 28 MONO char 97" {
+test "parity/SourceCodePro_standalone.cff: rendered glyph 28 MONO NO_HINTING char 97" {
   let f = @freetype.from_bytes(load_generated_sourcecodepro_standalone_cff())
   try! @freetype.set_pixel_sizes(f, 0U, 16U)
   let gid = @freetype.get_char_index(f, 97U)
@@ -377,7 +377,7 @@ test "parity/SourceCodePro_standalone.cff: rendered glyph 28 MONO char 97" {
 }
 
 ///|
-test "parity/SourceCodePro_standalone.cff: rendered glyph 1 LCD char 32" {
+test "parity/SourceCodePro_standalone.cff: rendered glyph 1 LCD NO_HINTING char 32" {
   let f = @freetype.from_bytes(load_generated_sourcecodepro_standalone_cff())
   try! @freetype.set_pixel_sizes(f, 0U, 16U)
   let gid = @freetype.get_char_index(f, 32U)
@@ -396,7 +396,7 @@ test "parity/SourceCodePro_standalone.cff: rendered glyph 1 LCD char 32" {
 }
 
 ///|
-test "parity/SourceCodePro_standalone.cff: rendered glyph 2 LCD char 65" {
+test "parity/SourceCodePro_standalone.cff: rendered glyph 2 LCD NO_HINTING char 65" {
   let f = @freetype.from_bytes(load_generated_sourcecodepro_standalone_cff())
   try! @freetype.set_pixel_sizes(f, 0U, 16U)
   let gid = @freetype.get_char_index(f, 65U)
@@ -415,7 +415,7 @@ test "parity/SourceCodePro_standalone.cff: rendered glyph 2 LCD char 65" {
 }
 
 ///|
-test "parity/SourceCodePro_standalone.cff: rendered glyph 28 LCD char 97" {
+test "parity/SourceCodePro_standalone.cff: rendered glyph 28 LCD NO_HINTING char 97" {
   let f = @freetype.from_bytes(load_generated_sourcecodepro_standalone_cff())
   try! @freetype.set_pixel_sizes(f, 0U, 16U)
   let gid = @freetype.get_char_index(f, 97U)
@@ -434,7 +434,7 @@ test "parity/SourceCodePro_standalone.cff: rendered glyph 28 LCD char 97" {
 }
 
 ///|
-test "parity/SourceCodePro_standalone.cff: rendered glyph 1 LCD_V char 32" {
+test "parity/SourceCodePro_standalone.cff: rendered glyph 1 LCD_V NO_HINTING char 32" {
   let f = @freetype.from_bytes(load_generated_sourcecodepro_standalone_cff())
   try! @freetype.set_pixel_sizes(f, 0U, 16U)
   let gid = @freetype.get_char_index(f, 32U)
@@ -453,7 +453,7 @@ test "parity/SourceCodePro_standalone.cff: rendered glyph 1 LCD_V char 32" {
 }
 
 ///|
-test "parity/SourceCodePro_standalone.cff: rendered glyph 2 LCD_V char 65" {
+test "parity/SourceCodePro_standalone.cff: rendered glyph 2 LCD_V NO_HINTING char 65" {
   let f = @freetype.from_bytes(load_generated_sourcecodepro_standalone_cff())
   try! @freetype.set_pixel_sizes(f, 0U, 16U)
   let gid = @freetype.get_char_index(f, 65U)
@@ -472,7 +472,7 @@ test "parity/SourceCodePro_standalone.cff: rendered glyph 2 LCD_V char 65" {
 }
 
 ///|
-test "parity/SourceCodePro_standalone.cff: rendered glyph 28 LCD_V char 97" {
+test "parity/SourceCodePro_standalone.cff: rendered glyph 28 LCD_V NO_HINTING char 97" {
   let f = @freetype.from_bytes(load_generated_sourcecodepro_standalone_cff())
   try! @freetype.set_pixel_sizes(f, 0U, 16U)
   let gid = @freetype.get_char_index(f, 97U)
@@ -488,6 +488,186 @@ test "parity/SourceCodePro_standalone.cff: rendered glyph 28 LCD_V char 97" {
   inspect(f.glyph().bitmap_left(), content="1")
   inspect(f.glyph().bitmap_top(), content="9")
   try! assert_buffer_hex(f.glyph().bitmap().buffer(), "000000000000000000000000000000000000052e3a0d000000095586925600000046a9dae6aa1d00179af7dfe7f1500026e8bf8791f2950027d76b333dc9ca01108418000196eb07012c00000065fd12000000000047ff1f000000000f59ff2c000007426798ff3500074c96bbdbff3a0039a0e0cbb2ff3b048de2a57360ff3b21d9b0511f17ff3b4aee5c080013ff3b78d814000013ff3b92b600000014ff3ba1a50000002bff3ba3ad0000016fff3b96cd11002abcfe3b77eb62417ed4f73b47fcba99d294ed3b1dd2fdebcb40e13b047fcbbb770a9428002a73632200471300011f11000000000000000000000000")
+}
+
+///|
+test "parity/SourceCodePro_standalone.cff: rendered glyph 1 NORMAL DEFAULT char 32" {
+  let f = @freetype.from_bytes(load_generated_sourcecodepro_standalone_cff())
+  try! @freetype.set_pixel_sizes(f, 0U, 16U)
+  let gid = @freetype.get_char_index(f, 32U)
+  inspect(gid, content="1")
+  try! @freetype.load_glyph(f, gid, load_flags=0)
+  try! @freetype.render_glyph(f, mode=Normal)
+  inspect(f.glyph().format(), content="Bitmap")
+  inspect(f.glyph().bitmap().pixel_mode(), content="Gray")
+}
+
+///|
+test "parity/SourceCodePro_standalone.cff: rendered glyph 2 NORMAL DEFAULT char 65" {
+  let f = @freetype.from_bytes(load_generated_sourcecodepro_standalone_cff())
+  try! @freetype.set_pixel_sizes(f, 0U, 16U)
+  let gid = @freetype.get_char_index(f, 65U)
+  inspect(gid, content="2")
+  try! @freetype.load_glyph(f, gid, load_flags=0)
+  try! @freetype.render_glyph(f, mode=Normal)
+  inspect(f.glyph().format(), content="Bitmap")
+  inspect(f.glyph().bitmap().pixel_mode(), content="Gray")
+}
+
+///|
+test "parity/SourceCodePro_standalone.cff: rendered glyph 28 NORMAL DEFAULT char 97" {
+  let f = @freetype.from_bytes(load_generated_sourcecodepro_standalone_cff())
+  try! @freetype.set_pixel_sizes(f, 0U, 16U)
+  let gid = @freetype.get_char_index(f, 97U)
+  inspect(gid, content="28")
+  try! @freetype.load_glyph(f, gid, load_flags=0)
+  try! @freetype.render_glyph(f, mode=Normal)
+  inspect(f.glyph().format(), content="Bitmap")
+  inspect(f.glyph().bitmap().pixel_mode(), content="Gray")
+}
+
+///|
+test "parity/SourceCodePro_standalone.cff: rendered glyph 1 LIGHT DEFAULT char 32" {
+  let f = @freetype.from_bytes(load_generated_sourcecodepro_standalone_cff())
+  try! @freetype.set_pixel_sizes(f, 0U, 16U)
+  let gid = @freetype.get_char_index(f, 32U)
+  inspect(gid, content="1")
+  try! @freetype.load_glyph(f, gid, load_flags=0)
+  try! @freetype.render_glyph(f, mode=Light)
+  inspect(f.glyph().format(), content="Bitmap")
+  inspect(f.glyph().bitmap().pixel_mode(), content="Gray")
+}
+
+///|
+test "parity/SourceCodePro_standalone.cff: rendered glyph 2 LIGHT DEFAULT char 65" {
+  let f = @freetype.from_bytes(load_generated_sourcecodepro_standalone_cff())
+  try! @freetype.set_pixel_sizes(f, 0U, 16U)
+  let gid = @freetype.get_char_index(f, 65U)
+  inspect(gid, content="2")
+  try! @freetype.load_glyph(f, gid, load_flags=0)
+  try! @freetype.render_glyph(f, mode=Light)
+  inspect(f.glyph().format(), content="Bitmap")
+  inspect(f.glyph().bitmap().pixel_mode(), content="Gray")
+}
+
+///|
+test "parity/SourceCodePro_standalone.cff: rendered glyph 28 LIGHT DEFAULT char 97" {
+  let f = @freetype.from_bytes(load_generated_sourcecodepro_standalone_cff())
+  try! @freetype.set_pixel_sizes(f, 0U, 16U)
+  let gid = @freetype.get_char_index(f, 97U)
+  inspect(gid, content="28")
+  try! @freetype.load_glyph(f, gid, load_flags=0)
+  try! @freetype.render_glyph(f, mode=Light)
+  inspect(f.glyph().format(), content="Bitmap")
+  inspect(f.glyph().bitmap().pixel_mode(), content="Gray")
+}
+
+///|
+test "parity/SourceCodePro_standalone.cff: rendered glyph 1 MONO DEFAULT char 32" {
+  let f = @freetype.from_bytes(load_generated_sourcecodepro_standalone_cff())
+  try! @freetype.set_pixel_sizes(f, 0U, 16U)
+  let gid = @freetype.get_char_index(f, 32U)
+  inspect(gid, content="1")
+  try! @freetype.load_glyph(f, gid, load_flags=0)
+  try! @freetype.render_glyph(f, mode=Mono)
+  inspect(f.glyph().format(), content="Bitmap")
+  inspect(f.glyph().bitmap().pixel_mode(), content="Mono")
+}
+
+///|
+test "parity/SourceCodePro_standalone.cff: rendered glyph 2 MONO DEFAULT char 65" {
+  let f = @freetype.from_bytes(load_generated_sourcecodepro_standalone_cff())
+  try! @freetype.set_pixel_sizes(f, 0U, 16U)
+  let gid = @freetype.get_char_index(f, 65U)
+  inspect(gid, content="2")
+  try! @freetype.load_glyph(f, gid, load_flags=0)
+  try! @freetype.render_glyph(f, mode=Mono)
+  inspect(f.glyph().format(), content="Bitmap")
+  inspect(f.glyph().bitmap().pixel_mode(), content="Mono")
+}
+
+///|
+test "parity/SourceCodePro_standalone.cff: rendered glyph 28 MONO DEFAULT char 97" {
+  let f = @freetype.from_bytes(load_generated_sourcecodepro_standalone_cff())
+  try! @freetype.set_pixel_sizes(f, 0U, 16U)
+  let gid = @freetype.get_char_index(f, 97U)
+  inspect(gid, content="28")
+  try! @freetype.load_glyph(f, gid, load_flags=0)
+  try! @freetype.render_glyph(f, mode=Mono)
+  inspect(f.glyph().format(), content="Bitmap")
+  inspect(f.glyph().bitmap().pixel_mode(), content="Mono")
+}
+
+///|
+test "parity/SourceCodePro_standalone.cff: rendered glyph 1 LCD DEFAULT char 32" {
+  let f = @freetype.from_bytes(load_generated_sourcecodepro_standalone_cff())
+  try! @freetype.set_pixel_sizes(f, 0U, 16U)
+  let gid = @freetype.get_char_index(f, 32U)
+  inspect(gid, content="1")
+  try! @freetype.load_glyph(f, gid, load_flags=0)
+  try! @freetype.render_glyph(f, mode=Lcd)
+  inspect(f.glyph().format(), content="Bitmap")
+  inspect(f.glyph().bitmap().pixel_mode(), content="Lcd")
+}
+
+///|
+test "parity/SourceCodePro_standalone.cff: rendered glyph 2 LCD DEFAULT char 65" {
+  let f = @freetype.from_bytes(load_generated_sourcecodepro_standalone_cff())
+  try! @freetype.set_pixel_sizes(f, 0U, 16U)
+  let gid = @freetype.get_char_index(f, 65U)
+  inspect(gid, content="2")
+  try! @freetype.load_glyph(f, gid, load_flags=0)
+  try! @freetype.render_glyph(f, mode=Lcd)
+  inspect(f.glyph().format(), content="Bitmap")
+  inspect(f.glyph().bitmap().pixel_mode(), content="Lcd")
+}
+
+///|
+test "parity/SourceCodePro_standalone.cff: rendered glyph 28 LCD DEFAULT char 97" {
+  let f = @freetype.from_bytes(load_generated_sourcecodepro_standalone_cff())
+  try! @freetype.set_pixel_sizes(f, 0U, 16U)
+  let gid = @freetype.get_char_index(f, 97U)
+  inspect(gid, content="28")
+  try! @freetype.load_glyph(f, gid, load_flags=0)
+  try! @freetype.render_glyph(f, mode=Lcd)
+  inspect(f.glyph().format(), content="Bitmap")
+  inspect(f.glyph().bitmap().pixel_mode(), content="Lcd")
+}
+
+///|
+test "parity/SourceCodePro_standalone.cff: rendered glyph 1 LCD_V DEFAULT char 32" {
+  let f = @freetype.from_bytes(load_generated_sourcecodepro_standalone_cff())
+  try! @freetype.set_pixel_sizes(f, 0U, 16U)
+  let gid = @freetype.get_char_index(f, 32U)
+  inspect(gid, content="1")
+  try! @freetype.load_glyph(f, gid, load_flags=0)
+  try! @freetype.render_glyph(f, mode=LcdV)
+  inspect(f.glyph().format(), content="Bitmap")
+  inspect(f.glyph().bitmap().pixel_mode(), content="LcdV")
+}
+
+///|
+test "parity/SourceCodePro_standalone.cff: rendered glyph 2 LCD_V DEFAULT char 65" {
+  let f = @freetype.from_bytes(load_generated_sourcecodepro_standalone_cff())
+  try! @freetype.set_pixel_sizes(f, 0U, 16U)
+  let gid = @freetype.get_char_index(f, 65U)
+  inspect(gid, content="2")
+  try! @freetype.load_glyph(f, gid, load_flags=0)
+  try! @freetype.render_glyph(f, mode=LcdV)
+  inspect(f.glyph().format(), content="Bitmap")
+  inspect(f.glyph().bitmap().pixel_mode(), content="LcdV")
+}
+
+///|
+test "parity/SourceCodePro_standalone.cff: rendered glyph 28 LCD_V DEFAULT char 97" {
+  let f = @freetype.from_bytes(load_generated_sourcecodepro_standalone_cff())
+  try! @freetype.set_pixel_sizes(f, 0U, 16U)
+  let gid = @freetype.get_char_index(f, 97U)
+  inspect(gid, content="28")
+  try! @freetype.load_glyph(f, gid, load_flags=0)
+  try! @freetype.render_glyph(f, mode=LcdV)
+  inspect(f.glyph().format(), content="Bitmap")
+  inspect(f.glyph().bitmap().pixel_mode(), content="LcdV")
 }
 
 ///|

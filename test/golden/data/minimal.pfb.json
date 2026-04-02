@@ -1034,6 +1034,176 @@
         "top": 20,
         "buffer_hex": "00000000000000000000000000000000000000000000000000000000000000000005090b0b090500000000000000000000000000000000050d14191b1b19140d050000000000000000000000000006111b23282b2b28231b1106000000000000000000000004111d2831383b3b3831281d1104000000000000000000000c1a27343e474b4b473e34271a0c000000000000000000031221303e4a555b5b554a3e302112030000000000000000071726364553616a6a6153453626170700000000000000000c1b2b3a49596877776859493a2b1b0c000000000000000110202f3e4e5d6d7c7c6d5d4e3e2f2010010000000000000515243343526271808071625243332415050000000000000a192838475766758484756657473828190a0000000000000e1d2d3c4c5b6a7a88887a6a5b4c3c2d1d0e00000000000312223141505f6f7e8c8c7e6f5f504131221203000000000717263645546473829191827364544536261707000000000c1b2b3a4959687886959586786859493a2b1b0c0000000110202f3e4e5d6d7c8a9a9a8a7c6d5d4e3e2f20100100000515243343526271808f9e9e8f80716252433324150500000919283847576675849398989384756657473828190900000b1b2b3b4b5b6a7a8888888888887a6a5b4b3b2b1b0b00000b1b2b3b4b5b6a77787878787878776a5b4b3b2b1b0b0000091928384755616868686868686868615547382819090000051423313e4a535858585858585858534a3e312314050000000d1b28343e454848484848484848453e34281b0d0000000005111d27303638383838383838383630271d1105000000000006111a2126282828282828282826211a110600000000000000040c1216181818181818181816120c0400000000000000000000030708080808080808080703000000000000"
       }
+    },
+    {
+      "glyph_index": 1,
+      "charcode": 32,
+      "size_ppem": 16,
+      "load_flags": "DEFAULT",
+      "render_mode": "NORMAL",
+      "bitmap": {
+        "width": 0,
+        "rows": 0,
+        "pitch": 0,
+        "pixel_mode": 2,
+        "num_grays": 256,
+        "left": 0,
+        "top": 0,
+        "buffer_hex": ""
+      }
+    },
+    {
+      "glyph_index": 2,
+      "charcode": 65,
+      "size_ppem": 16,
+      "load_flags": "DEFAULT",
+      "render_mode": "NORMAL",
+      "bitmap": {
+        "width": 8,
+        "rows": 12,
+        "pitch": 8,
+        "pixel_mode": 2,
+        "num_grays": 256,
+        "left": 0,
+        "top": 12,
+        "buffer_hex": "000000010100000000000034320000000000007d7b000000000000c6c4000000000012fcfc110000000058ffff5600000000a2ffff9e00000001e9ffffe601000034ffffffff3000007dffffffff790000c6ffffffffc20012fcfffffffffb0f"
+      }
+    },
+    {
+      "glyph_index": 1,
+      "charcode": 32,
+      "size_ppem": 16,
+      "load_flags": "DEFAULT",
+      "render_mode": "LIGHT",
+      "bitmap": {
+        "width": 0,
+        "rows": 0,
+        "pitch": 0,
+        "pixel_mode": 2,
+        "num_grays": 256,
+        "left": 0,
+        "top": 0,
+        "buffer_hex": ""
+      }
+    },
+    {
+      "glyph_index": 2,
+      "charcode": 65,
+      "size_ppem": 16,
+      "load_flags": "DEFAULT",
+      "render_mode": "LIGHT",
+      "bitmap": {
+        "width": 8,
+        "rows": 12,
+        "pitch": 8,
+        "pixel_mode": 2,
+        "num_grays": 256,
+        "left": 0,
+        "top": 12,
+        "buffer_hex": "000000010100000000000034320000000000007d7b000000000000c6c4000000000012fcfc110000000058ffff5600000000a2ffff9e00000001e9ffffe601000034ffffffff3000007dffffffff790000c6ffffffffc20012fcfffffffffb0f"
+      }
+    },
+    {
+      "glyph_index": 1,
+      "charcode": 32,
+      "size_ppem": 16,
+      "load_flags": "DEFAULT",
+      "render_mode": "MONO",
+      "bitmap": {
+        "width": 1,
+        "rows": 1,
+        "pitch": 2,
+        "pixel_mode": 1,
+        "num_grays": 256,
+        "left": 0,
+        "top": 1,
+        "buffer_hex": "0000"
+      }
+    },
+    {
+      "glyph_index": 2,
+      "charcode": 65,
+      "size_ppem": 16,
+      "load_flags": "DEFAULT",
+      "render_mode": "MONO",
+      "bitmap": {
+        "width": 6,
+        "rows": 11,
+        "pitch": 2,
+        "pixel_mode": 1,
+        "num_grays": 256,
+        "left": 1,
+        "top": 11,
+        "buffer_hex": "000020003000300030007800780078007800fc00fc00"
+      }
+    },
+    {
+      "glyph_index": 1,
+      "charcode": 32,
+      "size_ppem": 16,
+      "load_flags": "DEFAULT",
+      "render_mode": "LCD",
+      "bitmap": {
+        "width": 6,
+        "rows": 0,
+        "pitch": 8,
+        "pixel_mode": 5,
+        "num_grays": 256,
+        "left": -1,
+        "top": 0,
+        "buffer_hex": ""
+      }
+    },
+    {
+      "glyph_index": 2,
+      "charcode": 65,
+      "size_ppem": 16,
+      "load_flags": "DEFAULT",
+      "render_mode": "LCD",
+      "bitmap": {
+        "width": 24,
+        "rows": 12,
+        "pitch": 24,
+        "pixel_mode": 5,
+        "num_grays": 256,
+        "left": 0,
+        "top": 12,
+        "buffer_hex": "000000000000000000000102020100000000000000000000000000000000000000003466653200000000000000000000000000000000000000297dd1cf7b2700000000000000000000000000000000001a72c6ffffc470190000000000000000000000000000001263bbfcfffffcb96111000000000000000000000000000b58acf8fffffffff8aa560a0000000000000000000000044ea2f0ffffffffffffef9e4a03000000000000000000013f97e9ffffffffffffffffe6933b0100000000000000003488dfffffffffffffffffffffdc843000000000000000297dd1ffffffffffffffffffffffffcd792500000000001a72c6fffffffffffffffffffffffffffec26e170000001263bbfcfffffffffffffffffffffffffffffbb75f0f00"
+      }
+    },
+    {
+      "glyph_index": 1,
+      "charcode": 32,
+      "size_ppem": 16,
+      "load_flags": "DEFAULT",
+      "render_mode": "LCD_V",
+      "bitmap": {
+        "width": 0,
+        "rows": 6,
+        "pitch": 0,
+        "pixel_mode": 6,
+        "num_grays": 256,
+        "left": 0,
+        "top": 1,
+        "buffer_hex": ""
+      }
+    },
+    {
+      "glyph_index": 2,
+      "charcode": 65,
+      "size_ppem": 16,
+      "load_flags": "DEFAULT",
+      "render_mode": "LCD_V",
+      "bitmap": {
+        "width": 8,
+        "rows": 39,
+        "pitch": 8,
+        "pixel_mode": 6,
+        "num_grays": 256,
+        "left": 0,
+        "top": 12,
+        "buffer_hex": "000000000000000000000001010000000000000a0a0000000000001c1b00000000000034320000000000004c4a00000000000065630000000000007d7b0000000000009593000000000000aeac000000000000c6c4000000000000dedc000000000005f1f0040000000012fcfc110000000027ffff250000000040ffff3e0000000058ffff560000000070ffff6e000000008affff8700000000a2ffff9e00000000baffffb600000000d3ffffcf00000001e9ffffe60100000af8fffff60900001cffffffff19000034ffffffff3000004cffffffff48000065ffffffff6100007dffffffff79000095ffffffff910000aeffffffffaa0000c6ffffffffc20000deffffffffda0005f2ffffffffef0312fcfffffffffb0f12acacacacacab0f0d5454545454540b00000000000000000000000000000000"
+      }
     }
   ],
   "kerning": [],

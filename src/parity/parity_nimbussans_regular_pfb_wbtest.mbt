@@ -205,7 +205,7 @@ test "parity/NimbusSans-Regular.pfb: glyph metrics at 16ppem" {
 }
 
 ///|
-test "parity/NimbusSans-Regular.pfb: rendered glyph 381 NORMAL char 32" {
+test "parity/NimbusSans-Regular.pfb: rendered glyph 381 NORMAL NO_HINTING char 32" {
   let f = @freetype.from_bytes(load_generated_nimbussans_regular_pfb())
   try! @freetype.set_pixel_sizes(f, 0U, 16U)
   let gid = @freetype.get_char_index(f, 32U)
@@ -224,7 +224,7 @@ test "parity/NimbusSans-Regular.pfb: rendered glyph 381 NORMAL char 32" {
 }
 
 ///|
-test "parity/NimbusSans-Regular.pfb: rendered glyph 854 NORMAL char 65" {
+test "parity/NimbusSans-Regular.pfb: rendered glyph 854 NORMAL NO_HINTING char 65" {
   let f = @freetype.from_bytes(load_generated_nimbussans_regular_pfb())
   try! @freetype.set_pixel_sizes(f, 0U, 16U)
   let gid = @freetype.get_char_index(f, 65U)
@@ -243,7 +243,7 @@ test "parity/NimbusSans-Regular.pfb: rendered glyph 854 NORMAL char 65" {
 }
 
 ///|
-test "parity/NimbusSans-Regular.pfb: rendered glyph 113 NORMAL char 97" {
+test "parity/NimbusSans-Regular.pfb: rendered glyph 113 NORMAL NO_HINTING char 97" {
   let f = @freetype.from_bytes(load_generated_nimbussans_regular_pfb())
   try! @freetype.set_pixel_sizes(f, 0U, 16U)
   let gid = @freetype.get_char_index(f, 97U)
@@ -262,7 +262,7 @@ test "parity/NimbusSans-Regular.pfb: rendered glyph 113 NORMAL char 97" {
 }
 
 ///|
-test "parity/NimbusSans-Regular.pfb: rendered glyph 381 LIGHT char 32" {
+test "parity/NimbusSans-Regular.pfb: rendered glyph 381 LIGHT NO_HINTING char 32" {
   let f = @freetype.from_bytes(load_generated_nimbussans_regular_pfb())
   try! @freetype.set_pixel_sizes(f, 0U, 16U)
   let gid = @freetype.get_char_index(f, 32U)
@@ -281,7 +281,7 @@ test "parity/NimbusSans-Regular.pfb: rendered glyph 381 LIGHT char 32" {
 }
 
 ///|
-test "parity/NimbusSans-Regular.pfb: rendered glyph 854 LIGHT char 65" {
+test "parity/NimbusSans-Regular.pfb: rendered glyph 854 LIGHT NO_HINTING char 65" {
   let f = @freetype.from_bytes(load_generated_nimbussans_regular_pfb())
   try! @freetype.set_pixel_sizes(f, 0U, 16U)
   let gid = @freetype.get_char_index(f, 65U)
@@ -300,7 +300,7 @@ test "parity/NimbusSans-Regular.pfb: rendered glyph 854 LIGHT char 65" {
 }
 
 ///|
-test "parity/NimbusSans-Regular.pfb: rendered glyph 113 LIGHT char 97" {
+test "parity/NimbusSans-Regular.pfb: rendered glyph 113 LIGHT NO_HINTING char 97" {
   let f = @freetype.from_bytes(load_generated_nimbussans_regular_pfb())
   try! @freetype.set_pixel_sizes(f, 0U, 16U)
   let gid = @freetype.get_char_index(f, 97U)
@@ -319,7 +319,7 @@ test "parity/NimbusSans-Regular.pfb: rendered glyph 113 LIGHT char 97" {
 }
 
 ///|
-test "parity/NimbusSans-Regular.pfb: rendered glyph 381 MONO char 32" {
+test "parity/NimbusSans-Regular.pfb: rendered glyph 381 MONO NO_HINTING char 32" {
   let f = @freetype.from_bytes(load_generated_nimbussans_regular_pfb())
   try! @freetype.set_pixel_sizes(f, 0U, 16U)
   let gid = @freetype.get_char_index(f, 32U)
@@ -338,7 +338,7 @@ test "parity/NimbusSans-Regular.pfb: rendered glyph 381 MONO char 32" {
 }
 
 ///|
-test "parity/NimbusSans-Regular.pfb: rendered glyph 854 MONO char 65" {
+test "parity/NimbusSans-Regular.pfb: rendered glyph 854 MONO NO_HINTING char 65" {
   let f = @freetype.from_bytes(load_generated_nimbussans_regular_pfb())
   try! @freetype.set_pixel_sizes(f, 0U, 16U)
   let gid = @freetype.get_char_index(f, 65U)
@@ -357,7 +357,7 @@ test "parity/NimbusSans-Regular.pfb: rendered glyph 854 MONO char 65" {
 }
 
 ///|
-test "parity/NimbusSans-Regular.pfb: rendered glyph 113 MONO char 97" {
+test "parity/NimbusSans-Regular.pfb: rendered glyph 113 MONO NO_HINTING char 97" {
   let f = @freetype.from_bytes(load_generated_nimbussans_regular_pfb())
   try! @freetype.set_pixel_sizes(f, 0U, 16U)
   let gid = @freetype.get_char_index(f, 97U)
@@ -376,7 +376,7 @@ test "parity/NimbusSans-Regular.pfb: rendered glyph 113 MONO char 97" {
 }
 
 ///|
-test "parity/NimbusSans-Regular.pfb: rendered glyph 381 LCD char 32" {
+test "parity/NimbusSans-Regular.pfb: rendered glyph 381 LCD NO_HINTING char 32" {
   let f = @freetype.from_bytes(load_generated_nimbussans_regular_pfb())
   try! @freetype.set_pixel_sizes(f, 0U, 16U)
   let gid = @freetype.get_char_index(f, 32U)
@@ -395,7 +395,7 @@ test "parity/NimbusSans-Regular.pfb: rendered glyph 381 LCD char 32" {
 }
 
 ///|
-test "parity/NimbusSans-Regular.pfb: rendered glyph 854 LCD char 65" {
+test "parity/NimbusSans-Regular.pfb: rendered glyph 854 LCD NO_HINTING char 65" {
   let f = @freetype.from_bytes(load_generated_nimbussans_regular_pfb())
   try! @freetype.set_pixel_sizes(f, 0U, 16U)
   let gid = @freetype.get_char_index(f, 65U)
@@ -414,7 +414,7 @@ test "parity/NimbusSans-Regular.pfb: rendered glyph 854 LCD char 65" {
 }
 
 ///|
-test "parity/NimbusSans-Regular.pfb: rendered glyph 113 LCD char 97" {
+test "parity/NimbusSans-Regular.pfb: rendered glyph 113 LCD NO_HINTING char 97" {
   let f = @freetype.from_bytes(load_generated_nimbussans_regular_pfb())
   try! @freetype.set_pixel_sizes(f, 0U, 16U)
   let gid = @freetype.get_char_index(f, 97U)
@@ -433,7 +433,7 @@ test "parity/NimbusSans-Regular.pfb: rendered glyph 113 LCD char 97" {
 }
 
 ///|
-test "parity/NimbusSans-Regular.pfb: rendered glyph 381 LCD_V char 32" {
+test "parity/NimbusSans-Regular.pfb: rendered glyph 381 LCD_V NO_HINTING char 32" {
   let f = @freetype.from_bytes(load_generated_nimbussans_regular_pfb())
   try! @freetype.set_pixel_sizes(f, 0U, 16U)
   let gid = @freetype.get_char_index(f, 32U)
@@ -452,7 +452,7 @@ test "parity/NimbusSans-Regular.pfb: rendered glyph 381 LCD_V char 32" {
 }
 
 ///|
-test "parity/NimbusSans-Regular.pfb: rendered glyph 854 LCD_V char 65" {
+test "parity/NimbusSans-Regular.pfb: rendered glyph 854 LCD_V NO_HINTING char 65" {
   let f = @freetype.from_bytes(load_generated_nimbussans_regular_pfb())
   try! @freetype.set_pixel_sizes(f, 0U, 16U)
   let gid = @freetype.get_char_index(f, 65U)
@@ -471,7 +471,7 @@ test "parity/NimbusSans-Regular.pfb: rendered glyph 854 LCD_V char 65" {
 }
 
 ///|
-test "parity/NimbusSans-Regular.pfb: rendered glyph 113 LCD_V char 97" {
+test "parity/NimbusSans-Regular.pfb: rendered glyph 113 LCD_V NO_HINTING char 97" {
   let f = @freetype.from_bytes(load_generated_nimbussans_regular_pfb())
   try! @freetype.set_pixel_sizes(f, 0U, 16U)
   let gid = @freetype.get_char_index(f, 97U)
@@ -487,6 +487,186 @@ test "parity/NimbusSans-Regular.pfb: rendered glyph 113 LCD_V char 97" {
   inspect(f.glyph().bitmap_left(), content="0")
   inspect(f.glyph().bitmap_top(), content="9")
   try! assert_buffer_hex(f.glyph().bitmap().buffer(), "00000326432a0000000000337a977e270000000984ceebd27400000032d8fffbffcb1100006afcd4ade3f8310000a5f280599bff560000c8d7280444fc720000ddae00000dec800000af71000000da8900006335000000d78b0000160900000de78b00000000062559f88b000000225a7db1ff8b00000975aed1f6fa8b000035c9fcedbfe78b000084fdc69567d48b0003cedb724115c78b000ff79d1e0000c78b0022ff52000000ca8b0038ff28000000d28b0044ff22000006e48b0043ff35000028f58c0036ff60000273ff930020fba43445c0f7b10f0de4dd8c9ddfd2d84001aeffe0eeaaa3f76f005ee4fcd45563f687001e8ca87c1430a1550000385428000b4d26000000030000000200")
+}
+
+///|
+test "parity/NimbusSans-Regular.pfb: rendered glyph 381 NORMAL DEFAULT char 32" {
+  let f = @freetype.from_bytes(load_generated_nimbussans_regular_pfb())
+  try! @freetype.set_pixel_sizes(f, 0U, 16U)
+  let gid = @freetype.get_char_index(f, 32U)
+  inspect(gid, content="381")
+  try! @freetype.load_glyph(f, gid, load_flags=0)
+  try! @freetype.render_glyph(f, mode=Normal)
+  inspect(f.glyph().format(), content="Bitmap")
+  inspect(f.glyph().bitmap().pixel_mode(), content="Gray")
+}
+
+///|
+test "parity/NimbusSans-Regular.pfb: rendered glyph 854 NORMAL DEFAULT char 65" {
+  let f = @freetype.from_bytes(load_generated_nimbussans_regular_pfb())
+  try! @freetype.set_pixel_sizes(f, 0U, 16U)
+  let gid = @freetype.get_char_index(f, 65U)
+  inspect(gid, content="854")
+  try! @freetype.load_glyph(f, gid, load_flags=0)
+  try! @freetype.render_glyph(f, mode=Normal)
+  inspect(f.glyph().format(), content="Bitmap")
+  inspect(f.glyph().bitmap().pixel_mode(), content="Gray")
+}
+
+///|
+test "parity/NimbusSans-Regular.pfb: rendered glyph 113 NORMAL DEFAULT char 97" {
+  let f = @freetype.from_bytes(load_generated_nimbussans_regular_pfb())
+  try! @freetype.set_pixel_sizes(f, 0U, 16U)
+  let gid = @freetype.get_char_index(f, 97U)
+  inspect(gid, content="113")
+  try! @freetype.load_glyph(f, gid, load_flags=0)
+  try! @freetype.render_glyph(f, mode=Normal)
+  inspect(f.glyph().format(), content="Bitmap")
+  inspect(f.glyph().bitmap().pixel_mode(), content="Gray")
+}
+
+///|
+test "parity/NimbusSans-Regular.pfb: rendered glyph 381 LIGHT DEFAULT char 32" {
+  let f = @freetype.from_bytes(load_generated_nimbussans_regular_pfb())
+  try! @freetype.set_pixel_sizes(f, 0U, 16U)
+  let gid = @freetype.get_char_index(f, 32U)
+  inspect(gid, content="381")
+  try! @freetype.load_glyph(f, gid, load_flags=0)
+  try! @freetype.render_glyph(f, mode=Light)
+  inspect(f.glyph().format(), content="Bitmap")
+  inspect(f.glyph().bitmap().pixel_mode(), content="Gray")
+}
+
+///|
+test "parity/NimbusSans-Regular.pfb: rendered glyph 854 LIGHT DEFAULT char 65" {
+  let f = @freetype.from_bytes(load_generated_nimbussans_regular_pfb())
+  try! @freetype.set_pixel_sizes(f, 0U, 16U)
+  let gid = @freetype.get_char_index(f, 65U)
+  inspect(gid, content="854")
+  try! @freetype.load_glyph(f, gid, load_flags=0)
+  try! @freetype.render_glyph(f, mode=Light)
+  inspect(f.glyph().format(), content="Bitmap")
+  inspect(f.glyph().bitmap().pixel_mode(), content="Gray")
+}
+
+///|
+test "parity/NimbusSans-Regular.pfb: rendered glyph 113 LIGHT DEFAULT char 97" {
+  let f = @freetype.from_bytes(load_generated_nimbussans_regular_pfb())
+  try! @freetype.set_pixel_sizes(f, 0U, 16U)
+  let gid = @freetype.get_char_index(f, 97U)
+  inspect(gid, content="113")
+  try! @freetype.load_glyph(f, gid, load_flags=0)
+  try! @freetype.render_glyph(f, mode=Light)
+  inspect(f.glyph().format(), content="Bitmap")
+  inspect(f.glyph().bitmap().pixel_mode(), content="Gray")
+}
+
+///|
+test "parity/NimbusSans-Regular.pfb: rendered glyph 381 MONO DEFAULT char 32" {
+  let f = @freetype.from_bytes(load_generated_nimbussans_regular_pfb())
+  try! @freetype.set_pixel_sizes(f, 0U, 16U)
+  let gid = @freetype.get_char_index(f, 32U)
+  inspect(gid, content="381")
+  try! @freetype.load_glyph(f, gid, load_flags=0)
+  try! @freetype.render_glyph(f, mode=Mono)
+  inspect(f.glyph().format(), content="Bitmap")
+  inspect(f.glyph().bitmap().pixel_mode(), content="Mono")
+}
+
+///|
+test "parity/NimbusSans-Regular.pfb: rendered glyph 854 MONO DEFAULT char 65" {
+  let f = @freetype.from_bytes(load_generated_nimbussans_regular_pfb())
+  try! @freetype.set_pixel_sizes(f, 0U, 16U)
+  let gid = @freetype.get_char_index(f, 65U)
+  inspect(gid, content="854")
+  try! @freetype.load_glyph(f, gid, load_flags=0)
+  try! @freetype.render_glyph(f, mode=Mono)
+  inspect(f.glyph().format(), content="Bitmap")
+  inspect(f.glyph().bitmap().pixel_mode(), content="Mono")
+}
+
+///|
+test "parity/NimbusSans-Regular.pfb: rendered glyph 113 MONO DEFAULT char 97" {
+  let f = @freetype.from_bytes(load_generated_nimbussans_regular_pfb())
+  try! @freetype.set_pixel_sizes(f, 0U, 16U)
+  let gid = @freetype.get_char_index(f, 97U)
+  inspect(gid, content="113")
+  try! @freetype.load_glyph(f, gid, load_flags=0)
+  try! @freetype.render_glyph(f, mode=Mono)
+  inspect(f.glyph().format(), content="Bitmap")
+  inspect(f.glyph().bitmap().pixel_mode(), content="Mono")
+}
+
+///|
+test "parity/NimbusSans-Regular.pfb: rendered glyph 381 LCD DEFAULT char 32" {
+  let f = @freetype.from_bytes(load_generated_nimbussans_regular_pfb())
+  try! @freetype.set_pixel_sizes(f, 0U, 16U)
+  let gid = @freetype.get_char_index(f, 32U)
+  inspect(gid, content="381")
+  try! @freetype.load_glyph(f, gid, load_flags=0)
+  try! @freetype.render_glyph(f, mode=Lcd)
+  inspect(f.glyph().format(), content="Bitmap")
+  inspect(f.glyph().bitmap().pixel_mode(), content="Lcd")
+}
+
+///|
+test "parity/NimbusSans-Regular.pfb: rendered glyph 854 LCD DEFAULT char 65" {
+  let f = @freetype.from_bytes(load_generated_nimbussans_regular_pfb())
+  try! @freetype.set_pixel_sizes(f, 0U, 16U)
+  let gid = @freetype.get_char_index(f, 65U)
+  inspect(gid, content="854")
+  try! @freetype.load_glyph(f, gid, load_flags=0)
+  try! @freetype.render_glyph(f, mode=Lcd)
+  inspect(f.glyph().format(), content="Bitmap")
+  inspect(f.glyph().bitmap().pixel_mode(), content="Lcd")
+}
+
+///|
+test "parity/NimbusSans-Regular.pfb: rendered glyph 113 LCD DEFAULT char 97" {
+  let f = @freetype.from_bytes(load_generated_nimbussans_regular_pfb())
+  try! @freetype.set_pixel_sizes(f, 0U, 16U)
+  let gid = @freetype.get_char_index(f, 97U)
+  inspect(gid, content="113")
+  try! @freetype.load_glyph(f, gid, load_flags=0)
+  try! @freetype.render_glyph(f, mode=Lcd)
+  inspect(f.glyph().format(), content="Bitmap")
+  inspect(f.glyph().bitmap().pixel_mode(), content="Lcd")
+}
+
+///|
+test "parity/NimbusSans-Regular.pfb: rendered glyph 381 LCD_V DEFAULT char 32" {
+  let f = @freetype.from_bytes(load_generated_nimbussans_regular_pfb())
+  try! @freetype.set_pixel_sizes(f, 0U, 16U)
+  let gid = @freetype.get_char_index(f, 32U)
+  inspect(gid, content="381")
+  try! @freetype.load_glyph(f, gid, load_flags=0)
+  try! @freetype.render_glyph(f, mode=LcdV)
+  inspect(f.glyph().format(), content="Bitmap")
+  inspect(f.glyph().bitmap().pixel_mode(), content="LcdV")
+}
+
+///|
+test "parity/NimbusSans-Regular.pfb: rendered glyph 854 LCD_V DEFAULT char 65" {
+  let f = @freetype.from_bytes(load_generated_nimbussans_regular_pfb())
+  try! @freetype.set_pixel_sizes(f, 0U, 16U)
+  let gid = @freetype.get_char_index(f, 65U)
+  inspect(gid, content="854")
+  try! @freetype.load_glyph(f, gid, load_flags=0)
+  try! @freetype.render_glyph(f, mode=LcdV)
+  inspect(f.glyph().format(), content="Bitmap")
+  inspect(f.glyph().bitmap().pixel_mode(), content="LcdV")
+}
+
+///|
+test "parity/NimbusSans-Regular.pfb: rendered glyph 113 LCD_V DEFAULT char 97" {
+  let f = @freetype.from_bytes(load_generated_nimbussans_regular_pfb())
+  try! @freetype.set_pixel_sizes(f, 0U, 16U)
+  let gid = @freetype.get_char_index(f, 97U)
+  inspect(gid, content="113")
+  try! @freetype.load_glyph(f, gid, load_flags=0)
+  try! @freetype.render_glyph(f, mode=LcdV)
+  inspect(f.glyph().format(), content="Bitmap")
+  inspect(f.glyph().bitmap().pixel_mode(), content="LcdV")
 }
 
 ///|

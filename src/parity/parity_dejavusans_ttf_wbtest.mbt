@@ -218,7 +218,7 @@ test "parity/DejaVuSans.ttf: glyph metrics at 16ppem" {
 }
 
 ///|
-test "parity/DejaVuSans.ttf: rendered glyph 3 NORMAL char 32" {
+test "parity/DejaVuSans.ttf: rendered glyph 3 NORMAL NO_HINTING char 32" {
   let f = @freetype.from_bytes(load_generated_dejavusans_ttf())
   try! @freetype.set_pixel_sizes(f, 0U, 16U)
   let gid = @freetype.get_char_index(f, 32U)
@@ -237,7 +237,7 @@ test "parity/DejaVuSans.ttf: rendered glyph 3 NORMAL char 32" {
 }
 
 ///|
-test "parity/DejaVuSans.ttf: rendered glyph 36 NORMAL char 65" {
+test "parity/DejaVuSans.ttf: rendered glyph 36 NORMAL NO_HINTING char 65" {
   let f = @freetype.from_bytes(load_generated_dejavusans_ttf())
   try! @freetype.set_pixel_sizes(f, 0U, 16U)
   let gid = @freetype.get_char_index(f, 65U)
@@ -256,7 +256,7 @@ test "parity/DejaVuSans.ttf: rendered glyph 36 NORMAL char 65" {
 }
 
 ///|
-test "parity/DejaVuSans.ttf: rendered glyph 68 NORMAL char 97" {
+test "parity/DejaVuSans.ttf: rendered glyph 68 NORMAL NO_HINTING char 97" {
   let f = @freetype.from_bytes(load_generated_dejavusans_ttf())
   try! @freetype.set_pixel_sizes(f, 0U, 16U)
   let gid = @freetype.get_char_index(f, 97U)
@@ -275,7 +275,7 @@ test "parity/DejaVuSans.ttf: rendered glyph 68 NORMAL char 97" {
 }
 
 ///|
-test "parity/DejaVuSans.ttf: rendered glyph 3 LIGHT char 32" {
+test "parity/DejaVuSans.ttf: rendered glyph 3 LIGHT NO_HINTING char 32" {
   let f = @freetype.from_bytes(load_generated_dejavusans_ttf())
   try! @freetype.set_pixel_sizes(f, 0U, 16U)
   let gid = @freetype.get_char_index(f, 32U)
@@ -294,7 +294,7 @@ test "parity/DejaVuSans.ttf: rendered glyph 3 LIGHT char 32" {
 }
 
 ///|
-test "parity/DejaVuSans.ttf: rendered glyph 36 LIGHT char 65" {
+test "parity/DejaVuSans.ttf: rendered glyph 36 LIGHT NO_HINTING char 65" {
   let f = @freetype.from_bytes(load_generated_dejavusans_ttf())
   try! @freetype.set_pixel_sizes(f, 0U, 16U)
   let gid = @freetype.get_char_index(f, 65U)
@@ -313,7 +313,7 @@ test "parity/DejaVuSans.ttf: rendered glyph 36 LIGHT char 65" {
 }
 
 ///|
-test "parity/DejaVuSans.ttf: rendered glyph 68 LIGHT char 97" {
+test "parity/DejaVuSans.ttf: rendered glyph 68 LIGHT NO_HINTING char 97" {
   let f = @freetype.from_bytes(load_generated_dejavusans_ttf())
   try! @freetype.set_pixel_sizes(f, 0U, 16U)
   let gid = @freetype.get_char_index(f, 97U)
@@ -332,7 +332,7 @@ test "parity/DejaVuSans.ttf: rendered glyph 68 LIGHT char 97" {
 }
 
 ///|
-test "parity/DejaVuSans.ttf: rendered glyph 3 MONO char 32" {
+test "parity/DejaVuSans.ttf: rendered glyph 3 MONO NO_HINTING char 32" {
   let f = @freetype.from_bytes(load_generated_dejavusans_ttf())
   try! @freetype.set_pixel_sizes(f, 0U, 16U)
   let gid = @freetype.get_char_index(f, 32U)
@@ -351,7 +351,7 @@ test "parity/DejaVuSans.ttf: rendered glyph 3 MONO char 32" {
 }
 
 ///|
-test "parity/DejaVuSans.ttf: rendered glyph 36 MONO char 65" {
+test "parity/DejaVuSans.ttf: rendered glyph 36 MONO NO_HINTING char 65" {
   let f = @freetype.from_bytes(load_generated_dejavusans_ttf())
   try! @freetype.set_pixel_sizes(f, 0U, 16U)
   let gid = @freetype.get_char_index(f, 65U)
@@ -370,7 +370,7 @@ test "parity/DejaVuSans.ttf: rendered glyph 36 MONO char 65" {
 }
 
 ///|
-test "parity/DejaVuSans.ttf: rendered glyph 68 MONO char 97" {
+test "parity/DejaVuSans.ttf: rendered glyph 68 MONO NO_HINTING char 97" {
   let f = @freetype.from_bytes(load_generated_dejavusans_ttf())
   try! @freetype.set_pixel_sizes(f, 0U, 16U)
   let gid = @freetype.get_char_index(f, 97U)
@@ -389,7 +389,7 @@ test "parity/DejaVuSans.ttf: rendered glyph 68 MONO char 97" {
 }
 
 ///|
-test "parity/DejaVuSans.ttf: rendered glyph 3 LCD char 32" {
+test "parity/DejaVuSans.ttf: rendered glyph 3 LCD NO_HINTING char 32" {
   let f = @freetype.from_bytes(load_generated_dejavusans_ttf())
   try! @freetype.set_pixel_sizes(f, 0U, 16U)
   let gid = @freetype.get_char_index(f, 32U)
@@ -408,7 +408,7 @@ test "parity/DejaVuSans.ttf: rendered glyph 3 LCD char 32" {
 }
 
 ///|
-test "parity/DejaVuSans.ttf: rendered glyph 36 LCD char 65" {
+test "parity/DejaVuSans.ttf: rendered glyph 36 LCD NO_HINTING char 65" {
   let f = @freetype.from_bytes(load_generated_dejavusans_ttf())
   try! @freetype.set_pixel_sizes(f, 0U, 16U)
   let gid = @freetype.get_char_index(f, 65U)
@@ -427,7 +427,7 @@ test "parity/DejaVuSans.ttf: rendered glyph 36 LCD char 65" {
 }
 
 ///|
-test "parity/DejaVuSans.ttf: rendered glyph 68 LCD char 97" {
+test "parity/DejaVuSans.ttf: rendered glyph 68 LCD NO_HINTING char 97" {
   let f = @freetype.from_bytes(load_generated_dejavusans_ttf())
   try! @freetype.set_pixel_sizes(f, 0U, 16U)
   let gid = @freetype.get_char_index(f, 97U)
@@ -446,7 +446,7 @@ test "parity/DejaVuSans.ttf: rendered glyph 68 LCD char 97" {
 }
 
 ///|
-test "parity/DejaVuSans.ttf: rendered glyph 3 LCD_V char 32" {
+test "parity/DejaVuSans.ttf: rendered glyph 3 LCD_V NO_HINTING char 32" {
   let f = @freetype.from_bytes(load_generated_dejavusans_ttf())
   try! @freetype.set_pixel_sizes(f, 0U, 16U)
   let gid = @freetype.get_char_index(f, 32U)
@@ -465,7 +465,7 @@ test "parity/DejaVuSans.ttf: rendered glyph 3 LCD_V char 32" {
 }
 
 ///|
-test "parity/DejaVuSans.ttf: rendered glyph 36 LCD_V char 65" {
+test "parity/DejaVuSans.ttf: rendered glyph 36 LCD_V NO_HINTING char 65" {
   let f = @freetype.from_bytes(load_generated_dejavusans_ttf())
   try! @freetype.set_pixel_sizes(f, 0U, 16U)
   let gid = @freetype.get_char_index(f, 65U)
@@ -484,7 +484,7 @@ test "parity/DejaVuSans.ttf: rendered glyph 36 LCD_V char 65" {
 }
 
 ///|
-test "parity/DejaVuSans.ttf: rendered glyph 68 LCD_V char 97" {
+test "parity/DejaVuSans.ttf: rendered glyph 68 LCD_V NO_HINTING char 97" {
   let f = @freetype.from_bytes(load_generated_dejavusans_ttf())
   try! @freetype.set_pixel_sizes(f, 0U, 16U)
   let gid = @freetype.get_char_index(f, 97U)
@@ -500,6 +500,186 @@ test "parity/DejaVuSans.ttf: rendered glyph 68 LCD_V char 97" {
   inspect(f.glyph().bitmap_left(), content="0")
   inspect(f.glyph().bitmap_top(), content="10")
   try! assert_buffer_hex(f.glyph().bitmap().buffer(), "0000000000000000000000000000000000000000042d442904000000084b859c8139000000299fd9f0d58b0c00004aeffff4ffda38000064ecb39cc5fe7d0000599e5f4871e9bf0000384a0b001dbce70700160600000079fb160000000000004aff2b0000000000002dff3e0000000c28344eff4b0000125e7c8894ff5300025bb2d0dcdeff58001ab3fef8ededff5b0047f5d7a599a0ff5c0085f884514555ff5c00b8d82c00001eff5c00d8af0000002aff5c00e98700000037ff5c01f7760000004fff5c01fb7400000071ff5c01f583000000a1ff5c00e8a8000015d2ff5c00d0d3250a57e7ff5c00aaf3795eabd3ff5c0070ffd0b6ed92ff5c0037e3ffffe450ff5c001096d8d8931dac3d00003e80803c06541e0000062c2c03000000000000000000000000")
+}
+
+///|
+test "parity/DejaVuSans.ttf: rendered glyph 3 NORMAL DEFAULT char 32" {
+  let f = @freetype.from_bytes(load_generated_dejavusans_ttf())
+  try! @freetype.set_pixel_sizes(f, 0U, 16U)
+  let gid = @freetype.get_char_index(f, 32U)
+  inspect(gid, content="3")
+  try! @freetype.load_glyph(f, gid, load_flags=0)
+  try! @freetype.render_glyph(f, mode=Normal)
+  inspect(f.glyph().format(), content="Bitmap")
+  inspect(f.glyph().bitmap().pixel_mode(), content="Gray")
+}
+
+///|
+test "parity/DejaVuSans.ttf: rendered glyph 36 NORMAL DEFAULT char 65" {
+  let f = @freetype.from_bytes(load_generated_dejavusans_ttf())
+  try! @freetype.set_pixel_sizes(f, 0U, 16U)
+  let gid = @freetype.get_char_index(f, 65U)
+  inspect(gid, content="36")
+  try! @freetype.load_glyph(f, gid, load_flags=0)
+  try! @freetype.render_glyph(f, mode=Normal)
+  inspect(f.glyph().format(), content="Bitmap")
+  inspect(f.glyph().bitmap().pixel_mode(), content="Gray")
+}
+
+///|
+test "parity/DejaVuSans.ttf: rendered glyph 68 NORMAL DEFAULT char 97" {
+  let f = @freetype.from_bytes(load_generated_dejavusans_ttf())
+  try! @freetype.set_pixel_sizes(f, 0U, 16U)
+  let gid = @freetype.get_char_index(f, 97U)
+  inspect(gid, content="68")
+  try! @freetype.load_glyph(f, gid, load_flags=0)
+  try! @freetype.render_glyph(f, mode=Normal)
+  inspect(f.glyph().format(), content="Bitmap")
+  inspect(f.glyph().bitmap().pixel_mode(), content="Gray")
+}
+
+///|
+test "parity/DejaVuSans.ttf: rendered glyph 3 LIGHT DEFAULT char 32" {
+  let f = @freetype.from_bytes(load_generated_dejavusans_ttf())
+  try! @freetype.set_pixel_sizes(f, 0U, 16U)
+  let gid = @freetype.get_char_index(f, 32U)
+  inspect(gid, content="3")
+  try! @freetype.load_glyph(f, gid, load_flags=0)
+  try! @freetype.render_glyph(f, mode=Light)
+  inspect(f.glyph().format(), content="Bitmap")
+  inspect(f.glyph().bitmap().pixel_mode(), content="Gray")
+}
+
+///|
+test "parity/DejaVuSans.ttf: rendered glyph 36 LIGHT DEFAULT char 65" {
+  let f = @freetype.from_bytes(load_generated_dejavusans_ttf())
+  try! @freetype.set_pixel_sizes(f, 0U, 16U)
+  let gid = @freetype.get_char_index(f, 65U)
+  inspect(gid, content="36")
+  try! @freetype.load_glyph(f, gid, load_flags=0)
+  try! @freetype.render_glyph(f, mode=Light)
+  inspect(f.glyph().format(), content="Bitmap")
+  inspect(f.glyph().bitmap().pixel_mode(), content="Gray")
+}
+
+///|
+test "parity/DejaVuSans.ttf: rendered glyph 68 LIGHT DEFAULT char 97" {
+  let f = @freetype.from_bytes(load_generated_dejavusans_ttf())
+  try! @freetype.set_pixel_sizes(f, 0U, 16U)
+  let gid = @freetype.get_char_index(f, 97U)
+  inspect(gid, content="68")
+  try! @freetype.load_glyph(f, gid, load_flags=0)
+  try! @freetype.render_glyph(f, mode=Light)
+  inspect(f.glyph().format(), content="Bitmap")
+  inspect(f.glyph().bitmap().pixel_mode(), content="Gray")
+}
+
+///|
+test "parity/DejaVuSans.ttf: rendered glyph 3 MONO DEFAULT char 32" {
+  let f = @freetype.from_bytes(load_generated_dejavusans_ttf())
+  try! @freetype.set_pixel_sizes(f, 0U, 16U)
+  let gid = @freetype.get_char_index(f, 32U)
+  inspect(gid, content="3")
+  try! @freetype.load_glyph(f, gid, load_flags=0)
+  try! @freetype.render_glyph(f, mode=Mono)
+  inspect(f.glyph().format(), content="Bitmap")
+  inspect(f.glyph().bitmap().pixel_mode(), content="Mono")
+}
+
+///|
+test "parity/DejaVuSans.ttf: rendered glyph 36 MONO DEFAULT char 65" {
+  let f = @freetype.from_bytes(load_generated_dejavusans_ttf())
+  try! @freetype.set_pixel_sizes(f, 0U, 16U)
+  let gid = @freetype.get_char_index(f, 65U)
+  inspect(gid, content="36")
+  try! @freetype.load_glyph(f, gid, load_flags=0)
+  try! @freetype.render_glyph(f, mode=Mono)
+  inspect(f.glyph().format(), content="Bitmap")
+  inspect(f.glyph().bitmap().pixel_mode(), content="Mono")
+}
+
+///|
+test "parity/DejaVuSans.ttf: rendered glyph 68 MONO DEFAULT char 97" {
+  let f = @freetype.from_bytes(load_generated_dejavusans_ttf())
+  try! @freetype.set_pixel_sizes(f, 0U, 16U)
+  let gid = @freetype.get_char_index(f, 97U)
+  inspect(gid, content="68")
+  try! @freetype.load_glyph(f, gid, load_flags=0)
+  try! @freetype.render_glyph(f, mode=Mono)
+  inspect(f.glyph().format(), content="Bitmap")
+  inspect(f.glyph().bitmap().pixel_mode(), content="Mono")
+}
+
+///|
+test "parity/DejaVuSans.ttf: rendered glyph 3 LCD DEFAULT char 32" {
+  let f = @freetype.from_bytes(load_generated_dejavusans_ttf())
+  try! @freetype.set_pixel_sizes(f, 0U, 16U)
+  let gid = @freetype.get_char_index(f, 32U)
+  inspect(gid, content="3")
+  try! @freetype.load_glyph(f, gid, load_flags=0)
+  try! @freetype.render_glyph(f, mode=Lcd)
+  inspect(f.glyph().format(), content="Bitmap")
+  inspect(f.glyph().bitmap().pixel_mode(), content="Lcd")
+}
+
+///|
+test "parity/DejaVuSans.ttf: rendered glyph 36 LCD DEFAULT char 65" {
+  let f = @freetype.from_bytes(load_generated_dejavusans_ttf())
+  try! @freetype.set_pixel_sizes(f, 0U, 16U)
+  let gid = @freetype.get_char_index(f, 65U)
+  inspect(gid, content="36")
+  try! @freetype.load_glyph(f, gid, load_flags=0)
+  try! @freetype.render_glyph(f, mode=Lcd)
+  inspect(f.glyph().format(), content="Bitmap")
+  inspect(f.glyph().bitmap().pixel_mode(), content="Lcd")
+}
+
+///|
+test "parity/DejaVuSans.ttf: rendered glyph 68 LCD DEFAULT char 97" {
+  let f = @freetype.from_bytes(load_generated_dejavusans_ttf())
+  try! @freetype.set_pixel_sizes(f, 0U, 16U)
+  let gid = @freetype.get_char_index(f, 97U)
+  inspect(gid, content="68")
+  try! @freetype.load_glyph(f, gid, load_flags=0)
+  try! @freetype.render_glyph(f, mode=Lcd)
+  inspect(f.glyph().format(), content="Bitmap")
+  inspect(f.glyph().bitmap().pixel_mode(), content="Lcd")
+}
+
+///|
+test "parity/DejaVuSans.ttf: rendered glyph 3 LCD_V DEFAULT char 32" {
+  let f = @freetype.from_bytes(load_generated_dejavusans_ttf())
+  try! @freetype.set_pixel_sizes(f, 0U, 16U)
+  let gid = @freetype.get_char_index(f, 32U)
+  inspect(gid, content="3")
+  try! @freetype.load_glyph(f, gid, load_flags=0)
+  try! @freetype.render_glyph(f, mode=LcdV)
+  inspect(f.glyph().format(), content="Bitmap")
+  inspect(f.glyph().bitmap().pixel_mode(), content="LcdV")
+}
+
+///|
+test "parity/DejaVuSans.ttf: rendered glyph 36 LCD_V DEFAULT char 65" {
+  let f = @freetype.from_bytes(load_generated_dejavusans_ttf())
+  try! @freetype.set_pixel_sizes(f, 0U, 16U)
+  let gid = @freetype.get_char_index(f, 65U)
+  inspect(gid, content="36")
+  try! @freetype.load_glyph(f, gid, load_flags=0)
+  try! @freetype.render_glyph(f, mode=LcdV)
+  inspect(f.glyph().format(), content="Bitmap")
+  inspect(f.glyph().bitmap().pixel_mode(), content="LcdV")
+}
+
+///|
+test "parity/DejaVuSans.ttf: rendered glyph 68 LCD_V DEFAULT char 97" {
+  let f = @freetype.from_bytes(load_generated_dejavusans_ttf())
+  try! @freetype.set_pixel_sizes(f, 0U, 16U)
+  let gid = @freetype.get_char_index(f, 97U)
+  inspect(gid, content="68")
+  try! @freetype.load_glyph(f, gid, load_flags=0)
+  try! @freetype.render_glyph(f, mode=LcdV)
+  inspect(f.glyph().format(), content="Bitmap")
+  inspect(f.glyph().bitmap().pixel_mode(), content="LcdV")
 }
 
 ///|

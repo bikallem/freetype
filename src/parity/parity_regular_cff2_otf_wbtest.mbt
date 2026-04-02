@@ -169,7 +169,7 @@ test "parity/regular_CFF2.otf: glyph metrics at 16ppem" {
 }
 
 ///|
-test "parity/regular_CFF2.otf: rendered glyph 1 NORMAL char 65" {
+test "parity/regular_CFF2.otf: rendered glyph 1 NORMAL NO_HINTING char 65" {
   let f = @freetype.from_bytes(load_generated_regular_cff2_otf())
   try! @freetype.set_pixel_sizes(f, 0U, 16U)
   let gid = @freetype.get_char_index(f, 65U)
@@ -188,7 +188,7 @@ test "parity/regular_CFF2.otf: rendered glyph 1 NORMAL char 65" {
 }
 
 ///|
-test "parity/regular_CFF2.otf: rendered glyph 4 NORMAL char 97" {
+test "parity/regular_CFF2.otf: rendered glyph 4 NORMAL NO_HINTING char 97" {
   let f = @freetype.from_bytes(load_generated_regular_cff2_otf())
   try! @freetype.set_pixel_sizes(f, 0U, 16U)
   let gid = @freetype.get_char_index(f, 97U)
@@ -207,7 +207,7 @@ test "parity/regular_CFF2.otf: rendered glyph 4 NORMAL char 97" {
 }
 
 ///|
-test "parity/regular_CFF2.otf: rendered glyph 1 LIGHT char 65" {
+test "parity/regular_CFF2.otf: rendered glyph 1 LIGHT NO_HINTING char 65" {
   let f = @freetype.from_bytes(load_generated_regular_cff2_otf())
   try! @freetype.set_pixel_sizes(f, 0U, 16U)
   let gid = @freetype.get_char_index(f, 65U)
@@ -226,7 +226,7 @@ test "parity/regular_CFF2.otf: rendered glyph 1 LIGHT char 65" {
 }
 
 ///|
-test "parity/regular_CFF2.otf: rendered glyph 4 LIGHT char 97" {
+test "parity/regular_CFF2.otf: rendered glyph 4 LIGHT NO_HINTING char 97" {
   let f = @freetype.from_bytes(load_generated_regular_cff2_otf())
   try! @freetype.set_pixel_sizes(f, 0U, 16U)
   let gid = @freetype.get_char_index(f, 97U)
@@ -245,7 +245,7 @@ test "parity/regular_CFF2.otf: rendered glyph 4 LIGHT char 97" {
 }
 
 ///|
-test "parity/regular_CFF2.otf: rendered glyph 1 MONO char 65" {
+test "parity/regular_CFF2.otf: rendered glyph 1 MONO NO_HINTING char 65" {
   let f = @freetype.from_bytes(load_generated_regular_cff2_otf())
   try! @freetype.set_pixel_sizes(f, 0U, 16U)
   let gid = @freetype.get_char_index(f, 65U)
@@ -264,7 +264,7 @@ test "parity/regular_CFF2.otf: rendered glyph 1 MONO char 65" {
 }
 
 ///|
-test "parity/regular_CFF2.otf: rendered glyph 4 MONO char 97" {
+test "parity/regular_CFF2.otf: rendered glyph 4 MONO NO_HINTING char 97" {
   let f = @freetype.from_bytes(load_generated_regular_cff2_otf())
   try! @freetype.set_pixel_sizes(f, 0U, 16U)
   let gid = @freetype.get_char_index(f, 97U)
@@ -283,7 +283,7 @@ test "parity/regular_CFF2.otf: rendered glyph 4 MONO char 97" {
 }
 
 ///|
-test "parity/regular_CFF2.otf: rendered glyph 1 LCD char 65" {
+test "parity/regular_CFF2.otf: rendered glyph 1 LCD NO_HINTING char 65" {
   let f = @freetype.from_bytes(load_generated_regular_cff2_otf())
   try! @freetype.set_pixel_sizes(f, 0U, 16U)
   let gid = @freetype.get_char_index(f, 65U)
@@ -302,7 +302,7 @@ test "parity/regular_CFF2.otf: rendered glyph 1 LCD char 65" {
 }
 
 ///|
-test "parity/regular_CFF2.otf: rendered glyph 4 LCD char 97" {
+test "parity/regular_CFF2.otf: rendered glyph 4 LCD NO_HINTING char 97" {
   let f = @freetype.from_bytes(load_generated_regular_cff2_otf())
   try! @freetype.set_pixel_sizes(f, 0U, 16U)
   let gid = @freetype.get_char_index(f, 97U)
@@ -321,7 +321,7 @@ test "parity/regular_CFF2.otf: rendered glyph 4 LCD char 97" {
 }
 
 ///|
-test "parity/regular_CFF2.otf: rendered glyph 1 LCD_V char 65" {
+test "parity/regular_CFF2.otf: rendered glyph 1 LCD_V NO_HINTING char 65" {
   let f = @freetype.from_bytes(load_generated_regular_cff2_otf())
   try! @freetype.set_pixel_sizes(f, 0U, 16U)
   let gid = @freetype.get_char_index(f, 65U)
@@ -340,7 +340,7 @@ test "parity/regular_CFF2.otf: rendered glyph 1 LCD_V char 65" {
 }
 
 ///|
-test "parity/regular_CFF2.otf: rendered glyph 4 LCD_V char 97" {
+test "parity/regular_CFF2.otf: rendered glyph 4 LCD_V NO_HINTING char 97" {
   let f = @freetype.from_bytes(load_generated_regular_cff2_otf())
   try! @freetype.set_pixel_sizes(f, 0U, 16U)
   let gid = @freetype.get_char_index(f, 97U)
@@ -356,6 +356,126 @@ test "parity/regular_CFF2.otf: rendered glyph 4 LCD_V char 97" {
   inspect(f.glyph().bitmap_left(), content="0")
   inspect(f.glyph().bitmap_top(), content="9")
   try! assert_buffer_hex(f.glyph().bitmap().buffer(), "0000000000000000000000000000000002273b0c000000447f934f00002398d3e7a30f0063eae6e7ea310094d68e93fa630086853a3fe1900048310003c1b100150200009ec800000000008ad4000000001096df0000003667bfe600002e8abbe9eb000e81dacfcceb003cd8be7798eb0083e46a2369eb00c6ae1a0067eb04f06a000067eb0ffd3b000067eb1bff30000071eb1eff3d00039eeb14ff65002bd0eb08f1a6417fe8eb01ccdf99cfb2eb0087feedcd6deb0041c0c479299e000d686c250e4d0000151700000000000000000000")
+}
+
+///|
+test "parity/regular_CFF2.otf: rendered glyph 1 NORMAL DEFAULT char 65" {
+  let f = @freetype.from_bytes(load_generated_regular_cff2_otf())
+  try! @freetype.set_pixel_sizes(f, 0U, 16U)
+  let gid = @freetype.get_char_index(f, 65U)
+  inspect(gid, content="1")
+  try! @freetype.load_glyph(f, gid, load_flags=0)
+  try! @freetype.render_glyph(f, mode=Normal)
+  inspect(f.glyph().format(), content="Bitmap")
+  inspect(f.glyph().bitmap().pixel_mode(), content="Gray")
+}
+
+///|
+test "parity/regular_CFF2.otf: rendered glyph 4 NORMAL DEFAULT char 97" {
+  let f = @freetype.from_bytes(load_generated_regular_cff2_otf())
+  try! @freetype.set_pixel_sizes(f, 0U, 16U)
+  let gid = @freetype.get_char_index(f, 97U)
+  inspect(gid, content="4")
+  try! @freetype.load_glyph(f, gid, load_flags=0)
+  try! @freetype.render_glyph(f, mode=Normal)
+  inspect(f.glyph().format(), content="Bitmap")
+  inspect(f.glyph().bitmap().pixel_mode(), content="Gray")
+}
+
+///|
+test "parity/regular_CFF2.otf: rendered glyph 1 LIGHT DEFAULT char 65" {
+  let f = @freetype.from_bytes(load_generated_regular_cff2_otf())
+  try! @freetype.set_pixel_sizes(f, 0U, 16U)
+  let gid = @freetype.get_char_index(f, 65U)
+  inspect(gid, content="1")
+  try! @freetype.load_glyph(f, gid, load_flags=0)
+  try! @freetype.render_glyph(f, mode=Light)
+  inspect(f.glyph().format(), content="Bitmap")
+  inspect(f.glyph().bitmap().pixel_mode(), content="Gray")
+}
+
+///|
+test "parity/regular_CFF2.otf: rendered glyph 4 LIGHT DEFAULT char 97" {
+  let f = @freetype.from_bytes(load_generated_regular_cff2_otf())
+  try! @freetype.set_pixel_sizes(f, 0U, 16U)
+  let gid = @freetype.get_char_index(f, 97U)
+  inspect(gid, content="4")
+  try! @freetype.load_glyph(f, gid, load_flags=0)
+  try! @freetype.render_glyph(f, mode=Light)
+  inspect(f.glyph().format(), content="Bitmap")
+  inspect(f.glyph().bitmap().pixel_mode(), content="Gray")
+}
+
+///|
+test "parity/regular_CFF2.otf: rendered glyph 1 MONO DEFAULT char 65" {
+  let f = @freetype.from_bytes(load_generated_regular_cff2_otf())
+  try! @freetype.set_pixel_sizes(f, 0U, 16U)
+  let gid = @freetype.get_char_index(f, 65U)
+  inspect(gid, content="1")
+  try! @freetype.load_glyph(f, gid, load_flags=0)
+  try! @freetype.render_glyph(f, mode=Mono)
+  inspect(f.glyph().format(), content="Bitmap")
+  inspect(f.glyph().bitmap().pixel_mode(), content="Mono")
+}
+
+///|
+test "parity/regular_CFF2.otf: rendered glyph 4 MONO DEFAULT char 97" {
+  let f = @freetype.from_bytes(load_generated_regular_cff2_otf())
+  try! @freetype.set_pixel_sizes(f, 0U, 16U)
+  let gid = @freetype.get_char_index(f, 97U)
+  inspect(gid, content="4")
+  try! @freetype.load_glyph(f, gid, load_flags=0)
+  try! @freetype.render_glyph(f, mode=Mono)
+  inspect(f.glyph().format(), content="Bitmap")
+  inspect(f.glyph().bitmap().pixel_mode(), content="Mono")
+}
+
+///|
+test "parity/regular_CFF2.otf: rendered glyph 1 LCD DEFAULT char 65" {
+  let f = @freetype.from_bytes(load_generated_regular_cff2_otf())
+  try! @freetype.set_pixel_sizes(f, 0U, 16U)
+  let gid = @freetype.get_char_index(f, 65U)
+  inspect(gid, content="1")
+  try! @freetype.load_glyph(f, gid, load_flags=0)
+  try! @freetype.render_glyph(f, mode=Lcd)
+  inspect(f.glyph().format(), content="Bitmap")
+  inspect(f.glyph().bitmap().pixel_mode(), content="Lcd")
+}
+
+///|
+test "parity/regular_CFF2.otf: rendered glyph 4 LCD DEFAULT char 97" {
+  let f = @freetype.from_bytes(load_generated_regular_cff2_otf())
+  try! @freetype.set_pixel_sizes(f, 0U, 16U)
+  let gid = @freetype.get_char_index(f, 97U)
+  inspect(gid, content="4")
+  try! @freetype.load_glyph(f, gid, load_flags=0)
+  try! @freetype.render_glyph(f, mode=Lcd)
+  inspect(f.glyph().format(), content="Bitmap")
+  inspect(f.glyph().bitmap().pixel_mode(), content="Lcd")
+}
+
+///|
+test "parity/regular_CFF2.otf: rendered glyph 1 LCD_V DEFAULT char 65" {
+  let f = @freetype.from_bytes(load_generated_regular_cff2_otf())
+  try! @freetype.set_pixel_sizes(f, 0U, 16U)
+  let gid = @freetype.get_char_index(f, 65U)
+  inspect(gid, content="1")
+  try! @freetype.load_glyph(f, gid, load_flags=0)
+  try! @freetype.render_glyph(f, mode=LcdV)
+  inspect(f.glyph().format(), content="Bitmap")
+  inspect(f.glyph().bitmap().pixel_mode(), content="LcdV")
+}
+
+///|
+test "parity/regular_CFF2.otf: rendered glyph 4 LCD_V DEFAULT char 97" {
+  let f = @freetype.from_bytes(load_generated_regular_cff2_otf())
+  try! @freetype.set_pixel_sizes(f, 0U, 16U)
+  let gid = @freetype.get_char_index(f, 97U)
+  inspect(gid, content="4")
+  try! @freetype.load_glyph(f, gid, load_flags=0)
+  try! @freetype.render_glyph(f, mode=LcdV)
+  inspect(f.glyph().format(), content="Bitmap")
+  inspect(f.glyph().bitmap().pixel_mode(), content="LcdV")
 }
 
 ///|

@@ -221,7 +221,7 @@ test "parity/NotoSansJP-Regular.otf: glyph metrics at 16ppem" {
 }
 
 ///|
-test "parity/NotoSansJP-Regular.otf: rendered glyph 1 NORMAL char 32" {
+test "parity/NotoSansJP-Regular.otf: rendered glyph 1 NORMAL NO_HINTING char 32" {
   let f = @freetype.from_bytes(load_generated_notosansjp_regular_otf())
   try! @freetype.set_pixel_sizes(f, 0U, 16U)
   let gid = @freetype.get_char_index(f, 32U)
@@ -240,7 +240,7 @@ test "parity/NotoSansJP-Regular.otf: rendered glyph 1 NORMAL char 32" {
 }
 
 ///|
-test "parity/NotoSansJP-Regular.otf: rendered glyph 34 NORMAL char 65" {
+test "parity/NotoSansJP-Regular.otf: rendered glyph 34 NORMAL NO_HINTING char 65" {
   let f = @freetype.from_bytes(load_generated_notosansjp_regular_otf())
   try! @freetype.set_pixel_sizes(f, 0U, 16U)
   let gid = @freetype.get_char_index(f, 65U)
@@ -259,7 +259,7 @@ test "parity/NotoSansJP-Regular.otf: rendered glyph 34 NORMAL char 65" {
 }
 
 ///|
-test "parity/NotoSansJP-Regular.otf: rendered glyph 66 NORMAL char 97" {
+test "parity/NotoSansJP-Regular.otf: rendered glyph 66 NORMAL NO_HINTING char 97" {
   let f = @freetype.from_bytes(load_generated_notosansjp_regular_otf())
   try! @freetype.set_pixel_sizes(f, 0U, 16U)
   let gid = @freetype.get_char_index(f, 97U)
@@ -278,7 +278,7 @@ test "parity/NotoSansJP-Regular.otf: rendered glyph 66 NORMAL char 97" {
 }
 
 ///|
-test "parity/NotoSansJP-Regular.otf: rendered glyph 2388 NORMAL char 19968" {
+test "parity/NotoSansJP-Regular.otf: rendered glyph 2388 NORMAL NO_HINTING char 19968" {
   let f = @freetype.from_bytes(load_generated_notosansjp_regular_otf())
   try! @freetype.set_pixel_sizes(f, 0U, 16U)
   let gid = @freetype.get_char_index(f, 19968U)
@@ -297,7 +297,7 @@ test "parity/NotoSansJP-Regular.otf: rendered glyph 2388 NORMAL char 19968" {
 }
 
 ///|
-test "parity/NotoSansJP-Regular.otf: rendered glyph 1 LIGHT char 32" {
+test "parity/NotoSansJP-Regular.otf: rendered glyph 1 LIGHT NO_HINTING char 32" {
   let f = @freetype.from_bytes(load_generated_notosansjp_regular_otf())
   try! @freetype.set_pixel_sizes(f, 0U, 16U)
   let gid = @freetype.get_char_index(f, 32U)
@@ -316,7 +316,7 @@ test "parity/NotoSansJP-Regular.otf: rendered glyph 1 LIGHT char 32" {
 }
 
 ///|
-test "parity/NotoSansJP-Regular.otf: rendered glyph 34 LIGHT char 65" {
+test "parity/NotoSansJP-Regular.otf: rendered glyph 34 LIGHT NO_HINTING char 65" {
   let f = @freetype.from_bytes(load_generated_notosansjp_regular_otf())
   try! @freetype.set_pixel_sizes(f, 0U, 16U)
   let gid = @freetype.get_char_index(f, 65U)
@@ -335,7 +335,7 @@ test "parity/NotoSansJP-Regular.otf: rendered glyph 34 LIGHT char 65" {
 }
 
 ///|
-test "parity/NotoSansJP-Regular.otf: rendered glyph 66 LIGHT char 97" {
+test "parity/NotoSansJP-Regular.otf: rendered glyph 66 LIGHT NO_HINTING char 97" {
   let f = @freetype.from_bytes(load_generated_notosansjp_regular_otf())
   try! @freetype.set_pixel_sizes(f, 0U, 16U)
   let gid = @freetype.get_char_index(f, 97U)
@@ -354,7 +354,7 @@ test "parity/NotoSansJP-Regular.otf: rendered glyph 66 LIGHT char 97" {
 }
 
 ///|
-test "parity/NotoSansJP-Regular.otf: rendered glyph 2388 LIGHT char 19968" {
+test "parity/NotoSansJP-Regular.otf: rendered glyph 2388 LIGHT NO_HINTING char 19968" {
   let f = @freetype.from_bytes(load_generated_notosansjp_regular_otf())
   try! @freetype.set_pixel_sizes(f, 0U, 16U)
   let gid = @freetype.get_char_index(f, 19968U)
@@ -373,7 +373,7 @@ test "parity/NotoSansJP-Regular.otf: rendered glyph 2388 LIGHT char 19968" {
 }
 
 ///|
-test "parity/NotoSansJP-Regular.otf: rendered glyph 1 MONO char 32" {
+test "parity/NotoSansJP-Regular.otf: rendered glyph 1 MONO NO_HINTING char 32" {
   let f = @freetype.from_bytes(load_generated_notosansjp_regular_otf())
   try! @freetype.set_pixel_sizes(f, 0U, 16U)
   let gid = @freetype.get_char_index(f, 32U)
@@ -392,7 +392,7 @@ test "parity/NotoSansJP-Regular.otf: rendered glyph 1 MONO char 32" {
 }
 
 ///|
-test "parity/NotoSansJP-Regular.otf: rendered glyph 34 MONO char 65" {
+test "parity/NotoSansJP-Regular.otf: rendered glyph 34 MONO NO_HINTING char 65" {
   let f = @freetype.from_bytes(load_generated_notosansjp_regular_otf())
   try! @freetype.set_pixel_sizes(f, 0U, 16U)
   let gid = @freetype.get_char_index(f, 65U)
@@ -411,7 +411,7 @@ test "parity/NotoSansJP-Regular.otf: rendered glyph 34 MONO char 65" {
 }
 
 ///|
-test "parity/NotoSansJP-Regular.otf: rendered glyph 66 MONO char 97" {
+test "parity/NotoSansJP-Regular.otf: rendered glyph 66 MONO NO_HINTING char 97" {
   let f = @freetype.from_bytes(load_generated_notosansjp_regular_otf())
   try! @freetype.set_pixel_sizes(f, 0U, 16U)
   let gid = @freetype.get_char_index(f, 97U)
@@ -430,7 +430,7 @@ test "parity/NotoSansJP-Regular.otf: rendered glyph 66 MONO char 97" {
 }
 
 ///|
-test "parity/NotoSansJP-Regular.otf: rendered glyph 2388 MONO char 19968" {
+test "parity/NotoSansJP-Regular.otf: rendered glyph 2388 MONO NO_HINTING char 19968" {
   let f = @freetype.from_bytes(load_generated_notosansjp_regular_otf())
   try! @freetype.set_pixel_sizes(f, 0U, 16U)
   let gid = @freetype.get_char_index(f, 19968U)
@@ -449,7 +449,7 @@ test "parity/NotoSansJP-Regular.otf: rendered glyph 2388 MONO char 19968" {
 }
 
 ///|
-test "parity/NotoSansJP-Regular.otf: rendered glyph 1 LCD char 32" {
+test "parity/NotoSansJP-Regular.otf: rendered glyph 1 LCD NO_HINTING char 32" {
   let f = @freetype.from_bytes(load_generated_notosansjp_regular_otf())
   try! @freetype.set_pixel_sizes(f, 0U, 16U)
   let gid = @freetype.get_char_index(f, 32U)
@@ -468,7 +468,7 @@ test "parity/NotoSansJP-Regular.otf: rendered glyph 1 LCD char 32" {
 }
 
 ///|
-test "parity/NotoSansJP-Regular.otf: rendered glyph 34 LCD char 65" {
+test "parity/NotoSansJP-Regular.otf: rendered glyph 34 LCD NO_HINTING char 65" {
   let f = @freetype.from_bytes(load_generated_notosansjp_regular_otf())
   try! @freetype.set_pixel_sizes(f, 0U, 16U)
   let gid = @freetype.get_char_index(f, 65U)
@@ -487,7 +487,7 @@ test "parity/NotoSansJP-Regular.otf: rendered glyph 34 LCD char 65" {
 }
 
 ///|
-test "parity/NotoSansJP-Regular.otf: rendered glyph 66 LCD char 97" {
+test "parity/NotoSansJP-Regular.otf: rendered glyph 66 LCD NO_HINTING char 97" {
   let f = @freetype.from_bytes(load_generated_notosansjp_regular_otf())
   try! @freetype.set_pixel_sizes(f, 0U, 16U)
   let gid = @freetype.get_char_index(f, 97U)
@@ -506,7 +506,7 @@ test "parity/NotoSansJP-Regular.otf: rendered glyph 66 LCD char 97" {
 }
 
 ///|
-test "parity/NotoSansJP-Regular.otf: rendered glyph 2388 LCD char 19968" {
+test "parity/NotoSansJP-Regular.otf: rendered glyph 2388 LCD NO_HINTING char 19968" {
   let f = @freetype.from_bytes(load_generated_notosansjp_regular_otf())
   try! @freetype.set_pixel_sizes(f, 0U, 16U)
   let gid = @freetype.get_char_index(f, 19968U)
@@ -525,7 +525,7 @@ test "parity/NotoSansJP-Regular.otf: rendered glyph 2388 LCD char 19968" {
 }
 
 ///|
-test "parity/NotoSansJP-Regular.otf: rendered glyph 1 LCD_V char 32" {
+test "parity/NotoSansJP-Regular.otf: rendered glyph 1 LCD_V NO_HINTING char 32" {
   let f = @freetype.from_bytes(load_generated_notosansjp_regular_otf())
   try! @freetype.set_pixel_sizes(f, 0U, 16U)
   let gid = @freetype.get_char_index(f, 32U)
@@ -544,7 +544,7 @@ test "parity/NotoSansJP-Regular.otf: rendered glyph 1 LCD_V char 32" {
 }
 
 ///|
-test "parity/NotoSansJP-Regular.otf: rendered glyph 34 LCD_V char 65" {
+test "parity/NotoSansJP-Regular.otf: rendered glyph 34 LCD_V NO_HINTING char 65" {
   let f = @freetype.from_bytes(load_generated_notosansjp_regular_otf())
   try! @freetype.set_pixel_sizes(f, 0U, 16U)
   let gid = @freetype.get_char_index(f, 65U)
@@ -563,7 +563,7 @@ test "parity/NotoSansJP-Regular.otf: rendered glyph 34 LCD_V char 65" {
 }
 
 ///|
-test "parity/NotoSansJP-Regular.otf: rendered glyph 66 LCD_V char 97" {
+test "parity/NotoSansJP-Regular.otf: rendered glyph 66 LCD_V NO_HINTING char 97" {
   let f = @freetype.from_bytes(load_generated_notosansjp_regular_otf())
   try! @freetype.set_pixel_sizes(f, 0U, 16U)
   let gid = @freetype.get_char_index(f, 97U)
@@ -582,7 +582,7 @@ test "parity/NotoSansJP-Regular.otf: rendered glyph 66 LCD_V char 97" {
 }
 
 ///|
-test "parity/NotoSansJP-Regular.otf: rendered glyph 2388 LCD_V char 19968" {
+test "parity/NotoSansJP-Regular.otf: rendered glyph 2388 LCD_V NO_HINTING char 19968" {
   let f = @freetype.from_bytes(load_generated_notosansjp_regular_otf())
   try! @freetype.set_pixel_sizes(f, 0U, 16U)
   let gid = @freetype.get_char_index(f, 19968U)
@@ -598,6 +598,246 @@ test "parity/NotoSansJP-Regular.otf: rendered glyph 2388 LCD_V char 19968" {
   inspect(f.glyph().bitmap_left(), content="0")
   inspect(f.glyph().bitmap_top(), content="8")
   try! assert_buffer_hex(f.glyph().bitmap().buffer(), "0000000000000000000000000000000000000000000000000000000000000000103737373737373737373737373737142a8f8f8f8f8f8f8f8f8f8f8f8f8f8f3343e3e3e3e3e3e3e3e3e3e3e3e3e3e3514bffffffffffffffffffffffffffff5b38bfbfbfbfbfbfbfbfbfbfbfbfbfbf44206b6b6b6b6b6b6b6b6b6b6b6b6b6b2607171717171717171717171717171708")
+}
+
+///|
+test "parity/NotoSansJP-Regular.otf: rendered glyph 1 NORMAL DEFAULT char 32" {
+  let f = @freetype.from_bytes(load_generated_notosansjp_regular_otf())
+  try! @freetype.set_pixel_sizes(f, 0U, 16U)
+  let gid = @freetype.get_char_index(f, 32U)
+  inspect(gid, content="1")
+  try! @freetype.load_glyph(f, gid, load_flags=0)
+  try! @freetype.render_glyph(f, mode=Normal)
+  inspect(f.glyph().format(), content="Bitmap")
+  inspect(f.glyph().bitmap().pixel_mode(), content="Gray")
+}
+
+///|
+test "parity/NotoSansJP-Regular.otf: rendered glyph 34 NORMAL DEFAULT char 65" {
+  let f = @freetype.from_bytes(load_generated_notosansjp_regular_otf())
+  try! @freetype.set_pixel_sizes(f, 0U, 16U)
+  let gid = @freetype.get_char_index(f, 65U)
+  inspect(gid, content="34")
+  try! @freetype.load_glyph(f, gid, load_flags=0)
+  try! @freetype.render_glyph(f, mode=Normal)
+  inspect(f.glyph().format(), content="Bitmap")
+  inspect(f.glyph().bitmap().pixel_mode(), content="Gray")
+}
+
+///|
+test "parity/NotoSansJP-Regular.otf: rendered glyph 66 NORMAL DEFAULT char 97" {
+  let f = @freetype.from_bytes(load_generated_notosansjp_regular_otf())
+  try! @freetype.set_pixel_sizes(f, 0U, 16U)
+  let gid = @freetype.get_char_index(f, 97U)
+  inspect(gid, content="66")
+  try! @freetype.load_glyph(f, gid, load_flags=0)
+  try! @freetype.render_glyph(f, mode=Normal)
+  inspect(f.glyph().format(), content="Bitmap")
+  inspect(f.glyph().bitmap().pixel_mode(), content="Gray")
+}
+
+///|
+test "parity/NotoSansJP-Regular.otf: rendered glyph 2388 NORMAL DEFAULT char 19968" {
+  let f = @freetype.from_bytes(load_generated_notosansjp_regular_otf())
+  try! @freetype.set_pixel_sizes(f, 0U, 16U)
+  let gid = @freetype.get_char_index(f, 19968U)
+  inspect(gid, content="2388")
+  try! @freetype.load_glyph(f, gid, load_flags=0)
+  try! @freetype.render_glyph(f, mode=Normal)
+  inspect(f.glyph().format(), content="Bitmap")
+  inspect(f.glyph().bitmap().pixel_mode(), content="Gray")
+}
+
+///|
+test "parity/NotoSansJP-Regular.otf: rendered glyph 1 LIGHT DEFAULT char 32" {
+  let f = @freetype.from_bytes(load_generated_notosansjp_regular_otf())
+  try! @freetype.set_pixel_sizes(f, 0U, 16U)
+  let gid = @freetype.get_char_index(f, 32U)
+  inspect(gid, content="1")
+  try! @freetype.load_glyph(f, gid, load_flags=0)
+  try! @freetype.render_glyph(f, mode=Light)
+  inspect(f.glyph().format(), content="Bitmap")
+  inspect(f.glyph().bitmap().pixel_mode(), content="Gray")
+}
+
+///|
+test "parity/NotoSansJP-Regular.otf: rendered glyph 34 LIGHT DEFAULT char 65" {
+  let f = @freetype.from_bytes(load_generated_notosansjp_regular_otf())
+  try! @freetype.set_pixel_sizes(f, 0U, 16U)
+  let gid = @freetype.get_char_index(f, 65U)
+  inspect(gid, content="34")
+  try! @freetype.load_glyph(f, gid, load_flags=0)
+  try! @freetype.render_glyph(f, mode=Light)
+  inspect(f.glyph().format(), content="Bitmap")
+  inspect(f.glyph().bitmap().pixel_mode(), content="Gray")
+}
+
+///|
+test "parity/NotoSansJP-Regular.otf: rendered glyph 66 LIGHT DEFAULT char 97" {
+  let f = @freetype.from_bytes(load_generated_notosansjp_regular_otf())
+  try! @freetype.set_pixel_sizes(f, 0U, 16U)
+  let gid = @freetype.get_char_index(f, 97U)
+  inspect(gid, content="66")
+  try! @freetype.load_glyph(f, gid, load_flags=0)
+  try! @freetype.render_glyph(f, mode=Light)
+  inspect(f.glyph().format(), content="Bitmap")
+  inspect(f.glyph().bitmap().pixel_mode(), content="Gray")
+}
+
+///|
+test "parity/NotoSansJP-Regular.otf: rendered glyph 2388 LIGHT DEFAULT char 19968" {
+  let f = @freetype.from_bytes(load_generated_notosansjp_regular_otf())
+  try! @freetype.set_pixel_sizes(f, 0U, 16U)
+  let gid = @freetype.get_char_index(f, 19968U)
+  inspect(gid, content="2388")
+  try! @freetype.load_glyph(f, gid, load_flags=0)
+  try! @freetype.render_glyph(f, mode=Light)
+  inspect(f.glyph().format(), content="Bitmap")
+  inspect(f.glyph().bitmap().pixel_mode(), content="Gray")
+}
+
+///|
+test "parity/NotoSansJP-Regular.otf: rendered glyph 1 MONO DEFAULT char 32" {
+  let f = @freetype.from_bytes(load_generated_notosansjp_regular_otf())
+  try! @freetype.set_pixel_sizes(f, 0U, 16U)
+  let gid = @freetype.get_char_index(f, 32U)
+  inspect(gid, content="1")
+  try! @freetype.load_glyph(f, gid, load_flags=0)
+  try! @freetype.render_glyph(f, mode=Mono)
+  inspect(f.glyph().format(), content="Bitmap")
+  inspect(f.glyph().bitmap().pixel_mode(), content="Mono")
+}
+
+///|
+test "parity/NotoSansJP-Regular.otf: rendered glyph 34 MONO DEFAULT char 65" {
+  let f = @freetype.from_bytes(load_generated_notosansjp_regular_otf())
+  try! @freetype.set_pixel_sizes(f, 0U, 16U)
+  let gid = @freetype.get_char_index(f, 65U)
+  inspect(gid, content="34")
+  try! @freetype.load_glyph(f, gid, load_flags=0)
+  try! @freetype.render_glyph(f, mode=Mono)
+  inspect(f.glyph().format(), content="Bitmap")
+  inspect(f.glyph().bitmap().pixel_mode(), content="Mono")
+}
+
+///|
+test "parity/NotoSansJP-Regular.otf: rendered glyph 66 MONO DEFAULT char 97" {
+  let f = @freetype.from_bytes(load_generated_notosansjp_regular_otf())
+  try! @freetype.set_pixel_sizes(f, 0U, 16U)
+  let gid = @freetype.get_char_index(f, 97U)
+  inspect(gid, content="66")
+  try! @freetype.load_glyph(f, gid, load_flags=0)
+  try! @freetype.render_glyph(f, mode=Mono)
+  inspect(f.glyph().format(), content="Bitmap")
+  inspect(f.glyph().bitmap().pixel_mode(), content="Mono")
+}
+
+///|
+test "parity/NotoSansJP-Regular.otf: rendered glyph 2388 MONO DEFAULT char 19968" {
+  let f = @freetype.from_bytes(load_generated_notosansjp_regular_otf())
+  try! @freetype.set_pixel_sizes(f, 0U, 16U)
+  let gid = @freetype.get_char_index(f, 19968U)
+  inspect(gid, content="2388")
+  try! @freetype.load_glyph(f, gid, load_flags=0)
+  try! @freetype.render_glyph(f, mode=Mono)
+  inspect(f.glyph().format(), content="Bitmap")
+  inspect(f.glyph().bitmap().pixel_mode(), content="Mono")
+}
+
+///|
+test "parity/NotoSansJP-Regular.otf: rendered glyph 1 LCD DEFAULT char 32" {
+  let f = @freetype.from_bytes(load_generated_notosansjp_regular_otf())
+  try! @freetype.set_pixel_sizes(f, 0U, 16U)
+  let gid = @freetype.get_char_index(f, 32U)
+  inspect(gid, content="1")
+  try! @freetype.load_glyph(f, gid, load_flags=0)
+  try! @freetype.render_glyph(f, mode=Lcd)
+  inspect(f.glyph().format(), content="Bitmap")
+  inspect(f.glyph().bitmap().pixel_mode(), content="Lcd")
+}
+
+///|
+test "parity/NotoSansJP-Regular.otf: rendered glyph 34 LCD DEFAULT char 65" {
+  let f = @freetype.from_bytes(load_generated_notosansjp_regular_otf())
+  try! @freetype.set_pixel_sizes(f, 0U, 16U)
+  let gid = @freetype.get_char_index(f, 65U)
+  inspect(gid, content="34")
+  try! @freetype.load_glyph(f, gid, load_flags=0)
+  try! @freetype.render_glyph(f, mode=Lcd)
+  inspect(f.glyph().format(), content="Bitmap")
+  inspect(f.glyph().bitmap().pixel_mode(), content="Lcd")
+}
+
+///|
+test "parity/NotoSansJP-Regular.otf: rendered glyph 66 LCD DEFAULT char 97" {
+  let f = @freetype.from_bytes(load_generated_notosansjp_regular_otf())
+  try! @freetype.set_pixel_sizes(f, 0U, 16U)
+  let gid = @freetype.get_char_index(f, 97U)
+  inspect(gid, content="66")
+  try! @freetype.load_glyph(f, gid, load_flags=0)
+  try! @freetype.render_glyph(f, mode=Lcd)
+  inspect(f.glyph().format(), content="Bitmap")
+  inspect(f.glyph().bitmap().pixel_mode(), content="Lcd")
+}
+
+///|
+test "parity/NotoSansJP-Regular.otf: rendered glyph 2388 LCD DEFAULT char 19968" {
+  let f = @freetype.from_bytes(load_generated_notosansjp_regular_otf())
+  try! @freetype.set_pixel_sizes(f, 0U, 16U)
+  let gid = @freetype.get_char_index(f, 19968U)
+  inspect(gid, content="2388")
+  try! @freetype.load_glyph(f, gid, load_flags=0)
+  try! @freetype.render_glyph(f, mode=Lcd)
+  inspect(f.glyph().format(), content="Bitmap")
+  inspect(f.glyph().bitmap().pixel_mode(), content="Lcd")
+}
+
+///|
+test "parity/NotoSansJP-Regular.otf: rendered glyph 1 LCD_V DEFAULT char 32" {
+  let f = @freetype.from_bytes(load_generated_notosansjp_regular_otf())
+  try! @freetype.set_pixel_sizes(f, 0U, 16U)
+  let gid = @freetype.get_char_index(f, 32U)
+  inspect(gid, content="1")
+  try! @freetype.load_glyph(f, gid, load_flags=0)
+  try! @freetype.render_glyph(f, mode=LcdV)
+  inspect(f.glyph().format(), content="Bitmap")
+  inspect(f.glyph().bitmap().pixel_mode(), content="LcdV")
+}
+
+///|
+test "parity/NotoSansJP-Regular.otf: rendered glyph 34 LCD_V DEFAULT char 65" {
+  let f = @freetype.from_bytes(load_generated_notosansjp_regular_otf())
+  try! @freetype.set_pixel_sizes(f, 0U, 16U)
+  let gid = @freetype.get_char_index(f, 65U)
+  inspect(gid, content="34")
+  try! @freetype.load_glyph(f, gid, load_flags=0)
+  try! @freetype.render_glyph(f, mode=LcdV)
+  inspect(f.glyph().format(), content="Bitmap")
+  inspect(f.glyph().bitmap().pixel_mode(), content="LcdV")
+}
+
+///|
+test "parity/NotoSansJP-Regular.otf: rendered glyph 66 LCD_V DEFAULT char 97" {
+  let f = @freetype.from_bytes(load_generated_notosansjp_regular_otf())
+  try! @freetype.set_pixel_sizes(f, 0U, 16U)
+  let gid = @freetype.get_char_index(f, 97U)
+  inspect(gid, content="66")
+  try! @freetype.load_glyph(f, gid, load_flags=0)
+  try! @freetype.render_glyph(f, mode=LcdV)
+  inspect(f.glyph().format(), content="Bitmap")
+  inspect(f.glyph().bitmap().pixel_mode(), content="LcdV")
+}
+
+///|
+test "parity/NotoSansJP-Regular.otf: rendered glyph 2388 LCD_V DEFAULT char 19968" {
+  let f = @freetype.from_bytes(load_generated_notosansjp_regular_otf())
+  try! @freetype.set_pixel_sizes(f, 0U, 16U)
+  let gid = @freetype.get_char_index(f, 19968U)
+  inspect(gid, content="2388")
+  try! @freetype.load_glyph(f, gid, load_flags=0)
+  try! @freetype.render_glyph(f, mode=LcdV)
+  inspect(f.glyph().format(), content="Bitmap")
+  inspect(f.glyph().bitmap().pixel_mode(), content="LcdV")
 }
 
 ///|

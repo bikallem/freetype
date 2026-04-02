@@ -78,6 +78,11 @@ static const struct {
     { "NO_HINTING", FT_LOAD_NO_HINTING, "LCD",    FT_RENDER_MODE_LCD    },
     { "NO_HINTING", FT_LOAD_NO_HINTING, "LCD_V",  FT_RENDER_MODE_LCD_V  },
     { "NO_HINTING", FT_LOAD_NO_HINTING, "SDF",    FT_RENDER_MODE_SDF    },
+    { "DEFAULT",    FT_LOAD_DEFAULT,    "NORMAL",  FT_RENDER_MODE_NORMAL },
+    { "DEFAULT",    FT_LOAD_DEFAULT,    "LIGHT",   FT_RENDER_MODE_LIGHT  },
+    { "DEFAULT",    FT_LOAD_DEFAULT,    "MONO",    FT_RENDER_MODE_MONO   },
+    { "DEFAULT",    FT_LOAD_DEFAULT,    "LCD",     FT_RENDER_MODE_LCD    },
+    { "DEFAULT",    FT_LOAD_DEFAULT,    "LCD_V",   FT_RENDER_MODE_LCD_V  },
 };
 #define NUM_RENDER_MODES (sizeof(render_mode_matrix) / sizeof(render_mode_matrix[0]))
 

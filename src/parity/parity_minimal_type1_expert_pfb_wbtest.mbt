@@ -68,7 +68,7 @@ test "parity/minimal_type1_expert.pfb: charmap entries" {
 }
 
 ///|
-test "parity/minimal_type1_expert.pfb: rendered glyph 1 NORMAL char 32" {
+test "parity/minimal_type1_expert.pfb: rendered glyph 1 NORMAL NO_HINTING char 32" {
   let f = @freetype.from_bytes(load_generated_minimal_type1_expert_pfb())
   try! @freetype.set_pixel_sizes(f, 0U, 16U)
   let gid = @freetype.get_char_index(f, 32U)
@@ -87,7 +87,7 @@ test "parity/minimal_type1_expert.pfb: rendered glyph 1 NORMAL char 32" {
 }
 
 ///|
-test "parity/minimal_type1_expert.pfb: rendered glyph 1 LIGHT char 32" {
+test "parity/minimal_type1_expert.pfb: rendered glyph 1 LIGHT NO_HINTING char 32" {
   let f = @freetype.from_bytes(load_generated_minimal_type1_expert_pfb())
   try! @freetype.set_pixel_sizes(f, 0U, 16U)
   let gid = @freetype.get_char_index(f, 32U)
@@ -106,7 +106,7 @@ test "parity/minimal_type1_expert.pfb: rendered glyph 1 LIGHT char 32" {
 }
 
 ///|
-test "parity/minimal_type1_expert.pfb: rendered glyph 1 MONO char 32" {
+test "parity/minimal_type1_expert.pfb: rendered glyph 1 MONO NO_HINTING char 32" {
   let f = @freetype.from_bytes(load_generated_minimal_type1_expert_pfb())
   try! @freetype.set_pixel_sizes(f, 0U, 16U)
   let gid = @freetype.get_char_index(f, 32U)
@@ -125,7 +125,7 @@ test "parity/minimal_type1_expert.pfb: rendered glyph 1 MONO char 32" {
 }
 
 ///|
-test "parity/minimal_type1_expert.pfb: rendered glyph 1 LCD char 32" {
+test "parity/minimal_type1_expert.pfb: rendered glyph 1 LCD NO_HINTING char 32" {
   let f = @freetype.from_bytes(load_generated_minimal_type1_expert_pfb())
   try! @freetype.set_pixel_sizes(f, 0U, 16U)
   let gid = @freetype.get_char_index(f, 32U)
@@ -144,7 +144,7 @@ test "parity/minimal_type1_expert.pfb: rendered glyph 1 LCD char 32" {
 }
 
 ///|
-test "parity/minimal_type1_expert.pfb: rendered glyph 1 LCD_V char 32" {
+test "parity/minimal_type1_expert.pfb: rendered glyph 1 LCD_V NO_HINTING char 32" {
   let f = @freetype.from_bytes(load_generated_minimal_type1_expert_pfb())
   try! @freetype.set_pixel_sizes(f, 0U, 16U)
   let gid = @freetype.get_char_index(f, 32U)
@@ -160,5 +160,65 @@ test "parity/minimal_type1_expert.pfb: rendered glyph 1 LCD_V char 32" {
   inspect(f.glyph().bitmap_left(), content="0")
   inspect(f.glyph().bitmap_top(), content="1")
   try! assert_buffer_hex(f.glyph().bitmap().buffer(), "")
+}
+
+///|
+test "parity/minimal_type1_expert.pfb: rendered glyph 1 NORMAL DEFAULT char 32" {
+  let f = @freetype.from_bytes(load_generated_minimal_type1_expert_pfb())
+  try! @freetype.set_pixel_sizes(f, 0U, 16U)
+  let gid = @freetype.get_char_index(f, 32U)
+  inspect(gid, content="1")
+  try! @freetype.load_glyph(f, gid, load_flags=0)
+  try! @freetype.render_glyph(f, mode=Normal)
+  inspect(f.glyph().format(), content="Bitmap")
+  inspect(f.glyph().bitmap().pixel_mode(), content="Gray")
+}
+
+///|
+test "parity/minimal_type1_expert.pfb: rendered glyph 1 LIGHT DEFAULT char 32" {
+  let f = @freetype.from_bytes(load_generated_minimal_type1_expert_pfb())
+  try! @freetype.set_pixel_sizes(f, 0U, 16U)
+  let gid = @freetype.get_char_index(f, 32U)
+  inspect(gid, content="1")
+  try! @freetype.load_glyph(f, gid, load_flags=0)
+  try! @freetype.render_glyph(f, mode=Light)
+  inspect(f.glyph().format(), content="Bitmap")
+  inspect(f.glyph().bitmap().pixel_mode(), content="Gray")
+}
+
+///|
+test "parity/minimal_type1_expert.pfb: rendered glyph 1 MONO DEFAULT char 32" {
+  let f = @freetype.from_bytes(load_generated_minimal_type1_expert_pfb())
+  try! @freetype.set_pixel_sizes(f, 0U, 16U)
+  let gid = @freetype.get_char_index(f, 32U)
+  inspect(gid, content="1")
+  try! @freetype.load_glyph(f, gid, load_flags=0)
+  try! @freetype.render_glyph(f, mode=Mono)
+  inspect(f.glyph().format(), content="Bitmap")
+  inspect(f.glyph().bitmap().pixel_mode(), content="Mono")
+}
+
+///|
+test "parity/minimal_type1_expert.pfb: rendered glyph 1 LCD DEFAULT char 32" {
+  let f = @freetype.from_bytes(load_generated_minimal_type1_expert_pfb())
+  try! @freetype.set_pixel_sizes(f, 0U, 16U)
+  let gid = @freetype.get_char_index(f, 32U)
+  inspect(gid, content="1")
+  try! @freetype.load_glyph(f, gid, load_flags=0)
+  try! @freetype.render_glyph(f, mode=Lcd)
+  inspect(f.glyph().format(), content="Bitmap")
+  inspect(f.glyph().bitmap().pixel_mode(), content="Lcd")
+}
+
+///|
+test "parity/minimal_type1_expert.pfb: rendered glyph 1 LCD_V DEFAULT char 32" {
+  let f = @freetype.from_bytes(load_generated_minimal_type1_expert_pfb())
+  try! @freetype.set_pixel_sizes(f, 0U, 16U)
+  let gid = @freetype.get_char_index(f, 32U)
+  inspect(gid, content="1")
+  try! @freetype.load_glyph(f, gid, load_flags=0)
+  try! @freetype.render_glyph(f, mode=LcdV)
+  inspect(f.glyph().format(), content="Bitmap")
+  inspect(f.glyph().bitmap().pixel_mode(), content="LcdV")
 }
 

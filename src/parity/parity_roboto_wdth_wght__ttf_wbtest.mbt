@@ -205,7 +205,7 @@ test "parity/Roboto[wdth,wght].ttf: glyph metrics at 16ppem" {
 }
 
 ///|
-test "parity/Roboto[wdth,wght].ttf: rendered glyph 4 NORMAL char 32" {
+test "parity/Roboto[wdth,wght].ttf: rendered glyph 4 NORMAL NO_HINTING char 32" {
   let f = @freetype.from_bytes(load_generated_roboto_wdth_wght__ttf())
   try! @freetype.set_pixel_sizes(f, 0U, 16U)
   let gid = @freetype.get_char_index(f, 32U)
@@ -224,7 +224,7 @@ test "parity/Roboto[wdth,wght].ttf: rendered glyph 4 NORMAL char 32" {
 }
 
 ///|
-test "parity/Roboto[wdth,wght].ttf: rendered glyph 37 NORMAL char 65" {
+test "parity/Roboto[wdth,wght].ttf: rendered glyph 37 NORMAL NO_HINTING char 65" {
   let f = @freetype.from_bytes(load_generated_roboto_wdth_wght__ttf())
   try! @freetype.set_pixel_sizes(f, 0U, 16U)
   let gid = @freetype.get_char_index(f, 65U)
@@ -243,7 +243,7 @@ test "parity/Roboto[wdth,wght].ttf: rendered glyph 37 NORMAL char 65" {
 }
 
 ///|
-test "parity/Roboto[wdth,wght].ttf: rendered glyph 69 NORMAL char 97" {
+test "parity/Roboto[wdth,wght].ttf: rendered glyph 69 NORMAL NO_HINTING char 97" {
   let f = @freetype.from_bytes(load_generated_roboto_wdth_wght__ttf())
   try! @freetype.set_pixel_sizes(f, 0U, 16U)
   let gid = @freetype.get_char_index(f, 97U)
@@ -262,7 +262,7 @@ test "parity/Roboto[wdth,wght].ttf: rendered glyph 69 NORMAL char 97" {
 }
 
 ///|
-test "parity/Roboto[wdth,wght].ttf: rendered glyph 4 LIGHT char 32" {
+test "parity/Roboto[wdth,wght].ttf: rendered glyph 4 LIGHT NO_HINTING char 32" {
   let f = @freetype.from_bytes(load_generated_roboto_wdth_wght__ttf())
   try! @freetype.set_pixel_sizes(f, 0U, 16U)
   let gid = @freetype.get_char_index(f, 32U)
@@ -281,7 +281,7 @@ test "parity/Roboto[wdth,wght].ttf: rendered glyph 4 LIGHT char 32" {
 }
 
 ///|
-test "parity/Roboto[wdth,wght].ttf: rendered glyph 37 LIGHT char 65" {
+test "parity/Roboto[wdth,wght].ttf: rendered glyph 37 LIGHT NO_HINTING char 65" {
   let f = @freetype.from_bytes(load_generated_roboto_wdth_wght__ttf())
   try! @freetype.set_pixel_sizes(f, 0U, 16U)
   let gid = @freetype.get_char_index(f, 65U)
@@ -300,7 +300,7 @@ test "parity/Roboto[wdth,wght].ttf: rendered glyph 37 LIGHT char 65" {
 }
 
 ///|
-test "parity/Roboto[wdth,wght].ttf: rendered glyph 69 LIGHT char 97" {
+test "parity/Roboto[wdth,wght].ttf: rendered glyph 69 LIGHT NO_HINTING char 97" {
   let f = @freetype.from_bytes(load_generated_roboto_wdth_wght__ttf())
   try! @freetype.set_pixel_sizes(f, 0U, 16U)
   let gid = @freetype.get_char_index(f, 97U)
@@ -319,7 +319,7 @@ test "parity/Roboto[wdth,wght].ttf: rendered glyph 69 LIGHT char 97" {
 }
 
 ///|
-test "parity/Roboto[wdth,wght].ttf: rendered glyph 4 MONO char 32" {
+test "parity/Roboto[wdth,wght].ttf: rendered glyph 4 MONO NO_HINTING char 32" {
   let f = @freetype.from_bytes(load_generated_roboto_wdth_wght__ttf())
   try! @freetype.set_pixel_sizes(f, 0U, 16U)
   let gid = @freetype.get_char_index(f, 32U)
@@ -338,7 +338,7 @@ test "parity/Roboto[wdth,wght].ttf: rendered glyph 4 MONO char 32" {
 }
 
 ///|
-test "parity/Roboto[wdth,wght].ttf: rendered glyph 37 MONO char 65" {
+test "parity/Roboto[wdth,wght].ttf: rendered glyph 37 MONO NO_HINTING char 65" {
   let f = @freetype.from_bytes(load_generated_roboto_wdth_wght__ttf())
   try! @freetype.set_pixel_sizes(f, 0U, 16U)
   let gid = @freetype.get_char_index(f, 65U)
@@ -357,7 +357,7 @@ test "parity/Roboto[wdth,wght].ttf: rendered glyph 37 MONO char 65" {
 }
 
 ///|
-test "parity/Roboto[wdth,wght].ttf: rendered glyph 69 MONO char 97" {
+test "parity/Roboto[wdth,wght].ttf: rendered glyph 69 MONO NO_HINTING char 97" {
   let f = @freetype.from_bytes(load_generated_roboto_wdth_wght__ttf())
   try! @freetype.set_pixel_sizes(f, 0U, 16U)
   let gid = @freetype.get_char_index(f, 97U)
@@ -376,7 +376,7 @@ test "parity/Roboto[wdth,wght].ttf: rendered glyph 69 MONO char 97" {
 }
 
 ///|
-test "parity/Roboto[wdth,wght].ttf: rendered glyph 4 LCD char 32" {
+test "parity/Roboto[wdth,wght].ttf: rendered glyph 4 LCD NO_HINTING char 32" {
   let f = @freetype.from_bytes(load_generated_roboto_wdth_wght__ttf())
   try! @freetype.set_pixel_sizes(f, 0U, 16U)
   let gid = @freetype.get_char_index(f, 32U)
@@ -395,7 +395,7 @@ test "parity/Roboto[wdth,wght].ttf: rendered glyph 4 LCD char 32" {
 }
 
 ///|
-test "parity/Roboto[wdth,wght].ttf: rendered glyph 37 LCD char 65" {
+test "parity/Roboto[wdth,wght].ttf: rendered glyph 37 LCD NO_HINTING char 65" {
   let f = @freetype.from_bytes(load_generated_roboto_wdth_wght__ttf())
   try! @freetype.set_pixel_sizes(f, 0U, 16U)
   let gid = @freetype.get_char_index(f, 65U)
@@ -414,7 +414,7 @@ test "parity/Roboto[wdth,wght].ttf: rendered glyph 37 LCD char 65" {
 }
 
 ///|
-test "parity/Roboto[wdth,wght].ttf: rendered glyph 69 LCD char 97" {
+test "parity/Roboto[wdth,wght].ttf: rendered glyph 69 LCD NO_HINTING char 97" {
   let f = @freetype.from_bytes(load_generated_roboto_wdth_wght__ttf())
   try! @freetype.set_pixel_sizes(f, 0U, 16U)
   let gid = @freetype.get_char_index(f, 97U)
@@ -433,7 +433,7 @@ test "parity/Roboto[wdth,wght].ttf: rendered glyph 69 LCD char 97" {
 }
 
 ///|
-test "parity/Roboto[wdth,wght].ttf: rendered glyph 4 LCD_V char 32" {
+test "parity/Roboto[wdth,wght].ttf: rendered glyph 4 LCD_V NO_HINTING char 32" {
   let f = @freetype.from_bytes(load_generated_roboto_wdth_wght__ttf())
   try! @freetype.set_pixel_sizes(f, 0U, 16U)
   let gid = @freetype.get_char_index(f, 32U)
@@ -452,7 +452,7 @@ test "parity/Roboto[wdth,wght].ttf: rendered glyph 4 LCD_V char 32" {
 }
 
 ///|
-test "parity/Roboto[wdth,wght].ttf: rendered glyph 37 LCD_V char 65" {
+test "parity/Roboto[wdth,wght].ttf: rendered glyph 37 LCD_V NO_HINTING char 65" {
   let f = @freetype.from_bytes(load_generated_roboto_wdth_wght__ttf())
   try! @freetype.set_pixel_sizes(f, 0U, 16U)
   let gid = @freetype.get_char_index(f, 65U)
@@ -471,7 +471,7 @@ test "parity/Roboto[wdth,wght].ttf: rendered glyph 37 LCD_V char 65" {
 }
 
 ///|
-test "parity/Roboto[wdth,wght].ttf: rendered glyph 69 LCD_V char 97" {
+test "parity/Roboto[wdth,wght].ttf: rendered glyph 69 LCD_V NO_HINTING char 97" {
   let f = @freetype.from_bytes(load_generated_roboto_wdth_wght__ttf())
   try! @freetype.set_pixel_sizes(f, 0U, 16U)
   let gid = @freetype.get_char_index(f, 97U)
@@ -487,6 +487,186 @@ test "parity/Roboto[wdth,wght].ttf: rendered glyph 69 LCD_V char 97" {
   inspect(f.glyph().bitmap_left(), content="0")
   inspect(f.glyph().bitmap_top(), content="9")
   try! assert_buffer_hex(f.glyph().bitmap().buffer(), "00000024401f00000000237894721300000471cce8c64e000020c9fdefffa3030053fabd9be3e3140090ef6947a7fc3200c0cd130055ff5600c29600001efe6d008152000006f87c00341d000000ef83000000021920f48700000f4f6d74ff8800045aa7c5ccff880020aef8ece4ff880054f2c59890ff88009eea6d4038fc8801d4be1a0000e88809f48a000000ed8814ff65000000ff881cff5f000004ff881bff6a000024ff8810fd95000069ff8a07eec73333b8ff8f00ccf08787ebff98008effdfdfdcf7a60048e8fffa92ceb9001698cbae3f82840000407356093c440000031f070000000000000000000000")
+}
+
+///|
+test "parity/Roboto[wdth,wght].ttf: rendered glyph 4 NORMAL DEFAULT char 32" {
+  let f = @freetype.from_bytes(load_generated_roboto_wdth_wght__ttf())
+  try! @freetype.set_pixel_sizes(f, 0U, 16U)
+  let gid = @freetype.get_char_index(f, 32U)
+  inspect(gid, content="4")
+  try! @freetype.load_glyph(f, gid, load_flags=0)
+  try! @freetype.render_glyph(f, mode=Normal)
+  inspect(f.glyph().format(), content="Bitmap")
+  inspect(f.glyph().bitmap().pixel_mode(), content="Gray")
+}
+
+///|
+test "parity/Roboto[wdth,wght].ttf: rendered glyph 37 NORMAL DEFAULT char 65" {
+  let f = @freetype.from_bytes(load_generated_roboto_wdth_wght__ttf())
+  try! @freetype.set_pixel_sizes(f, 0U, 16U)
+  let gid = @freetype.get_char_index(f, 65U)
+  inspect(gid, content="37")
+  try! @freetype.load_glyph(f, gid, load_flags=0)
+  try! @freetype.render_glyph(f, mode=Normal)
+  inspect(f.glyph().format(), content="Bitmap")
+  inspect(f.glyph().bitmap().pixel_mode(), content="Gray")
+}
+
+///|
+test "parity/Roboto[wdth,wght].ttf: rendered glyph 69 NORMAL DEFAULT char 97" {
+  let f = @freetype.from_bytes(load_generated_roboto_wdth_wght__ttf())
+  try! @freetype.set_pixel_sizes(f, 0U, 16U)
+  let gid = @freetype.get_char_index(f, 97U)
+  inspect(gid, content="69")
+  try! @freetype.load_glyph(f, gid, load_flags=0)
+  try! @freetype.render_glyph(f, mode=Normal)
+  inspect(f.glyph().format(), content="Bitmap")
+  inspect(f.glyph().bitmap().pixel_mode(), content="Gray")
+}
+
+///|
+test "parity/Roboto[wdth,wght].ttf: rendered glyph 4 LIGHT DEFAULT char 32" {
+  let f = @freetype.from_bytes(load_generated_roboto_wdth_wght__ttf())
+  try! @freetype.set_pixel_sizes(f, 0U, 16U)
+  let gid = @freetype.get_char_index(f, 32U)
+  inspect(gid, content="4")
+  try! @freetype.load_glyph(f, gid, load_flags=0)
+  try! @freetype.render_glyph(f, mode=Light)
+  inspect(f.glyph().format(), content="Bitmap")
+  inspect(f.glyph().bitmap().pixel_mode(), content="Gray")
+}
+
+///|
+test "parity/Roboto[wdth,wght].ttf: rendered glyph 37 LIGHT DEFAULT char 65" {
+  let f = @freetype.from_bytes(load_generated_roboto_wdth_wght__ttf())
+  try! @freetype.set_pixel_sizes(f, 0U, 16U)
+  let gid = @freetype.get_char_index(f, 65U)
+  inspect(gid, content="37")
+  try! @freetype.load_glyph(f, gid, load_flags=0)
+  try! @freetype.render_glyph(f, mode=Light)
+  inspect(f.glyph().format(), content="Bitmap")
+  inspect(f.glyph().bitmap().pixel_mode(), content="Gray")
+}
+
+///|
+test "parity/Roboto[wdth,wght].ttf: rendered glyph 69 LIGHT DEFAULT char 97" {
+  let f = @freetype.from_bytes(load_generated_roboto_wdth_wght__ttf())
+  try! @freetype.set_pixel_sizes(f, 0U, 16U)
+  let gid = @freetype.get_char_index(f, 97U)
+  inspect(gid, content="69")
+  try! @freetype.load_glyph(f, gid, load_flags=0)
+  try! @freetype.render_glyph(f, mode=Light)
+  inspect(f.glyph().format(), content="Bitmap")
+  inspect(f.glyph().bitmap().pixel_mode(), content="Gray")
+}
+
+///|
+test "parity/Roboto[wdth,wght].ttf: rendered glyph 4 MONO DEFAULT char 32" {
+  let f = @freetype.from_bytes(load_generated_roboto_wdth_wght__ttf())
+  try! @freetype.set_pixel_sizes(f, 0U, 16U)
+  let gid = @freetype.get_char_index(f, 32U)
+  inspect(gid, content="4")
+  try! @freetype.load_glyph(f, gid, load_flags=0)
+  try! @freetype.render_glyph(f, mode=Mono)
+  inspect(f.glyph().format(), content="Bitmap")
+  inspect(f.glyph().bitmap().pixel_mode(), content="Mono")
+}
+
+///|
+test "parity/Roboto[wdth,wght].ttf: rendered glyph 37 MONO DEFAULT char 65" {
+  let f = @freetype.from_bytes(load_generated_roboto_wdth_wght__ttf())
+  try! @freetype.set_pixel_sizes(f, 0U, 16U)
+  let gid = @freetype.get_char_index(f, 65U)
+  inspect(gid, content="37")
+  try! @freetype.load_glyph(f, gid, load_flags=0)
+  try! @freetype.render_glyph(f, mode=Mono)
+  inspect(f.glyph().format(), content="Bitmap")
+  inspect(f.glyph().bitmap().pixel_mode(), content="Mono")
+}
+
+///|
+test "parity/Roboto[wdth,wght].ttf: rendered glyph 69 MONO DEFAULT char 97" {
+  let f = @freetype.from_bytes(load_generated_roboto_wdth_wght__ttf())
+  try! @freetype.set_pixel_sizes(f, 0U, 16U)
+  let gid = @freetype.get_char_index(f, 97U)
+  inspect(gid, content="69")
+  try! @freetype.load_glyph(f, gid, load_flags=0)
+  try! @freetype.render_glyph(f, mode=Mono)
+  inspect(f.glyph().format(), content="Bitmap")
+  inspect(f.glyph().bitmap().pixel_mode(), content="Mono")
+}
+
+///|
+test "parity/Roboto[wdth,wght].ttf: rendered glyph 4 LCD DEFAULT char 32" {
+  let f = @freetype.from_bytes(load_generated_roboto_wdth_wght__ttf())
+  try! @freetype.set_pixel_sizes(f, 0U, 16U)
+  let gid = @freetype.get_char_index(f, 32U)
+  inspect(gid, content="4")
+  try! @freetype.load_glyph(f, gid, load_flags=0)
+  try! @freetype.render_glyph(f, mode=Lcd)
+  inspect(f.glyph().format(), content="Bitmap")
+  inspect(f.glyph().bitmap().pixel_mode(), content="Lcd")
+}
+
+///|
+test "parity/Roboto[wdth,wght].ttf: rendered glyph 37 LCD DEFAULT char 65" {
+  let f = @freetype.from_bytes(load_generated_roboto_wdth_wght__ttf())
+  try! @freetype.set_pixel_sizes(f, 0U, 16U)
+  let gid = @freetype.get_char_index(f, 65U)
+  inspect(gid, content="37")
+  try! @freetype.load_glyph(f, gid, load_flags=0)
+  try! @freetype.render_glyph(f, mode=Lcd)
+  inspect(f.glyph().format(), content="Bitmap")
+  inspect(f.glyph().bitmap().pixel_mode(), content="Lcd")
+}
+
+///|
+test "parity/Roboto[wdth,wght].ttf: rendered glyph 69 LCD DEFAULT char 97" {
+  let f = @freetype.from_bytes(load_generated_roboto_wdth_wght__ttf())
+  try! @freetype.set_pixel_sizes(f, 0U, 16U)
+  let gid = @freetype.get_char_index(f, 97U)
+  inspect(gid, content="69")
+  try! @freetype.load_glyph(f, gid, load_flags=0)
+  try! @freetype.render_glyph(f, mode=Lcd)
+  inspect(f.glyph().format(), content="Bitmap")
+  inspect(f.glyph().bitmap().pixel_mode(), content="Lcd")
+}
+
+///|
+test "parity/Roboto[wdth,wght].ttf: rendered glyph 4 LCD_V DEFAULT char 32" {
+  let f = @freetype.from_bytes(load_generated_roboto_wdth_wght__ttf())
+  try! @freetype.set_pixel_sizes(f, 0U, 16U)
+  let gid = @freetype.get_char_index(f, 32U)
+  inspect(gid, content="4")
+  try! @freetype.load_glyph(f, gid, load_flags=0)
+  try! @freetype.render_glyph(f, mode=LcdV)
+  inspect(f.glyph().format(), content="Bitmap")
+  inspect(f.glyph().bitmap().pixel_mode(), content="LcdV")
+}
+
+///|
+test "parity/Roboto[wdth,wght].ttf: rendered glyph 37 LCD_V DEFAULT char 65" {
+  let f = @freetype.from_bytes(load_generated_roboto_wdth_wght__ttf())
+  try! @freetype.set_pixel_sizes(f, 0U, 16U)
+  let gid = @freetype.get_char_index(f, 65U)
+  inspect(gid, content="37")
+  try! @freetype.load_glyph(f, gid, load_flags=0)
+  try! @freetype.render_glyph(f, mode=LcdV)
+  inspect(f.glyph().format(), content="Bitmap")
+  inspect(f.glyph().bitmap().pixel_mode(), content="LcdV")
+}
+
+///|
+test "parity/Roboto[wdth,wght].ttf: rendered glyph 69 LCD_V DEFAULT char 97" {
+  let f = @freetype.from_bytes(load_generated_roboto_wdth_wght__ttf())
+  try! @freetype.set_pixel_sizes(f, 0U, 16U)
+  let gid = @freetype.get_char_index(f, 97U)
+  inspect(gid, content="69")
+  try! @freetype.load_glyph(f, gid, load_flags=0)
+  try! @freetype.render_glyph(f, mode=LcdV)
+  inspect(f.glyph().format(), content="Bitmap")
+  inspect(f.glyph().bitmap().pixel_mode(), content="LcdV")
 }
 
 ///|

@@ -38336,6 +38336,261 @@
         "top": 16,
         "buffer_hex": "000000000000000000040608080604000000000000000000000000000000040a0f1316181816130f0a0300000000000000000000030b12191e2326282826231f181108000000000000000006101921282e3236383836332e261e140a00000000000005121d272f363d4246484846423c342b21150900000000000e1c28343d454b5155575855514a41372c1f1204000000071624323f4a535a606567676560584e4235281a0c0000000b1b2a39485560686f747777746e64594c3e2f21120300000e1e2e3e4d5d6c767e838686837b6f6253453526170700000e1e2e3e4e5e6e7c847f7b7c838477685849392a1a0a00000c1c2c3b4a586674777072757b8a7b6b5b4b3b2c1c0c00000f1e2d3c4b596570797e8184868b7c6c5c4c3c2c1c0c00021222324151606e7c86827e7a7a897c6c5c4c3c2c1c0c0004142434445464738282756e6d7a897c6c5c4c3c2c1c0c000313233343536373828378767b82897c6c5c4c3c2c1c0c000212223141505f6e7c858785857e867c6c5c4c3c2c1c0c00000e1e2d3c4a586570777b7b777378776b5b4c3c2c1c0c000009182634424e5962686b6b686668686155473829190a000003111e2c38434c54595b5b58575858544b3f312315060000000815212c363f45494b4b49474848453e34281b0e00000000000b15202930363a3b3b393838383630281d120500000000000009131b21262a2b2b2928282826211a11070000000000000000050d12171a1b1b1a18181817120c04000000000000000000000003070a0b0b0a0808080703000000000000000000000000000000000000000000000000000000000000"
       }
+    },
+    {
+      "glyph_index": 1,
+      "charcode": 32,
+      "size_ppem": 16,
+      "load_flags": "DEFAULT",
+      "render_mode": "NORMAL",
+      "bitmap": {
+        "width": 0,
+        "rows": 0,
+        "pitch": 0,
+        "pixel_mode": 2,
+        "num_grays": 256,
+        "left": 0,
+        "top": 0,
+        "buffer_hex": ""
+      }
+    },
+    {
+      "glyph_index": 2,
+      "charcode": 65,
+      "size_ppem": 16,
+      "load_flags": "DEFAULT",
+      "render_mode": "NORMAL",
+      "bitmap": {
+        "width": 10,
+        "rows": 11,
+        "pitch": 10,
+        "pixel_mode": 2,
+        "num_grays": 256,
+        "left": 0,
+        "top": 11,
+        "buffer_hex": "0000001effb40000000000000070bbf70e000000000000c261d358000000000017fd1f91aa000000000067dc0050f40800000000ba980010fc4f00000011fb5f0f0fcca10000005fffffffffffee050000b1b300000026ff45000cf75d00000000d2970056f80e000000007ee802"
+      }
+    },
+    {
+      "glyph_index": 28,
+      "charcode": 97,
+      "size_ppem": 16,
+      "load_flags": "DEFAULT",
+      "render_mode": "NORMAL",
+      "bitmap": {
+        "width": 8,
+        "rows": 9,
+        "pitch": 8,
+        "pixel_mode": 2,
+        "num_grays": 256,
+        "left": 1,
+        "top": 8,
+        "buffer_hex": "004eb2e3edb1200027d3652b36c6cd01000000000046ff1f00084f9abcc8ff3b23d98f340513ff3b96a80000001aff3b9adb281659d2fc3b1fd5ffd99c1ce33b0002200000000000"
+      }
+    },
+    {
+      "glyph_index": 1,
+      "charcode": 32,
+      "size_ppem": 16,
+      "load_flags": "DEFAULT",
+      "render_mode": "LIGHT",
+      "bitmap": {
+        "width": 0,
+        "rows": 0,
+        "pitch": 0,
+        "pixel_mode": 2,
+        "num_grays": 256,
+        "left": 0,
+        "top": 0,
+        "buffer_hex": ""
+      }
+    },
+    {
+      "glyph_index": 2,
+      "charcode": 65,
+      "size_ppem": 16,
+      "load_flags": "DEFAULT",
+      "render_mode": "LIGHT",
+      "bitmap": {
+        "width": 10,
+        "rows": 11,
+        "pitch": 10,
+        "pixel_mode": 2,
+        "num_grays": 256,
+        "left": 0,
+        "top": 11,
+        "buffer_hex": "0000001effb40000000000000070bbf70e000000000000c261d358000000000017fd1f91aa000000000067dc0050f40800000000ba980010fc4f00000011fb5f0f0fcca10000005fffffffffffee050000b1b300000026ff45000cf75d00000000d2970056f80e000000007ee802"
+      }
+    },
+    {
+      "glyph_index": 28,
+      "charcode": 97,
+      "size_ppem": 16,
+      "load_flags": "DEFAULT",
+      "render_mode": "LIGHT",
+      "bitmap": {
+        "width": 8,
+        "rows": 9,
+        "pitch": 8,
+        "pixel_mode": 2,
+        "num_grays": 256,
+        "left": 1,
+        "top": 8,
+        "buffer_hex": "004eb2e3edb1200027d3652b36c6cd01000000000046ff1f00084f9abcc8ff3b23d98f340513ff3b96a80000001aff3b9adb281659d2fc3b1fd5ffd99c1ce33b0002200000000000"
+      }
+    },
+    {
+      "glyph_index": 1,
+      "charcode": 32,
+      "size_ppem": 16,
+      "load_flags": "DEFAULT",
+      "render_mode": "MONO",
+      "bitmap": {
+        "width": 1,
+        "rows": 1,
+        "pitch": 2,
+        "pixel_mode": 1,
+        "num_grays": 256,
+        "left": 0,
+        "top": 1,
+        "buffer_hex": "0000"
+      }
+    },
+    {
+      "glyph_index": 2,
+      "charcode": 65,
+      "size_ppem": 16,
+      "load_flags": "DEFAULT",
+      "render_mode": "MONO",
+      "bitmap": {
+        "width": 9,
+        "rows": 11,
+        "pitch": 2,
+        "pixel_mode": 1,
+        "num_grays": 256,
+        "left": 0,
+        "top": 11,
+        "buffer_hex": "0c000c00140016001200320023003f00610041804080"
+      }
+    },
+    {
+      "glyph_index": 28,
+      "charcode": 97,
+      "size_ppem": 16,
+      "load_flags": "DEFAULT",
+      "render_mode": "MONO",
+      "bitmap": {
+        "width": 7,
+        "rows": 8,
+        "pitch": 2,
+        "pixel_mode": 1,
+        "num_grays": 256,
+        "left": 1,
+        "top": 8,
+        "buffer_hex": "3c00460002001e006200c200c6007a00"
+      }
+    },
+    {
+      "glyph_index": 1,
+      "charcode": 32,
+      "size_ppem": 16,
+      "load_flags": "DEFAULT",
+      "render_mode": "LCD",
+      "bitmap": {
+        "width": 6,
+        "rows": 0,
+        "pitch": 8,
+        "pixel_mode": 5,
+        "num_grays": 256,
+        "left": -1,
+        "top": 0,
+        "buffer_hex": ""
+      }
+    },
+    {
+      "glyph_index": 2,
+      "charcode": 65,
+      "size_ppem": 16,
+      "load_flags": "DEFAULT",
+      "render_mode": "LCD",
+      "bitmap": {
+        "width": 30,
+        "rows": 11,
+        "pitch": 32,
+        "pixel_mode": 5,
+        "num_grays": 256,
+        "left": 0,
+        "top": 11,
+        "buffer_hex": "000000000000000000001e71c9fffff9b4600f000000000000000000000000000000000000000000001d70c4f2bbbbc7f7b25a0e0000000000000000000000000000000000000000186ec2fbb561387fd3f8ac580c0000000000000000000000000000000000001769c1fdca721f003d91e5f5aa5609000000000000000000000000000000001667bbfddc883000000650a4f5f4a8500800000000000000000000000000001266bafbea9844010000001060b8fcf3a34f080000000000000000000000001160b8fbf8ad5f170f0f0f0f0f2b7dccfff0a14d0500000000000000000000105fb3faffffffffffffffffffffffffffffffee9f470500000000000000000d5db1f8f9b35f0f000000000000000000267ad2ffed9945040000000000000c58b0f7f9b15d100000000000000000000000267ed2ffe9974302000000000b56aaf7f8b25a0e000000000000000000000000002a7ed2ffe8963e02000000"
+      }
+    },
+    {
+      "glyph_index": 28,
+      "charcode": 97,
+      "size_ppem": 16,
+      "load_flags": "DEFAULT",
+      "render_mode": "LCD",
+      "bitmap": {
+        "width": 27,
+        "rows": 9,
+        "pitch": 28,
+        "pixel_mode": 5,
+        "num_grays": 256,
+        "left": 0,
+        "top": 8,
+        "buffer_hex": "00000000000d284e789ab2c2d3e3f0f4eddfceb1864c200600000000000000002777c1d3ae84654e3c2b242736538ac6f1fbcd7a2701000000000000000000000000000000000000000005469aecffcb731f0000000000000000000819344f6b869aa8b3bcc1c3c8dcf1ffe78f3b0000000000042359a6d9e2bf8f694c341f0e0501001367bfffe78f3b00000000014296e8f5a854060000000000000000001a6ec5ffe78f3b0000000001469aedffdb9f5528100b162a3e597fb2d2e8f1fce78f3b0000000000021f579fd5f1fffff4e9d9cdb89c76431c3d8fe3e78f3b000000000000000000020a1620180c000000000000000000000000000000"
+      }
+    },
+    {
+      "glyph_index": 1,
+      "charcode": 32,
+      "size_ppem": 16,
+      "load_flags": "DEFAULT",
+      "render_mode": "LCD_V",
+      "bitmap": {
+        "width": 0,
+        "rows": 6,
+        "pitch": 0,
+        "pixel_mode": 6,
+        "num_grays": 256,
+        "left": 0,
+        "top": 1,
+        "buffer_hex": ""
+      }
+    },
+    {
+      "glyph_index": 2,
+      "charcode": 65,
+      "size_ppem": 16,
+      "load_flags": "DEFAULT",
+      "render_mode": "LCD_V",
+      "bitmap": {
+        "width": 10,
+        "rows": 39,
+        "pitch": 10,
+        "pixel_mode": 6,
+        "num_grays": 256,
+        "left": 0,
+        "top": 12,
+        "buffer_hex": "0000000000000000000000000000000000000000000000015332000000000000000bab70000000000000001effb40000000000000038f8cf0000000000000055e0e90200000000000070bbf70e0000000000008b96f722000000000000a778e83d000000000000c261d358000000000000dd4bbe73000000000007f234a78f000000000017fd1f91aa000000000030fb0d7cc500000000004cef0265e1000000000067dc0050f4080000000082c6003afe1a000000009faf0023ff3400000000ba980010fc4f00000000d5800004f16a00000004ed680000dd8600000011fb5f0f0fcca100000027ff906363d7bc00000044ffccbbbbebd90000005fffffffffffee0500007af0abababc1fb13000096d653535376ff2a0000b1b300000026ff450000cc9700000010fa600002e67900000003ea7c000cf75d00000000d297001fff4000000000b6b2003bff240000000099cf0056f80e000000007ee80243a402000000004ba402254c00000000002053020000000000000000000000000000000000000000"
+      }
+    },
+    {
+      "glyph_index": 28,
+      "charcode": 97,
+      "size_ppem": 16,
+      "load_flags": "DEFAULT",
+      "render_mode": "LCD_V",
+      "bitmap": {
+        "width": 8,
+        "rows": 30,
+        "pitch": 8,
+        "pixel_mode": 6,
+        "num_grays": 256,
+        "left": 1,
+        "top": 9,
+        "buffer_hex": "000000000000000000000000000000000000093741120000000d5e8f995d0100004eb2e3edb1200019a2f9d7e1f3540027ecb97f8af0990027d3652b36c6cd010f7f13000093ed08002800000063fe13000000000046ff1f00000000125cff2c000008466a9bff3600084f9abcc8ff3b003ca3cdaf98ff3b0490cf885747ff3b23d98f340513ff3b4de43b000013ff3b7bc707000013ff3b96a80000001aff3ba5a100000046ff3ba7b800000e96ff3b9adb281659d2fc3b7bf67b64adbbf53b4bfdd3bce365ec3b1fd5ffd99c1ce33b0583cc8b48009628002e74330400481300022000000000000000000000000000"
+      }
     }
   ],
   "kerning": [],
