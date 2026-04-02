@@ -136,7 +136,7 @@ test "parity/cff2_vf.otf: glyph metrics at 16ppem" {
 }
 
 ///|
-test "parity/cff2_vf.otf: rendered glyph 1 NORMAL NO_HINTING char 65" {
+test "parity/cff2_vf.otf: rendered glyph 1 NORMAL NO_HINTING 16ppem char 65" {
   let f = @freetype.from_bytes(load_generated_cff2_vf_otf())
   try! @freetype.set_pixel_sizes(f, 0U, 16U)
   let gid = @freetype.get_char_index(f, 65U)
@@ -155,7 +155,7 @@ test "parity/cff2_vf.otf: rendered glyph 1 NORMAL NO_HINTING char 65" {
 }
 
 ///|
-test "parity/cff2_vf.otf: rendered glyph 1 LIGHT NO_HINTING char 65" {
+test "parity/cff2_vf.otf: rendered glyph 1 LIGHT NO_HINTING 16ppem char 65" {
   let f = @freetype.from_bytes(load_generated_cff2_vf_otf())
   try! @freetype.set_pixel_sizes(f, 0U, 16U)
   let gid = @freetype.get_char_index(f, 65U)
@@ -174,7 +174,7 @@ test "parity/cff2_vf.otf: rendered glyph 1 LIGHT NO_HINTING char 65" {
 }
 
 ///|
-test "parity/cff2_vf.otf: rendered glyph 1 MONO NO_HINTING char 65" {
+test "parity/cff2_vf.otf: rendered glyph 1 MONO NO_HINTING 16ppem char 65" {
   let f = @freetype.from_bytes(load_generated_cff2_vf_otf())
   try! @freetype.set_pixel_sizes(f, 0U, 16U)
   let gid = @freetype.get_char_index(f, 65U)
@@ -193,7 +193,7 @@ test "parity/cff2_vf.otf: rendered glyph 1 MONO NO_HINTING char 65" {
 }
 
 ///|
-test "parity/cff2_vf.otf: rendered glyph 1 LCD NO_HINTING char 65" {
+test "parity/cff2_vf.otf: rendered glyph 1 LCD NO_HINTING 16ppem char 65" {
   let f = @freetype.from_bytes(load_generated_cff2_vf_otf())
   try! @freetype.set_pixel_sizes(f, 0U, 16U)
   let gid = @freetype.get_char_index(f, 65U)
@@ -212,7 +212,7 @@ test "parity/cff2_vf.otf: rendered glyph 1 LCD NO_HINTING char 65" {
 }
 
 ///|
-test "parity/cff2_vf.otf: rendered glyph 1 LCD_V NO_HINTING char 65" {
+test "parity/cff2_vf.otf: rendered glyph 1 LCD_V NO_HINTING 16ppem char 65" {
   let f = @freetype.from_bytes(load_generated_cff2_vf_otf())
   try! @freetype.set_pixel_sizes(f, 0U, 16U)
   let gid = @freetype.get_char_index(f, 65U)
@@ -231,7 +231,7 @@ test "parity/cff2_vf.otf: rendered glyph 1 LCD_V NO_HINTING char 65" {
 }
 
 ///|
-test "parity/cff2_vf.otf: rendered glyph 1 NORMAL DEFAULT char 65" {
+test "parity/cff2_vf.otf: rendered glyph 1 NORMAL DEFAULT 16ppem char 65" {
   let f = @freetype.from_bytes(load_generated_cff2_vf_otf())
   try! @freetype.set_pixel_sizes(f, 0U, 16U)
   let gid = @freetype.get_char_index(f, 65U)
@@ -243,7 +243,7 @@ test "parity/cff2_vf.otf: rendered glyph 1 NORMAL DEFAULT char 65" {
 }
 
 ///|
-test "parity/cff2_vf.otf: rendered glyph 1 LIGHT DEFAULT char 65" {
+test "parity/cff2_vf.otf: rendered glyph 1 LIGHT DEFAULT 16ppem char 65" {
   let f = @freetype.from_bytes(load_generated_cff2_vf_otf())
   try! @freetype.set_pixel_sizes(f, 0U, 16U)
   let gid = @freetype.get_char_index(f, 65U)
@@ -255,7 +255,7 @@ test "parity/cff2_vf.otf: rendered glyph 1 LIGHT DEFAULT char 65" {
 }
 
 ///|
-test "parity/cff2_vf.otf: rendered glyph 1 MONO DEFAULT char 65" {
+test "parity/cff2_vf.otf: rendered glyph 1 MONO DEFAULT 16ppem char 65" {
   let f = @freetype.from_bytes(load_generated_cff2_vf_otf())
   try! @freetype.set_pixel_sizes(f, 0U, 16U)
   let gid = @freetype.get_char_index(f, 65U)
@@ -267,7 +267,7 @@ test "parity/cff2_vf.otf: rendered glyph 1 MONO DEFAULT char 65" {
 }
 
 ///|
-test "parity/cff2_vf.otf: rendered glyph 1 LCD DEFAULT char 65" {
+test "parity/cff2_vf.otf: rendered glyph 1 LCD DEFAULT 16ppem char 65" {
   let f = @freetype.from_bytes(load_generated_cff2_vf_otf())
   try! @freetype.set_pixel_sizes(f, 0U, 16U)
   let gid = @freetype.get_char_index(f, 65U)
@@ -279,9 +279,164 @@ test "parity/cff2_vf.otf: rendered glyph 1 LCD DEFAULT char 65" {
 }
 
 ///|
-test "parity/cff2_vf.otf: rendered glyph 1 LCD_V DEFAULT char 65" {
+test "parity/cff2_vf.otf: rendered glyph 1 LCD_V DEFAULT 16ppem char 65" {
   let f = @freetype.from_bytes(load_generated_cff2_vf_otf())
   try! @freetype.set_pixel_sizes(f, 0U, 16U)
+  let gid = @freetype.get_char_index(f, 65U)
+  inspect(gid, content="1")
+  try! @freetype.load_glyph(f, gid, load_flags=0)
+  try! @freetype.render_glyph(f, mode=LcdV)
+  inspect(f.glyph().format(), content="Bitmap")
+  inspect(f.glyph().bitmap().pixel_mode(), content="LcdV")
+}
+
+///|
+test "parity/cff2_vf.otf: rendered glyph 1 NORMAL NO_HINTING 36ppem char 65" {
+  let f = @freetype.from_bytes(load_generated_cff2_vf_otf())
+  try! @freetype.set_pixel_sizes(f, 0U, 36U)
+  let gid = @freetype.get_char_index(f, 65U)
+  inspect(gid, content="1")
+  try! @freetype.load_glyph(f, gid, load_flags=@base.LOAD_NO_HINTING)
+  try! @freetype.render_glyph(f, mode=Normal)
+  inspect(f.glyph().format(), content="Bitmap")
+  inspect(f.glyph().bitmap().pixel_mode(), content="Gray")
+  inspect(f.glyph().bitmap().width(), content="24")
+  inspect(f.glyph().bitmap().rows(), content="25")
+  inspect(f.glyph().bitmap().pitch(), content="24")
+  inspect(f.glyph().bitmap().num_grays(), content="256")
+  inspect(f.glyph().bitmap_left(), content="0")
+  inspect(f.glyph().bitmap_top(), content="25")
+  try! assert_buffer_hex(f.glyph().bitmap().buffer(), "000000000000000000000b4b4b0800000000000000000000000000000000000000005effff540000000000000000000000000000000000000000b6ffffac0000000000000000000000000000000000000013fffffff60c00000000000000000000000000000000000065ffffffff5a000000000000000000000000000000000000bde28cffffb1000000000000000000000000000000000018fd8c35fffff910000000000000000000000000000000006dff3500deffff6000000000000000000000000000000000c5de000089ffffb70000000000000000000000000000001efe86000033fffffb13000000000000000000000000000075ff2f000000ddffff660000000000000000000000000000cdd80000000087ffffbd0000000000000000000000000025ff810000000031fffffd170000000000000000000000007dff2a0000000000dbffff6b000000000000000000000000d4d200000000000085ffffc300000000000000000000002cffff8b8b8b8b8b8bbcfffffe1c0000000000000000000084ffffffffffffffffffffffff7100000000000000000000dce51b1b1b1b1b1b1b1ba0ffffc800000000000000000034ff7600000000000000002effffff2100000000000000008cff20000000000000000000d8ffff770000000000000001e3c70000000000000000000082ffffce000000000000003cff70000000000000000000002cffffff2600000000000094fe1b0000000000000000000000d6ffff7d00000067a2ccffffd7b49136000000001985a4c3ffffffffae8f3dcfffffffffffffff730000000037ffffffffffffffffff83")
+}
+
+///|
+test "parity/cff2_vf.otf: rendered glyph 1 LIGHT NO_HINTING 36ppem char 65" {
+  let f = @freetype.from_bytes(load_generated_cff2_vf_otf())
+  try! @freetype.set_pixel_sizes(f, 0U, 36U)
+  let gid = @freetype.get_char_index(f, 65U)
+  inspect(gid, content="1")
+  try! @freetype.load_glyph(f, gid, load_flags=@base.LOAD_NO_HINTING)
+  try! @freetype.render_glyph(f, mode=Light)
+  inspect(f.glyph().format(), content="Bitmap")
+  inspect(f.glyph().bitmap().pixel_mode(), content="Gray")
+  inspect(f.glyph().bitmap().width(), content="24")
+  inspect(f.glyph().bitmap().rows(), content="25")
+  inspect(f.glyph().bitmap().pitch(), content="24")
+  inspect(f.glyph().bitmap().num_grays(), content="256")
+  inspect(f.glyph().bitmap_left(), content="0")
+  inspect(f.glyph().bitmap_top(), content="25")
+  try! assert_buffer_hex(f.glyph().bitmap().buffer(), "000000000000000000000b4b4b0800000000000000000000000000000000000000005effff540000000000000000000000000000000000000000b6ffffac0000000000000000000000000000000000000013fffffff60c00000000000000000000000000000000000065ffffffff5a000000000000000000000000000000000000bde28cffffb1000000000000000000000000000000000018fd8c35fffff910000000000000000000000000000000006dff3500deffff6000000000000000000000000000000000c5de000089ffffb70000000000000000000000000000001efe86000033fffffb13000000000000000000000000000075ff2f000000ddffff660000000000000000000000000000cdd80000000087ffffbd0000000000000000000000000025ff810000000031fffffd170000000000000000000000007dff2a0000000000dbffff6b000000000000000000000000d4d200000000000085ffffc300000000000000000000002cffff8b8b8b8b8b8bbcfffffe1c0000000000000000000084ffffffffffffffffffffffff7100000000000000000000dce51b1b1b1b1b1b1b1ba0ffffc800000000000000000034ff7600000000000000002effffff2100000000000000008cff20000000000000000000d8ffff770000000000000001e3c70000000000000000000082ffffce000000000000003cff70000000000000000000002cffffff2600000000000094fe1b0000000000000000000000d6ffff7d00000067a2ccffffd7b49136000000001985a4c3ffffffffae8f3dcfffffffffffffff730000000037ffffffffffffffffff83")
+}
+
+///|
+test "parity/cff2_vf.otf: rendered glyph 1 MONO NO_HINTING 36ppem char 65" {
+  let f = @freetype.from_bytes(load_generated_cff2_vf_otf())
+  try! @freetype.set_pixel_sizes(f, 0U, 36U)
+  let gid = @freetype.get_char_index(f, 65U)
+  inspect(gid, content="1")
+  try! @freetype.load_glyph(f, gid, load_flags=@base.LOAD_NO_HINTING)
+  try! @freetype.render_glyph(f, mode=Mono)
+  inspect(f.glyph().format(), content="Bitmap")
+  inspect(f.glyph().bitmap().pixel_mode(), content="Mono")
+  inspect(f.glyph().bitmap().width(), content="24")
+  inspect(f.glyph().bitmap().rows(), content="24")
+  inspect(f.glyph().bitmap().pitch(), content="4")
+  inspect(f.glyph().bitmap().num_grays(), content="256")
+  inspect(f.glyph().bitmap_left(), content="0")
+  inspect(f.glyph().bitmap_top(), content="24")
+  inspect(f.glyph().bitmap().buffer().length(), content="96")
+}
+
+///|
+test "parity/cff2_vf.otf: rendered glyph 1 LCD NO_HINTING 36ppem char 65" {
+  let f = @freetype.from_bytes(load_generated_cff2_vf_otf())
+  try! @freetype.set_pixel_sizes(f, 0U, 36U)
+  let gid = @freetype.get_char_index(f, 65U)
+  inspect(gid, content="1")
+  try! @freetype.load_glyph(f, gid, load_flags=@base.LOAD_NO_HINTING)
+  try! @freetype.render_glyph(f, mode=Lcd)
+  inspect(f.glyph().format(), content="Bitmap")
+  inspect(f.glyph().bitmap().pixel_mode(), content="Lcd")
+  inspect(f.glyph().bitmap().width(), content="75")
+  inspect(f.glyph().bitmap().rows(), content="25")
+  inspect(f.glyph().bitmap().pitch(), content="76")
+  inspect(f.glyph().bitmap().num_grays(), content="256")
+  inspect(f.glyph().bitmap_left(), content="-1")
+  inspect(f.glyph().bitmap_top(), content="25")
+  try! assert_buffer_hex(f.glyph().bitmap().buffer(), "000000000000000000000000000000000000000000000000000000000000000000000b243e4b4b4b4b3b21080000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000105eb2f9fffffffff5a8540b0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000001062b6f9fffffffffffff5ac580b000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000001361b9fffffffffffffffffff6af570c00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000001565b9fcfffffffffffffffffffff8ae5a0e0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000001569bdfcffe2906e8cdefffffffffffff7b15d0e000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000001869c1fdffdf8c38013589e0fffffffffffff9b55d1000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000001b6dc1feffe08935010000338bdefffffffffffffab460120000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000001b71c5feffde8a3200000000003589ddfffffffffffffab76311000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000001e71c9feffda8632000000000000003387dffffffffffffffbba621300000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000002275c9ffffdb832f0000000000000000003189ddfffffffffffffcba66160000000000000000000000000000000000000000000000000000000000000000000000000000000000000000002279cdffffd8842c00000000000000000000003387dbfffffffffffffcbd6915000000000000000000000000000000000000000000000000000000000000000000000000000000000000002579d1ffffd5812d000000000000000000000000003185ddfffffffffffffdc068170000000000000000000000000000000000000000000000000000000000000000000000000000000000297dd1ffffd67e2a0000000000000000000000000000002f87dbfffffffffffffdbf6b1a0000000000000000000000000000000000000000000000000000000000000000000000000000002980d4ffffd27e2700000000000000000000000000000000003185d9fffffffffffffdc36f19000000000000000000000000000000000000000000000000000000000000000000000000002c80e1ffffffffb48b8b8b8b8b8b8b8b8b8b8b8b8b8b8b8b8b8b8cbcfffffffffffffffffec66e1c00000000000000000000000000000000000000000000000000000000000000000000003084e2fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffec5711e0000000000000000000000000000000000000000000000000000000000000000003088dcffffe5953e1b1b1b1b1b1b1b1b1b1b1b1b1b1b1b1b1b1b1b1b1b1b1c4ca0f4fffffffffffffec8741e000000000000000000000000000000000000000000000000000000000000003488dfffffca7623000000000000000000000000000000000000000000000000002e82daffffffffffffffcc74210000000000000000000000000000000000000000000000000000000000388cdfffffca72200000000000000000000000000000000000000000000000000000002c84d8ffffffffffffffcb77230000000000000000000000000000000000000000000000000000013890e3fffec7731d00000000000000000000000000000000000000000000000000000000002e82d6ffffffffffffffce7a23000000000000000000000000000000000000000000000000023c90e6fffec4701e000000000000000000000000000000000000000000000000000000000000002c80d8ffffffffffffffd1792600000000000000000000000000000000000000000000024094e6fffec56d1b0000000000000000000000000000000000000000000000000000000000000000002a82d6ffffffffffffffd17d29000000000000000000000000103a678895a2afbcccfffffffffffffffcd7ccc0b4a89c918562360e0000000000000000000000000019416f858f9aa4aeb9c3cdffffffffffffffffffffffffe1aea4998f84693d15000000237bcfffffffffffffffffffffffffffffffffffffffffffffc7731f00000000000000000000000000378be3ffffffffffffffffffffffffffffffffffffffffffffffffffffd7832f00")
+}
+
+///|
+test "parity/cff2_vf.otf: rendered glyph 1 LCD_V NO_HINTING 36ppem char 65" {
+  let f = @freetype.from_bytes(load_generated_cff2_vf_otf())
+  try! @freetype.set_pixel_sizes(f, 0U, 36U)
+  let gid = @freetype.get_char_index(f, 65U)
+  inspect(gid, content="1")
+  try! @freetype.load_glyph(f, gid, load_flags=@base.LOAD_NO_HINTING)
+  try! @freetype.render_glyph(f, mode=LcdV)
+  inspect(f.glyph().format(), content="Bitmap")
+  inspect(f.glyph().bitmap().pixel_mode(), content="LcdV")
+  inspect(f.glyph().bitmap().width(), content="24")
+  inspect(f.glyph().bitmap().rows(), content="78")
+  inspect(f.glyph().bitmap().pitch(), content="24")
+  inspect(f.glyph().bitmap().num_grays(), content="256")
+  inspect(f.glyph().bitmap_left(), content="0")
+  inspect(f.glyph().bitmap_top(), content="25")
+  try! assert_buffer_hex(f.glyph().bitmap().buffer(), "000000000000000000000000000000000000000000000000000000000000000000000b4b4b080000000000000000000000000000000000000000209f9f1a000000000000000000000000000000000000000040f7f73800000000000000000000000000000000000000005effff5400000000000000000000000000000000000000007affff71000000000000000000000000000000000000000099ffff8f0000000000000000000000000000000000000000b6ffffac0000000000000000000000000000000000000000d2ffffc80000000000000000000000000000000000000004f8ffffe40200000000000000000000000000000000000013fffffff60c0000000000000000000000000000000000002affffffff2100000000000000000000000000000000000048ffffffff3e00000000000000000000000000000000000065ffffffff5a00000000000000000000000000000000000082ffe4ffff77000000000000000000000000000000000000a0f5b2ffff95000000000000000000000000000000000000bde28cffffb1000000000000000000000000000000000000dac66effffce000000000000000000000000000000000007f1a851ffffe9030000000000000000000000000000000018fd8c35fffff9100000000000000000000000000000000032ff6f1afeffff260000000000000000000000000000000050ff5108f2ffff43000000000000000000000000000000006dff3500deffff60000000000000000000000000000000008afd1a00c2ffff7d00000000000000000000000000000000a8f20800a5ffff9b00000000000000000000000000000000c5de000089ffffb700000000000000000000000000000001e1c100006dffffd40000000000000000000000000000000bf5a300004fffffed0500000000000000000000000000001efe86000033fffffb1300000000000000000000000000003aff6a000019fdffff2b000000000000000000000000000058ff4c000007f1ffff49000000000000000000000000000075ff2f000000ddffff66000000000000000000000000000092fc16000000c1ffff820000000000000000000000000000b0ef06000000a3ffffa00000000000000000000000000000cdd80000000087ffffbd0000000000000000000000000002e7bb000000006bffffda000000000000000000000000000ff89d000000004dfffff10700000000000000000000000025ff810000000031fffffd1700000000000000000000000041ff640000000018fdffff3100000000000000000000000060ff460000000007f0ffff4f0000000000000000000000007dff2a0000000000dbffff6b00000000000000000000000099fa120000000000bfffff88000000000000000000000000b8eb040000000000a2ffffa6000000000000000000000000d4d200000000000085ffffc3000000000000000000000005ecb600000000000069ffffdf000000000000000000000014ffd037373737373784fffff40a000000000000000000002cffff8b8b8b8b8b8bbcfffffe1c0000000000000000000049ffffdfdfdfdfdfdff7ffffff370000000000000000000067ffffffffffffffffffffffff550000000000000000000084ffffffffffffffffffffffff7100000000000000000000a1ffd7c7c7c7c7c7c7c7ffffff8e00000000000000000000bfff726f6f6f6f6f6f6fffffffac00000000000000000000dce51b1b1b1b1b1b1b1ba0ffffc800000000000000000008f1b0000000000000000068ffffe40100000000000000001afd9200000000000000004afffff60c000000000000000034ff7600000000000000002effffff21000000000000000051ff59000000000000000016fcffff3c00000000000000006fff3b000000000000000005eeffff5a00000000000000008cff20000000000000000000d8ffff770000000000000000a9f60c000000000000000000bcffff940000000000000000c7e3010000000000000000009effffb20000000000000001e3c70000000000000000000082ffffce000000000000000bf5ab0000000000000000000066ffffe80300000000000020ff8d0000000000000000000048fffff9100000000000003cff70000000000000000000002cffffff2600000000000059ff530000000000000000000014fbffff4200000000000077ff350000000000000000000005edffff6000000000000094fe1b0000000000000000000000d6ffff7d00000000011df5ff350900000000000000000117f0ffffbb050000234e75ffff84603d10000000000631506fffffffff5a3b1267a2ccffffd7b49136000000001985a4c3ffffffffae8f3dabf5fffffffffee55c000000002bd9f7ffffffffffffe369cfffffffffffffff730000000037ffffffffffffffffff83cfffffffffffffff730000000037ffffffffffffffffff838babe3ffeaababab4d0000000025abababbfffffffd3ab58445374a76d53535326000000001253535358a7a7a76c532b000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000")
+}
+
+///|
+test "parity/cff2_vf.otf: rendered glyph 1 NORMAL DEFAULT 36ppem char 65" {
+  let f = @freetype.from_bytes(load_generated_cff2_vf_otf())
+  try! @freetype.set_pixel_sizes(f, 0U, 36U)
+  let gid = @freetype.get_char_index(f, 65U)
+  inspect(gid, content="1")
+  try! @freetype.load_glyph(f, gid, load_flags=0)
+  try! @freetype.render_glyph(f, mode=Normal)
+  inspect(f.glyph().format(), content="Bitmap")
+  inspect(f.glyph().bitmap().pixel_mode(), content="Gray")
+}
+
+///|
+test "parity/cff2_vf.otf: rendered glyph 1 LIGHT DEFAULT 36ppem char 65" {
+  let f = @freetype.from_bytes(load_generated_cff2_vf_otf())
+  try! @freetype.set_pixel_sizes(f, 0U, 36U)
+  let gid = @freetype.get_char_index(f, 65U)
+  inspect(gid, content="1")
+  try! @freetype.load_glyph(f, gid, load_flags=0)
+  try! @freetype.render_glyph(f, mode=Light)
+  inspect(f.glyph().format(), content="Bitmap")
+  inspect(f.glyph().bitmap().pixel_mode(), content="Gray")
+}
+
+///|
+test "parity/cff2_vf.otf: rendered glyph 1 MONO DEFAULT 36ppem char 65" {
+  let f = @freetype.from_bytes(load_generated_cff2_vf_otf())
+  try! @freetype.set_pixel_sizes(f, 0U, 36U)
+  let gid = @freetype.get_char_index(f, 65U)
+  inspect(gid, content="1")
+  try! @freetype.load_glyph(f, gid, load_flags=0)
+  try! @freetype.render_glyph(f, mode=Mono)
+  inspect(f.glyph().format(), content="Bitmap")
+  inspect(f.glyph().bitmap().pixel_mode(), content="Mono")
+}
+
+///|
+test "parity/cff2_vf.otf: rendered glyph 1 LCD DEFAULT 36ppem char 65" {
+  let f = @freetype.from_bytes(load_generated_cff2_vf_otf())
+  try! @freetype.set_pixel_sizes(f, 0U, 36U)
+  let gid = @freetype.get_char_index(f, 65U)
+  inspect(gid, content="1")
+  try! @freetype.load_glyph(f, gid, load_flags=0)
+  try! @freetype.render_glyph(f, mode=Lcd)
+  inspect(f.glyph().format(), content="Bitmap")
+  inspect(f.glyph().bitmap().pixel_mode(), content="Lcd")
+}
+
+///|
+test "parity/cff2_vf.otf: rendered glyph 1 LCD_V DEFAULT 36ppem char 65" {
+  let f = @freetype.from_bytes(load_generated_cff2_vf_otf())
+  try! @freetype.set_pixel_sizes(f, 0U, 36U)
   let gid = @freetype.get_char_index(f, 65U)
   inspect(gid, content="1")
   try! @freetype.load_glyph(f, gid, load_flags=0)

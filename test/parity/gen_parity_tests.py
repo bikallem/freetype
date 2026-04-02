@@ -364,7 +364,7 @@ def gen_font_tests(ff, golden):
             # mode, glyph index) but skip exact dimension and buffer comparison.
             is_hinted = render_load_flags == "DEFAULT"
             L += [f"///|",
-                  f'test "parity/{ff}: rendered glyph {g["glyph_index"]} {render_mode_name}{load_flag_suffix} char {g["charcode"]}" {{',
+                  f'test "parity/{ff}: rendered glyph {g["glyph_index"]} {render_mode_name}{load_flag_suffix} {g["size_ppem"]}ppem char {g["charcode"]}" {{',
                   f"  let f = @freetype.from_bytes({loader_fn}())",
                   f"  try! @freetype.set_pixel_sizes(f, 0U, {g['size_ppem']}U)",
                   f"  let gid = @freetype.get_char_index(f, {g['charcode']}U)",

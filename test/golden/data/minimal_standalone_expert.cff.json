@@ -617,6 +617,193 @@
         "top": 1,
         "buffer_hex": ""
       }
+    },
+    {
+      "glyph_index": 1,
+      "charcode": 32,
+      "size_ppem": 36,
+      "load_flags": "NO_HINTING",
+      "render_mode": "NORMAL",
+      "bitmap": {
+        "width": 0,
+        "rows": 0,
+        "pitch": 0,
+        "pixel_mode": 2,
+        "num_grays": 256,
+        "left": 0,
+        "top": 0,
+        "buffer_hex": ""
+      }
+    },
+    {
+      "glyph_index": 1,
+      "charcode": 32,
+      "size_ppem": 36,
+      "load_flags": "NO_HINTING",
+      "render_mode": "LIGHT",
+      "bitmap": {
+        "width": 0,
+        "rows": 0,
+        "pitch": 0,
+        "pixel_mode": 2,
+        "num_grays": 256,
+        "left": 0,
+        "top": 0,
+        "buffer_hex": ""
+      }
+    },
+    {
+      "glyph_index": 1,
+      "charcode": 32,
+      "size_ppem": 36,
+      "load_flags": "NO_HINTING",
+      "render_mode": "MONO",
+      "bitmap": {
+        "width": 1,
+        "rows": 1,
+        "pitch": 2,
+        "pixel_mode": 1,
+        "num_grays": 256,
+        "left": 0,
+        "top": 1,
+        "buffer_hex": "0000"
+      }
+    },
+    {
+      "glyph_index": 1,
+      "charcode": 32,
+      "size_ppem": 36,
+      "load_flags": "NO_HINTING",
+      "render_mode": "LCD",
+      "bitmap": {
+        "width": 6,
+        "rows": 0,
+        "pitch": 8,
+        "pixel_mode": 5,
+        "num_grays": 256,
+        "left": -1,
+        "top": 0,
+        "buffer_hex": ""
+      }
+    },
+    {
+      "glyph_index": 1,
+      "charcode": 32,
+      "size_ppem": 36,
+      "load_flags": "NO_HINTING",
+      "render_mode": "LCD_V",
+      "bitmap": {
+        "width": 0,
+        "rows": 6,
+        "pitch": 0,
+        "pixel_mode": 6,
+        "num_grays": 256,
+        "left": 0,
+        "top": 1,
+        "buffer_hex": ""
+      }
+    },
+    {
+      "glyph_index": 1,
+      "charcode": 32,
+      "size_ppem": 36,
+      "load_flags": "NO_HINTING",
+      "render_mode": "SDF",
+      "bitmap": {
+        "width": 0,
+        "rows": 0,
+        "pitch": 0,
+        "pixel_mode": 2,
+        "num_grays": 256,
+        "left": 0,
+        "top": 0,
+        "buffer_hex": ""
+      }
+    },
+    {
+      "glyph_index": 1,
+      "charcode": 32,
+      "size_ppem": 36,
+      "load_flags": "DEFAULT",
+      "render_mode": "NORMAL",
+      "bitmap": {
+        "width": 0,
+        "rows": 0,
+        "pitch": 0,
+        "pixel_mode": 2,
+        "num_grays": 256,
+        "left": 0,
+        "top": 0,
+        "buffer_hex": ""
+      }
+    },
+    {
+      "glyph_index": 1,
+      "charcode": 32,
+      "size_ppem": 36,
+      "load_flags": "DEFAULT",
+      "render_mode": "LIGHT",
+      "bitmap": {
+        "width": 0,
+        "rows": 0,
+        "pitch": 0,
+        "pixel_mode": 2,
+        "num_grays": 256,
+        "left": 0,
+        "top": 0,
+        "buffer_hex": ""
+      }
+    },
+    {
+      "glyph_index": 1,
+      "charcode": 32,
+      "size_ppem": 36,
+      "load_flags": "DEFAULT",
+      "render_mode": "MONO",
+      "bitmap": {
+        "width": 1,
+        "rows": 1,
+        "pitch": 2,
+        "pixel_mode": 1,
+        "num_grays": 256,
+        "left": 0,
+        "top": 1,
+        "buffer_hex": "0000"
+      }
+    },
+    {
+      "glyph_index": 1,
+      "charcode": 32,
+      "size_ppem": 36,
+      "load_flags": "DEFAULT",
+      "render_mode": "LCD",
+      "bitmap": {
+        "width": 6,
+        "rows": 0,
+        "pitch": 8,
+        "pixel_mode": 5,
+        "num_grays": 256,
+        "left": -1,
+        "top": 0,
+        "buffer_hex": ""
+      }
+    },
+    {
+      "glyph_index": 1,
+      "charcode": 32,
+      "size_ppem": 36,
+      "load_flags": "DEFAULT",
+      "render_mode": "LCD_V",
+      "bitmap": {
+        "width": 0,
+        "rows": 6,
+        "pitch": 0,
+        "pixel_mode": 6,
+        "num_grays": 256,
+        "left": 0,
+        "top": 1,
+        "buffer_hex": ""
+      }
     }
   ],
   "kerning": [],

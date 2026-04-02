@@ -58,8 +58,13 @@ static const FT_ULong test_charcodes[] = {
 static const FT_ULong variation_test_charcodes[] = { 'A', 'a' };
 #define NUM_VARIATION_TEST_CHARS (sizeof(variation_test_charcodes) / sizeof(variation_test_charcodes[0]))
 
-static const FT_ULong render_test_charcodes[] = { ' ', 'A', 'a', 0x4E00 };
+static const FT_ULong render_test_charcodes[] = {
+    ' ', 'A', 'a', 'S', 'g', 'Q', '&', '9', 0x4E00
+};
 #define NUM_RENDER_TEST_CHARS (sizeof(render_test_charcodes) / sizeof(render_test_charcodes[0]))
+
+static const int render_test_sizes[] = { 16, 36 };
+#define NUM_RENDER_SIZES (sizeof(render_test_sizes) / sizeof(render_test_sizes[0]))
 
 static const FT_ULong color_render_test_charcodes[] = {
     'A', 'B', 'C', 'D', 'E', 'a', 'b', 'c', 'd', 'e'
@@ -299,19 +304,21 @@ static void dump_rendered_glyphs(FILE *fp, FT_Face face) {
     }
 
     int first_glyph = 1;
-    for (unsigned m = 0; m < NUM_RENDER_MODES; m++) {
-        for (unsigned c = 0; c < NUM_RENDER_TEST_CHARS; c++) {
-            dump_one_rendered_glyph(
-                fp,
-                face,
-                render_test_charcodes[c],
-                render_mode_matrix[m].load_flag_name,
-                render_mode_matrix[m].load_flags,
-                render_mode_matrix[m].render_mode_name,
-                render_mode_matrix[m].render_mode,
-                16,
-                &first_glyph
-            );
+    for (unsigned s = 0; s < NUM_RENDER_SIZES; s++) {
+        for (unsigned m = 0; m < NUM_RENDER_MODES; m++) {
+            for (unsigned c = 0; c < NUM_RENDER_TEST_CHARS; c++) {
+                dump_one_rendered_glyph(
+                    fp,
+                    face,
+                    render_test_charcodes[c],
+                    render_mode_matrix[m].load_flag_name,
+                    render_mode_matrix[m].load_flags,
+                    render_mode_matrix[m].render_mode_name,
+                    render_mode_matrix[m].render_mode,
+                    render_test_sizes[s],
+                    &first_glyph
+                );
+            }
         }
     }
     if (face->face_flags & FT_FACE_FLAG_COLOR) {

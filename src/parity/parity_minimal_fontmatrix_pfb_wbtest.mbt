@@ -94,7 +94,7 @@ test "parity/minimal_fontmatrix.pfb: glyph metrics at 16ppem" {
 }
 
 ///|
-test "parity/minimal_fontmatrix.pfb: rendered glyph 1 NORMAL NO_HINTING char 32" {
+test "parity/minimal_fontmatrix.pfb: rendered glyph 1 NORMAL NO_HINTING 16ppem char 32" {
   let f = @freetype.from_bytes(load_generated_minimal_fontmatrix_pfb())
   try! @freetype.set_pixel_sizes(f, 0U, 16U)
   let gid = @freetype.get_char_index(f, 32U)
@@ -113,7 +113,7 @@ test "parity/minimal_fontmatrix.pfb: rendered glyph 1 NORMAL NO_HINTING char 32"
 }
 
 ///|
-test "parity/minimal_fontmatrix.pfb: rendered glyph 2 NORMAL NO_HINTING char 65" {
+test "parity/minimal_fontmatrix.pfb: rendered glyph 2 NORMAL NO_HINTING 16ppem char 65" {
   let f = @freetype.from_bytes(load_generated_minimal_fontmatrix_pfb())
   try! @freetype.set_pixel_sizes(f, 0U, 16U)
   let gid = @freetype.get_char_index(f, 65U)
@@ -132,7 +132,7 @@ test "parity/minimal_fontmatrix.pfb: rendered glyph 2 NORMAL NO_HINTING char 65"
 }
 
 ///|
-test "parity/minimal_fontmatrix.pfb: rendered glyph 1 LIGHT NO_HINTING char 32" {
+test "parity/minimal_fontmatrix.pfb: rendered glyph 1 LIGHT NO_HINTING 16ppem char 32" {
   let f = @freetype.from_bytes(load_generated_minimal_fontmatrix_pfb())
   try! @freetype.set_pixel_sizes(f, 0U, 16U)
   let gid = @freetype.get_char_index(f, 32U)
@@ -151,7 +151,7 @@ test "parity/minimal_fontmatrix.pfb: rendered glyph 1 LIGHT NO_HINTING char 32" 
 }
 
 ///|
-test "parity/minimal_fontmatrix.pfb: rendered glyph 2 LIGHT NO_HINTING char 65" {
+test "parity/minimal_fontmatrix.pfb: rendered glyph 2 LIGHT NO_HINTING 16ppem char 65" {
   let f = @freetype.from_bytes(load_generated_minimal_fontmatrix_pfb())
   try! @freetype.set_pixel_sizes(f, 0U, 16U)
   let gid = @freetype.get_char_index(f, 65U)
@@ -170,7 +170,7 @@ test "parity/minimal_fontmatrix.pfb: rendered glyph 2 LIGHT NO_HINTING char 65" 
 }
 
 ///|
-test "parity/minimal_fontmatrix.pfb: rendered glyph 1 MONO NO_HINTING char 32" {
+test "parity/minimal_fontmatrix.pfb: rendered glyph 1 MONO NO_HINTING 16ppem char 32" {
   let f = @freetype.from_bytes(load_generated_minimal_fontmatrix_pfb())
   try! @freetype.set_pixel_sizes(f, 0U, 16U)
   let gid = @freetype.get_char_index(f, 32U)
@@ -189,7 +189,7 @@ test "parity/minimal_fontmatrix.pfb: rendered glyph 1 MONO NO_HINTING char 32" {
 }
 
 ///|
-test "parity/minimal_fontmatrix.pfb: rendered glyph 2 MONO NO_HINTING char 65" {
+test "parity/minimal_fontmatrix.pfb: rendered glyph 2 MONO NO_HINTING 16ppem char 65" {
   let f = @freetype.from_bytes(load_generated_minimal_fontmatrix_pfb())
   try! @freetype.set_pixel_sizes(f, 0U, 16U)
   let gid = @freetype.get_char_index(f, 65U)
@@ -208,7 +208,7 @@ test "parity/minimal_fontmatrix.pfb: rendered glyph 2 MONO NO_HINTING char 65" {
 }
 
 ///|
-test "parity/minimal_fontmatrix.pfb: rendered glyph 1 LCD NO_HINTING char 32" {
+test "parity/minimal_fontmatrix.pfb: rendered glyph 1 LCD NO_HINTING 16ppem char 32" {
   let f = @freetype.from_bytes(load_generated_minimal_fontmatrix_pfb())
   try! @freetype.set_pixel_sizes(f, 0U, 16U)
   let gid = @freetype.get_char_index(f, 32U)
@@ -227,7 +227,7 @@ test "parity/minimal_fontmatrix.pfb: rendered glyph 1 LCD NO_HINTING char 32" {
 }
 
 ///|
-test "parity/minimal_fontmatrix.pfb: rendered glyph 2 LCD NO_HINTING char 65" {
+test "parity/minimal_fontmatrix.pfb: rendered glyph 2 LCD NO_HINTING 16ppem char 65" {
   let f = @freetype.from_bytes(load_generated_minimal_fontmatrix_pfb())
   try! @freetype.set_pixel_sizes(f, 0U, 16U)
   let gid = @freetype.get_char_index(f, 65U)
@@ -246,7 +246,7 @@ test "parity/minimal_fontmatrix.pfb: rendered glyph 2 LCD NO_HINTING char 65" {
 }
 
 ///|
-test "parity/minimal_fontmatrix.pfb: rendered glyph 1 LCD_V NO_HINTING char 32" {
+test "parity/minimal_fontmatrix.pfb: rendered glyph 1 LCD_V NO_HINTING 16ppem char 32" {
   let f = @freetype.from_bytes(load_generated_minimal_fontmatrix_pfb())
   try! @freetype.set_pixel_sizes(f, 0U, 16U)
   let gid = @freetype.get_char_index(f, 32U)
@@ -265,7 +265,7 @@ test "parity/minimal_fontmatrix.pfb: rendered glyph 1 LCD_V NO_HINTING char 32" 
 }
 
 ///|
-test "parity/minimal_fontmatrix.pfb: rendered glyph 2 LCD_V NO_HINTING char 65" {
+test "parity/minimal_fontmatrix.pfb: rendered glyph 2 LCD_V NO_HINTING 16ppem char 65" {
   let f = @freetype.from_bytes(load_generated_minimal_fontmatrix_pfb())
   try! @freetype.set_pixel_sizes(f, 0U, 16U)
   let gid = @freetype.get_char_index(f, 65U)
@@ -284,7 +284,7 @@ test "parity/minimal_fontmatrix.pfb: rendered glyph 2 LCD_V NO_HINTING char 65" 
 }
 
 ///|
-test "parity/minimal_fontmatrix.pfb: rendered glyph 1 NORMAL DEFAULT char 32" {
+test "parity/minimal_fontmatrix.pfb: rendered glyph 1 NORMAL DEFAULT 16ppem char 32" {
   let f = @freetype.from_bytes(load_generated_minimal_fontmatrix_pfb())
   try! @freetype.set_pixel_sizes(f, 0U, 16U)
   let gid = @freetype.get_char_index(f, 32U)
@@ -296,7 +296,7 @@ test "parity/minimal_fontmatrix.pfb: rendered glyph 1 NORMAL DEFAULT char 32" {
 }
 
 ///|
-test "parity/minimal_fontmatrix.pfb: rendered glyph 2 NORMAL DEFAULT char 65" {
+test "parity/minimal_fontmatrix.pfb: rendered glyph 2 NORMAL DEFAULT 16ppem char 65" {
   let f = @freetype.from_bytes(load_generated_minimal_fontmatrix_pfb())
   try! @freetype.set_pixel_sizes(f, 0U, 16U)
   let gid = @freetype.get_char_index(f, 65U)
@@ -308,7 +308,7 @@ test "parity/minimal_fontmatrix.pfb: rendered glyph 2 NORMAL DEFAULT char 65" {
 }
 
 ///|
-test "parity/minimal_fontmatrix.pfb: rendered glyph 1 LIGHT DEFAULT char 32" {
+test "parity/minimal_fontmatrix.pfb: rendered glyph 1 LIGHT DEFAULT 16ppem char 32" {
   let f = @freetype.from_bytes(load_generated_minimal_fontmatrix_pfb())
   try! @freetype.set_pixel_sizes(f, 0U, 16U)
   let gid = @freetype.get_char_index(f, 32U)
@@ -320,7 +320,7 @@ test "parity/minimal_fontmatrix.pfb: rendered glyph 1 LIGHT DEFAULT char 32" {
 }
 
 ///|
-test "parity/minimal_fontmatrix.pfb: rendered glyph 2 LIGHT DEFAULT char 65" {
+test "parity/minimal_fontmatrix.pfb: rendered glyph 2 LIGHT DEFAULT 16ppem char 65" {
   let f = @freetype.from_bytes(load_generated_minimal_fontmatrix_pfb())
   try! @freetype.set_pixel_sizes(f, 0U, 16U)
   let gid = @freetype.get_char_index(f, 65U)
@@ -332,7 +332,7 @@ test "parity/minimal_fontmatrix.pfb: rendered glyph 2 LIGHT DEFAULT char 65" {
 }
 
 ///|
-test "parity/minimal_fontmatrix.pfb: rendered glyph 1 MONO DEFAULT char 32" {
+test "parity/minimal_fontmatrix.pfb: rendered glyph 1 MONO DEFAULT 16ppem char 32" {
   let f = @freetype.from_bytes(load_generated_minimal_fontmatrix_pfb())
   try! @freetype.set_pixel_sizes(f, 0U, 16U)
   let gid = @freetype.get_char_index(f, 32U)
@@ -344,7 +344,7 @@ test "parity/minimal_fontmatrix.pfb: rendered glyph 1 MONO DEFAULT char 32" {
 }
 
 ///|
-test "parity/minimal_fontmatrix.pfb: rendered glyph 2 MONO DEFAULT char 65" {
+test "parity/minimal_fontmatrix.pfb: rendered glyph 2 MONO DEFAULT 16ppem char 65" {
   let f = @freetype.from_bytes(load_generated_minimal_fontmatrix_pfb())
   try! @freetype.set_pixel_sizes(f, 0U, 16U)
   let gid = @freetype.get_char_index(f, 65U)
@@ -356,7 +356,7 @@ test "parity/minimal_fontmatrix.pfb: rendered glyph 2 MONO DEFAULT char 65" {
 }
 
 ///|
-test "parity/minimal_fontmatrix.pfb: rendered glyph 1 LCD DEFAULT char 32" {
+test "parity/minimal_fontmatrix.pfb: rendered glyph 1 LCD DEFAULT 16ppem char 32" {
   let f = @freetype.from_bytes(load_generated_minimal_fontmatrix_pfb())
   try! @freetype.set_pixel_sizes(f, 0U, 16U)
   let gid = @freetype.get_char_index(f, 32U)
@@ -368,7 +368,7 @@ test "parity/minimal_fontmatrix.pfb: rendered glyph 1 LCD DEFAULT char 32" {
 }
 
 ///|
-test "parity/minimal_fontmatrix.pfb: rendered glyph 2 LCD DEFAULT char 65" {
+test "parity/minimal_fontmatrix.pfb: rendered glyph 2 LCD DEFAULT 16ppem char 65" {
   let f = @freetype.from_bytes(load_generated_minimal_fontmatrix_pfb())
   try! @freetype.set_pixel_sizes(f, 0U, 16U)
   let gid = @freetype.get_char_index(f, 65U)
@@ -380,7 +380,7 @@ test "parity/minimal_fontmatrix.pfb: rendered glyph 2 LCD DEFAULT char 65" {
 }
 
 ///|
-test "parity/minimal_fontmatrix.pfb: rendered glyph 1 LCD_V DEFAULT char 32" {
+test "parity/minimal_fontmatrix.pfb: rendered glyph 1 LCD_V DEFAULT 16ppem char 32" {
   let f = @freetype.from_bytes(load_generated_minimal_fontmatrix_pfb())
   try! @freetype.set_pixel_sizes(f, 0U, 16U)
   let gid = @freetype.get_char_index(f, 32U)
@@ -392,9 +392,319 @@ test "parity/minimal_fontmatrix.pfb: rendered glyph 1 LCD_V DEFAULT char 32" {
 }
 
 ///|
-test "parity/minimal_fontmatrix.pfb: rendered glyph 2 LCD_V DEFAULT char 65" {
+test "parity/minimal_fontmatrix.pfb: rendered glyph 2 LCD_V DEFAULT 16ppem char 65" {
   let f = @freetype.from_bytes(load_generated_minimal_fontmatrix_pfb())
   try! @freetype.set_pixel_sizes(f, 0U, 16U)
+  let gid = @freetype.get_char_index(f, 65U)
+  inspect(gid, content="2")
+  try! @freetype.load_glyph(f, gid, load_flags=0)
+  try! @freetype.render_glyph(f, mode=LcdV)
+  inspect(f.glyph().format(), content="Bitmap")
+  inspect(f.glyph().bitmap().pixel_mode(), content="LcdV")
+}
+
+///|
+test "parity/minimal_fontmatrix.pfb: rendered glyph 1 NORMAL NO_HINTING 36ppem char 32" {
+  let f = @freetype.from_bytes(load_generated_minimal_fontmatrix_pfb())
+  try! @freetype.set_pixel_sizes(f, 0U, 36U)
+  let gid = @freetype.get_char_index(f, 32U)
+  inspect(gid, content="1")
+  try! @freetype.load_glyph(f, gid, load_flags=@base.LOAD_NO_HINTING)
+  try! @freetype.render_glyph(f, mode=Normal)
+  inspect(f.glyph().format(), content="Bitmap")
+  inspect(f.glyph().bitmap().pixel_mode(), content="Gray")
+  inspect(f.glyph().bitmap().width(), content="0")
+  inspect(f.glyph().bitmap().rows(), content="0")
+  inspect(f.glyph().bitmap().pitch(), content="0")
+  inspect(f.glyph().bitmap().num_grays(), content="256")
+  inspect(f.glyph().bitmap_left(), content="0")
+  inspect(f.glyph().bitmap_top(), content="0")
+  try! assert_buffer_hex(f.glyph().bitmap().buffer(), "")
+}
+
+///|
+test "parity/minimal_fontmatrix.pfb: rendered glyph 2 NORMAL NO_HINTING 36ppem char 65" {
+  let f = @freetype.from_bytes(load_generated_minimal_fontmatrix_pfb())
+  try! @freetype.set_pixel_sizes(f, 0U, 36U)
+  let gid = @freetype.get_char_index(f, 65U)
+  inspect(gid, content="2")
+  try! @freetype.load_glyph(f, gid, load_flags=@base.LOAD_NO_HINTING)
+  try! @freetype.render_glyph(f, mode=Normal)
+  inspect(f.glyph().format(), content="Bitmap")
+  inspect(f.glyph().bitmap().pixel_mode(), content="Gray")
+  inspect(f.glyph().bitmap().width(), content="9")
+  inspect(f.glyph().bitmap().rows(), content="13")
+  inspect(f.glyph().bitmap().pitch(), content="9")
+  inspect(f.glyph().bitmap().num_grays(), content="256")
+  inspect(f.glyph().bitmap_left(), content="0")
+  inspect(f.glyph().bitmap_top(), content="13")
+  try! assert_buffer_hex(f.glyph().bitmap().buffer(), "00000000190000000000000000a0000000000000001afe1900000000000062ff61000000000000abffaa000000000004f0ffef04000000003dffffff3c0000000086ffffff8500000000cfffffffce00000019fefffffffe18000061ffffffffff600000aaffffffffffa90003efffffffffffef03")
+}
+
+///|
+test "parity/minimal_fontmatrix.pfb: rendered glyph 1 LIGHT NO_HINTING 36ppem char 32" {
+  let f = @freetype.from_bytes(load_generated_minimal_fontmatrix_pfb())
+  try! @freetype.set_pixel_sizes(f, 0U, 36U)
+  let gid = @freetype.get_char_index(f, 32U)
+  inspect(gid, content="1")
+  try! @freetype.load_glyph(f, gid, load_flags=@base.LOAD_NO_HINTING)
+  try! @freetype.render_glyph(f, mode=Light)
+  inspect(f.glyph().format(), content="Bitmap")
+  inspect(f.glyph().bitmap().pixel_mode(), content="Gray")
+  inspect(f.glyph().bitmap().width(), content="0")
+  inspect(f.glyph().bitmap().rows(), content="0")
+  inspect(f.glyph().bitmap().pitch(), content="0")
+  inspect(f.glyph().bitmap().num_grays(), content="256")
+  inspect(f.glyph().bitmap_left(), content="0")
+  inspect(f.glyph().bitmap_top(), content="0")
+  try! assert_buffer_hex(f.glyph().bitmap().buffer(), "")
+}
+
+///|
+test "parity/minimal_fontmatrix.pfb: rendered glyph 2 LIGHT NO_HINTING 36ppem char 65" {
+  let f = @freetype.from_bytes(load_generated_minimal_fontmatrix_pfb())
+  try! @freetype.set_pixel_sizes(f, 0U, 36U)
+  let gid = @freetype.get_char_index(f, 65U)
+  inspect(gid, content="2")
+  try! @freetype.load_glyph(f, gid, load_flags=@base.LOAD_NO_HINTING)
+  try! @freetype.render_glyph(f, mode=Light)
+  inspect(f.glyph().format(), content="Bitmap")
+  inspect(f.glyph().bitmap().pixel_mode(), content="Gray")
+  inspect(f.glyph().bitmap().width(), content="9")
+  inspect(f.glyph().bitmap().rows(), content="13")
+  inspect(f.glyph().bitmap().pitch(), content="9")
+  inspect(f.glyph().bitmap().num_grays(), content="256")
+  inspect(f.glyph().bitmap_left(), content="0")
+  inspect(f.glyph().bitmap_top(), content="13")
+  try! assert_buffer_hex(f.glyph().bitmap().buffer(), "00000000190000000000000000a0000000000000001afe1900000000000062ff61000000000000abffaa000000000004f0ffef04000000003dffffff3c0000000086ffffff8500000000cfffffffce00000019fefffffffe18000061ffffffffff600000aaffffffffffa90003efffffffffffef03")
+}
+
+///|
+test "parity/minimal_fontmatrix.pfb: rendered glyph 1 MONO NO_HINTING 36ppem char 32" {
+  let f = @freetype.from_bytes(load_generated_minimal_fontmatrix_pfb())
+  try! @freetype.set_pixel_sizes(f, 0U, 36U)
+  let gid = @freetype.get_char_index(f, 32U)
+  inspect(gid, content="1")
+  try! @freetype.load_glyph(f, gid, load_flags=@base.LOAD_NO_HINTING)
+  try! @freetype.render_glyph(f, mode=Mono)
+  inspect(f.glyph().format(), content="Bitmap")
+  inspect(f.glyph().bitmap().pixel_mode(), content="Mono")
+  inspect(f.glyph().bitmap().width(), content="1")
+  inspect(f.glyph().bitmap().rows(), content="1")
+  inspect(f.glyph().bitmap().pitch(), content="2")
+  inspect(f.glyph().bitmap().num_grays(), content="256")
+  inspect(f.glyph().bitmap_left(), content="0")
+  inspect(f.glyph().bitmap_top(), content="1")
+  inspect(f.glyph().bitmap().buffer().length(), content="2")
+}
+
+///|
+test "parity/minimal_fontmatrix.pfb: rendered glyph 2 MONO NO_HINTING 36ppem char 65" {
+  let f = @freetype.from_bytes(load_generated_minimal_fontmatrix_pfb())
+  try! @freetype.set_pixel_sizes(f, 0U, 36U)
+  let gid = @freetype.get_char_index(f, 65U)
+  inspect(gid, content="2")
+  try! @freetype.load_glyph(f, gid, load_flags=@base.LOAD_NO_HINTING)
+  try! @freetype.render_glyph(f, mode=Mono)
+  inspect(f.glyph().format(), content="Bitmap")
+  inspect(f.glyph().bitmap().pixel_mode(), content="Mono")
+  inspect(f.glyph().bitmap().width(), content="7")
+  inspect(f.glyph().bitmap().rows(), content="13")
+  inspect(f.glyph().bitmap().pitch(), content="2")
+  inspect(f.glyph().bitmap().num_grays(), content="256")
+  inspect(f.glyph().bitmap_left(), content="1")
+  inspect(f.glyph().bitmap_top(), content="13")
+  inspect(f.glyph().bitmap().buffer().length(), content="26")
+}
+
+///|
+test "parity/minimal_fontmatrix.pfb: rendered glyph 1 LCD NO_HINTING 36ppem char 32" {
+  let f = @freetype.from_bytes(load_generated_minimal_fontmatrix_pfb())
+  try! @freetype.set_pixel_sizes(f, 0U, 36U)
+  let gid = @freetype.get_char_index(f, 32U)
+  inspect(gid, content="1")
+  try! @freetype.load_glyph(f, gid, load_flags=@base.LOAD_NO_HINTING)
+  try! @freetype.render_glyph(f, mode=Lcd)
+  inspect(f.glyph().format(), content="Bitmap")
+  inspect(f.glyph().bitmap().pixel_mode(), content="Lcd")
+  inspect(f.glyph().bitmap().width(), content="6")
+  inspect(f.glyph().bitmap().rows(), content="0")
+  inspect(f.glyph().bitmap().pitch(), content="8")
+  inspect(f.glyph().bitmap().num_grays(), content="256")
+  inspect(f.glyph().bitmap_left(), content="-1")
+  inspect(f.glyph().bitmap_top(), content="0")
+  try! assert_buffer_hex(f.glyph().bitmap().buffer(), "")
+}
+
+///|
+test "parity/minimal_fontmatrix.pfb: rendered glyph 2 LCD NO_HINTING 36ppem char 65" {
+  let f = @freetype.from_bytes(load_generated_minimal_fontmatrix_pfb())
+  try! @freetype.set_pixel_sizes(f, 0U, 36U)
+  let gid = @freetype.get_char_index(f, 65U)
+  inspect(gid, content="2")
+  try! @freetype.load_glyph(f, gid, load_flags=@base.LOAD_NO_HINTING)
+  try! @freetype.render_glyph(f, mode=Lcd)
+  inspect(f.glyph().format(), content="Bitmap")
+  inspect(f.glyph().bitmap().pixel_mode(), content="Lcd")
+  inspect(f.glyph().bitmap().width(), content="27")
+  inspect(f.glyph().bitmap().rows(), content="13")
+  inspect(f.glyph().bitmap().pitch(), content="28")
+  inspect(f.glyph().bitmap().num_grays(), content="256")
+  inspect(f.glyph().bitmap_left(), content="0")
+  inspect(f.glyph().bitmap_top(), content="13")
+  try! assert_buffer_hex(f.glyph().bitmap().buffer(), "000000000000000000000000191919000000000000000000000000000000000000000000000000247ca07b23000000000000000000000000000000000000000000001a6dc5fec46c1900000000000000000000000000000000000000001162b6fcfffcb561110000000000000000000000000000000000000857abf6fffffff6aa5608000000000000000000000000000000000448a0f0ffffffffffef9f47040000000000000000000000000000013d91e7ffffffffffffffe7903c01000000000000000000000000003286daffffffffffffffffffd98531000000000000000000000000237bcfffffffffffffffffffffffce7a2200000000000000000000196cc4fefffffffffffffffffffffffec36b1800000000000000001061b5fcfffffffffffffffffffffffffffcb460100000000000000856aaf6fffffffffffffffffffffffffffffff5a955080000000003479fefffffffffffffffffffffffffffffffffffef9f47030000")
+}
+
+///|
+test "parity/minimal_fontmatrix.pfb: rendered glyph 1 LCD_V NO_HINTING 36ppem char 32" {
+  let f = @freetype.from_bytes(load_generated_minimal_fontmatrix_pfb())
+  try! @freetype.set_pixel_sizes(f, 0U, 36U)
+  let gid = @freetype.get_char_index(f, 32U)
+  inspect(gid, content="1")
+  try! @freetype.load_glyph(f, gid, load_flags=@base.LOAD_NO_HINTING)
+  try! @freetype.render_glyph(f, mode=LcdV)
+  inspect(f.glyph().format(), content="Bitmap")
+  inspect(f.glyph().bitmap().pixel_mode(), content="LcdV")
+  inspect(f.glyph().bitmap().width(), content="0")
+  inspect(f.glyph().bitmap().rows(), content="6")
+  inspect(f.glyph().bitmap().pitch(), content="0")
+  inspect(f.glyph().bitmap().num_grays(), content="256")
+  inspect(f.glyph().bitmap_left(), content="0")
+  inspect(f.glyph().bitmap_top(), content="1")
+  try! assert_buffer_hex(f.glyph().bitmap().buffer(), "")
+}
+
+///|
+test "parity/minimal_fontmatrix.pfb: rendered glyph 2 LCD_V NO_HINTING 36ppem char 65" {
+  let f = @freetype.from_bytes(load_generated_minimal_fontmatrix_pfb())
+  try! @freetype.set_pixel_sizes(f, 0U, 36U)
+  let gid = @freetype.get_char_index(f, 65U)
+  inspect(gid, content="2")
+  try! @freetype.load_glyph(f, gid, load_flags=@base.LOAD_NO_HINTING)
+  try! @freetype.render_glyph(f, mode=LcdV)
+  inspect(f.glyph().format(), content="Bitmap")
+  inspect(f.glyph().bitmap().pixel_mode(), content="LcdV")
+  inspect(f.glyph().bitmap().width(), content="9")
+  inspect(f.glyph().bitmap().rows(), content="42")
+  inspect(f.glyph().bitmap().pitch(), content="9")
+  inspect(f.glyph().bitmap().num_grays(), content="256")
+  inspect(f.glyph().bitmap_left(), content="0")
+  inspect(f.glyph().bitmap_top(), content="13")
+  try! assert_buffer_hex(f.glyph().bitmap().buffer(), "000000000500000000000000001900000000000000003e0000000000000000700000000000000000a00000000000000001cd0100000000000009ee090000000000001afe1900000000000031ff300000000000004aff4900000000000062ff610000000000007aff7900000000000093ff92000000000000abffaa000000000000c3ffc2000000000000dcffdb000000000004f0ffef040000000010fbfffb0f0000000025ffffff24000000003dffffff3c0000000055ffffff54000000006effffff6d0000000086ffffff85000000009effffff9d00000000b7ffffffb600000000cfffffffce00000000e6ffffffe500000009f7fffffff609000019fefffffffe18000030ffffffffff2f000049ffffffffff48000061ffffffffff60000079ffffffffff78000092ffffffffff910000aaffffffffffa90000c2ffffffffffc10000dbffffffffffdb0003efffffffffffef0303a7acacacacaca703045454545454545403000000000000000000000000000000000000")
+}
+
+///|
+test "parity/minimal_fontmatrix.pfb: rendered glyph 1 NORMAL DEFAULT 36ppem char 32" {
+  let f = @freetype.from_bytes(load_generated_minimal_fontmatrix_pfb())
+  try! @freetype.set_pixel_sizes(f, 0U, 36U)
+  let gid = @freetype.get_char_index(f, 32U)
+  inspect(gid, content="1")
+  try! @freetype.load_glyph(f, gid, load_flags=0)
+  try! @freetype.render_glyph(f, mode=Normal)
+  inspect(f.glyph().format(), content="Bitmap")
+  inspect(f.glyph().bitmap().pixel_mode(), content="Gray")
+}
+
+///|
+test "parity/minimal_fontmatrix.pfb: rendered glyph 2 NORMAL DEFAULT 36ppem char 65" {
+  let f = @freetype.from_bytes(load_generated_minimal_fontmatrix_pfb())
+  try! @freetype.set_pixel_sizes(f, 0U, 36U)
+  let gid = @freetype.get_char_index(f, 65U)
+  inspect(gid, content="2")
+  try! @freetype.load_glyph(f, gid, load_flags=0)
+  try! @freetype.render_glyph(f, mode=Normal)
+  inspect(f.glyph().format(), content="Bitmap")
+  inspect(f.glyph().bitmap().pixel_mode(), content="Gray")
+}
+
+///|
+test "parity/minimal_fontmatrix.pfb: rendered glyph 1 LIGHT DEFAULT 36ppem char 32" {
+  let f = @freetype.from_bytes(load_generated_minimal_fontmatrix_pfb())
+  try! @freetype.set_pixel_sizes(f, 0U, 36U)
+  let gid = @freetype.get_char_index(f, 32U)
+  inspect(gid, content="1")
+  try! @freetype.load_glyph(f, gid, load_flags=0)
+  try! @freetype.render_glyph(f, mode=Light)
+  inspect(f.glyph().format(), content="Bitmap")
+  inspect(f.glyph().bitmap().pixel_mode(), content="Gray")
+}
+
+///|
+test "parity/minimal_fontmatrix.pfb: rendered glyph 2 LIGHT DEFAULT 36ppem char 65" {
+  let f = @freetype.from_bytes(load_generated_minimal_fontmatrix_pfb())
+  try! @freetype.set_pixel_sizes(f, 0U, 36U)
+  let gid = @freetype.get_char_index(f, 65U)
+  inspect(gid, content="2")
+  try! @freetype.load_glyph(f, gid, load_flags=0)
+  try! @freetype.render_glyph(f, mode=Light)
+  inspect(f.glyph().format(), content="Bitmap")
+  inspect(f.glyph().bitmap().pixel_mode(), content="Gray")
+}
+
+///|
+test "parity/minimal_fontmatrix.pfb: rendered glyph 1 MONO DEFAULT 36ppem char 32" {
+  let f = @freetype.from_bytes(load_generated_minimal_fontmatrix_pfb())
+  try! @freetype.set_pixel_sizes(f, 0U, 36U)
+  let gid = @freetype.get_char_index(f, 32U)
+  inspect(gid, content="1")
+  try! @freetype.load_glyph(f, gid, load_flags=0)
+  try! @freetype.render_glyph(f, mode=Mono)
+  inspect(f.glyph().format(), content="Bitmap")
+  inspect(f.glyph().bitmap().pixel_mode(), content="Mono")
+}
+
+///|
+test "parity/minimal_fontmatrix.pfb: rendered glyph 2 MONO DEFAULT 36ppem char 65" {
+  let f = @freetype.from_bytes(load_generated_minimal_fontmatrix_pfb())
+  try! @freetype.set_pixel_sizes(f, 0U, 36U)
+  let gid = @freetype.get_char_index(f, 65U)
+  inspect(gid, content="2")
+  try! @freetype.load_glyph(f, gid, load_flags=0)
+  try! @freetype.render_glyph(f, mode=Mono)
+  inspect(f.glyph().format(), content="Bitmap")
+  inspect(f.glyph().bitmap().pixel_mode(), content="Mono")
+}
+
+///|
+test "parity/minimal_fontmatrix.pfb: rendered glyph 1 LCD DEFAULT 36ppem char 32" {
+  let f = @freetype.from_bytes(load_generated_minimal_fontmatrix_pfb())
+  try! @freetype.set_pixel_sizes(f, 0U, 36U)
+  let gid = @freetype.get_char_index(f, 32U)
+  inspect(gid, content="1")
+  try! @freetype.load_glyph(f, gid, load_flags=0)
+  try! @freetype.render_glyph(f, mode=Lcd)
+  inspect(f.glyph().format(), content="Bitmap")
+  inspect(f.glyph().bitmap().pixel_mode(), content="Lcd")
+}
+
+///|
+test "parity/minimal_fontmatrix.pfb: rendered glyph 2 LCD DEFAULT 36ppem char 65" {
+  let f = @freetype.from_bytes(load_generated_minimal_fontmatrix_pfb())
+  try! @freetype.set_pixel_sizes(f, 0U, 36U)
+  let gid = @freetype.get_char_index(f, 65U)
+  inspect(gid, content="2")
+  try! @freetype.load_glyph(f, gid, load_flags=0)
+  try! @freetype.render_glyph(f, mode=Lcd)
+  inspect(f.glyph().format(), content="Bitmap")
+  inspect(f.glyph().bitmap().pixel_mode(), content="Lcd")
+}
+
+///|
+test "parity/minimal_fontmatrix.pfb: rendered glyph 1 LCD_V DEFAULT 36ppem char 32" {
+  let f = @freetype.from_bytes(load_generated_minimal_fontmatrix_pfb())
+  try! @freetype.set_pixel_sizes(f, 0U, 36U)
+  let gid = @freetype.get_char_index(f, 32U)
+  inspect(gid, content="1")
+  try! @freetype.load_glyph(f, gid, load_flags=0)
+  try! @freetype.render_glyph(f, mode=LcdV)
+  inspect(f.glyph().format(), content="Bitmap")
+  inspect(f.glyph().bitmap().pixel_mode(), content="LcdV")
+}
+
+///|
+test "parity/minimal_fontmatrix.pfb: rendered glyph 2 LCD_V DEFAULT 36ppem char 65" {
+  let f = @freetype.from_bytes(load_generated_minimal_fontmatrix_pfb())
+  try! @freetype.set_pixel_sizes(f, 0U, 36U)
   let gid = @freetype.get_char_index(f, 65U)
   inspect(gid, content="2")
   try! @freetype.load_glyph(f, gid, load_flags=0)
