@@ -1,4 +1,4 @@
-.PHONY: all build test contracts fmt clean parity parity-tests parity-exhaustive parity-exhaustive-ci parity-fuzz parity-fuzz-smoke bench check
+.PHONY: all build test contracts fmt clean parity bench check
 
 # Default: build, format, and test (no bench — it's slow)
 all: build fmt test parity info
@@ -47,35 +47,45 @@ clean:
 GOLDEN_GEN  := test/golden/generate/gen_golden
 GOLDEN_DATA := test/golden/data
 FONT_DIR    := test/fonts
+PARITY_MODE ?= sampled
 
-parity: parity-golden parity-tests parity-report
-
-parity-golden: | $(FONT_DIR)/.downloaded
-	@mkdir -p $(GOLDEN_DATA)
-	@if [ ! -x $(GOLDEN_GEN) ]; then \
-		$(MAKE) -C test/golden/generate gen_golden 2>/dev/null || true; \
-	fi
-	@if [ -x $(GOLDEN_GEN) ]; then \
-		python3 test/golden/generate/generate.py $(FONT_DIR) $(GOLDEN_DATA) >/dev/null; \
-	fi
-
-parity-tests: parity-golden
-	@python3 test/parity/gen_parity_tests.py >/dev/null
-
-parity-report: parity-golden
-	@python3 test/parity/report.py
-
-parity-exhaustive:
-	@python3 test/parity/exhaustive.py --config test/parity/exhaustive_ci.json
-
-parity-exhaustive-ci:
-	@python3 test/parity/exhaustive.py --config test/parity/exhaustive_ci.json
-
-parity-fuzz:
-	@python3 test/parity/fuzz_diff.py
-
-parity-fuzz-smoke:
-	@python3 test/parity/fuzz_diff.py --cases 4 --max-ops 2
+parity: | $(FONT_DIR)/.downloaded
+	@set -e; \
+	run_sampled() { \
+		mkdir -p $(GOLDEN_DATA); \
+		if [ ! -x $(GOLDEN_GEN) ]; then \
+			$(MAKE) -C test/golden/generate gen_golden 2>/dev/null || true; \
+		fi; \
+		if [ -x $(GOLDEN_GEN) ]; then \
+			python3 test/golden/generate/generate.py $(FONT_DIR) $(GOLDEN_DATA) >/dev/null; \
+		fi; \
+		python3 test/parity/gen_parity_tests.py >/dev/null; \
+		python3 test/parity/report.py; \
+	}; \
+	case "$(PARITY_MODE)" in \
+		sampled) \
+			run_sampled; \
+			;; \
+		exhaustive) \
+			python3 test/parity/exhaustive.py --config test/parity/exhaustive_ci.json; \
+			;; \
+		fuzz) \
+			python3 test/parity/fuzz_diff.py; \
+			;; \
+		fuzz-smoke) \
+			python3 test/parity/fuzz_diff.py --cases 4 --max-ops 2; \
+			;; \
+		all) \
+			run_sampled; \
+			python3 test/parity/exhaustive.py --config test/parity/exhaustive_ci.json; \
+			python3 test/parity/fuzz_diff.py --cases 4 --max-ops 2; \
+			;; \
+		*) \
+			echo "Unknown PARITY_MODE=$(PARITY_MODE)"; \
+			echo "Use one of: sampled, exhaustive, fuzz, fuzz-smoke, all"; \
+			exit 2; \
+			;; \
+	esac
 
 $(FONT_DIR)/.downloaded:
 	@mkdir -p $(FONT_DIR)

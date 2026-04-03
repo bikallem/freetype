@@ -27,7 +27,7 @@ def main():
             goldens[name] = json.load(f)
 
     if not goldens:
-        print("No golden files found. Run: make parity-golden")
+        print("No golden files found. Run: make parity")
         return 1
 
     # Run MoonBit parity tests and capture results
