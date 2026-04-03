@@ -927,7 +927,7 @@ test "render_glyph: bitmap font can be re-rendered as sdf" {
 }
 
 ///|
-test "load_glyph: OT-SVG fonts no longer use an SVG color-render path" {
+test "contract/ot-svg: LOAD_COLOR falls back to outline and grayscale rendering" {
   let face = from_bytes(render_svg_test_font())
   inspect(face.has_color(), content="true")
   inspect((face.face_flags() & @base.FACE_FLAG_SVG) != 0L, content="true")

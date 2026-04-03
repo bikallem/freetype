@@ -67,7 +67,7 @@ The following FreeType subsystems are **excluded** from this port:
 | **FT_Library global state** | Eliminated — API is stateless, no initialization needed |
 | **Memory allocator** (`FT_ALLOC`/`FT_FREE`/`FT_Memory`) | Eliminated — GC handles memory |
 | **FT_Generic** (user data hooks) | Omitted — users wrap `Face` in their own struct |
-| **OT-SVG renderer** (`SVG ` table rendering) | Not implemented — the runtime exposes SVG table metadata but does not ship an SVG rasterizer |
+| **OT-SVG renderer** (`SVG ` table rendering) | Not implemented — the runtime exposes SVG table metadata and `FACE_FLAG_SVG`, but `LOAD_COLOR` still falls back to outline/grayscale rendering because no SVG glyph loader or rasterizer is shipped |
 
 ## Compatibility Target
 
