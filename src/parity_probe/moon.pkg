@@ -1,0 +1,12 @@
+import {
+  "bikallem/freetype",
+  "bikallem/freetype/base",
+  "moonbitlang/core/env" @env,
+  "moonbitlang/x/fs" @fs,
+}
+
+warnings = "-20"
+
+options(
+  "is-main": true,
+)

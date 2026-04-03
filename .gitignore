@@ -1,4 +1,5 @@
 vendor
+__pycache__/
 
 # MoonBit build artifacts
 _build/
@@ -28,6 +29,7 @@ test/fonts/.downloaded
 # Golden generator binary
 test/golden/generate/gen_golden
 test/golden/generate/gen_diff_oracle
+test/parity/artifacts/
 
 # Benchmark binary
 bench/bench_c

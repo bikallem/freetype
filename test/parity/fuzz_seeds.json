@@ -1,0 +1,69 @@
+{
+  "seeds": [
+    {
+      "name": "ttf-core",
+      "focus_tags": ["cmap", "head", "hhea", "hmtx", "loca", "glyf", "maxp"],
+      "run": {
+        "font": "test/fonts/minimal.ttf",
+        "dimensions": ["charmaps", "glyphs", "render", "kerning"],
+        "glyph_sizes": [16],
+        "render_sizes": [16],
+        "glyph_load_flags": ["NO_SCALE", "NO_HINTING"],
+        "render_load_flags": ["NO_HINTING"],
+        "render_modes": ["NORMAL", "LIGHT", "MONO", "LCD", "LCD_V"]
+      }
+    },
+    {
+      "name": "cff-core",
+      "focus_tags": ["cmap", "head", "hhea", "hmtx", "maxp", "CFF "],
+      "run": {
+        "font": "test/fonts/minimal.otf",
+        "dimensions": ["charmaps", "glyphs", "render", "kerning"],
+        "glyph_sizes": [16],
+        "render_sizes": [16],
+        "glyph_load_flags": ["NO_SCALE", "NO_HINTING"],
+        "render_load_flags": ["NO_HINTING"],
+        "render_modes": ["NORMAL", "LIGHT", "MONO", "LCD", "LCD_V"]
+      }
+    },
+    {
+      "name": "cbdt-color",
+      "focus_tags": ["CBDT", "CBLC", "cmap", "head", "maxp"],
+      "run": {
+        "font": "test/fonts/minimal_cbdt_matrix.ttf",
+        "dimensions": ["render"],
+        "render_sizes": [16],
+        "render_load_flags": ["COLOR_NO_HINTING"],
+        "render_modes": ["NORMAL"]
+      }
+    },
+    {
+      "name": "uvs",
+      "focus_tags": ["cmap", "head", "maxp"],
+      "run": {
+        "font": "test/fonts/uvs.ttf",
+        "dimensions": ["charmaps", "glyphs"],
+        "glyph_load_flags": ["NO_SCALE"]
+      }
+    },
+    {
+      "name": "mvar",
+      "focus_tags": ["MVAR", "fvar", "gvar", "cmap", "head", "hhea"],
+      "run": {
+        "font": "test/fonts/mvar.ttf",
+        "dimensions": ["glyphs"],
+        "glyph_load_flags": ["NO_SCALE"]
+      }
+    },
+    {
+      "name": "cff2-var",
+      "focus_tags": ["CFF2", "fvar", "avar", "cmap", "head", "hhea"],
+      "run": {
+        "font": "test/fonts/cff2_vf.otf",
+        "dimensions": ["glyphs"],
+        "glyph_load_flags": ["NO_SCALE"],
+        "variation": "non-default"
+      }
+    }
+  ]
+}

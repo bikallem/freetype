@@ -66,6 +66,10 @@ Repository documentation and comments should use the following wording:
 - The sampled suite (`make parity`) is supplemented by a whole-font
   differential runner (`make parity-exhaustive-ci`) for deterministic
   curated-corpus sweeps over selected dimensions.
+- Generated and mutational differentials (`make parity-fuzz-smoke` for CI,
+  `make parity-fuzz` for longer local runs) compare load status and selected
+  glyph/render semantics against the vendored oracle, and they must emit
+  minimized repro artifacts on mismatch.
 - Contract tests run intentional exclusions separately from parity. In this
   repository the dedicated entry point is `make contracts`.
 - Intentional exclusions use explicit contract tests and must not silently

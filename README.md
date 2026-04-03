@@ -206,6 +206,7 @@ make test      # Run unit tests
 make contracts # Run intentional-incompatibility contract tests
 make parity    # Run parity tests against C FreeType golden data
 make parity-exhaustive-ci # Run reduced whole-font differentials against vendored FreeType
+make parity-fuzz-smoke # Run deterministic mutational differentials and save minimized repros
 make fmt       # Format code + regenerate .mbti files
 make bench     # Run C vs MoonBit benchmark comparison
 make clean     # Remove build artifacts
@@ -227,6 +228,8 @@ behaviors that are out of scope by design, such as the OT-SVG fallback path.
 3. **Font loading** — Tests read fonts from disk at runtime via `@fs.read_file_to_bytes()` (native target).
 
 4. **Whole-font differentials** — `test/parity/exhaustive.py` drives a streamed NDJSON oracle emitted by `test/golden/generate/gen_diff_oracle.c`, then runs the native MoonBit diff CLI in `src/parity_diff`. This path is for exhaustive or selected-dimension sweeps over complete fonts rather than sampled regression coverage. The reduced deterministic subset is wired to `make parity-exhaustive-ci`.
+
+5. **Generated and fuzzed differentials** — `test/parity/fuzz_diff.py` mutates a deterministic seed corpus declared in `test/parity/fuzz_seeds.json`, compares MoonBit load behavior through `src/parity_probe`, then runs `src/parity_diff` whenever both runtimes accept the mutated font. On any load-status or semantic mismatch it greedily minimizes the mutation sequence and writes a repro bundle under `test/parity/artifacts/`.
 
 **Fonts tested** (real corpus plus synthetic edge-case fixtures):
 
@@ -271,6 +274,7 @@ Use the exhaustive runner when the sampled suite is not enough:
 
 ```bash
 make parity-exhaustive-ci
+make parity-fuzz-smoke
 python3 test/parity/exhaustive.py \
   --font test/fonts/minimal.ttf \
   --dimensions charmaps,glyphs,render,kerning \
@@ -279,9 +283,11 @@ python3 test/parity/exhaustive.py \
   --glyph-load-flags NO_SCALE,NO_HINTING \
   --render-load-flags NO_HINTING \
   --render-modes NORMAL,LIGHT,MONO,LCD,LCD_V
+python3 test/parity/fuzz_diff.py --seed 20260403 --cases 8 --max-ops 2
 ```
 
 It supports full-font sweeps per run, selected dimensions (`charmaps`, `glyphs`, `render`, `kerning`), reduced case matrices via oracle filtering, and exact mismatch reporting at font/glyph/size/flag/mode granularity.
+The fuzz path adds deterministic table mutations for selected SFNT seeds and stores minimized mismatch artifacts in `test/parity/artifacts/`.
 
 Run the parity report:
 
