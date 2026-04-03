@@ -52,18 +52,9 @@ bd close <id>         # Complete work
 
 ## Build & Test
 
-_Add your build and test commands here_
-
-```bash
-# Example:
-# npm install
-# npm test
-```
 
 ## Architecture Overview
 
-_Add a brief overview of your project architecture_
 
 ## Conventions & Patterns
 
-_Add your project-specific conventions here_
