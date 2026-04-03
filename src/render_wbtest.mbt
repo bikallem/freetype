@@ -19,6 +19,11 @@ fn render_color_ref_test_font() -> Bytes {
 }
 
 ///|
+fn render_cpal_only_test_font() -> Bytes {
+  try! @fs.read_file_to_bytes("test/fonts/minimal_cpal_only.ttf")
+}
+
+///|
 fn render_svg_test_font() -> Bytes {
   try! @fs.read_file_to_bytes("test/fonts/ab_svg.ttf")
 }
@@ -706,6 +711,16 @@ test "load_glyph: LOAD_COLOR renders COLR v0 layers and palette selection" {
     has_bgra_pixel(face.glyph().bitmap(), b'\x00', b'\xFF', b'\xFF', b'\xFF'),
     content="true",
   )
+}
+
+///|
+test "load_glyph: CPAL-only fonts expose palettes without claiming color glyph support" {
+  let face = from_bytes(render_cpal_only_test_font())
+  inspect(face.has_color(), content="false")
+  inspect(get_palette_data(face) is Some(_), content="true")
+  inspect((face.face_flags() & @base.FACE_FLAG_COLOR) != 0L, content="false")
+  let palette = try! select_palette(face, 0U)
+  inspect(palette.length(), content="2")
 }
 
 ///|

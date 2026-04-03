@@ -9,6 +9,7 @@ target/
 test/fonts/*.ttf
 !test/fonts/ab_svg.ttf
 !test/fonts/mvar.ttf
+!test/fonts/minimal_cpal_only.ttf
 !test/fonts/minimal_cbdt_matrix.ttf
 !test/fonts/minimal_sbix_refs.ttf
 !test/fonts/uvs.ttf

@@ -1010,7 +1010,6 @@ fn load_sfnt(
   match color_tables {
     Some(tables) => {
       if tables.palette_data() is Some(palette_data) {
-        face.set_face_flags(face.face_flags() | @base.FACE_FLAG_COLOR)
         face.set_palette_data(Some(palette_data))
         match tables.select_palette(0U) {
           Some(default_palette) => {

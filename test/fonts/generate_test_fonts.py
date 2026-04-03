@@ -4,6 +4,7 @@ generate_test_fonts.py — Generate minimal synthetic test fonts for FreeType te
 
 Generates:
   minimal.ttf  — Minimal TrueType font (3 glyphs: .notdef, space, A)
+  minimal_cpal_only.ttf — Minimal TrueType font with CPAL palette data only
   mvar.ttf     — Minimal variable TrueType font with MVAR face-metric deltas
   uvs.ttf      — Minimal TrueType font with cmap format 14 variation selectors
   minimal.otf  — Minimal CFF/OpenType font (OTTO signature)
@@ -1715,6 +1716,28 @@ def generate_colr_v0_ttf() -> bytes:
     return assemble_sfnt(tables, sfnt_version=b'\x00\x01\x00\x00')
 
 
+def generate_cpal_only_ttf() -> bytes:
+    glyf_data, loca_data = build_glyf_and_loca()
+    palettes = [
+        [(0x00, 0x00, 0xFF, 0xFF), (0xFF, 0x00, 0x00, 0xFF)],
+    ]
+    tables = {
+        'head': build_head_table(x_min=0, y_min=0, x_max=450, y_max=700,
+                                 index_to_loc_format=0),
+        'hhea': build_hhea_table(num_hmetrics=3, advance_width_max=500),
+        'maxp': build_maxp_table(num_glyphs=3, max_points=3, max_contours=1),
+        'OS/2': build_os2_table(),
+        'name': build_name_table(family='Minimal CPAL Only', style='Regular'),
+        'cmap': build_cmap_table(),
+        'post': build_post_table(),
+        'glyf': glyf_data,
+        'loca': loca_data,
+        'hmtx': build_hmtx_table(),
+        'CPAL': build_cpal_table(palettes),
+    }
+    return assemble_sfnt(tables, sfnt_version=b'\x00\x01\x00\x00')
+
+
 def generate_colr_v1_ttf() -> bytes:
     glyf_data, loca_data, hmtx, cmap = build_colr_glyph_set()
     palettes = [
@@ -2796,6 +2819,13 @@ def main():
     with open(colr_v0_path, 'wb') as f:
         f.write(colr_v0_data)
     print(f"  Written {len(colr_v0_data)} bytes to {colr_v0_path}")
+
+    print("Generating minimal_cpal_only.ttf...")
+    cpal_only_data = generate_cpal_only_ttf()
+    cpal_only_path = os.path.join(SCRIPT_DIR, 'minimal_cpal_only.ttf')
+    with open(cpal_only_path, 'wb') as f:
+        f.write(cpal_only_data)
+    print(f"  Written {len(cpal_only_data)} bytes to {cpal_only_path}")
 
     print("Generating minimal_colr_v1.ttf...")
     colr_v1_data = generate_colr_v1_ttf()
