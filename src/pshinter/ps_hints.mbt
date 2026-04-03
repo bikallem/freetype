@@ -48,6 +48,26 @@ struct FittedStem {
 } derive(Eq, Show)
 
 ///|
+pub fn FittedStem::org_pos(self : FittedStem) -> Int64 {
+  self.org_pos
+}
+
+///|
+pub fn FittedStem::org_width(self : FittedStem) -> Int64 {
+  self.org_width
+}
+
+///|
+pub fn FittedStem::cur_pos(self : FittedStem) -> Int64 {
+  self.cur_pos
+}
+
+///|
+pub fn FittedStem::cur_width(self : FittedStem) -> Int64 {
+  self.cur_width
+}
+
+///|
 /// Apply PS hinting to align stem edges to pixel grid.
 /// This is a simplified version of the full hinting algorithm.
 pub fn align_stem(
@@ -153,15 +173,44 @@ fn fit_blue_zone_edge(
   scale : @fixed.Fixed,
   top_edge : Bool,
 ) -> Int64? {
-  ignore(top_edge)
+  let no_overshoots = scale < globals.blue_scale()
+  let mut threshold = globals.blue_shift()
+  if threshold > 0L &&
+    @fixed.mul_fix(scale, @fixed.Fixed::from_raw(threshold)).val() > 32L &&
+    scale.val() > 0L {
+    threshold = @fixed.mul_div(32L, 0x10000L, scale.val())
+  }
   for _, zone in zones {
+    if top_edge {
+      if zone.is_bottom {
+        continue
+      }
+    } else if !zone.is_bottom {
+      continue
+    }
     if position < zone.bottom - globals.blue_fuzz() ||
       position > zone.top + globals.blue_fuzz() {
       continue
     }
-    return Some(
-      pix_round(@fixed.mul_fix(scale, @fixed.Fixed::from_raw(zone.top)).val()),
-    )
+    if top_edge {
+      let delta = position - zone.bottom
+      if no_overshoots || delta <= threshold {
+        return Some(
+          pix_round(
+            @fixed.mul_fix(scale, @fixed.Fixed::from_raw(zone.flat)).val(),
+          ),
+        )
+      }
+    } else {
+      let delta = zone.top - position
+      if no_overshoots || delta < threshold {
+        return Some(
+          pix_round(
+            @fixed.mul_fix(scale, @fixed.Fixed::from_raw(zone.flat)).val(),
+          ),
+        )
+      }
+    }
   }
   None
 }

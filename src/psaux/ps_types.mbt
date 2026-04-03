@@ -41,6 +41,11 @@ struct StemHint {
 } derive(Eq, Show)
 
 ///|
+pub fn StemHint::new(position : Int64, width : Int64) -> StemHint {
+  { position, width }
+}
+
+///|
 pub fn StemHint::position(self : StemHint) -> Int64 {
   self.position
 }

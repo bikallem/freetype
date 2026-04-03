@@ -24,3 +24,41 @@ test "PsGlobals::new defaults" {
   inspect(g.blue_fuzz, content="1")
   inspect(g.std_hw, content="0")
 }
+
+///|
+test "fit_stems: top blue zones snap the top edge to the flat reference edge" {
+  let defaults = PsGlobals::new()
+  let globals = build_ps_globals(
+    [-10, 0, 500, 510],
+    [],
+    0,
+    0,
+    @fixed.Fixed::from_int(128),
+    defaults.blue_shift().to_int(),
+    defaults.blue_fuzz().to_int(),
+  )
+  let scale = @fixed.Fixed::from_int(64)
+  let fitted = fit_stems([@psaux.StemHint::new(500L, 10L)], globals, scale, true)
+  inspect(fitted.length(), content="1")
+  inspect(fitted[0].cur_pos() + fitted[0].cur_width(), content="32000")
+  inspect(fitted[0].cur_pos(), content="31360")
+}
+
+///|
+test "fit_stems: bottom zones only snap the bottom edge" {
+  let defaults = PsGlobals::new()
+  let globals = build_ps_globals(
+    [-10, 0, 500, 510],
+    [],
+    0,
+    0,
+    @fixed.Fixed::from_int(128),
+    defaults.blue_shift().to_int(),
+    defaults.blue_fuzz().to_int(),
+  )
+  let scale = @fixed.Fixed::from_int(64)
+  let fitted = fit_stems([@psaux.StemHint::new(-10L, 10L)], globals, scale, true)
+  inspect(fitted.length(), content="1")
+  inspect(fitted[0].cur_pos(), content="0")
+  inspect(fitted[0].cur_pos() + fitted[0].cur_width(), content="640")
+}
