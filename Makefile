@@ -1,4 +1,4 @@
-.PHONY: all build test contracts fmt clean parity parity-tests bench check
+.PHONY: all build test contracts fmt clean parity parity-tests parity-exhaustive parity-exhaustive-ci bench check
 
 # Default: build, format, and test (no bench — it's slow)
 all: build fmt test parity info
@@ -64,6 +64,12 @@ parity-tests: parity-golden
 
 parity-report: parity-golden
 	@python3 test/parity/report.py
+
+parity-exhaustive:
+	@python3 test/parity/exhaustive.py --config test/parity/exhaustive_ci.json
+
+parity-exhaustive-ci:
+	@python3 test/parity/exhaustive.py --config test/parity/exhaustive_ci.json
 
 $(FONT_DIR)/.downloaded:
 	@mkdir -p $(FONT_DIR)

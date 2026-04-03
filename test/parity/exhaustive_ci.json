@@ -1,0 +1,87 @@
+{
+  "runs": [
+    {
+      "name": "truetype-minimal",
+      "font": "test/fonts/minimal.ttf",
+      "dimensions": ["charmaps", "glyphs", "render", "kerning"],
+      "glyph_sizes": [16],
+      "render_sizes": [16],
+      "glyph_load_flags": ["NO_SCALE", "NO_HINTING"],
+      "render_load_flags": ["NO_HINTING"],
+      "render_modes": ["NORMAL", "LIGHT", "MONO", "LCD", "LCD_V"]
+    },
+    {
+      "name": "cff-opentype-minimal",
+      "font": "test/fonts/minimal.otf",
+      "dimensions": ["charmaps", "glyphs", "render", "kerning"],
+      "glyph_sizes": [16],
+      "render_sizes": [16],
+      "glyph_load_flags": ["NO_SCALE", "NO_HINTING"],
+      "render_load_flags": ["NO_HINTING"],
+      "render_modes": ["NORMAL", "LIGHT", "MONO", "LCD", "LCD_V"]
+    },
+    {
+      "name": "standalone-cff-minimal",
+      "font": "test/fonts/minimal_standalone.cff",
+      "dimensions": ["charmaps", "glyphs", "render", "kerning"],
+      "glyph_sizes": [16],
+      "render_sizes": [16],
+      "glyph_load_flags": ["NO_SCALE", "NO_HINTING"],
+      "render_load_flags": ["NO_HINTING"],
+      "render_modes": ["NORMAL", "LIGHT", "MONO", "LCD", "LCD_V"]
+    },
+    {
+      "name": "type1-minimal",
+      "font": "test/fonts/minimal.pfb",
+      "dimensions": ["charmaps", "glyphs", "render", "kerning"],
+      "glyph_sizes": [16],
+      "render_sizes": [16],
+      "glyph_load_flags": ["NO_SCALE", "NO_HINTING"],
+      "render_load_flags": ["NO_HINTING"],
+      "render_modes": ["NORMAL", "LIGHT", "MONO", "LCD", "LCD_V"]
+    },
+    {
+      "name": "ttc-minimal",
+      "font": "test/fonts/minimal.ttc",
+      "dimensions": ["charmaps", "glyphs", "render", "kerning"],
+      "glyph_sizes": [16],
+      "render_sizes": [16],
+      "glyph_load_flags": ["NO_SCALE", "NO_HINTING"],
+      "render_load_flags": ["NO_HINTING"],
+      "render_modes": ["NORMAL", "LIGHT", "MONO", "LCD", "LCD_V"]
+    },
+    {
+      "name": "woff2-minimal",
+      "font": "test/fonts/minimal.woff2",
+      "dimensions": ["charmaps", "glyphs", "render", "kerning"],
+      "glyph_sizes": [16],
+      "render_sizes": [16],
+      "glyph_load_flags": ["NO_SCALE", "NO_HINTING"],
+      "render_load_flags": ["NO_HINTING"],
+      "render_modes": ["NORMAL", "LIGHT", "MONO", "LCD", "LCD_V"]
+    },
+    {
+      "name": "bdf-minimal",
+      "font": "test/fonts/minimal.bdf",
+      "dimensions": ["charmaps"]
+    },
+    {
+      "name": "pcf-minimal",
+      "font": "test/fonts/minimal.pcf",
+      "dimensions": ["charmaps"]
+    },
+    {
+      "name": "cff2-variable-default",
+      "font": "test/fonts/cff2_vf.otf",
+      "dimensions": ["glyphs"],
+      "glyph_load_flags": ["NO_SCALE"]
+    },
+    {
+      "name": "cff2-variable-instance",
+      "font": "test/fonts/cff2_vf.otf",
+      "dimensions": ["glyphs"],
+      "glyph_load_flags": ["NO_SCALE"],
+      "variation": "non-default"
+    }
+  ]
+}

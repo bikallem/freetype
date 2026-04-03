@@ -27,6 +27,7 @@ test/fonts/.downloaded
 
 # Golden generator binary
 test/golden/generate/gen_golden
+test/golden/generate/gen_diff_oracle
 
 # Benchmark binary
 bench/bench_c

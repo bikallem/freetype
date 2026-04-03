@@ -63,6 +63,9 @@ Repository documentation and comments should use the following wording:
 
 - Differential parity tests compare supported behavior against the vendored
   oracle.
+- The sampled suite (`make parity`) is supplemented by a whole-font
+  differential runner (`make parity-exhaustive-ci`) for deterministic
+  curated-corpus sweeps over selected dimensions.
 - Contract tests run intentional exclusions separately from parity. In this
   repository the dedicated entry point is `make contracts`.
 - Intentional exclusions use explicit contract tests and must not silently

@@ -18,9 +18,12 @@ OUTPUT_DIR = ../data
 
 .PHONY: all clean generate
 
-all: gen_golden
+all: gen_golden gen_diff_oracle
 
 gen_golden: gen_golden.c $(FREETYPE_DIR)/objs/libfreetype.a
+	$(CC) $(CFLAGS) -o $@ $< $(LDFLAGS)
+
+gen_diff_oracle: gen_diff_oracle.c $(FREETYPE_DIR)/objs/libfreetype.a
 	$(CC) $(CFLAGS) -o $@ $< $(LDFLAGS)
 
 generate: gen_golden
@@ -28,4 +31,4 @@ generate: gen_golden
 	python3 generate.py $(FONT_DIR) $(OUTPUT_DIR)
 
 clean:
-	rm -f gen_golden
+	rm -f gen_golden gen_diff_oracle

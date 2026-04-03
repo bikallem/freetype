@@ -1,0 +1,16 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "bikallem/freetype/parity_diff"
+
+// Values
+
+// Errors
+
+// Types and methods
+type DiffState derive(Show)
+
+type OracleHeader
+
+// Type aliases
+
+// Traits
+

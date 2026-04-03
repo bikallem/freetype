@@ -205,6 +205,7 @@ make build     # Compile
 make test      # Run unit tests
 make contracts # Run intentional-incompatibility contract tests
 make parity    # Run parity tests against C FreeType golden data
+make parity-exhaustive-ci # Run reduced whole-font differentials against vendored FreeType
 make fmt       # Format code + regenerate .mbti files
 make bench     # Run C vs MoonBit benchmark comparison
 make clean     # Remove build artifacts
@@ -224,6 +225,8 @@ the exclusion-contract suite with `make contracts`; those tests document
 behaviors that are out of scope by design, such as the OT-SVG fallback path.
 
 3. **Font loading** — Tests read fonts from disk at runtime via `@fs.read_file_to_bytes()` (native target).
+
+4. **Whole-font differentials** — `test/parity/exhaustive.py` drives a streamed NDJSON oracle emitted by `test/golden/generate/gen_diff_oracle.c`, then runs the native MoonBit diff CLI in `src/parity_diff`. This path is for exhaustive or selected-dimension sweeps over complete fonts rather than sampled regression coverage. The reduced deterministic subset is wired to `make parity-exhaustive-ci`.
 
 **Fonts tested** (real corpus plus synthetic edge-case fixtures):
 
@@ -261,6 +264,24 @@ behaviors that are out of scope by design, such as the OT-SVG fallback path.
 - Rendered bitmap parity: pixel mode, dimensions, bearings, buffer bytes
 - TTC multi-face loading
 - Kerning pair values (up to 20 pairs)
+
+**Whole-font runner**
+
+Use the exhaustive runner when the sampled suite is not enough:
+
+```bash
+make parity-exhaustive-ci
+python3 test/parity/exhaustive.py \
+  --font test/fonts/minimal.ttf \
+  --dimensions charmaps,glyphs,render,kerning \
+  --glyph-sizes 16 \
+  --render-sizes 16 \
+  --glyph-load-flags NO_SCALE,NO_HINTING \
+  --render-load-flags NO_HINTING \
+  --render-modes NORMAL,LIGHT,MONO,LCD,LCD_V
+```
+
+It supports full-font sweeps per run, selected dimensions (`charmaps`, `glyphs`, `render`, `kerning`), reduced case matrices via oracle filtering, and exact mismatch reporting at font/glyph/size/flag/mode granularity.
 
 Run the parity report:
 
