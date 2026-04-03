@@ -213,6 +213,10 @@ make clean     # Remove build artifacts
 make all       # build + fmt + test + parity
 ```
 
+If you use Nix, enter the LLVM/libFuzzer toolchain shell with `nix develop`.
+The repo-local [flake.nix](/home/blem/projects/freetype/flake.nix) provides
+`clang`, `llvm`, `lld`, and `compiler-rt` for coverage-guided fuzzing work.
+
 ## Parity Testing
 
 Parity tests verify that the MoonBit port produces identical results to the vendored C FreeType library across all supported font formats. The test pipeline:
