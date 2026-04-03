@@ -6,6 +6,7 @@ MoonBit FreeType-compatible font engine with pure MoonBit drivers.
 
 - [Features](#features)
 - [What Is Not Ported](#what-is-not-ported)
+- [Compatibility Target](#compatibility-target)
 - [API](#api)
 - [Project Structure](#project-structure)
 - [Build](#build)
@@ -67,6 +68,17 @@ The following FreeType subsystems are **excluded** from this port:
 | **Memory allocator** (`FT_ALLOC`/`FT_FREE`/`FT_Memory`) | Eliminated — GC handles memory |
 | **FT_Generic** (user data hooks) | Omitted — users wrap `Face` in their own struct |
 | **OT-SVG renderer** (`SVG ` table rendering) | Not implemented — the runtime exposes SVG table metadata but does not ship an SVG rasterizer |
+
+## Compatibility Target
+
+Compatibility claims in this repository are pinned to the vendored FreeType
+2.14.2 snapshot in `vendor/freetype-c`, not to a floating upstream idea of
+"current FreeType". The MoonBit runtime is expected to match that vendored
+oracle for the supported surface, with explicit exclusions such as the missing
+OT-SVG glyph-document/render path.
+
+The full decision record, allowed wording, and exclusion list live in
+[`docs/compatibility.md`](docs/compatibility.md).
 
 ## API
 
