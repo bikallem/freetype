@@ -8,11 +8,15 @@ fn build_ps_globals_from_cff_private(
   private_dict : @cff.CffPrivateDict,
 ) -> @pshinter.PsGlobals {
   let defaults = @pshinter.PsGlobals::new()
-  @pshinter.build_ps_globals(
+  @pshinter.build_ps_globals_with_private(
     private_dict.blue_values().map(fn(v) { v.to_int() }),
     private_dict.other_blues().map(fn(v) { v.to_int() }),
+    private_dict.family_blues().map(fn(v) { v.to_int() }),
+    private_dict.family_other_blues().map(fn(v) { v.to_int() }),
     private_dict.std_hw().to_int(),
     private_dict.std_vw().to_int(),
+    private_dict.stem_snap_h().map(fn(v) { v.to_int() }),
+    private_dict.stem_snap_v().map(fn(v) { v.to_int() }),
     match private_dict.blue_scale() {
       Some(value) => fixed_from_double(value)
       None => defaults.blue_scale()

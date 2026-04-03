@@ -413,14 +413,21 @@ fn load_type1_pfb(data : Bytes) -> @base.FaceRec raise @error.FTError {
       Some(g) => g
       None => {
         let defaults = @pshinter.PsGlobals::new()
-        let g = @pshinter.build_ps_globals(
+        let g = @pshinter.build_ps_globals_with_private(
           font.blue_values(),
           font.other_blues(),
+          font.family_blues(),
+          font.family_other_blues(),
           font.std_hw(),
           font.std_vw(),
-          defaults.blue_scale(),
-          defaults.blue_shift().to_int(),
-          defaults.blue_fuzz().to_int(),
+          font.stem_snap_h(),
+          font.stem_snap_v(),
+          match font.blue_scale() {
+            Some(value) => double_to_fixed(value)
+            None => defaults.blue_scale()
+          },
+          font.blue_shift().unwrap_or(defaults.blue_shift().to_int()),
+          font.blue_fuzz().unwrap_or(defaults.blue_fuzz().to_int()),
         )
         hint_globals_ref.val = Some(g)
         g

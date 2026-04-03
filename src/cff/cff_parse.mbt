@@ -427,6 +427,8 @@ pub fn parse_private_dict(data : Bytes) -> CffPrivateDict {
               if stack.length() > 0 {
                 dict.blue_fuzz = Some(stack[0].to_int())
               }
+            12 => dict.stem_snap_h = delta_operands_to_i64(stack)
+            13 => dict.stem_snap_v = delta_operands_to_i64(stack)
             _ => ()
           }
         }
@@ -438,6 +440,12 @@ pub fn parse_private_dict(data : Bytes) -> CffPrivateDict {
           7 =>
             // OtherBlues
             dict.other_blues = delta_operands_to_i64(stack)
+          8 =>
+            // FamilyBlues
+            dict.family_blues = delta_operands_to_i64(stack)
+          9 =>
+            // FamilyOtherBlues
+            dict.family_other_blues = delta_operands_to_i64(stack)
           10 =>
             // StdHW
             if stack.length() > 0 {
@@ -587,6 +595,8 @@ pub fn parse_private_dict_cff2(
             if stack.length() > 0 {
               dict.blue_fuzz = Some(stack[0].to_int())
             }
+          12 => dict.stem_snap_h = delta_operands_to_i64(stack)
+          13 => dict.stem_snap_v = delta_operands_to_i64(stack)
           _ => ()
         }
       }
@@ -618,6 +628,8 @@ pub fn parse_private_dict_cff2(
       match b0 {
         6 => dict.blue_values = delta_operands_to_i64(stack)
         7 => dict.other_blues = delta_operands_to_i64(stack)
+        8 => dict.family_blues = delta_operands_to_i64(stack)
+        9 => dict.family_other_blues = delta_operands_to_i64(stack)
         10 => if stack.length() > 0 { dict.std_hw = stack[0].to_int64() }
         11 => if stack.length() > 0 { dict.std_vw = stack[0].to_int64() }
         19 =>

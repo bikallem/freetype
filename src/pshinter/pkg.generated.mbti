@@ -14,6 +14,8 @@ pub fn apply_blue_zone(Int64, Array[BlueZone], @fixed.Fixed, Int64) -> Int64?
 
 pub fn build_ps_globals(Array[Int], Array[Int], Int, Int, @fixed.Fixed, Int, Int) -> PsGlobals
 
+pub fn build_ps_globals_with_private(Array[Int], Array[Int], Array[Int], Array[Int], Int, Int, Array[Int], Array[Int], @fixed.Fixed, Int, Int) -> PsGlobals
+
 pub fn fit_stems(Array[@psaux.StemHint], PsGlobals, @fixed.Fixed, Bool) -> Array[FittedStem]
 
 pub fn hint_outline(@types.Outline, Array[@psaux.StemHint], Array[@psaux.StemHint], PsGlobals, @fixed.Fixed) -> Unit
@@ -26,14 +28,22 @@ pub fn interpolate_points(@types.Outline, Array[FittedStem], Array[FittedStem], 
 type BlueZone derive(Eq, Show)
 
 type FittedStem derive(Eq, Show)
+pub fn FittedStem::cur_pos(Self) -> Int64
+pub fn FittedStem::cur_width(Self) -> Int64
+pub fn FittedStem::org_pos(Self) -> Int64
+pub fn FittedStem::org_width(Self) -> Int64
 
 type PsGlobals derive(Show)
 pub fn PsGlobals::blue_fuzz(Self) -> Int64
 pub fn PsGlobals::blue_scale(Self) -> @fixed.Fixed
 pub fn PsGlobals::blue_shift(Self) -> Int64
 pub fn PsGlobals::blue_values(Self) -> Array[BlueZone]
+pub fn PsGlobals::family_blues(Self) -> Array[BlueZone]
+pub fn PsGlobals::family_other_blues(Self) -> Array[BlueZone]
 pub fn PsGlobals::new() -> Self
 pub fn PsGlobals::other_blues(Self) -> Array[BlueZone]
+pub fn PsGlobals::snap_widths_h(Self) -> Array[Int64]
+pub fn PsGlobals::snap_widths_v(Self) -> Array[Int64]
 pub fn PsGlobals::std_hw(Self) -> Int64
 pub fn PsGlobals::std_vw(Self) -> Int64
 

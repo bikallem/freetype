@@ -73,8 +73,75 @@ test "Type1Font creation" {
   inspect(font.paint_type, content="0")
   inspect(font.std_hw, content="0")
   inspect(font.std_vw, content="0")
+  inspect(font.family_blues(), content="[]")
+  inspect(font.stem_snap_h(), content="[]")
+  inspect(font.blue_scale(), content="None")
   inspect(font.charstrings.length(), content="0")
   inspect(font.subrs.length(), content="0")
+}
+
+///|
+fn encrypt_type1_test_eexec(plaintext : Bytes) -> Bytes {
+  let mut key : UInt = 55665U
+  let out : Array[Byte] = []
+  for _ in 0..<4 {
+    let cipher = (key >> 8).to_byte()
+    out.push(cipher)
+    key = ((cipher.to_uint() + key) * 52845U + 22719U) & 0xFFFFU
+  }
+  for byte in plaintext {
+    let cipher = (byte.to_uint() ^ (key >> 8)).to_byte()
+    out.push(cipher)
+    key = ((cipher.to_uint() + key) * 52845U + 22719U) & 0xFFFFU
+  }
+  Bytes::from_array(out[:])
+}
+
+///|
+fn type1_test_hex_ascii(data : Bytes) -> Bytes {
+  let out : Array[Byte] = []
+  let digits = b"0123456789ABCDEF"
+  for byte in data {
+    out.push(digits[(byte.to_int() >> 4) & 0x0F])
+    out.push(digits[byte.to_int() & 0x0F])
+  }
+  Bytes::from_array(out[:])
+}
+
+///|
+test "parse_type1_pfa captures private dict hint arrays and blue parameters" {
+  let private_dict : Bytes = b"/BlueValues [-10 0 500 510] def\n" +
+    b"/OtherBlues [-220 -210] def\n" +
+    b"/FamilyBlues [96 106] def\n" +
+    b"/FamilyOtherBlues [-240 -230] def\n" +
+    b"/StdHW [18] def\n" +
+    b"/StdVW [80] def\n" +
+    b"/StemSnapH [18 22 28] def\n" +
+    b"/StemSnapV [80 90] def\n" +
+    b"/BlueScale 0.25 def\n" +
+    b"/BlueShift 7 def\n" +
+    b"/BlueFuzz 1 def\n"
+  let encrypted = type1_test_hex_ascii(encrypt_type1_test_eexec(private_dict))
+  let pfa : Bytes = b"%!PS-AdobeFont-1.0: HintData 001.000\n" +
+    b"/FontName /HintData def\n" +
+    b"/FamilyName (Hint Data) readonly def\n" +
+    b"/FontType 1 def\n" +
+    b"/Encoding StandardEncoding def\n" +
+    b"currentfile eexec\n" +
+    encrypted +
+    b"\ncleartomark\n"
+  let font = parse_type1_pfa(pfa)
+  inspect(font.blue_values(), content="[-10, 0, 500, 510]")
+  inspect(font.other_blues(), content="[-220, -210]")
+  inspect(font.family_blues(), content="[96, 106]")
+  inspect(font.family_other_blues(), content="[-240, -230]")
+  inspect(font.std_hw(), content="18")
+  inspect(font.std_vw(), content="80")
+  inspect(font.stem_snap_h(), content="[18, 22, 28]")
+  inspect(font.stem_snap_v(), content="[80, 90]")
+  inspect(font.blue_scale(), content="Some(0.25)")
+  inspect(font.blue_shift(), content="Some(7)")
+  inspect(font.blue_fuzz(), content="Some(1)")
 }
 
 ///|

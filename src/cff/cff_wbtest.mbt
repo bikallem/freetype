@@ -119,6 +119,30 @@ test "parse_private_dict: BlueScale, BlueShift, BlueFuzz" {
 }
 
 ///|
+test "parse_private_dict: family blues and stem snap arrays" {
+  let data : Bytes = concat_test_bytes([
+    encode_cff_test_int(96),
+    encode_cff_test_int(10),
+    Bytes::from_array([8]),
+    encode_cff_test_int(-220),
+    encode_cff_test_int(10),
+    Bytes::from_array([9]),
+    encode_cff_test_int(18),
+    encode_cff_test_int(4),
+    encode_cff_test_int(6),
+    Bytes::from_array([12, 12]),
+    encode_cff_test_int(80),
+    encode_cff_test_int(10),
+    Bytes::from_array([12, 13]),
+  ])
+  let dict = parse_private_dict(data)
+  inspect(dict.family_blues(), content="[96, 106]")
+  inspect(dict.family_other_blues(), content="[-220, -210]")
+  inspect(dict.stem_snap_h(), content="[18, 22, 28]")
+  inspect(dict.stem_snap_v(), content="[80, 90]")
+}
+
+///|
 fn load_scaled_fontmatrix_cff() -> Bytes {
   [
     1, 0, 4, 1, 0, 1, 1, 1, 18, 87, 105, 100, 116, 104, 84, 101, 115, 116, 45, 82,

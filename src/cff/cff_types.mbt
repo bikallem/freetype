@@ -86,8 +86,12 @@ struct CffPrivateDict {
   mut subrs_offset : UInt // relative to start of Private DICT
   mut blue_values : Array[Int64]
   mut other_blues : Array[Int64]
+  mut family_blues : Array[Int64]
+  mut family_other_blues : Array[Int64]
   mut std_hw : Int64
   mut std_vw : Int64
+  mut stem_snap_h : Array[Int64]
+  mut stem_snap_v : Array[Int64]
   mut blue_scale : Double?
   mut blue_shift : Int?
   mut blue_fuzz : Int?
@@ -102,8 +106,12 @@ pub fn CffPrivateDict::new() -> CffPrivateDict {
     subrs_offset: 0U,
     blue_values: [],
     other_blues: [],
+    family_blues: [],
+    family_other_blues: [],
     std_hw: 0L,
     std_vw: 0L,
+    stem_snap_h: [],
+    stem_snap_v: [],
     blue_scale: None,
     blue_shift: None,
     blue_fuzz: None,
@@ -328,6 +336,18 @@ pub fn CffPrivateDict::other_blues(self : CffPrivateDict) -> Array[Int64] {
 }
 
 ///|
+pub fn CffPrivateDict::family_blues(self : CffPrivateDict) -> Array[Int64] {
+  self.family_blues
+}
+
+///|
+pub fn CffPrivateDict::family_other_blues(
+  self : CffPrivateDict,
+) -> Array[Int64] {
+  self.family_other_blues
+}
+
+///|
 pub fn CffPrivateDict::default_width_x(self : CffPrivateDict) -> Int64 {
   self.default_width_x
 }
@@ -402,6 +422,16 @@ pub fn CffPrivateDict::std_hw(self : CffPrivateDict) -> Int64 {
 ///|
 pub fn CffPrivateDict::std_vw(self : CffPrivateDict) -> Int64 {
   self.std_vw
+}
+
+///|
+pub fn CffPrivateDict::stem_snap_h(self : CffPrivateDict) -> Array[Int64] {
+  self.stem_snap_h
+}
+
+///|
+pub fn CffPrivateDict::stem_snap_v(self : CffPrivateDict) -> Array[Int64] {
+  self.stem_snap_v
 }
 
 ///|

@@ -72,11 +72,15 @@ pub fn CffPrivateDict::blue_shift(Self) -> Int?
 pub fn CffPrivateDict::blue_values(Self) -> Array[Int64]
 pub fn CffPrivateDict::default_vsindex(Self) -> Int
 pub fn CffPrivateDict::default_width_x(Self) -> Int64
+pub fn CffPrivateDict::family_blues(Self) -> Array[Int64]
+pub fn CffPrivateDict::family_other_blues(Self) -> Array[Int64]
 pub fn CffPrivateDict::new() -> Self
 pub fn CffPrivateDict::nominal_width_x(Self) -> Int64
 pub fn CffPrivateDict::other_blues(Self) -> Array[Int64]
 pub fn CffPrivateDict::std_hw(Self) -> Int64
 pub fn CffPrivateDict::std_vw(Self) -> Int64
+pub fn CffPrivateDict::stem_snap_h(Self) -> Array[Int64]
+pub fn CffPrivateDict::stem_snap_v(Self) -> Array[Int64]
 
 type CffTopDict derive(Show)
 pub fn CffTopDict::charset_offset(Self) -> UInt

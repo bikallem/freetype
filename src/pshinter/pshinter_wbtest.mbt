@@ -38,7 +38,12 @@ test "fit_stems: top blue zones snap the top edge to the flat reference edge" {
     defaults.blue_fuzz().to_int(),
   )
   let scale = @fixed.Fixed::from_int(64)
-  let fitted = fit_stems([@psaux.StemHint::new(500L, 10L)], globals, scale, true)
+  let fitted = fit_stems(
+    [@psaux.StemHint::new(500L, 10L)],
+    globals,
+    scale,
+    true,
+  )
   inspect(fitted.length(), content="1")
   inspect(fitted[0].cur_pos() + fitted[0].cur_width(), content="32000")
   inspect(fitted[0].cur_pos(), content="31360")
@@ -57,8 +62,60 @@ test "fit_stems: bottom zones only snap the bottom edge" {
     defaults.blue_fuzz().to_int(),
   )
   let scale = @fixed.Fixed::from_int(64)
-  let fitted = fit_stems([@psaux.StemHint::new(-10L, 10L)], globals, scale, true)
+  let fitted = fit_stems(
+    [@psaux.StemHint::new(-10L, 10L)],
+    globals,
+    scale,
+    true,
+  )
   inspect(fitted.length(), content="1")
   inspect(fitted[0].cur_pos(), content="0")
   inspect(fitted[0].cur_pos() + fitted[0].cur_width(), content="640")
+}
+
+///|
+test "fit_stems: family blues override the aligned flat edge when they match within one pixel" {
+  let defaults = PsGlobals::new()
+  let globals = build_ps_globals_with_private(
+    [-10, 0, 100, 110],
+    [],
+    [-8, 0, 96, 106],
+    [],
+    0,
+    0,
+    [],
+    [],
+    @fixed.Fixed::from_int(128),
+    defaults.blue_shift().to_int(),
+    defaults.blue_fuzz().to_int(),
+  )
+  let scale = @fixed.Fixed::from_int(8)
+  let fitted = fit_stems(
+    [@psaux.StemHint::new(100L, 10L)],
+    globals,
+    scale,
+    true,
+  )
+  inspect(fitted.length(), content="1")
+  inspect(fitted[0].cur_pos() + fitted[0].cur_width(), content="768")
+}
+
+///|
+test "build_ps_globals_with_private retains stem snap arrays" {
+  let defaults = PsGlobals::new()
+  let globals = build_ps_globals_with_private(
+    [],
+    [],
+    [],
+    [],
+    0,
+    0,
+    [43],
+    [],
+    defaults.blue_scale(),
+    defaults.blue_shift().to_int(),
+    defaults.blue_fuzz().to_int(),
+  )
+  inspect(globals.snap_widths_h(), content="[43]")
+  inspect(globals.snap_widths_v(), content="[]")
 }

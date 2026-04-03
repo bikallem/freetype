@@ -16,10 +16,17 @@ struct Type1Font {
   mut glyph_order : Array[String] // glyph order as stored in /CharStrings
   subrs : Array[Bytes] // subroutine array
   // Private dict values
-  blue_values : Array[Int] // BlueValues alignment zones
-  other_blues : Array[Int] // OtherBlues alignment zones
-  std_hw : Int // StdHW (dominant horizontal stem width)
-  std_vw : Int // StdVW (dominant vertical stem width)
+  mut blue_values : Array[Int] // BlueValues alignment zones
+  mut other_blues : Array[Int] // OtherBlues alignment zones
+  mut family_blues : Array[Int] // FamilyBlues alignment zones
+  mut family_other_blues : Array[Int] // FamilyOtherBlues alignment zones
+  mut std_hw : Int // StdHW (dominant horizontal stem width)
+  mut std_vw : Int // StdVW (dominant vertical stem width)
+  mut stem_snap_h : Array[Int] // StemSnapH widths
+  mut stem_snap_v : Array[Int] // StemSnapV widths
+  mut blue_scale : Double? // BlueScale
+  mut blue_shift : Int? // BlueShift
+  mut blue_fuzz : Int? // BlueFuzz
   default_width_x : Int64 // defaultWidthX
   nominal_width_x : Int64 // nominalWidthX
   mut len_iv : Int // lenIV for charstring decryption (default 4)
@@ -61,8 +68,15 @@ pub fn Type1Font::new() -> Type1Font {
     subrs: [],
     blue_values: [],
     other_blues: [],
+    family_blues: [],
+    family_other_blues: [],
     std_hw: 0,
     std_vw: 0,
+    stem_snap_h: [],
+    stem_snap_v: [],
+    blue_scale: None,
+    blue_shift: None,
+    blue_fuzz: None,
     default_width_x: 0L,
     nominal_width_x: 0L,
     len_iv: 4,
@@ -202,6 +216,7 @@ pub fn parse_type1_pfb(data : Bytes) -> Type1Font raise @error.FTError {
   // Decrypt binary segment (eexec encrypted private dict + charstrings)
   if binary_parts.length() > 0 {
     let decrypted = eexec_decrypt(binary_parts[0])
+    apply_private_dict_metadata(font, decrypted)
     // Parse /lenIV from decrypted data
     font.len_iv = extract_len_iv(decrypted)
     // Parse /CharStrings dict from decrypted data
@@ -285,6 +300,7 @@ fn parse_type1_pfa(data : Bytes) -> Type1Font {
       data[eexec_pos:text_len].to_bytes()
     }
     let decrypted = eexec_decrypt(binary_data)
+    apply_private_dict_metadata(font, decrypted)
     font.len_iv = extract_len_iv(decrypted)
     let (charstrings, glyph_order) = extract_charstrings(decrypted)
     font.charstrings = charstrings
@@ -903,6 +919,83 @@ fn extract_named_int(ascii_data : Bytes, key : String) -> Int {
     }
   }
   0
+}
+
+///|
+fn extract_named_double(ascii_data : Bytes, key : String) -> Double? {
+  let len = ascii_data.length()
+  for i in 0..<(len - key.length()) {
+    let mut match_ = true
+    if ascii_data[i] != b'/' {
+      continue
+    }
+    for j in 0..<key.length() {
+      if ascii_data[i + 1 + j] != key[j].to_byte() {
+        match_ = false
+        break
+      }
+    }
+    if !match_ {
+      continue
+    }
+    let (value, _, ok) = read_ps_number_token(ascii_data, i + key.length() + 1)
+    if ok {
+      return Some(value)
+    }
+  }
+  None
+}
+
+///|
+fn extract_named_number_array(ascii_data : Bytes, key : Bytes) -> Array[Int] {
+  let start = find_ps_array_start(ascii_data, key)
+  if start < 0 {
+    return []
+  }
+  let values : Array[Int] = []
+  let mut pos = start + 1
+  while pos < ascii_data.length() {
+    pos = skip_ascii_ws(ascii_data, pos)
+    if pos >= ascii_data.length() || ascii_data[pos] == b']' {
+      break
+    }
+    let (value, next_pos, ok) = read_ps_number_token(ascii_data, pos)
+    if !ok {
+      break
+    }
+    values.push(round_double_to_int_local(value))
+    pos = next_pos
+  }
+  values
+}
+
+///|
+fn apply_private_dict_metadata(font : Type1Font, decrypted : Bytes) -> Unit {
+  font.blue_values = extract_named_number_array(decrypted, b"/BlueValues")
+  font.other_blues = extract_named_number_array(decrypted, b"/OtherBlues")
+  font.family_blues = extract_named_number_array(decrypted, b"/FamilyBlues")
+  font.family_other_blues = extract_named_number_array(
+    decrypted, b"/FamilyOtherBlues",
+  )
+  let std_hw = extract_named_number_array(decrypted, b"/StdHW")
+  if !std_hw.is_empty() {
+    font.std_hw = std_hw[0]
+  }
+  let std_vw = extract_named_number_array(decrypted, b"/StdVW")
+  if !std_vw.is_empty() {
+    font.std_vw = std_vw[0]
+  }
+  font.stem_snap_h = extract_named_number_array(decrypted, b"/StemSnapH")
+  font.stem_snap_v = extract_named_number_array(decrypted, b"/StemSnapV")
+  font.blue_scale = extract_named_double(decrypted, "BlueScale")
+  let blue_shift = extract_named_double(decrypted, "BlueShift")
+  if blue_shift is Some(value) {
+    font.blue_shift = Some(round_double_to_int_local(value))
+  }
+  let blue_fuzz = extract_named_double(decrypted, "BlueFuzz")
+  if blue_fuzz is Some(value) {
+    font.blue_fuzz = Some(round_double_to_int_local(value))
+  }
 }
 
 ///|
@@ -1555,6 +1648,41 @@ pub fn Type1Font::std_hw(self : Type1Font) -> Int {
 ///|
 pub fn Type1Font::std_vw(self : Type1Font) -> Int {
   self.std_vw
+}
+
+///|
+pub fn Type1Font::family_blues(self : Type1Font) -> Array[Int] {
+  self.family_blues
+}
+
+///|
+pub fn Type1Font::family_other_blues(self : Type1Font) -> Array[Int] {
+  self.family_other_blues
+}
+
+///|
+pub fn Type1Font::stem_snap_h(self : Type1Font) -> Array[Int] {
+  self.stem_snap_h
+}
+
+///|
+pub fn Type1Font::stem_snap_v(self : Type1Font) -> Array[Int] {
+  self.stem_snap_v
+}
+
+///|
+pub fn Type1Font::blue_scale(self : Type1Font) -> Double? {
+  self.blue_scale
+}
+
+///|
+pub fn Type1Font::blue_shift(self : Type1Font) -> Int? {
+  self.blue_shift
+}
+
+///|
+pub fn Type1Font::blue_fuzz(self : Type1Font) -> Int? {
+  self.blue_fuzz
 }
 
 ///|

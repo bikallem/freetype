@@ -445,7 +445,27 @@ fn load_sfnt(
         hint_h_hints.val = hh
         hint_v_hints.val = hv
         hint_has_hints.val = hh.length() > 0 || hv.length() > 0
-        let pd = cff.private_dict_for_glyph(glyph_index)
+        let pd = if cff.is_cff2() && face.var_coords().length() > 0 {
+          let fd_idx = cff.fd_index_for_glyph(glyph_index)
+          let maybe_private_data = if fd_idx >= 0 &&
+            fd_idx < cff.fd_private_data().length() &&
+            cff.fd_private_data()[fd_idx].length() > 0 {
+            Some(cff.fd_private_data()[fd_idx])
+          } else {
+            cff.private_data()
+          }
+          match maybe_private_data {
+            Some(priv_data) if priv_data.length() > 0 =>
+              @cff.parse_private_dict_cff2(
+                priv_data,
+                vstore=cff.vstore(),
+                normalized_coords=face.var_coords(),
+              )
+            _ => cff.private_dict_for_glyph(glyph_index)
+          }
+        } else {
+          cff.private_dict_for_glyph(glyph_index)
+        }
         hint_globals_ref.val = Some(build_ps_globals_from_cff_private(pd))
       }
       (o, b"", @types.BBox::empty(), [])

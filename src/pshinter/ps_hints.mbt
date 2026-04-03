@@ -13,6 +13,8 @@ struct BlueZone {
 struct PsGlobals {
   blue_values : Array[BlueZone]
   other_blues : Array[BlueZone]
+  family_blues : Array[BlueZone]
+  family_other_blues : Array[BlueZone]
   blue_scale : @fixed.Fixed
   blue_shift : Int64
   blue_fuzz : Int64
@@ -27,6 +29,8 @@ pub fn PsGlobals::new() -> PsGlobals {
   {
     blue_values: [],
     other_blues: [],
+    family_blues: [],
+    family_other_blues: [],
     blue_scale: @fixed.Fixed::from_raw(0x29B7L), // 0.039625 default
     blue_shift: 7L,
     blue_fuzz: 1L,
@@ -135,10 +139,10 @@ fn snap_stem_side_delta(pos : Int64, len : Int64) -> Int64 {
 
 ///|
 fn quantize_stem_length(len : Int64, std_width : Int64) -> Int64 {
-  if len <= 64L {
+  let mut result = len
+  if result <= 64L {
     return 64L
   }
-  let mut result = len
   if std_width > 0L {
     let mut delta = result - std_width
     if delta < 0L {
@@ -166,9 +170,36 @@ fn quantize_stem_length(len : Int64, std_width : Int64) -> Int64 {
 }
 
 ///|
+fn family_blue_flat(
+  zone : BlueZone,
+  family_zones : Array[BlueZone],
+  scale : @fixed.Fixed,
+) -> Int64 {
+  let mut best = 64L
+  let mut flat = zone.flat
+  for _, family in family_zones {
+    if family.is_bottom != zone.is_bottom {
+      continue
+    }
+    let ref_delta = if zone.flat >= family.flat {
+      zone.flat - family.flat
+    } else {
+      family.flat - zone.flat
+    }
+    let scaled_delta = @fixed.mul_fix(scale, @fixed.Fixed::from_raw(ref_delta)).val()
+    if scaled_delta < best {
+      best = scaled_delta
+      flat = family.flat
+    }
+  }
+  flat
+}
+
+///|
 fn fit_blue_zone_edge(
   position : Int64,
   zones : Array[BlueZone],
+  family_zones : Array[BlueZone],
   globals : PsGlobals,
   scale : @fixed.Fixed,
   top_edge : Bool,
@@ -195,19 +226,17 @@ fn fit_blue_zone_edge(
     if top_edge {
       let delta = position - zone.bottom
       if no_overshoots || delta <= threshold {
+        let flat = family_blue_flat(zone, family_zones, scale)
         return Some(
-          pix_round(
-            @fixed.mul_fix(scale, @fixed.Fixed::from_raw(zone.flat)).val(),
-          ),
+          pix_round(@fixed.mul_fix(scale, @fixed.Fixed::from_raw(flat)).val()),
         )
       }
     } else {
       let delta = zone.top - position
       if no_overshoots || delta < threshold {
+        let flat = family_blue_flat(zone, family_zones, scale)
         return Some(
-          pix_round(
-            @fixed.mul_fix(scale, @fixed.Fixed::from_raw(zone.flat)).val(),
-          ),
+          pix_round(@fixed.mul_fix(scale, @fixed.Fixed::from_raw(flat)).val()),
         )
       }
     }
@@ -220,6 +249,55 @@ fn fit_blue_zone_edge(
 /// Blue values come in pairs: (reference, overshoot).
 /// The first pair in blue_values is the baseline zone (bottom zone);
 /// subsequent pairs are top zones. other_blues are all bottom zones.
+fn build_blue_zones(
+  values : Array[Int],
+  first_is_bottom : Bool,
+  all_are_bottom : Bool,
+) -> Array[BlueZone] {
+  let zones : Array[BlueZone] = []
+  for i = 0; i + 1 < values.length(); {
+    let v0 = values[i].to_int64()
+    let v1 = values[i + 1].to_int64()
+    let bottom = if v0 < v1 { v0 } else { v1 }
+    let top = if v0 > v1 { v0 } else { v1 }
+    let is_bottom = all_are_bottom || (first_is_bottom && i == 0)
+    let flat = if is_bottom { v1 } else { v0 }
+    zones.push({ bottom, top, flat, is_bottom })
+    continue i + 2
+  }
+  zones
+}
+
+///|
+pub fn build_ps_globals_with_private(
+  blue_values : Array[Int],
+  other_blues : Array[Int],
+  family_blues : Array[Int],
+  family_other_blues : Array[Int],
+  std_hw : Int,
+  std_vw : Int,
+  snap_widths_h : Array[Int],
+  snap_widths_v : Array[Int],
+  blue_scale : @fixed.Fixed,
+  blue_shift : Int,
+  blue_fuzz : Int,
+) -> PsGlobals {
+  {
+    blue_values: build_blue_zones(blue_values, true, false),
+    other_blues: build_blue_zones(other_blues, true, true),
+    family_blues: build_blue_zones(family_blues, true, false),
+    family_other_blues: build_blue_zones(family_other_blues, true, true),
+    blue_scale,
+    blue_shift: blue_shift.to_int64(),
+    blue_fuzz: blue_fuzz.to_int64(),
+    std_hw: std_hw.to_int64(),
+    std_vw: std_vw.to_int64(),
+    snap_widths_h: snap_widths_h.map(fn(v) { v.to_int64() }),
+    snap_widths_v: snap_widths_v.map(fn(v) { v.to_int64() }),
+  }
+}
+
+///|
 pub fn build_ps_globals(
   blue_values : Array[Int],
   other_blues : Array[Int],
@@ -229,53 +307,19 @@ pub fn build_ps_globals(
   blue_shift : Int,
   blue_fuzz : Int,
 ) -> PsGlobals {
-  let bv : Array[BlueZone] = []
-  // Match FreeType's PS blue-zone interpretation:
-  // the first BlueValues pair is a bottom zone whose flat edge is the second
-  // value; subsequent BlueValues pairs are top zones whose flat edge is the
-  // first value. OtherBlues are always bottom zones with the second value as
-  // the flat edge.
-  for i = 0; i + 1 < blue_values.length(); {
-    let v0 = blue_values[i].to_int64()
-    let v1 = blue_values[i + 1].to_int64()
-    let bottom = if v0 < v1 { v0 } else { v1 }
-    let top = if v0 > v1 { v0 } else { v1 }
-    let is_bottom = i == 0
-    let flat = if is_bottom { v1 } else { v0 }
-    bv.push({ bottom, top, flat, is_bottom })
-    continue i + 2
-  }
-  let ob : Array[BlueZone] = []
-  for i = 0; i + 1 < other_blues.length(); {
-    let v0 = other_blues[i].to_int64()
-    let v1 = other_blues[i + 1].to_int64()
-    ob.push({
-      bottom: if v0 < v1 {
-        v0
-      } else {
-        v1
-      },
-      top: if v0 > v1 {
-        v0
-      } else {
-        v1
-      },
-      flat: v1,
-      is_bottom: true,
-    })
-    continue i + 2
-  }
-  {
-    blue_values: bv,
-    other_blues: ob,
+  build_ps_globals_with_private(
+    blue_values,
+    other_blues,
+    [],
+    [],
+    std_hw,
+    std_vw,
+    [],
+    [],
     blue_scale,
-    blue_shift: blue_shift.to_int64(),
-    blue_fuzz: blue_fuzz.to_int64(),
-    std_hw: std_hw.to_int64(),
-    std_vw: std_vw.to_int64(),
-    snap_widths_h: [],
-    snap_widths_v: [],
-  }
+    blue_shift,
+    blue_fuzz,
+  )
 }
 
 ///|
@@ -295,6 +339,18 @@ pub fn fit_stems(
       all.push(z)
     }
     for z in globals.other_blues {
+      all.push(z)
+    }
+    all
+  } else {
+    []
+  }
+  let family_zones = if is_horizontal {
+    let all : Array[BlueZone] = []
+    for z in globals.family_blues {
+      all.push(z)
+    }
+    for z in globals.family_other_blues {
       all.push(z)
     }
     all
@@ -343,11 +399,12 @@ pub fn fit_stems(
     let mut cur_pos = pos_px + snap_stem_side_delta(pos_px, cur_width)
     if is_horizontal && !zones.is_empty() {
       let bottom_aligned = fit_blue_zone_edge(
-        org_pos, zones, globals, scale, false,
+        org_pos, zones, family_zones, globals, scale, false,
       )
       let top_aligned = fit_blue_zone_edge(
         org_pos + org_width,
         zones,
+        family_zones,
         globals,
         scale,
         true,
@@ -482,6 +539,16 @@ pub fn PsGlobals::other_blues(self : PsGlobals) -> Array[BlueZone] {
 }
 
 ///|
+pub fn PsGlobals::family_blues(self : PsGlobals) -> Array[BlueZone] {
+  self.family_blues
+}
+
+///|
+pub fn PsGlobals::family_other_blues(self : PsGlobals) -> Array[BlueZone] {
+  self.family_other_blues
+}
+
+///|
 pub fn PsGlobals::blue_scale(self : PsGlobals) -> @fixed.Fixed {
   self.blue_scale
 }
@@ -504,4 +571,14 @@ pub fn PsGlobals::std_hw(self : PsGlobals) -> Int64 {
 ///|
 pub fn PsGlobals::std_vw(self : PsGlobals) -> Int64 {
   self.std_vw
+}
+
+///|
+pub fn PsGlobals::snap_widths_h(self : PsGlobals) -> Array[Int64] {
+  self.snap_widths_h
+}
+
+///|
+pub fn PsGlobals::snap_widths_v(self : PsGlobals) -> Array[Int64] {
+  self.snap_widths_v
 }
