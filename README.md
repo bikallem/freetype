@@ -167,7 +167,6 @@ src/
   smooth/              # Outline rasterizer: gray, mono, LCD, LCD_V bitmap emission
   color/               # Color font table parsing, BGRA surfaces, bitmap decode helpers
   sdf/                 # Signed-distance-field rasterization
-  nativeft/            # Legacy native bridge experiments (not used by the public runtime)
   sfnt/                # SFNT parsing: table directory, head, hhea, maxp, hmtx, name,
                        #   OS/2, post, cmap (formats 0/2/4/6/8/10/12/13/14), kern,
                        #   WOFF1, WOFF2

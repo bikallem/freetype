@@ -322,8 +322,7 @@ pub fn SfntOps::chars_of_variant(Self) -> (UInt) -> Array[UInt]
 pub fn SfntOps::get_kerning(Self) -> (UInt, UInt) -> Int
 pub fn SfntOps::load_color_glyph(Self) -> (UInt, Int, UInt, UInt, Array[@types.Color], @types.Color) -> BitmapGlyphData? raise @error.FTError
 pub fn SfntOps::load_glyph(Self) -> (UInt, Int) -> (GlyphSlotData, @types.Outline, Bytes, Array[@types.Vector]) raise @error.FTError
-pub fn SfntOps::load_native_slot(Self) -> (FaceRec, UInt, Int) -> Bool raise @error.FTError
-pub fn SfntOps::new(char_index~ : (UInt) -> UInt, char_variant_index~ : (UInt, UInt) -> UInt, char_variant_is_default~ : (UInt, UInt) -> Int, variant_selectors~ : () -> Array[UInt], variants_of_char~ : (UInt) -> Array[UInt], chars_of_variant~ : (UInt) -> Array[UInt], load_glyph~ : (UInt, Int) -> (GlyphSlotData, @types.Outline, Bytes, Array[@types.Vector]) raise @error.FTError, get_kerning~ : (UInt, UInt) -> Int, apply_hints~ : (@types.Outline, @fixed.Fixed) -> Bool, tt_hint~ : (@types.Outline, Bytes, Array[@types.Vector], @fixed.Fixed, @fixed.Fixed, UInt) -> Bool, load_native_slot? : (FaceRec, UInt, Int) -> Bool raise @error.FTError, palette_data~ : () -> @types.PaletteData?, select_palette~ : (UInt) -> Array[@types.Color]? raise @error.FTError, load_color_glyph~ : (UInt, Int, UInt, UInt, Array[@types.Color], @types.Color) -> BitmapGlyphData? raise @error.FTError, num_glyphs~ : UInt, raw_data~ : Bytes) -> Self
+pub fn SfntOps::new(char_index~ : (UInt) -> UInt, char_variant_index~ : (UInt, UInt) -> UInt, char_variant_is_default~ : (UInt, UInt) -> Int, variant_selectors~ : () -> Array[UInt], variants_of_char~ : (UInt) -> Array[UInt], chars_of_variant~ : (UInt) -> Array[UInt], load_glyph~ : (UInt, Int) -> (GlyphSlotData, @types.Outline, Bytes, Array[@types.Vector]) raise @error.FTError, get_kerning~ : (UInt, UInt) -> Int, apply_hints~ : (@types.Outline, @fixed.Fixed) -> Bool, tt_hint~ : (@types.Outline, Bytes, Array[@types.Vector], @fixed.Fixed, @fixed.Fixed, UInt) -> Bool, palette_data~ : () -> @types.PaletteData?, select_palette~ : (UInt) -> Array[@types.Color]? raise @error.FTError, load_color_glyph~ : (UInt, Int, UInt, UInt, Array[@types.Color], @types.Color) -> BitmapGlyphData? raise @error.FTError, num_glyphs~ : UInt, raw_data~ : Bytes) -> Self
 pub fn SfntOps::num_glyphs(Self) -> UInt
 pub fn SfntOps::palette_data(Self) -> () -> @types.PaletteData?
 pub fn SfntOps::raw_data(Self) -> Bytes
@@ -352,8 +351,7 @@ pub fn Type1Ops::attach_metrics(Self) -> (Bytes) -> Unit raise @error.FTError
 pub fn Type1Ops::char_index(Self) -> (UInt) -> UInt
 pub fn Type1Ops::get_kerning(Self) -> (UInt, UInt) -> Int
 pub fn Type1Ops::load_glyph(Self) -> (UInt, Int) -> (GlyphSlotData, @types.Outline) raise @error.FTError
-pub fn Type1Ops::load_native_slot(Self) -> (FaceRec, UInt, Int) -> Bool raise @error.FTError
-pub fn Type1Ops::new(char_index~ : (UInt) -> UInt, load_glyph~ : (UInt, Int) -> (GlyphSlotData, @types.Outline) raise @error.FTError, apply_hints~ : (@types.Outline, @fixed.Fixed) -> Bool, load_native_slot? : (FaceRec, UInt, Int) -> Bool raise @error.FTError, get_kerning? : (UInt, UInt) -> Int, set_var_design_coordinates? : (Array[(@fixed.Fixed, UInt)]) -> Unit raise @error.FTError, attach_metrics? : (Bytes) -> Unit raise @error.FTError) -> Self
+pub fn Type1Ops::new(char_index~ : (UInt) -> UInt, load_glyph~ : (UInt, Int) -> (GlyphSlotData, @types.Outline) raise @error.FTError, apply_hints~ : (@types.Outline, @fixed.Fixed) -> Bool, get_kerning? : (UInt, UInt) -> Int, set_var_design_coordinates? : (Array[(@fixed.Fixed, UInt)]) -> Unit raise @error.FTError, attach_metrics? : (Bytes) -> Unit raise @error.FTError) -> Self
 pub fn Type1Ops::set_var_design_coordinates(Self) -> (Array[(@fixed.Fixed, UInt)]) -> Unit raise @error.FTError
 pub impl Show for Type1Ops
 

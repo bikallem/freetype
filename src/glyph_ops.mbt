@@ -276,45 +276,11 @@ fn set_slot_bitmap_glyph(
 }
 
 ///|
-fn load_flags_with_render_mode(load_flags : Int, mode : RenderMode) -> Int {
-  let cleared = load_flags &
-    (-1 ^ @base.LOAD_TARGET_MODE_MASK) &
-    (-1 ^ @base.LOAD_MONOCHROME)
-  match mode {
-    Normal => cleared | @base.LOAD_RENDER | @base.LOAD_TARGET_NORMAL
-    Light => cleared | @base.LOAD_RENDER | @base.LOAD_TARGET_LIGHT
-    Mono =>
-      cleared |
-      @base.LOAD_RENDER |
-      @base.LOAD_TARGET_MONO |
-      @base.LOAD_MONOCHROME
-    Lcd => cleared | @base.LOAD_RENDER | @base.LOAD_TARGET_LCD
-    LcdV => cleared | @base.LOAD_RENDER | @base.LOAD_TARGET_LCD_V
-    // SDF uses the existing grayscale/native bitmap path and converts after.
-    Sdf => cleared | @base.LOAD_RENDER | @base.LOAD_TARGET_NORMAL
-  }
-}
-
-///|
 fn render_slot_bitmap(
   face : @base.FaceRec,
   mode : RenderMode,
 ) -> Unit raise @error.FTError {
   let slot = face.glyph()
-  if mode != Sdf {
-    let native_load_flags = load_flags_with_render_mode(slot.load_flags(), mode)
-    match face.driver_data() {
-      @base.DriverData::SfntDriver(ops) =>
-        if ops.load_native_slot()(face, slot.glyph_index(), native_load_flags) {
-          return
-        }
-      @base.DriverData::Type1Ops(ops) =>
-        if ops.load_native_slot()(face, slot.glyph_index(), native_load_flags) {
-          return
-        }
-      @base.DriverData::Empty | @base.DriverData::BitmapOps(_) => ()
-    }
-  }
   match slot.format() {
     Bitmap =>
       if mode == Sdf {
@@ -426,18 +392,11 @@ pub fn load_glyph(
   load_flags? : Int = 0,
 ) -> Unit raise @error.FTError {
   match face.driver_data() {
-    Type1Ops(ops) =>
-      if ops.load_native_slot()(face, glyph_index, load_flags) {
-        return
-      }
-    Empty | BitmapOps(_) | SfntDriver(_) => ()
-  }
-  match face.driver_data() {
     BitmapOps(ops) => {
       load_bitmap_glyph(face, glyph_index, load_flags, ops)
       return
     }
-    SfntDriver(ops) => {
+    SfntDriver(ops) =>
       if (load_flags & @base.LOAD_COLOR) != 0 &&
         (load_flags & @base.LOAD_NO_SCALE) == 0 &&
         face.size().metrics().x_ppem() != 0U &&
@@ -458,10 +417,6 @@ pub fn load_glyph(
           None => ()
         }
       }
-      if ops.load_native_slot()(face, glyph_index, load_flags) {
-        return
-      }
-    }
     _ => ()
   }
   let (slot_data, outline, tt_instructions, tt_phantoms) = match
