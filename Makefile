@@ -1,4 +1,4 @@
-.PHONY: all build test fmt clean parity parity-tests bench check
+.PHONY: all build test contracts fmt clean parity parity-tests bench check
 
 # Default: build, format, and test (no bench — it's slow)
 all: build fmt test parity info
@@ -18,6 +18,9 @@ fmt:
 # ── Test ───────────────────────────────────────────────────────────
 test:
 	moon test
+
+contracts:
+	moon test src --target native --filter 'contract/*'
 
 # ── Info ───────────────────────────────────────────────────────────
 info: 

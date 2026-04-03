@@ -203,6 +203,7 @@ src/
 ```bash
 make build     # Compile
 make test      # Run unit tests
+make contracts # Run intentional-incompatibility contract tests
 make parity    # Run parity tests against C FreeType golden data
 make fmt       # Format code + regenerate .mbti files
 make bench     # Run C vs MoonBit benchmark comparison
@@ -217,6 +218,10 @@ Parity tests verify that the MoonBit port produces identical results to the vend
 1. **Golden file generation** — A Python wrapper (`test/golden/generate/generate.py`) stages the font corpus, using the repo's MoonBit WOFF2 decompressor for `.woff2` files, then invokes a C program (`test/golden/generate/gen_golden.c`) linked against vendored FreeType to dump JSON per font: face metadata, charmap entries, glyph outlines at multiple sizes and load flags, and kerning pairs.
 
 2. **Test generation** — A Python script (`test/parity/gen_parity_tests.py`) reads the golden JSON and generates MoonBit test files that load the same fonts through our port and compare every value.
+
+Intentional exclusions are reported separately from parity regressions. Run
+the exclusion-contract suite with `make contracts`; those tests document
+behaviors that are out of scope by design, such as the OT-SVG fallback path.
 
 3. **Font loading** — Tests read fonts from disk at runtime via `@fs.read_file_to_bytes()` (native target).
 

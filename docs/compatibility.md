@@ -63,6 +63,8 @@ Repository documentation and comments should use the following wording:
 
 - Differential parity tests compare supported behavior against the vendored
   oracle.
+- Contract tests run intentional exclusions separately from parity. In this
+  repository the dedicated entry point is `make contracts`.
 - Intentional exclusions use explicit contract tests and must not silently
   inflate parity counts.
 - When a new incompatibility is accepted, it must be added here and covered by
