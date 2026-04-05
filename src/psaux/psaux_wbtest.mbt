@@ -234,6 +234,59 @@ test "Type1: seac composes outlines and shifts hints" {
 }
 
 ///|
+test "Type1: direct rlineto after hsbw starts contour" {
+  let cs : Bytes = [
+    189, 248, 136, 13, // hsbw(50, 500)
+     239, 139, 5, // rlineto(100, 0)
+     139, 239, 5, // rlineto(0, 100)
+     14,
+  ]
+  let no_seac : (String) -> (
+    @types.Outline,
+    Int64,
+    Array[StemHint],
+    Array[StemHint],
+  ) raise @error.FTError = _name => raise @error.FTError::InvalidGlyphIndex
+  let (outline, width, _, _) = execute_type1(cs, [], 0L, no_seac)
+  inspect(width, content="500")
+  inspect(outline.n_points(), content="3")
+  inspect(outline.n_contours(), content="1")
+  inspect(outline.points()[0].x(), content="50")
+  inspect(outline.points()[0].y(), content="0")
+  inspect(outline.points()[1].x(), content="150")
+  inspect(outline.points()[1].y(), content="0")
+  inspect(outline.points()[2].x(), content="150")
+  inspect(outline.points()[2].y(), content="100")
+}
+
+///|
+test "Type1: direct rrcurveto after hsbw starts contour" {
+  let cs : Bytes = [
+    189, 248, 136, 13, // hsbw(50, 500)
+     149, 159, 169, 179, 189, 199, 8, // rrcurveto(10, 20, 30, 40, 50, 60)
+     14,
+  ]
+  let no_seac : (String) -> (
+    @types.Outline,
+    Int64,
+    Array[StemHint],
+    Array[StemHint],
+  ) raise @error.FTError = _name => raise @error.FTError::InvalidGlyphIndex
+  let (outline, width, _, _) = execute_type1(cs, [], 0L, no_seac)
+  inspect(width, content="500")
+  inspect(outline.n_points(), content="4")
+  inspect(outline.n_contours(), content="1")
+  inspect(outline.points()[0].x(), content="50")
+  inspect(outline.points()[0].y(), content="0")
+  inspect(outline.points()[1].x(), content="60")
+  inspect(outline.points()[1].y(), content="20")
+  inspect(outline.points()[2].x(), content="90")
+  inspect(outline.points()[2].y(), content="60")
+  inspect(outline.points()[3].x(), content="140")
+  inspect(outline.points()[3].y(), content="120")
+}
+
+///|
 fn encode_type1_test_int(value : Int) -> Bytes {
   if value >= -107 && value <= 107 {
     [(value + 139).to_byte()]
